@@ -16,10 +16,10 @@ import com.google.api.services.drive.DriveScopes
 
 class GoogleAuthManager(private val context: Context) {
 
-    private val credentialManager = CredentialManager.create(context)
+    private val credentialManager by lazy { CredentialManager.create(context) }
     private val TAG = "GoogleAuthManager"
 
-    suspend fun signIn(): GoogleIdTokenCredential? {
+    suspend fun signIn(activityContext: Context): GoogleIdTokenCredential? {
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
             .setServerClientId(context.getString(R.string.google_web_client_id))
@@ -30,7 +30,7 @@ class GoogleAuthManager(private val context: Context) {
             .build()
 
         return try {
-            val result = credentialManager.getCredential(context, request)
+            val result = credentialManager.getCredential(activityContext, request)
             GoogleIdTokenCredential.createFrom(result.credential.data)
         } catch (e: Exception) {
             Log.e(TAG, "Sign in failed", e)

@@ -1,6 +1,7 @@
 package com.example.healthjournal.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -21,10 +22,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class JournalViewModel(application: Application, private val repository: JournalRepository) : AndroidViewModel(application) {
-
-    private val authManager = GoogleAuthManager(application)
-    private val sessionManager = SessionManager(application)
+class JournalViewModel(
+    application: Application,
+    private val repository: JournalRepository,
+    private val authManager: GoogleAuthManager,
+    private val sessionManager: SessionManager
+) : AndroidViewModel(application) {
 
     val allEntries: StateFlow<List<JournalEntry>> = repository.allEntries.stateIn(
         scope = viewModelScope,
@@ -48,9 +51,9 @@ class JournalViewModel(application: Application, private val repository: Journal
         }
     }
 
-    fun signIn(onResolutionRequired: (android.app.PendingIntent) -> Unit) {
+    fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit) {
         viewModelScope.launch {
-            val credential = authManager.signIn()
+            val credential = authManager.signIn(activityContext)
             if (credential != null) {
                 sessionManager.saveUserEmail(credential.id)
                 _isUserSignedIn.value = true
@@ -59,7 +62,7 @@ class JournalViewModel(application: Application, private val repository: Journal
                 authManager.requestDriveAuthorization(
                     email = credential.id,
                     onResolutionRequired = onResolutionRequired,
-                    onSuccess = { accessToken ->
+                    onSuccess = { _ ->
                         _syncStatus.value = "Authenticated & Authorized"
                         syncNow()
                     }
@@ -106,11 +109,16 @@ class JournalViewModel(application: Application, private val repository: Journal
     }
 }
 
-class JournalViewModelFactory(private val application: Application, private val repository: JournalRepository) : ViewModelProvider.Factory {
+class JournalViewModelFactory(
+    private val application: Application,
+    private val repository: JournalRepository
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(JournalViewModel::class.java)) {
+            val authManager = GoogleAuthManager(application)
+            val sessionManager = SessionManager(application)
             @Suppress("UNCHECKED_CAST")
-            return JournalViewModel(application, repository) as T
+            return JournalViewModel(application, repository, authManager, sessionManager) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

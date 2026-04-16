@@ -16,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,6 +31,7 @@ fun HistoryScreen(viewModel: JournalViewModel, onAddEntryClick: () -> Unit) {
     val entries by viewModel.allEntries.collectAsState()
     val isSignedIn by viewModel.isUserSignedIn.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()
+    val context = LocalContext.current
 
     val authorizationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
@@ -50,7 +52,7 @@ fun HistoryScreen(viewModel: JournalViewModel, onAddEntryClick: () -> Unit) {
                         }
                     } else {
                         TextButton(onClick = {
-                            viewModel.signIn { pendingIntent ->
+                            viewModel.signIn(context) { pendingIntent ->
                                 authorizationLauncher.launch(
                                     IntentSenderRequest.Builder(pendingIntent).build()
                                 )
