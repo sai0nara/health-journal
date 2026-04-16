@@ -14,4 +14,8 @@ class JournalRepository(private val journalDao: JournalDao) {
     suspend fun getEntryById(entryId: String): JournalEntry? {
         return journalDao.getEntryById(entryId)
     }
+
+    suspend fun importAll(entries: List<JournalEntry>) {
+        journalDao.insertAll(entries)
+    }
 }

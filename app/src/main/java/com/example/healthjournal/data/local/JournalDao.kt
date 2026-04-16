@@ -16,4 +16,7 @@ interface JournalDao {
 
     @Query("SELECT * FROM journal_entries WHERE entry_id = :entryId")
     suspend fun getEntryById(entryId: String): JournalEntry?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entries: List<JournalEntry>)
 }

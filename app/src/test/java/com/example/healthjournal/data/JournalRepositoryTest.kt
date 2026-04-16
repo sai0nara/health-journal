@@ -56,4 +56,14 @@ class JournalRepositoryTest {
             assertEquals(entries, it)
         }
     }
+
+    @Test
+    fun importAllCallsDao() = runBlocking {
+        val entries = listOf(JournalEntry(description = "Test Entry"))
+        coEvery { journalDao.insertAll(any()) } returns Unit
+        
+        repository.importAll(entries)
+        
+        coVerify { journalDao.insertAll(entries) }
+    }
 }

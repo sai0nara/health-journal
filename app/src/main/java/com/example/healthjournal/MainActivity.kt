@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         
         val database = JournalDatabase.getDatabase(this)
         val repository = JournalRepository(database.journalDao())
-        val viewModelFactory = JournalViewModelFactory(repository)
+        val viewModelFactory = JournalViewModelFactory(application, repository)
 
         setContent {
             HealthJournalTheme {

@@ -1,14 +1,20 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,10 +28,39 @@ import java.util.*
 @Composable
 fun HistoryScreen(viewModel: JournalViewModel, onAddEntryClick: () -> Unit) {
     val entries by viewModel.allEntries.collectAsState()
+    val isSignedIn by viewModel.isUserSignedIn.collectAsState()
+    val syncStatus by viewModel.syncStatus.collectAsState()
+
+    val authorizationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            viewModel.syncNow()
+        }
+    }
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Health Journal") })
+            TopAppBar(
+                title = { Text("Health Journal") },
+                actions = {
+                    if (isSignedIn) {
+                        IconButton(onClick = { viewModel.syncNow() }) {
+                            Icon(Icons.Default.Sync, contentDescription = "Sync Now")
+                        }
+                    } else {
+                        TextButton(onClick = {
+                            viewModel.signIn { pendingIntent ->
+                                authorizationLauncher.launch(
+                                    IntentSenderRequest.Builder(pendingIntent).build()
+                                )
+                            }
+                        }) {
+                            Text("Sign In")
+                        }
+                    }
+                }
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddEntryClick) {
@@ -33,15 +68,28 @@ fun HistoryScreen(viewModel: JournalViewModel, onAddEntryClick: () -> Unit) {
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(entries) { entry ->
-                JournalEntryItem(entry)
+        Column(modifier = Modifier.padding(padding)) {
+            syncStatus?.let {
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = it,
+                        modifier = Modifier.padding(8.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(entries) { entry ->
+                    JournalEntryItem(entry)
+                }
             }
         }
     }

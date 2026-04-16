@@ -15,6 +15,7 @@ local.properties
 
 # Log Files
 *.log
+*.hprof
 
 # Android Studio / IntelliJ IDEA files
 .idea/
