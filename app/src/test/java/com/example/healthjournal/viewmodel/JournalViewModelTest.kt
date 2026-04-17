@@ -71,6 +71,22 @@ class JournalViewModelTest {
     }
 
     @Test
+    fun addEntryCallsRepositoryWithCustomTimestamp() = runTest {
+        val description = "Test Description"
+        val customTimestamp = 123456789L
+        coEvery { repository.insert(any()) } returns Unit
+        
+        viewModel.addEntry(description, customTimestamp)
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        coVerify { 
+            repository.insert(match { 
+                it.description == description && it.timestamp == customTimestamp 
+            }) 
+        }
+    }
+
+    @Test
     fun allEntriesReflectsRepositoryFlow() = runTest {
         val entries = listOf(JournalEntry(description = "Entry 1"))
         coEvery { repository.allEntries } returns flowOf(entries)

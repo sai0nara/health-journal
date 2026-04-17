@@ -21,13 +21,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.healthjournal.data.local.JournalEntry
-import com.example.healthjournal.viewmodel.JournalViewModel
+import com.example.healthjournal.viewmodel.IJournalViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryScreen(viewModel: JournalViewModel, onAddEntryClick: () -> Unit) {
+fun HistoryScreen(viewModel: IJournalViewModel, onAddEntryClick: () -> Unit) {
     val entries by viewModel.allEntries.collectAsState()
     val isSignedIn by viewModel.isUserSignedIn.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()

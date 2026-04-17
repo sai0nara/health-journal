@@ -22,28 +22,38 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+interface IJournalViewModel {
+    val allEntries: StateFlow<List<JournalEntry>>
+    val isUserSignedIn: StateFlow<Boolean>
+    val syncStatus: StateFlow<String?>
+    fun addEntry(description: String, timestamp: Long = System.currentTimeMillis())
+    fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit)
+    fun syncNow()
+    fun signOut()
+}
+
 class JournalViewModel(
     application: Application,
     private val repository: JournalRepository,
     private val authManager: GoogleAuthManager,
     private val sessionManager: SessionManager
-) : AndroidViewModel(application) {
+) : AndroidViewModel(application), IJournalViewModel {
 
-    val allEntries: StateFlow<List<JournalEntry>> = repository.allEntries.stateIn(
+    override val allEntries: StateFlow<List<JournalEntry>> = repository.allEntries.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
 
     private val _isUserSignedIn = MutableStateFlow(sessionManager.getUserEmail() != null)
-    val isUserSignedIn: StateFlow<Boolean> = _isUserSignedIn.asStateFlow()
+    override val isUserSignedIn: StateFlow<Boolean> = _isUserSignedIn.asStateFlow()
 
     private val _syncStatus = MutableStateFlow<String?>(null)
-    val syncStatus: StateFlow<String?> = _syncStatus.asStateFlow()
+    override val syncStatus: StateFlow<String?> = _syncStatus.asStateFlow()
 
-    fun addEntry(description: String) {
+    override fun addEntry(description: String, timestamp: Long) {
         viewModelScope.launch {
-            val newEntry = JournalEntry(description = description)
+            val newEntry = JournalEntry(description = description, timestamp = timestamp)
             repository.insert(newEntry)
             if (_isUserSignedIn.value) {
                 SyncManager.enqueueSync(getApplication())
@@ -51,7 +61,7 @@ class JournalViewModel(
         }
     }
 
-    fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit) {
+    override fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit) {
         viewModelScope.launch {
             val credential = authManager.signIn(activityContext)
             if (credential != null) {
@@ -71,7 +81,7 @@ class JournalViewModel(
         }
     }
 
-    fun syncNow() {
+    override fun syncNow() {
         val email = sessionManager.getUserEmail() ?: return
         viewModelScope.launch {
             _syncStatus.value = "Syncing..."
@@ -99,7 +109,7 @@ class JournalViewModel(
         }
     }
 
-    fun signOut() {
+    override fun signOut() {
         viewModelScope.launch {
             authManager.signOut()
             sessionManager.clearSession()

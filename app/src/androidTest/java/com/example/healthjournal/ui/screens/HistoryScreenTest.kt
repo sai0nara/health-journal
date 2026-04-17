@@ -5,19 +5,31 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.example.healthjournal.data.local.JournalEntry
-import com.example.healthjournal.viewmodel.JournalViewModel
-import io.mockk.every
-import io.mockk.mockk
+import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import org.junit.Rule
 import org.junit.Test
+import android.app.PendingIntent
+import android.content.Context
 
 class HistoryScreenTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private val viewModel: JournalViewModel = mockk(relaxed = true)
+    class MockJournalViewModel : IJournalViewModel {
+        override val allEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
+        override val isUserSignedIn = MutableStateFlow(false)
+        override val syncStatus = MutableStateFlow<String?>(null)
+        
+        override fun addEntry(description: String, timestamp: Long) {}
+        override fun signIn(activityContext: Context, onResolutionRequired: (PendingIntent) -> Unit) {}
+        override fun syncNow() {}
+        override fun signOut() {}
+    }
+
+    private val viewModel = MockJournalViewModel()
 
     @Test
     fun testHistoryScreen_DisplaysEntries() {
@@ -25,8 +37,7 @@ class HistoryScreenTest {
             JournalEntry(description = "Morning jog"),
             JournalEntry(description = "Healthy lunch")
         )
-        val entriesFlow = MutableStateFlow(entries)
-        every { viewModel.allEntries } returns entriesFlow
+        viewModel.allEntries.value = entries
 
         composeTestRule.setContent {
             HistoryScreen(
@@ -43,7 +54,6 @@ class HistoryScreenTest {
     @Test
     fun testHistoryScreen_FabCallsOnAddEntryClick() {
         var addEntryClicked = false
-        every { viewModel.allEntries } returns MutableStateFlow(emptyList())
 
         composeTestRule.setContent {
             HistoryScreen(
