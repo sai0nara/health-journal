@@ -4,4 +4,4 @@
 4. search
 5. graph, trends
 6. measurements 
-7. 
+7. allure report with screenshots

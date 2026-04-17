@@ -6,6 +6,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
@@ -51,6 +53,27 @@ class JournalViewModel(
     private val _syncStatus = MutableStateFlow<String?>(null)
     override val syncStatus: StateFlow<String?> = _syncStatus.asStateFlow()
 
+    init {
+        // Observe WorkManager for "journal_sync"
+        viewModelScope.launch {
+            WorkManager.getInstance(getApplication())
+                .getWorkInfosForUniqueWorkFlow("journal_sync")
+                .collect { workInfos ->
+                    val info = workInfos.firstOrNull()
+                    _syncStatus.value = when (info?.state) {
+                        WorkInfo.State.ENQUEUED -> {
+                            if (info.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
+                        }
+                        WorkInfo.State.RUNNING -> "Syncing..."
+                        WorkInfo.State.SUCCEEDED -> "Synced"
+                        WorkInfo.State.FAILED -> "Sync Failed"
+                        WorkInfo.State.CANCELLED -> "Sync Cancelled"
+                        else -> null
+                    }
+                }
+        }
+    }
+
     override fun addEntry(description: String, timestamp: Long) {
         viewModelScope.launch {
             val newEntry = JournalEntry(description = description, timestamp = timestamp)
@@ -83,30 +106,8 @@ class JournalViewModel(
 
     override fun syncNow() {
         val email = sessionManager.getUserEmail() ?: return
-        viewModelScope.launch {
-            _syncStatus.value = "Syncing..."
-            try {
-                val account = authManager.getAccount(email)
-                val driveService = DriveServiceHelper.createDriveService(getApplication(), account)
-                val driveHelper = DriveServiceHelper(driveService)
-                
-                // 1. Upload local to cloud
-                val localEntries = repository.allEntries.first()
-                driveHelper.uploadJournalData(Gson().toJson(localEntries))
-                
-                // 2. Download from cloud and merge (simple merge: cloud wins for conflicts)
-                val cloudJson = driveHelper.downloadJournalData()
-                if (cloudJson != null) {
-                    val type = object : TypeToken<List<JournalEntry>>() {}.type
-                    val cloudEntries: List<JournalEntry> = Gson().fromJson(cloudJson, type)
-                    repository.importAll(cloudEntries)
-                }
-                
-                _syncStatus.value = "Sync Complete"
-            } catch (e: Exception) {
-                _syncStatus.value = "Sync Failed: ${e.message}"
-            }
-        }
+        SyncManager.enqueueSync(getApplication())
+        _syncStatus.value = "Sync Requested"
     }
 
     override fun signOut() {

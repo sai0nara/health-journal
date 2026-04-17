@@ -14,6 +14,7 @@ import com.example.healthjournal.ui.screens.HistoryScreen
 import com.example.healthjournal.ui.theme.HealthJournalTheme
 import com.example.healthjournal.viewmodel.JournalViewModel
 import com.example.healthjournal.viewmodel.JournalViewModelFactory
+import com.example.healthjournal.sync.SyncManager
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,6 +23,9 @@ class MainActivity : ComponentActivity() {
         val database = JournalDatabase.getDatabase(this)
         val repository = JournalRepository(database.journalDao())
         val viewModelFactory = JournalViewModelFactory(application, repository)
+
+        // Trigger sync on start
+        SyncManager.enqueueSync(this)
 
         setContent {
             HealthJournalTheme {
