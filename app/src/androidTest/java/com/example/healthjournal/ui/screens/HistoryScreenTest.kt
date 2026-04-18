@@ -6,6 +6,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.viewmodel.IJournalViewModel
+import io.qameta.allure.android.rules.ScreenshotRule
+import io.qameta.allure.kotlin.Feature
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.junit.Rule
@@ -13,10 +15,14 @@ import org.junit.Test
 import android.app.PendingIntent
 import android.content.Context
 
+@Feature("History")
 class HistoryScreenTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @get:Rule
+    val screenshotRule = ScreenshotRule(mode = ScreenshotRule.Mode.END)
 
     class MockJournalViewModel : IJournalViewModel {
         override val allEntries = MutableStateFlow<List<JournalEntry>>(emptyList())

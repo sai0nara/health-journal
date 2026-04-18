@@ -2,6 +2,19 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
+    id("io.qameta.allure")
+}
+
+allure {
+    version.set("2.25.0")
+    adapter {
+        aspectjVersion.set("1.9.22")
+        frameworks {
+            junit4 {
+                enabled.set(true)
+            }
+        }
+    }
 }
 
 android {
@@ -16,6 +29,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments["listener"] = "io.qameta.allure.kotlin.junit4.AllureJunit4"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -44,6 +58,9 @@ android {
         kotlinCompilerExtensionVersion = "1.5.8"
     }
     packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             excludes += "META-INF/DEPENDENCIES"
@@ -51,6 +68,16 @@ android {
             excludes += "META-INF/LICENSE.md"
             excludes += "META-INF/LICENSE-notice.md"
         }
+    }
+}
+
+tasks.register<Exec>("pullAllureResults") {
+    group = "verification"
+    description = "Pulls Allure results from the connected device"
+    commandLine("adb", "pull", "/sdcard/Download/allure-results/.", "${project.buildDir}/allure-results")
+    doFirst {
+        val resultsDir = file("${project.buildDir}/allure-results")
+        if (!resultsDir.exists()) resultsDir.mkdirs()
     }
 }
 
@@ -98,10 +125,12 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
     testImplementation("androidx.credentials:credentials:1.3.0")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation("io.mockk:mockk-android:1.13.9")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("io.qameta.allure:allure-kotlin-android:2.4.0")
+    androidTestImplementation("io.qameta.allure:allure-kotlin-junit4:2.4.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
