@@ -6,10 +6,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.viewmodel.IJournalViewModel
+import io.qameta.allure.android.allureScreenshot
 import io.qameta.allure.android.rules.ScreenshotRule
 import io.qameta.allure.kotlin.Feature
+import io.qameta.allure.kotlin.Step
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import org.junit.Rule
 import org.junit.Test
 import android.app.PendingIntent
@@ -22,7 +23,7 @@ class HistoryScreenTest {
     val composeTestRule = createComposeRule()
 
     @get:Rule
-    val screenshotRule = ScreenshotRule(mode = ScreenshotRule.Mode.END)
+    val screenshotRule = ScreenshotRule(mode = ScreenshotRule.Mode.FAILURE)
 
     class MockJournalViewModel : IJournalViewModel {
         override val allEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
@@ -43,36 +44,54 @@ class HistoryScreenTest {
             JournalEntry(description = "Morning jog"),
             JournalEntry(description = "Healthy lunch")
         )
-        viewModel.allEntries.value = entries
+        
+        step("Prepare entries and open History Screen") {
+            viewModel.allEntries.value = entries
 
-        composeTestRule.setContent {
-            HistoryScreen(
-                viewModel = viewModel,
-                onAddEntryClick = {}
-            )
+            composeTestRule.setContent {
+                HistoryScreen(
+                    viewModel = viewModel,
+                    onAddEntryClick = {}
+                )
+            }
+            allureScreenshot("history_screen_with_entries")
         }
 
-        // Verify that entries are displayed
-        composeTestRule.onNodeWithText("Morning jog").assertExists()
-        composeTestRule.onNodeWithText("Healthy lunch").assertExists()
+        step("Verify that entries are displayed") {
+            composeTestRule.onNodeWithText("Morning jog").assertExists()
+            composeTestRule.onNodeWithText("Healthy lunch").assertExists()
+        }
     }
 
     @Test
     fun testHistoryScreen_FabCallsOnAddEntryClick() {
         var addEntryClicked = false
 
-        composeTestRule.setContent {
-            HistoryScreen(
-                viewModel = viewModel,
-                onAddEntryClick = { addEntryClicked = true }
-            )
+        step("Open History Screen") {
+            composeTestRule.setContent {
+                HistoryScreen(
+                    viewModel = viewModel,
+                    onAddEntryClick = { addEntryClicked = true }
+                )
+            }
+            allureScreenshot("history_screen_opened")
         }
 
-        // Click the FAB
-        composeTestRule.onNodeWithContentDescription("Add Entry")
-            .performClick()
+        step("Click the Add Entry FAB") {
+            composeTestRule.onNodeWithContentDescription("Add Entry")
+                .performClick()
+            allureScreenshot("fab_clicked")
+        }
 
-        // Verify onAddEntryClick was called
-        assert(addEntryClicked)
+        step("Verify onAddEntryClick was called") {
+            assert(addEntryClicked)
+        }
+    }
+
+    @Step("{0}")
+    private fun step(description: String, block: () -> Unit) {
+        io.qameta.allure.kotlin.Allure.step(description) {
+            block()
+        }
     }
 }
