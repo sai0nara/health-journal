@@ -17,6 +17,8 @@ import org.junit.Rule
 import org.junit.Test
 import android.app.PendingIntent
 import android.content.Context
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Feature("Add Entry")
 class AddEntryScreenTest {
@@ -73,6 +75,7 @@ class AddEntryScreenTest {
         }
 
         step("Verify entry was saved and screen closed") {
+            allureScreenshot("verification_save_success")
             assert(viewModel.addEntryCalledWith?.first == testDescription)
             assert(backCalled)
         }
@@ -99,7 +102,70 @@ class AddEntryScreenTest {
         }
 
         step("Verify back was called") {
+            allureScreenshot("verification_back_success")
             assert(backCalled)
+        }
+    }
+
+    @Test
+    fun testAddEntryScreen_DatePickerOpens() {
+        step("Open Add Entry Screen") {
+            composeTestRule.setContent {
+                AddEntryScreen(viewModel = viewModel, onBack = {})
+            }
+        }
+
+        val currentDate = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date())
+        step("Click Date button ($currentDate)") {
+            composeTestRule.onNodeWithText(currentDate).performClick()
+            allureScreenshot("date_picker_opened")
+        }
+
+        step("Verify Date Picker is visible") {
+            allureScreenshot("verification_date_picker_visible")
+            // Material 3 DatePicker header usually contains "Select date"
+            composeTestRule.onNodeWithText("SELECT DATE", ignoreCase = true).assertExists()
+        }
+    }
+
+    @Test
+    fun testAddEntryScreen_TimePickerOpens() {
+        step("Open Add Entry Screen") {
+            composeTestRule.setContent {
+                AddEntryScreen(viewModel = viewModel, onBack = {})
+            }
+        }
+
+        val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+        step("Click Time button ($currentTime)") {
+            composeTestRule.onNodeWithText(currentTime).performClick()
+            allureScreenshot("time_picker_opened")
+        }
+
+        step("Verify Time Picker is visible") {
+            allureScreenshot("verification_time_picker_visible")
+            composeTestRule.onNodeWithText("Select Time").assertExists()
+        }
+    }
+
+    @Test
+    fun testAddEntryScreen_EmptyDescriptionDoesNotSave() {
+        var backCalled = false
+        step("Open Add Entry Screen") {
+            composeTestRule.setContent {
+                AddEntryScreen(viewModel = viewModel, onBack = { backCalled = true })
+            }
+        }
+
+        step("Click Save with empty description") {
+            composeTestRule.onNodeWithText("Save Entry").performClick()
+            allureScreenshot("save_attempt_empty")
+        }
+
+        step("Verify no save occurred") {
+            allureScreenshot("verification_no_save_occurred")
+            assert(viewModel.addEntryCalledWith == null)
+            assert(!backCalled)
         }
     }
 

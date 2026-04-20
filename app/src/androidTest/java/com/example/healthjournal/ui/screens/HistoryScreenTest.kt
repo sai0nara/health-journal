@@ -1,5 +1,6 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -30,9 +31,13 @@ class HistoryScreenTest {
         override val isUserSignedIn = MutableStateFlow(false)
         override val syncStatus = MutableStateFlow<String?>(null)
         
+        var syncNowCalled = false
+
         override fun addEntry(description: String, timestamp: Long) {}
         override fun signIn(activityContext: Context, onResolutionRequired: (PendingIntent) -> Unit) {}
-        override fun syncNow() {}
+        override fun syncNow() {
+            syncNowCalled = true
+        }
         override fun signOut() {}
     }
 
@@ -58,6 +63,7 @@ class HistoryScreenTest {
         }
 
         step("Verify that entries are displayed") {
+            allureScreenshot("verification_entries_displayed")
             composeTestRule.onNodeWithText("Morning jog").assertExists()
             composeTestRule.onNodeWithText("Healthy lunch").assertExists()
         }
@@ -84,7 +90,77 @@ class HistoryScreenTest {
         }
 
         step("Verify onAddEntryClick was called") {
+            allureScreenshot("verification_fab_click_success")
             assert(addEntryClicked)
+        }
+    }
+
+    @Test
+    fun testHistoryScreen_SignInButtonShownWhenLoggedOut() {
+        step("Set signed out state and open History Screen") {
+            viewModel.isUserSignedIn.value = false
+            composeTestRule.setContent {
+                HistoryScreen(viewModel = viewModel, onAddEntryClick = {})
+            }
+            allureScreenshot("history_signed_out")
+        }
+
+        step("Verify Sign In button is displayed") {
+            allureScreenshot("verification_sign_in_shown")
+            composeTestRule.onNodeWithText("Sign In").assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun testHistoryScreen_SyncButtonShownWhenLoggedIn() {
+        step("Set signed in state and open History Screen") {
+            viewModel.isUserSignedIn.value = true
+            composeTestRule.setContent {
+                HistoryScreen(viewModel = viewModel, onAddEntryClick = {})
+            }
+            allureScreenshot("history_signed_in")
+        }
+
+        step("Verify Sync button is displayed") {
+            allureScreenshot("verification_sync_button_shown")
+            composeTestRule.onNodeWithContentDescription("Sync Now").assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun testHistoryScreen_SyncStatusDisplayed() {
+        val status = "Syncing with Google Drive..."
+        step("Set sync status and open History Screen") {
+            viewModel.syncStatus.value = status
+            composeTestRule.setContent {
+                HistoryScreen(viewModel = viewModel, onAddEntryClick = {})
+            }
+            allureScreenshot("history_sync_status")
+        }
+
+        step("Verify sync status text is displayed") {
+            allureScreenshot("verification_sync_status_shown")
+            composeTestRule.onNodeWithText(status).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun testHistoryScreen_SyncButtonClickTriggersViewModel() {
+        step("Set signed in state and open History Screen") {
+            viewModel.isUserSignedIn.value = true
+            composeTestRule.setContent {
+                HistoryScreen(viewModel = viewModel, onAddEntryClick = {})
+            }
+        }
+
+        step("Click Sync button") {
+            composeTestRule.onNodeWithContentDescription("Sync Now").performClick()
+            allureScreenshot("sync_clicked")
+        }
+
+        step("Verify syncNow was called") {
+            allureScreenshot("verification_sync_triggered")
+            assert(viewModel.syncNowCalled)
         }
     }
 
