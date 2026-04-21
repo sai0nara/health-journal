@@ -13,5 +13,6 @@ data class JournalEntry(
     val steps: Int? = null,
     val heart_rate_avg: Int? = null,
     val sleep_hours: Float? = null,
-    val ai_advice: String? = null
+    val ai_advice: String? = null,
+    val isSynced: Boolean = false
 )

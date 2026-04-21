@@ -59,10 +59,12 @@ class HistoryScreenTest {
                     onAddEntryClick = {}
                 )
             }
+            composeTestRule.waitForIdle()
             allureScreenshot("history_screen_with_entries")
         }
 
         step("Verify that entries are displayed") {
+            composeTestRule.waitForIdle()
             allureScreenshot("verification_entries_displayed")
             composeTestRule.onNodeWithText("Morning jog").assertExists()
             composeTestRule.onNodeWithText("Healthy lunch").assertExists()
@@ -80,16 +82,19 @@ class HistoryScreenTest {
                     onAddEntryClick = { addEntryClicked = true }
                 )
             }
+            composeTestRule.waitForIdle()
             allureScreenshot("history_screen_opened")
         }
 
         step("Click the Add Entry FAB") {
             composeTestRule.onNodeWithContentDescription("Add Entry")
                 .performClick()
+            composeTestRule.waitForIdle()
             allureScreenshot("fab_clicked")
         }
 
         step("Verify onAddEntryClick was called") {
+            composeTestRule.waitForIdle()
             allureScreenshot("verification_fab_click_success")
             assert(addEntryClicked)
         }
@@ -102,10 +107,12 @@ class HistoryScreenTest {
             composeTestRule.setContent {
                 HistoryScreen(viewModel = viewModel, onAddEntryClick = {})
             }
+            composeTestRule.waitForIdle()
             allureScreenshot("history_signed_out")
         }
 
         step("Verify Sign In button is displayed") {
+            composeTestRule.waitForIdle()
             allureScreenshot("verification_sign_in_shown")
             composeTestRule.onNodeWithText("Sign In").assertIsDisplayed()
         }
@@ -118,10 +125,12 @@ class HistoryScreenTest {
             composeTestRule.setContent {
                 HistoryScreen(viewModel = viewModel, onAddEntryClick = {})
             }
+            composeTestRule.waitForIdle()
             allureScreenshot("history_signed_in")
         }
 
         step("Verify Sync button is displayed") {
+            composeTestRule.waitForIdle()
             allureScreenshot("verification_sync_button_shown")
             composeTestRule.onNodeWithContentDescription("Sync Now").assertIsDisplayed()
         }
@@ -135,10 +144,12 @@ class HistoryScreenTest {
             composeTestRule.setContent {
                 HistoryScreen(viewModel = viewModel, onAddEntryClick = {})
             }
+            composeTestRule.waitForIdle()
             allureScreenshot("history_sync_status")
         }
 
         step("Verify sync status text is displayed") {
+            composeTestRule.waitForIdle()
             allureScreenshot("verification_sync_status_shown")
             composeTestRule.onNodeWithText(status).assertIsDisplayed()
         }
@@ -151,14 +162,17 @@ class HistoryScreenTest {
             composeTestRule.setContent {
                 HistoryScreen(viewModel = viewModel, onAddEntryClick = {})
             }
+            composeTestRule.waitForIdle()
         }
 
         step("Click Sync button") {
             composeTestRule.onNodeWithContentDescription("Sync Now").performClick()
+            composeTestRule.waitForIdle()
             allureScreenshot("sync_clicked")
         }
 
         step("Verify syncNow was called") {
+            composeTestRule.waitForIdle()
             allureScreenshot("verification_sync_triggered")
             assert(viewModel.syncNowCalled)
         }

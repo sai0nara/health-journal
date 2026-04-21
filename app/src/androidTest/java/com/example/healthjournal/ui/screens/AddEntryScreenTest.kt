@@ -58,6 +58,7 @@ class AddEntryScreenTest {
                     onBack = { backCalled = true }
                 )
             }
+            composeTestRule.waitForIdle()
             allureScreenshot("add_entry_screen_opened")
         }
 
@@ -65,17 +66,22 @@ class AddEntryScreenTest {
         step("Enter description: $testDescription") {
             composeTestRule.onNodeWithText("How are you feeling today?")
                 .performTextInput(testDescription)
+            composeTestRule.waitForIdle()
             allureScreenshot("description_entered")
         }
 
         step("Click Save button") {
             composeTestRule.onNodeWithText("Save Entry")
                 .performClick()
+            composeTestRule.waitForIdle()
             allureScreenshot("save_clicked")
         }
 
         step("Verify entry was saved and screen closed") {
-            allureScreenshot("verification_save_success")
+            // Wait for onBack to be triggered (callback executed)
+            composeTestRule.waitUntil(5000) { backCalled }
+            // Note: We don't take a screenshot here as the UI doesn't visually change 
+            // in this isolated component test without a NavController.
             assert(viewModel.addEntryCalledWith?.first == testDescription)
             assert(backCalled)
         }
@@ -92,17 +98,20 @@ class AddEntryScreenTest {
                     onBack = { backCalled = true }
                 )
             }
+            composeTestRule.waitForIdle()
             allureScreenshot("add_entry_screen_opened")
         }
 
         step("Click Back button") {
             composeTestRule.onNodeWithContentDescription("Back")
                 .performClick()
+            composeTestRule.waitForIdle()
             allureScreenshot("back_clicked")
         }
 
         step("Verify back was called") {
-            allureScreenshot("verification_back_success")
+            // Wait for onBack to be triggered (callback executed)
+            composeTestRule.waitUntil(5000) { backCalled }
             assert(backCalled)
         }
     }
@@ -113,15 +122,18 @@ class AddEntryScreenTest {
             composeTestRule.setContent {
                 AddEntryScreen(viewModel = viewModel, onBack = {})
             }
+            composeTestRule.waitForIdle()
         }
 
         val currentDate = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date())
         step("Click Date button ($currentDate)") {
             composeTestRule.onNodeWithText(currentDate).performClick()
+            composeTestRule.waitForIdle()
             allureScreenshot("date_picker_opened")
         }
 
         step("Verify Date Picker is visible") {
+            composeTestRule.waitForIdle()
             allureScreenshot("verification_date_picker_visible")
             // Material 3 DatePicker header usually contains "Select date"
             composeTestRule.onNodeWithText("SELECT DATE", ignoreCase = true).assertExists()
@@ -134,15 +146,18 @@ class AddEntryScreenTest {
             composeTestRule.setContent {
                 AddEntryScreen(viewModel = viewModel, onBack = {})
             }
+            composeTestRule.waitForIdle()
         }
 
         val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
         step("Click Time button ($currentTime)") {
             composeTestRule.onNodeWithText(currentTime).performClick()
+            composeTestRule.waitForIdle()
             allureScreenshot("time_picker_opened")
         }
 
         step("Verify Time Picker is visible") {
+            composeTestRule.waitForIdle()
             allureScreenshot("verification_time_picker_visible")
             composeTestRule.onNodeWithText("Select Time").assertExists()
         }
@@ -155,14 +170,17 @@ class AddEntryScreenTest {
             composeTestRule.setContent {
                 AddEntryScreen(viewModel = viewModel, onBack = { backCalled = true })
             }
+            composeTestRule.waitForIdle()
         }
 
         step("Click Save with empty description") {
             composeTestRule.onNodeWithText("Save Entry").performClick()
+            composeTestRule.waitForIdle()
             allureScreenshot("save_attempt_empty")
         }
 
         step("Verify no save occurred") {
+            composeTestRule.waitForIdle()
             allureScreenshot("verification_no_save_occurred")
             assert(viewModel.addEntryCalledWith == null)
             assert(!backCalled)

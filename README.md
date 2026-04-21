@@ -13,3 +13,9 @@ Personal health journal app
 ```shell
 
 ```
+
+# Resume Gemini
+
+```shell
+gemini --resume 498b026d-b2ef-4b26-9917-e16bd82e1b3d    
+```
