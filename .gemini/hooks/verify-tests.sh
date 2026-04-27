@@ -11,9 +11,6 @@ if [ -d "/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Ho
   echo "Using JAVA_HOME: $JAVA_HOME" >> $LOG_FILE
 fi
 
-# Read hook input
-input=$(cat)
-
 # 1. Run Unit Tests
 echo "Running Unit Tests..." >> $LOG_FILE
 ./gradlew :app:test --quiet >> $LOG_FILE 2>&1
