@@ -59,7 +59,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 }
             }
 
-            val mergedEntries = allEntriesMap.values.toList()
+            val mergedEntries = allEntriesMap.values.toList().map { it.copy(isSynced = true) }
 
             // 4. Update local DB
             repository.importAll(mergedEntries)
