@@ -1,0 +1,26 @@
+description = 'Generate a summarized commit message with emojis (💄 Style, 🐛 Bug fixes, ✨ New features, 📝 Docs)'
+
+prompt = '''
+You are an expert developer. Generate a summarized commit message based on the staged changes.
+
+Current Status:
+!{git status}
+
+Staged Diff:
+!{git diff --staged}
+
+Categorize the changes using these emojis:
+- ✨ New features
+- 🐛 Bug fixes
+- 💄 Style (formatting, missing semi-colons, etc; no code change)
+- 📝 Docs (documentation only changes)
+
+Rules:
+1. Summarize the changes clearly and concisely.
+2. Group changes by category.
+3. Use the specified emojis.
+4. If no changes are staged, tell the user to stage changes first.
+5. Do NOT actually commit the changes. Just provide the message.
+
+User's extra context: {{args}}
+'''

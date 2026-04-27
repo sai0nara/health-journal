@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "AfterAgent": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "verify-health-journal",
+            "type": "command",
+            "command": "bash .gemini/hooks/verify-tests.sh",
+            "description": "Automatically validates unit and UI tests after any changes.",
+            "timeout": 180000
+          }
+        ]
+      }
+    ]
+  }
+}
