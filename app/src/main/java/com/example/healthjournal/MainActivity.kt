@@ -11,6 +11,7 @@ import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.ui.screens.AddEntryScreen
 import com.example.healthjournal.ui.screens.HistoryScreen
+import com.example.healthjournal.ui.screens.ComponentPreviewScreen
 import com.example.healthjournal.ui.theme.HealthJournalTheme
 import com.example.healthjournal.viewmodel.JournalViewModel
 import com.example.healthjournal.viewmodel.JournalViewModelFactory
@@ -32,7 +33,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val viewModel: JournalViewModel = viewModel(factory = viewModelFactory)
 
-                NavHost(navController = navController, startDestination = "history") {
+                NavHost(navController = navController, startDestination = "component_preview") {
                     composable("history") {
                         HistoryScreen(
                             viewModel = viewModel,
@@ -43,6 +44,11 @@ class MainActivity : ComponentActivity() {
                         AddEntryScreen(
                             viewModel = viewModel,
                             onBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("component_preview") {
+                        ComponentPreviewScreen(
+                            onBack = { navController.navigate("history") }
                         )
                     }
                 }

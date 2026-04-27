@@ -122,6 +122,20 @@ dependencies {
     // WorkManager for sync
     implementation("androidx.work:work-runtime-ktx:$work_version")
 
+    // Health Connect
+    implementation("androidx.health.connect:connect-client:1.1.0-alpha11")
+
+    // CameraX
+    val camerax_version = "1.4.0"
+    implementation("androidx.camera:camera-core:$camerax_version")
+    implementation("androidx.camera:camera-camera2:$camerax_version")
+    implementation("androidx.camera:camera-lifecycle:$camerax_version")
+    implementation("androidx.camera:camera-view:$camerax_version")
+    implementation("androidx.camera:camera-extensions:$camerax_version")
+
+    // Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
     // Gson for JSON serialization
     implementation("com.google.code.gson:gson:2.10.1")
 

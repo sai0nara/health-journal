@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.healthjournal.ui.components.EnrichmentPanel
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -134,6 +135,11 @@ fun AddEntryScreen(viewModel: IJournalViewModel, onBack: () -> Unit) {
                     .fillMaxWidth()
                     .weight(1f),
                 minLines = 5
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            EnrichmentPanel(
+                onAttachPhotoClick = { /* TODO: Implement Camera */ },
+                onSyncHealthClick = { /* TODO: Implement Health Connect */ }
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
