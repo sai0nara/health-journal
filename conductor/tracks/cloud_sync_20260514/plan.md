@@ -5,9 +5,9 @@
     - [x] Review current `DriveServiceHelper.kt` implementation.
     - [x] Write unit tests for Google Drive client initialization.
     - [x] Implement robust error handling for API calls.
-- [ ] Task: Finalize Authentication Flow
-    - [ ] Write tests for Google Sign-In and scope authorization.
-    - [ ] Ensure `GoogleAuthManager.kt` correctly handles token refreshing and session persistence.
+- [x] Task: Finalize Authentication Flow [5efba6f]
+    - [x] Write tests for Google Sign-In and scope authorization.
+    - [x] Ensure `GoogleAuthManager.kt` correctly handles token refreshing and session persistence.
 - [ ] Task: Conductor - User Manual Verification 'Foundation & Refactoring' (Protocol in workflow.md)
 
 ## Phase 2: Core Sync Logic
