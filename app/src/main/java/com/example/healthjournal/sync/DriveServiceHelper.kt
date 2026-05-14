@@ -15,39 +15,55 @@ import java.util.Collections
 class DriveServiceHelper(private val driveService: Drive) {
 
     suspend fun uploadJournalData(content: String): String? = withContext(Dispatchers.IO) {
-        val metadata = File()
-            .setName("health_journal_data.json")
-            .setMimeType("application/json")
+        try {
+            val metadata = File()
+                .setName("health_journal_data.json")
+                .setMimeType("application/json")
+                .setParents(Collections.singletonList("appDataFolder"))
 
-        val contentStream = ByteArrayContent.fromString("application/json", content)
+            val contentStream = ByteArrayContent.fromString("application/json", content)
 
-        val existingFileId = findDataFile()
-        
-        val file = if (existingFileId == null) {
-            driveService.files().create(metadata, contentStream).execute()
-        } else {
-            driveService.files().update(existingFileId, null, contentStream).execute()
+            val existingFileId = findDataFile()
+            
+            val file = if (existingFileId == null) {
+                driveService.files().create(metadata, contentStream).execute()
+            } else {
+                driveService.files().update(existingFileId, null, contentStream).execute()
+            }
+            
+            file.id
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
-        
-        file.id
     }
 
     suspend fun downloadJournalData(): String? = withContext(Dispatchers.IO) {
-        val fileId = findDataFile() ?: return@withContext null
-        
-        driveService.files().get(fileId).executeMediaAsInputStream().use { inputStream ->
-            inputStream.bufferedReader().use { it.readText() }
+        try {
+            val fileId = findDataFile() ?: return@withContext null
+            
+            driveService.files().get(fileId).executeMediaAsInputStream().use { inputStream ->
+                inputStream.bufferedReader().use { it.readText() }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 
     private suspend fun findDataFile(): String? = withContext(Dispatchers.IO) {
-        val result = driveService.files().list()
-            .setQ("name = 'health_journal_data.json' and trashed = false")
-            .setSpaces("drive")
-            .setFields("files(id)")
-            .execute()
-        
-        result.files.firstOrNull()?.id
+        try {
+            val result = driveService.files().list()
+                .setQ("name = 'health_journal_data.json' and trashed = false")
+                .setSpaces("appDataFolder")
+                .setFields("files(id)")
+                .execute()
+            
+            result.files.firstOrNull()?.id
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     companion object {
