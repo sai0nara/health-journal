@@ -39,7 +39,7 @@ class GoogleAuthManager(private val context: Context) {
     }
 
     fun requestDriveAuthorization(email: String, onResolutionRequired: (android.app.PendingIntent) -> Unit, onSuccess: (String) -> Unit) {
-        val requestedScopes = listOf(Scope(DriveScopes.DRIVE_FILE))
+        val requestedScopes = listOf(Scope(DriveScopes.DRIVE_APPDATA))
         val authorizationRequest = AuthorizationRequest.builder()
             .setRequestedScopes(requestedScopes)
             .build()
