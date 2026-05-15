@@ -6,8 +6,9 @@
 2. **The Tech Stack is Deliberate:** Changes to the tech stack must be documented in `tech-stack.md` *before* implementation
 3. **Test-Driven Development:** Write unit tests before implementing functionality
 4. **High Code Coverage:** Aim for >80% code coverage for all modules
-5. **User Experience First:** Every decision should prioritize user experience
-6. **Non-Interactive & CI-Aware:** Prefer non-interactive commands. Use `CI=true` for watch-mode tools (tests, linters) to ensure single execution.
+5. **UI Test Coverage:** Every user-facing feature must be covered by UI tests
+6. **User Experience First:** Every decision should prioritize user experience
+7. **Non-Interactive & CI-Aware:** Prefer non-interactive commands. Use `CI=true` for watch-mode tools (tests, linters) to ensure single execution.
 
 ## Task Workflow
 
@@ -32,7 +33,12 @@ All tasks follow a strict lifecycle:
    - With the safety of passing tests, refactor the implementation code and the test code to improve clarity, remove duplication, and enhance performance without changing the external behavior.
    - Rerun tests to ensure they still pass after refactoring.
 
-6. **Verify Coverage:** Run coverage reports using the project's chosen tools. For example, in a Python project, this might look like:
+6. **UI Testing (Blue Phase):**
+   - Write UI tests that exercise the new feature's user interface.
+   - Execute the UI tests on an emulator.
+   - **CRITICAL:** Continue refining the implementation and tests until the UI tests are "green" (passing) on the emulator.
+
+7. **Verify Coverage:** Run coverage reports using the project's chosen tools. For example, in a Python project, this might look like:
    ```bash
    pytest --cov=app --cov-report=html
    ```
@@ -186,6 +192,11 @@ Before marking any task complete, verify:
 - Verify database transactions
 - Test authentication and authorization
 - Check form submissions
+
+### UI Testing
+- Features must be verified with automated UI tests.
+- UI tests must be executed on an emulator.
+- Execution must be repeated until tests pass consistently.
 
 ### Mobile Testing
 - Test on actual iPhone when possible
