@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val viewModel: JournalViewModel = viewModel(factory = viewModelFactory)
 
-                NavHost(navController = navController, startDestination = "component_preview") {
+                NavHost(navController = navController, startDestination = "history") {
                     composable("history") {
                         HistoryScreen(
                             viewModel = viewModel,
@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("component_preview") {
                         ComponentPreviewScreen(
-                            onBack = { navController.navigate("history") }
+                            onBack = { navController.popBackStack() }
                         )
                     }
                 }

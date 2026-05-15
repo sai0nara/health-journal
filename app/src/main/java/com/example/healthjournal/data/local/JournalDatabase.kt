@@ -19,7 +19,7 @@ abstract class JournalDatabase : RoomDatabase() {
                     context.applicationContext,
                     JournalDatabase::class.java,
                     "journal_database"
-                ).build()
+                ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }
