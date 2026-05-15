@@ -69,7 +69,7 @@ class DriveServiceHelper(private val driveService: Drive) {
     companion object {
         fun createDriveService(context: Context, account: android.accounts.Account): Drive {
             val credential = GoogleAccountCredential.usingOAuth2(
-                context, Collections.singletonList(DriveScopes.DRIVE_FILE)
+                context, Collections.singletonList(DriveScopes.DRIVE_APPDATA)
             ).setSelectedAccount(account)
 
             return Drive.Builder(
