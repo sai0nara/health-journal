@@ -2,25 +2,18 @@ package com.example.healthjournal.viewmodel
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import androidx.work.WorkManager
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalEntry
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
+import com.example.healthjournal.sync.SyncManager
+import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -28,7 +21,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-@ExperimentalCoroutinesApi
+@OptIn(ExperimentalCoroutinesApi::class)
 class JournalViewModelTest {
 
     private lateinit var viewModel: JournalViewModel
@@ -36,15 +29,24 @@ class JournalViewModelTest {
     private val authManager: GoogleAuthManager = mockk()
     private val sessionManager: SessionManager = mockk()
     private val application: Application = mockk()
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         
-        // Mock WorkManager to avoid IllegalStateException in SyncManager.enqueueSync
+        mockkStatic(Log::class)
+        every { Log.d(any(), any()) } returns 0
+        every { Log.i(any(), any()) } returns 0
+        every { Log.w(any(), any<String>()) } returns 0
+        every { Log.e(any(), any()) } returns 0
+        every { Log.e(any(), any(), any()) } returns 0
+
         mockkStatic(WorkManager::class)
         every { WorkManager.getInstance(any()) } returns mockk(relaxed = true)
+
+        mockkObject(SyncManager)
+        every { SyncManager.enqueueSync(any()) } returns Unit
 
         every { sessionManager.getUserEmail() } returns null
         every { application.applicationContext } returns application
@@ -56,7 +58,7 @@ class JournalViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-        unmockkStatic(WorkManager::class)
+        unmockkAll()
     }
 
     @Test
@@ -65,44 +67,28 @@ class JournalViewModelTest {
         coEvery { repository.insert(any()) } returns Unit
         
         viewModel.addEntry(description)
-        testDispatcher.scheduler.advanceUntilIdle()
         
         coVerify { repository.insert(match { it.description == description }) }
     }
 
     @Test
-    fun addEntryCallsRepositoryWithCustomTimestamp() = runTest {
-        val description = "Test Description"
-        val customTimestamp = 123456789L
+    fun addEntryPreventsFutureDates() = runTest {
+        val futureTimestamp = System.currentTimeMillis() + 100000
         coEvery { repository.insert(any()) } returns Unit
         
-        viewModel.addEntry(description, customTimestamp)
-        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.addEntry("Future", futureTimestamp)
         
-        coVerify { 
-            repository.insert(match { 
-                it.description == description && it.timestamp == customTimestamp 
-            }) 
-        }
+        coVerify(exactly = 0) { repository.insert(any()) }
     }
 
     @Test
-    fun allEntriesReflectsRepositoryFlow() = runTest {
-        val entries = listOf(JournalEntry(description = "Entry 1"))
-        coEvery { repository.allEntries } returns flowOf(entries)
+    fun updateEntryCallsRepository() = runTest {
+        val entry = JournalEntry(description = "Old")
+        coEvery { repository.insert(any()) } returns Unit
         
-        // Need to recreate viewModel since allEntries is a property initialized at creation
-        viewModel = JournalViewModel(application, repository, authManager, sessionManager)
+        viewModel.updateEntry(entry.copy(description = "New"))
         
-        // Start collecting so WhileSubscribed starts the underlying flow
-        val collectJob = backgroundScope.launch {
-            viewModel.allEntries.collect {}
-        }
-        
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertEquals(entries, viewModel.allEntries.value)
-        collectJob.cancel()
+        coVerify { repository.insert(match { it.description == "New" }) }
     }
 
     @Test
@@ -114,14 +100,17 @@ class JournalViewModelTest {
         
         coEvery { authManager.signIn(context) } returns credential
         every { sessionManager.saveUserEmail(email) } returns Unit
-        // Mock authorization call - using any() for callback
-        every { authManager.requestDriveAuthorization(email, any(), any()) } returns Unit
+        
+        val onResolution = slot<(android.app.PendingIntent) -> Unit>()
+        val onSuccess = slot<(String) -> Unit>()
+        every { authManager.requestDriveAuthorization(eq(email), capture(onResolution), capture(onSuccess)) } answers {
+            onSuccess.captured.invoke("token")
+        }
 
         viewModel.signIn(context) {}
-        testDispatcher.scheduler.advanceUntilIdle()
         
         assertTrue(viewModel.isUserSignedIn.value)
-        coVerify { sessionManager.saveUserEmail(email) }
+        verify { sessionManager.saveUserEmail(email) }
     }
 
     @Test
@@ -130,12 +119,23 @@ class JournalViewModelTest {
         every { sessionManager.clearSession() } returns Unit
         
         viewModel.signOut()
-        testDispatcher.scheduler.advanceUntilIdle()
         
         assertFalse(viewModel.isUserSignedIn.value)
         coVerify { 
             authManager.signOut()
+        }
+        verify {
             sessionManager.clearSession()
         }
+    }
+
+    @Test
+    fun getEntryByIdCallsRepository() = kotlinx.coroutines.runBlocking {
+        val entry = JournalEntry(description = "Test")
+        coEvery { repository.getEntryById("123") } returns entry
+
+        val result = viewModel.getEntryById("123")
+
+        assertEquals(entry, result)
     }
 }

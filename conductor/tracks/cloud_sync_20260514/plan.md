@@ -11,7 +11,7 @@
 - [x] Task: Conductor - User Manual Verification 'Foundation & Refactoring' (Protocol in workflow.md) [ffbe707]
 
 ## Phase 2: Core Sync Logic
-- [ ] Task: Implement Database Backup Logic
+- [~] Task: Implement Database Backup Logic
     - [ ] Write tests for database export to JSON/Binary.
     - [ ] Implement secure file preparation for upload.
 - [ ] Task: Implement File Upload and Download

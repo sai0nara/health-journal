@@ -37,12 +37,24 @@ class MainActivity : ComponentActivity() {
                     composable("history") {
                         HistoryScreen(
                             viewModel = viewModel,
-                            onAddEntryClick = { navController.navigate("add_entry") }
+                            onAddEntryClick = { navController.navigate("add_entry") },
+                            onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") }
                         )
                     }
-                    composable("add_entry") {
+                    composable(
+                        route = "add_entry?entryId={entryId}",
+                        arguments = listOf(
+                            androidx.navigation.navArgument("entryId") {
+                                type = androidx.navigation.NavType.StringType
+                                nullable = true
+                                defaultValue = null
+                            }
+                        )
+                    ) { backStackEntry ->
+                        val entryId = backStackEntry.arguments?.getString("entryId")
                         AddEntryScreen(
                             viewModel = viewModel,
+                            entryId = entryId,
                             onBack = { navController.popBackStack() }
                         )
                     }

@@ -2,6 +2,7 @@ package com.example.healthjournal.viewmodel
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -12,15 +13,11 @@ import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalEntry
-import com.example.healthjournal.sync.DriveServiceHelper
 import com.example.healthjournal.sync.SyncManager
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -28,7 +25,9 @@ interface IJournalViewModel {
     val allEntries: StateFlow<List<JournalEntry>>
     val isUserSignedIn: StateFlow<Boolean>
     val syncStatus: StateFlow<String?>
-    fun addEntry(description: String, timestamp: Long = System.currentTimeMillis())
+    fun addEntry(description: String, timestamp: Long = System.currentTimeMillis(), photoUrl: String? = null)
+    fun updateEntry(entry: JournalEntry)
+    suspend fun getEntryById(entryId: String): JournalEntry?
     fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit)
     fun syncNow()
     fun signOut()
@@ -53,6 +52,8 @@ class JournalViewModel(
     private val _syncStatus = MutableStateFlow<String?>(null)
     override val syncStatus: StateFlow<String?> = _syncStatus.asStateFlow()
 
+    private val TAG = "JournalViewModel"
+
     init {
         // Observe WorkManager for "journal_sync"
         viewModelScope.launch {
@@ -74,9 +75,17 @@ class JournalViewModel(
         }
     }
 
-    override fun addEntry(description: String, timestamp: Long) {
+    override fun addEntry(description: String, timestamp: Long, photoUrl: String?) {
+        if (timestamp > System.currentTimeMillis()) {
+            Log.w(TAG, "Attempted to add entry in the future. Ignoring.")
+            return
+        }
         viewModelScope.launch {
-            val newEntry = JournalEntry(description = description, timestamp = timestamp)
+            val newEntry = JournalEntry(
+                description = description,
+                timestamp = timestamp,
+                photo_url = photoUrl
+            )
             repository.insert(newEntry)
             if (_isUserSignedIn.value) {
                 SyncManager.enqueueSync(getApplication())
@@ -84,34 +93,61 @@ class JournalViewModel(
         }
     }
 
+    override fun updateEntry(entry: JournalEntry) {
+        if (entry.timestamp > System.currentTimeMillis()) {
+            Log.w(TAG, "Attempted to update entry with future date. Ignoring.")
+            return
+        }
+        viewModelScope.launch {
+            repository.insert(entry.copy(isSynced = false)) // Reset sync status on edit
+            if (_isUserSignedIn.value) {
+                SyncManager.enqueueSync(getApplication())
+            }
+        }
+    }
+
+    override suspend fun getEntryById(entryId: String): JournalEntry? {
+        return repository.getEntryById(entryId)
+    }
+
     override fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit) {
         viewModelScope.launch {
+            Log.d(TAG, "Sign in initiated")
             val credential = authManager.signIn(activityContext)
             if (credential != null) {
+                Log.d(TAG, "Sign in successful for ${credential.id}")
                 sessionManager.saveUserEmail(credential.id)
                 _isUserSignedIn.value = true
                 
                 // Request Drive authorization after sign in
                 authManager.requestDriveAuthorization(
                     email = credential.id,
-                    onResolutionRequired = onResolutionRequired,
-                    onSuccess = { _ ->
+                    onResolutionRequired = { pendingIntent ->
+                        Log.d(TAG, "Resolution required for Drive access")
+                        onResolutionRequired(pendingIntent)
+                    },
+                    onSuccess = { accessToken ->
+                        Log.d(TAG, "Drive authorization successful")
                         _syncStatus.value = "Authenticated & Authorized"
                         syncNow()
                     }
                 )
+            } else {
+                Log.e(TAG, "Sign in returned null credential")
             }
         }
     }
 
     override fun syncNow() {
         val email = sessionManager.getUserEmail() ?: return
+        Log.d(TAG, "Sync now triggered for $email")
         SyncManager.enqueueSync(getApplication())
         _syncStatus.value = "Sync Requested"
     }
 
     override fun signOut() {
         viewModelScope.launch {
+            Log.d(TAG, "Sign out initiated")
             authManager.signOut()
             sessionManager.clearSession()
             _isUserSignedIn.value = false

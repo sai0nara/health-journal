@@ -1,10 +1,7 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import io.qameta.allure.android.allureScreenshot
@@ -19,6 +16,7 @@ import android.app.PendingIntent
 import android.content.Context
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.test.rule.GrantPermissionRule
 
 @Feature("Add Entry")
 class AddEntryScreenTest {
@@ -29,16 +27,22 @@ class AddEntryScreenTest {
     @get:Rule
     val screenshotRule = ScreenshotRule(mode = ScreenshotRule.Mode.FAILURE)
 
+    @get:Rule
+    val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(android.Manifest.permission.CAMERA)
+
     class MockJournalViewModel : IJournalViewModel {
         override val allEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
         override val isUserSignedIn: StateFlow<Boolean> = MutableStateFlow(false)
         override val syncStatus: StateFlow<String?> = MutableStateFlow(null)
         
-        var addEntryCalledWith: Pair<String, Long>? = null
+        var addEntryCalledWith: Triple<String, Long, String?>? = null
         
-        override fun addEntry(description: String, timestamp: Long) {
-            addEntryCalledWith = description to timestamp
+        override fun addEntry(description: String, timestamp: Long, photoUrl: String?) {
+            addEntryCalledWith = Triple(description, timestamp, photoUrl)
         }
+
+        override fun updateEntry(entry: JournalEntry) {}
+        override suspend fun getEntryById(entryId: String): JournalEntry? = null
         
         override fun signIn(activityContext: Context, onResolutionRequired: (PendingIntent) -> Unit) {}
         override fun syncNow() {}
@@ -80,8 +84,6 @@ class AddEntryScreenTest {
         step("Verify entry was saved and screen closed") {
             // Wait for onBack to be triggered (callback executed)
             composeTestRule.waitUntil(5000) { backCalled }
-            // Note: We don't take a screenshot here as the UI doesn't visually change 
-            // in this isolated component test without a NavController.
             assert(viewModel.addEntryCalledWith?.first == testDescription)
             assert(backCalled)
         }
@@ -184,6 +186,28 @@ class AddEntryScreenTest {
             allureScreenshot("verification_no_save_occurred")
             assert(viewModel.addEntryCalledWith == null)
             assert(!backCalled)
+        }
+    }
+
+    @Test
+    fun testAddEntryScreen_EnrichmentPanelButtonsClickable() {
+        step("Open Add Entry Screen with enrichment callbacks") {
+            composeTestRule.setContent {
+                AddEntryScreen(
+                    viewModel = viewModel,
+                    onBack = {}
+                )
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Click Attach Photo in EnrichmentPanel") {
+            // Note: EnrichmentPanel is inside a verticalScroll Column
+            composeTestRule.onNodeWithText("Attach Photo")
+                .performScrollTo()
+                .performClick()
+            composeTestRule.waitForIdle()
+            allureScreenshot("attach_photo_clicked_in_screen")
         }
     }
 

@@ -3,6 +3,7 @@ package com.example.healthjournal.ui.screens
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,10 +18,13 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
@@ -29,7 +33,11 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryScreen(viewModel: IJournalViewModel, onAddEntryClick: () -> Unit) {
+fun HistoryScreen(
+    viewModel: IJournalViewModel,
+    onAddEntryClick: () -> Unit,
+    onEntryClick: (String) -> Unit
+) {
     val entries by viewModel.allEntries.collectAsState()
     val isSignedIn by viewModel.isUserSignedIn.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()
@@ -116,7 +124,7 @@ fun HistoryScreen(viewModel: IJournalViewModel, onAddEntryClick: () -> Unit) {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(entries) { entry ->
-                            JournalEntryItem(entry)
+                            JournalEntryItem(entry, onClick = { onEntryClick(entry.entry_id) })
                         }
                     }
                 }
@@ -126,9 +134,11 @@ fun HistoryScreen(viewModel: IJournalViewModel, onAddEntryClick: () -> Unit) {
 }
 
 @Composable
-fun JournalEntryItem(entry: JournalEntry) {
+fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -143,6 +153,23 @@ fun JournalEntryItem(entry: JournalEntry) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(text = entry.description, fontSize = 16.sp)
+                
+                entry.photo_url?.let { uriString ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)
+                            .clip(MaterialTheme.shapes.small)
+                    ) {
+                        AsyncImage(
+                            model = uriString,
+                            contentDescription = "Attached photo",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
             }
             
             if (entry.isSynced) {
