@@ -30,6 +30,8 @@ class HistoryScreenTest {
         override val allEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
         override val isUserSignedIn = MutableStateFlow(false)
         override val syncStatus = MutableStateFlow<String?>(null)
+        override val searchQuery = MutableStateFlow("")
+        override val isAscending = MutableStateFlow(false)
         
         var syncNowCalled = false
 
@@ -42,9 +44,18 @@ class HistoryScreenTest {
             syncNowCalled = true
         }
         override fun signOut() {}
+        override fun setSearchQuery(query: String) { searchQuery.value = query }
+        override fun setSortOrder(isAsc: Boolean) { isAscending.value = isAsc }
     }
 
     private val viewModel = MockJournalViewModel()
+
+    @Step("{0}")
+    private fun step(description: String, block: () -> Unit) {
+        io.qameta.allure.kotlin.Allure.step(description) {
+            block()
+        }
+    }
 
     @Test
     fun testHistoryScreen_DisplaysEntries() {
@@ -199,10 +210,24 @@ class HistoryScreenTest {
         }
     }
 
-    @Step("{0}")
-    private fun step(description: String, block: () -> Unit) {
-        io.qameta.allure.kotlin.Allure.step(description) {
-            block()
+    @Test
+    fun testHistoryScreen_SearchAndSortUIExists() {
+        step("Open History Screen and verify Search/Sort UI") {
+            composeTestRule.setContent {
+                HistoryScreen(
+                    viewModel = viewModel,
+                    onAddEntryClick = {},
+                    onEntryClick = {}
+                )
+            }
+            composeTestRule.waitForIdle()
+            allureScreenshot("history_with_search_sort")
+            
+            // Search Bar should be present (standard Material 3 search bar content)
+            composeTestRule.onNodeWithText("Search journal...").assertIsDisplayed()
+            
+            // Sort Button should be present
+            composeTestRule.onNodeWithContentDescription("Sort order").assertIsDisplayed()
         }
     }
 }

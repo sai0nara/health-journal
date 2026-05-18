@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -41,6 +43,9 @@ fun HistoryScreen(
     val entries by viewModel.allEntries.collectAsState()
     val isSignedIn by viewModel.isUserSignedIn.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val isAscending by viewModel.isAscending.collectAsState()
+    
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -60,6 +65,12 @@ fun HistoryScreen(
             TopAppBar(
                 title = { Text("Health Journal") },
                 actions = {
+                    IconButton(onClick = { viewModel.setSortOrder(!isAscending) }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Sort, 
+                            contentDescription = "Sort order"
+                        )
+                    }
                     if (isSignedIn) {
                         IconButton(onClick = { viewModel.syncNow() }) {
                             Icon(Icons.Default.Sync, contentDescription = "Sync Now")
@@ -85,6 +96,20 @@ fun HistoryScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
+            // Search Bar
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = { viewModel.setSearchQuery(it) },
+                onSearch = { /* Handle explicit search if needed */ },
+                active = false,
+                onActiveChange = { },
+                placeholder = { Text("Search journal...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {}
+
             syncStatus?.let {
                 Surface(
                     color = MaterialTheme.colorScheme.secondaryContainer,
@@ -115,7 +140,10 @@ fun HistoryScreen(
             ) {
                 if (entries.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No entries yet. Start by adding one!", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = if (searchQuery.isBlank()) "No entries yet. Start by adding one!" else "No matches found.",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                     }
                 } else {
                     LazyColumn(

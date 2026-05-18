@@ -34,6 +34,8 @@ class AddEntryScreenTest {
         override val allEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
         override val isUserSignedIn: StateFlow<Boolean> = MutableStateFlow(false)
         override val syncStatus: StateFlow<String?> = MutableStateFlow(null)
+        override val searchQuery: StateFlow<String> = MutableStateFlow("")
+        override val isAscending: StateFlow<Boolean> = MutableStateFlow(false)
         
         var addEntryCalledWith: Triple<String, Long, String?>? = null
         
@@ -47,6 +49,8 @@ class AddEntryScreenTest {
         override fun signIn(activityContext: Context, onResolutionRequired: (PendingIntent) -> Unit) {}
         override fun syncNow() {}
         override fun signOut() {}
+        override fun setSearchQuery(query: String) {}
+        override fun setSortOrder(isAsc: Boolean) {}
     }
 
     private val viewModel = MockJournalViewModel()

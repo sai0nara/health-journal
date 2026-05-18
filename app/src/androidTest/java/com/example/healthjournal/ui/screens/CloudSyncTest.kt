@@ -27,6 +27,8 @@ class CloudSyncTest {
         override val allEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
         override val isUserSignedIn = MutableStateFlow(false)
         override val syncStatus = MutableStateFlow<String?>(null)
+        override val searchQuery = MutableStateFlow("")
+        override val isAscending = MutableStateFlow(false)
         
         var signInCalled = false
         var syncNowCalled = false
@@ -44,6 +46,8 @@ class CloudSyncTest {
         override fun signOut() {
             isUserSignedIn.value = false
         }
+        override fun setSearchQuery(query: String) { searchQuery.value = query }
+        override fun setSortOrder(isAsc: Boolean) { isAscending.value = isAsc }
     }
 
     private val viewModel = MockJournalViewModel()

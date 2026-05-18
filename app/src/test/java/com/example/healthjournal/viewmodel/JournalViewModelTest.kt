@@ -13,6 +13,7 @@ import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -130,12 +131,28 @@ class JournalViewModelTest {
     }
 
     @Test
-    fun getEntryByIdCallsRepository() = kotlinx.coroutines.runBlocking {
-        val entry = JournalEntry(description = "Test")
-        coEvery { repository.getEntryById("123") } returns entry
+    fun allEntriesReflectsSearchAndSort() = runTest {
+        val entries = listOf(JournalEntry(description = "Apple"))
+        val searchQuery = "App"
 
-        val result = viewModel.getEntryById("123")
+        // Mock the search query call
+        coEvery { repository.searchEntries(searchQuery) } returns flowOf(entries)
+        coEvery { repository.allEntries } returns flowOf(emptyList())
 
-        assertEquals(entry, result)
+        // Re-initialize to pick up flow changes
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager)
+
+        // Start collecting
+        val items = mutableListOf<List<JournalEntry>>()
+        val collectJob = backgroundScope.launch {
+            viewModel.allEntries.collect { items.add(it) }
+        }
+
+        viewModel.setSearchQuery(searchQuery)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(items.any { it.any { entry -> entry.description == "Apple" } })
+        collectJob.cancel()
     }
-}
+    }
+

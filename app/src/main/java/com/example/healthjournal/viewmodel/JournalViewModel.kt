@@ -14,23 +14,25 @@ import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.sync.SyncManager
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 interface IJournalViewModel {
     val allEntries: StateFlow<List<JournalEntry>>
     val isUserSignedIn: StateFlow<Boolean>
     val syncStatus: StateFlow<String?>
+    val searchQuery: StateFlow<String>
+    val isAscending: StateFlow<Boolean>
+    
     fun addEntry(description: String, timestamp: Long = System.currentTimeMillis(), photoUrl: String? = null)
     fun updateEntry(entry: JournalEntry)
     suspend fun getEntryById(entryId: String): JournalEntry?
     fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit)
     fun syncNow()
     fun signOut()
+    
+    fun setSearchQuery(query: String)
+    fun setSortOrder(isAsc: Boolean)
 }
 
 class JournalViewModel(
@@ -40,7 +42,22 @@ class JournalViewModel(
     private val sessionManager: SessionManager
 ) : AndroidViewModel(application), IJournalViewModel {
 
-    override val allEntries: StateFlow<List<JournalEntry>> = repository.allEntries.stateIn(
+    private val _searchQuery = MutableStateFlow("")
+    override val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _isAscending = MutableStateFlow(false) // Default Descending (newest first)
+    override val isAscending: StateFlow<Boolean> = _isAscending.asStateFlow()
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    override val allEntries: StateFlow<List<JournalEntry>> = combine(_searchQuery, _isAscending) { query, isAsc ->
+        query to isAsc
+    }.flatMapLatest { (query, isAsc) ->
+        if (query.isBlank()) {
+            repository.getEntriesSortedByDate(isAsc)
+        } else {
+            repository.searchEntries(query)
+        }
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
@@ -153,6 +170,14 @@ class JournalViewModel(
             _isUserSignedIn.value = false
             _syncStatus.value = null
         }
+    }
+
+    override fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    override fun setSortOrder(isAsc: Boolean) {
+        _isAscending.value = isAsc
     }
 }
 
