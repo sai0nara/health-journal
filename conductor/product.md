@@ -15,6 +15,7 @@ Solving **Data Fragmentation** by bringing together:
 
 ## Key Features
 - **Unified Logging:** A seamless interface for recording physical and mental health events.
+- **Advanced List Management:** Efficiently manage logs with keyword search and customizable date sorting.
 - **Automated Data Integration:** Effortless importing of health data from wearables and other apps using Health Connect.
 - **Cloud Synchronization:** Reliable backup and multi-device sync using the user's personal Google Drive.
 - **AI-Driven Insights:** Intelligent analysis of logs and metrics to identify correlations, patterns, and potential health triggers.
