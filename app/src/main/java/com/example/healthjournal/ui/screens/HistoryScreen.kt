@@ -59,6 +59,56 @@ fun HistoryScreen(
 
     var isRefreshing by remember { mutableStateOf(false) }
     val pullToRefreshState = rememberPullToRefreshState()
+    
+    var showLoginDialog by remember { mutableStateOf(false) }
+    var emailInput by remember { mutableStateOf("") }
+    var passwordInput by remember { mutableStateOf("") }
+
+    if (showLoginDialog) {
+        AlertDialog(
+            onDismissRequest = { showLoginDialog = false },
+            title = { Text("Sign In with Credentials") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = emailInput,
+                        onValueChange = { emailInput = it },
+                        label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = passwordInput,
+                        onValueChange = { passwordInput = it },
+                        label = { Text("Password") },
+                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Password
+                        )
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    if (emailInput.isNotBlank() && passwordInput.isNotBlank()) {
+                        viewModel.signIn(context) { pendingIntent ->
+                            authorizationLauncher.launch(
+                                IntentSenderRequest.Builder(pendingIntent).build()
+                            )
+                        }
+                        showLoginDialog = false
+                    }
+                }) {
+                    Text("Login")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLoginDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -76,13 +126,7 @@ fun HistoryScreen(
                             Icon(Icons.Default.Sync, contentDescription = "Sync Now")
                         }
                     } else {
-                        TextButton(onClick = {
-                            viewModel.signIn(context) { pendingIntent ->
-                                authorizationLauncher.launch(
-                                    IntentSenderRequest.Builder(pendingIntent).build()
-                                )
-                            }
-                        }) {
+                        TextButton(onClick = { showLoginDialog = true }) {
                             Text("Sign In")
                         }
                     }

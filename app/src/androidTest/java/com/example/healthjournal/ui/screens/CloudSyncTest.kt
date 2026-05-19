@@ -68,6 +68,14 @@ class CloudSyncTest {
             composeTestRule.waitForIdle()
             allureScreenshot("login_screen")
             composeTestRule.onNodeWithText("Sign In").performClick()
+        }
+
+        step("Enter credentials in dialog and click Login") {
+            composeTestRule.onNodeWithText("Sign In with Credentials").assertIsDisplayed()
+            composeTestRule.onNodeWithText("Email").performTextInput("test@example.com")
+            composeTestRule.onNodeWithText("Password").performTextInput("password")
+            composeTestRule.onNodeWithText("Login").performClick()
+            composeTestRule.waitForIdle()
             assert(viewModel.signInCalled)
         }
 
@@ -280,6 +288,35 @@ class CloudSyncTest {
         step("Verify empty state message") {
             composeTestRule.onNodeWithText("No entries yet. Start by adding one!").assertIsDisplayed()
             allureScreenshot("verification_empty_state")
+        }
+    }
+
+    @Test
+    fun testLoginWithCredentialsDialog() {
+        step("Open app and click Sign In") {
+            viewModel.isUserSignedIn.value = false
+            composeTestRule.setContent {
+                HistoryScreen(
+                    viewModel = viewModel, 
+                    onAddEntryClick = {},
+                    onEntryClick = {}
+                )
+            }
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithText("Sign In").performClick()
+        }
+
+        step("Verify Login Dialog is shown and enter credentials") {
+            composeTestRule.onNodeWithText("Sign In with Credentials").assertIsDisplayed()
+            composeTestRule.onNodeWithText("Email").performTextInput("user@example.com")
+            composeTestRule.onNodeWithText("Password").performTextInput("password123")
+            allureScreenshot("login_dialog_filled")
+        }
+
+        step("Click Login and verify ViewModel call") {
+            composeTestRule.onNodeWithText("Login").performClick()
+            composeTestRule.waitForIdle()
+            assert(viewModel.signInCalled)
         }
     }
 

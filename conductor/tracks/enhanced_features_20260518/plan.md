@@ -10,13 +10,13 @@
 - [x] Task: Update History UI with Search & Sort [verified]
     - [x] Write UI tests for search bar and sort menu on HistoryScreen.
     - [x] Implement SearchBar and Sort Menu in HistoryScreen.
-- [~] Task: Conductor - User Manual Verification 'Sorting & Search' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Sorting & Search' (Protocol in workflow.md) [7b94f90]
 
 ## Phase 2: Credential-based Authentication
-- [ ] Task: Research and Implement Legacy Auth Flow
-    - [ ] Analyze secure ways to handle username/password for Drive (e.g., manual OAuth2 code entry or App Passwords).
-    - [ ] Implement UI for credential entry.
-- [ ] Task: Integrate with `GoogleAuthManager`
-    - [ ] Write tests for credential-based session persistence.
-    - [ ] Update `GoogleAuthManager` to handle manually provided credentials.
-- [ ] Task: Conductor - User Manual Verification 'Credential-based Auth' (Protocol in workflow.md)
+- [x] Task: Research and Implement Legacy Auth Flow [verified]
+    - [x] Analyze secure ways to handle username/password for Drive (e.g., manual OAuth2 code entry or App Passwords).
+    - [x] Implement UI for credential entry.
+- [x] Task: Integrate with `GoogleAuthManager` [verified]
+    - [x] Write tests for credential-based session persistence.
+    - [x] Update `GoogleAuthManager` to handle manually provided credentials.
+- [~] Task: Conductor - User Manual Verification 'Credential-based Auth' (Protocol in workflow.md)
