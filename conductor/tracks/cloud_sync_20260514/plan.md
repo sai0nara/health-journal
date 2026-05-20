@@ -35,3 +35,6 @@
 - [ ] Task: Manual Sync Trigger
     - [ ] Add a "Sync Now" button and verify its functionality.
 - [ ] Task: Conductor - User Manual Verification 'UI & Integration' (Protocol in workflow.md)
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions 61b2e37
