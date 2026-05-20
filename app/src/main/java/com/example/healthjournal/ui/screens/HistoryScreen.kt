@@ -67,19 +67,23 @@ fun HistoryScreen(
     if (showLoginDialog) {
         AlertDialog(
             onDismissRequest = { showLoginDialog = false },
-            title = { Text("Sign In with Credentials") },
+            title = { Text("Sign In to Google Drive") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Enter your Google account email. This will initiate the secure authorization flow.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
                     OutlinedTextField(
                         value = emailInput,
                         onValueChange = { emailInput = it },
-                        label = { Text("Email") },
+                        label = { Text("Google Email") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = passwordInput,
                         onValueChange = { passwordInput = it },
-                        label = { Text("Password") },
+                        label = { Text("Password (for local verification)") },
                         modifier = Modifier.fillMaxWidth(),
                         visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -90,16 +94,18 @@ fun HistoryScreen(
             },
             confirmButton = {
                 Button(onClick = {
-                    if (emailInput.isNotBlank() && passwordInput.isNotBlank()) {
+                    if (emailInput.isNotBlank()) {
                         viewModel.signIn(context) { pendingIntent ->
                             authorizationLauncher.launch(
                                 IntentSenderRequest.Builder(pendingIntent).build()
                             )
                         }
                         showLoginDialog = false
+                    } else {
+                        android.widget.Toast.makeText(context, "Please enter your email", android.widget.Toast.LENGTH_SHORT).show()
                     }
                 }) {
-                    Text("Login")
+                    Text("Continue")
                 }
             },
             dismissButton = {

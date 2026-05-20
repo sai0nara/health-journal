@@ -136,7 +136,7 @@ class JournalViewModelTest {
         val searchQuery = "App"
 
         // Mock the search query call
-        coEvery { repository.searchEntries(searchQuery) } returns flowOf(entries)
+        coEvery { repository.searchEntries(searchQuery, any()) } returns flowOf(entries)
         coEvery { repository.allEntries } returns flowOf(emptyList())
 
         // Re-initialize to pick up flow changes

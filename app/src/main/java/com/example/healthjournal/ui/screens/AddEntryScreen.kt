@@ -114,6 +114,26 @@ fun AddEntryScreen(
         }
     }
 
+    fun savePersistentPhoto(tempUri: Uri): String? {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(tempUri)
+            val fileName = "photo_${System.currentTimeMillis()}.jpg"
+            val photoDir = File(context.filesDir, "photos")
+            photoDir.mkdirs()
+            val persistentFile = File(photoDir, fileName)
+            
+            inputStream?.use { input ->
+                persistentFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            Uri.fromFile(persistentFile).toString()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
     if (showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -276,18 +296,24 @@ fun AddEntryScreen(
                         }
                         
                         if (entryId == null) {
+                            val persistentUri = capturedImageUri?.let { savePersistentPhoto(it) }
                             viewModel.addEntry(
                                 description = description,
                                 timestamp = finalTimestamp,
-                                photoUrl = capturedImageUri?.toString()
+                                photoUrl = persistentUri
                             )
                         } else {
                             existingEntry?.let {
+                                val persistentUri = if (capturedImageUri?.toString() == it.photo_url) {
+                                    it.photo_url
+                                } else {
+                                    capturedImageUri?.let { uri -> savePersistentPhoto(uri) }
+                                }
                                 viewModel.updateEntry(
                                     it.copy(
                                         description = description,
                                         timestamp = finalTimestamp,
-                                        photo_url = capturedImageUri?.toString()
+                                        photo_url = persistentUri
                                     )
                                 )
                             }

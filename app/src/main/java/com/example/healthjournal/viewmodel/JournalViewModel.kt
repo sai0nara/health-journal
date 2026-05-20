@@ -55,7 +55,7 @@ class JournalViewModel(
         if (query.isBlank()) {
             repository.getEntriesSortedByDate(isAsc)
         } else {
-            repository.searchEntries(query)
+            repository.searchEntries(query, isAsc)
         }
     }.stateIn(
         scope = viewModelScope,

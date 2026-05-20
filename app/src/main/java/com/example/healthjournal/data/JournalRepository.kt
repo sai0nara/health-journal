@@ -11,8 +11,8 @@ class JournalRepository(private val journalDao: JournalDao) {
         return journalDao.getEntriesSortedByDate(isAsc)
     }
 
-    fun searchEntries(query: String): Flow<List<JournalEntry>> {
-        return journalDao.searchEntries(query)
+    fun searchEntries(query: String, isAsc: Boolean): Flow<List<JournalEntry>> {
+        return journalDao.searchEntries(query, isAsc)
     }
 
     suspend fun insert(entry: JournalEntry) {
