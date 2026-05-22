@@ -37,4 +37,4 @@
 - [ ] Task: Conductor - User Manual Verification 'UI & Integration' (Protocol in workflow.md)
 
 ## Phase: Review Fixes
-- [x] Task: Apply review suggestions 61b2e37
+- [x] Task: Apply review suggestions a896e19
