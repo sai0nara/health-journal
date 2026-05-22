@@ -4,5 +4,4 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Complete Google Drive Cloud Synchronization**
-  *Link: [./tracks/cloud_sync_20260514/](./tracks/cloud_sync_20260514/)*
+*No tracks currently in progress.*
