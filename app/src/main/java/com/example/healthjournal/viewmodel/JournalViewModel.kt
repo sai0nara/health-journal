@@ -14,8 +14,10 @@ import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.sync.SyncManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 interface IJournalViewModel {
     val allEntries: StateFlow<List<JournalEntry>>
@@ -39,7 +41,8 @@ class JournalViewModel(
     application: Application,
     private val repository: JournalRepository,
     private val authManager: GoogleAuthManager,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val ioContext: kotlin.coroutines.CoroutineContext = Dispatchers.IO
 ) : AndroidViewModel(application), IJournalViewModel {
 
     private val _searchQuery = MutableStateFlow("")
@@ -128,31 +131,46 @@ class JournalViewModel(
     }
 
     override fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit) {
-        viewModelScope.launch {
-            Log.d(TAG, "Sign in initiated")
-            val credential = authManager.signIn(activityContext)
-            if (credential != null) {
+        viewModelScope.launch(ioContext) {
+            try {
+                Log.d(TAG, "Sign in initiated")
+                val credential = authManager.signIn(activityContext)
                 Log.d(TAG, "Sign in successful for ${credential.id}")
                 sessionManager.saveUserEmail(credential.id)
                 _isUserSignedIn.value = true
                 
-                // Request Drive authorization after sign in
-                authManager.requestDriveAuthorization(
-                    email = credential.id,
-                    onResolutionRequired = { pendingIntent ->
-                        Log.d(TAG, "Resolution required for Drive access")
-                        onResolutionRequired(pendingIntent)
-                    },
-                    onSuccess = { accessToken ->
-                        Log.d(TAG, "Drive authorization successful")
-                        _syncStatus.value = "Authenticated & Authorized"
-                        syncNow()
-                    }
-                )
-            } else {
-                Log.e(TAG, "Sign in returned null credential")
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(getApplication(), "Signed in as ${credential.id}", android.widget.Toast.LENGTH_SHORT).show()
+                }
+
+                requestDriveAuth(onResolutionRequired)
+            } catch (e: Exception) {
+                Log.e(TAG, "Sign in failed", e)
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(getApplication(), "Sign-in failed: ${e.localizedMessage}", android.widget.Toast.LENGTH_LONG).show()
+                }
             }
         }
+    }
+
+    fun requestDriveAuth(onResolutionRequired: (android.app.PendingIntent) -> Unit) {
+        val email = sessionManager.getUserEmail() ?: return
+        
+        Log.d(TAG, "Requesting Drive authorization for $email")
+        authManager.requestDriveAuthorization(
+            onResolutionRequired = { pendingIntent ->
+                Log.d(TAG, "Resolution required for Drive access")
+                onResolutionRequired(pendingIntent)
+            },
+            onSuccess = { accessToken ->
+                Log.d(TAG, "Drive authorization successful")
+                _syncStatus.value = "Authenticated & Authorized"
+                viewModelScope.launch(Dispatchers.Main) {
+                    android.widget.Toast.makeText(getApplication(), "Drive Authorization Successful!", android.widget.Toast.LENGTH_SHORT).show()
+                }
+                syncNow()
+            }
+        )
     }
 
     override fun syncNow() {

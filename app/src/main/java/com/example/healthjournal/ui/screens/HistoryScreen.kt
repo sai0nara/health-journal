@@ -53,68 +53,15 @@ fun HistoryScreen(
         ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
-            viewModel.syncNow()
+            // Re-invoke the authorization request to get the result (code)
+            (viewModel as? com.example.healthjournal.viewmodel.JournalViewModel)?.requestDriveAuth { 
+                // Resolution required again - ignore or log
+            }
         }
     }
 
     var isRefreshing by remember { mutableStateOf(false) }
     val pullToRefreshState = rememberPullToRefreshState()
-    
-    var showLoginDialog by remember { mutableStateOf(false) }
-    var emailInput by remember { mutableStateOf("") }
-    var passwordInput by remember { mutableStateOf("") }
-
-    if (showLoginDialog) {
-        AlertDialog(
-            onDismissRequest = { showLoginDialog = false },
-            title = { Text("Sign In to Google Drive") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "Enter your Google account email. This will initiate the secure authorization flow.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    OutlinedTextField(
-                        value = emailInput,
-                        onValueChange = { emailInput = it },
-                        label = { Text("Google Email") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = passwordInput,
-                        onValueChange = { passwordInput = it },
-                        label = { Text("Password (for local verification)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Password
-                        )
-                    )
-                }
-            },
-            confirmButton = {
-                Button(onClick = {
-                    if (emailInput.isNotBlank()) {
-                        viewModel.signIn(context) { pendingIntent ->
-                            authorizationLauncher.launch(
-                                IntentSenderRequest.Builder(pendingIntent).build()
-                            )
-                        }
-                        showLoginDialog = false
-                    } else {
-                        android.widget.Toast.makeText(context, "Please enter your email", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                }) {
-                    Text("Continue")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showLoginDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 
     Scaffold(
         topBar = {
@@ -132,7 +79,13 @@ fun HistoryScreen(
                             Icon(Icons.Default.Sync, contentDescription = "Sync Now")
                         }
                     } else {
-                        TextButton(onClick = { showLoginDialog = true }) {
+                        TextButton(onClick = {
+                            viewModel.signIn(context) { pendingIntent ->
+                                authorizationLauncher.launch(
+                                    IntentSenderRequest.Builder(pendingIntent).build()
+                                )
+                            }
+                        }) {
                             Text("Sign In")
                         }
                     }
@@ -148,13 +101,19 @@ fun HistoryScreen(
         Column(modifier = Modifier.padding(padding)) {
             // Search Bar
             SearchBar(
-                query = searchQuery,
-                onQueryChange = { viewModel.setSearchQuery(it) },
-                onSearch = { /* Handle explicit search if needed */ },
-                active = false,
-                onActiveChange = { },
-                placeholder = { Text("Search journal...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                inputField = {
+                    SearchBarDefaults.InputField(
+                        query = searchQuery,
+                        onQueryChange = { viewModel.setSearchQuery(it) },
+                        onSearch = { /* Handle explicit search */ },
+                        expanded = false,
+                        onExpandedChange = { },
+                        placeholder = { Text("Search journal...") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
+                    )
+                },
+                expanded = false,
+                onExpandedChange = { },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)

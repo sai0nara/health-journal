@@ -8,3 +8,5 @@
 6. measurements 
 
 [//]: # (7. allure report with screenshots)
+
+8. add versions to app-debug.apk

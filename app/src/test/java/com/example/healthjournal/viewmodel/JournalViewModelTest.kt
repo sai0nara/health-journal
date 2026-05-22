@@ -3,6 +3,7 @@ package com.example.healthjournal.viewmodel
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.work.WorkManager
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
@@ -30,7 +31,7 @@ class JournalViewModelTest {
     private val authManager: GoogleAuthManager = mockk()
     private val sessionManager: SessionManager = mockk()
     private val application: Application = mockk()
-    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
 
     @Before
     fun setup() {
@@ -43,6 +44,10 @@ class JournalViewModelTest {
         every { Log.e(any(), any()) } returns 0
         every { Log.e(any(), any(), any()) } returns 0
 
+        mockkStatic(Toast::class)
+        every { Toast.makeText(any(), any<CharSequence>(), any()) } returns mockk(relaxed = true)
+        every { Toast.makeText(any(), any<Int>(), any()) } returns mockk(relaxed = true)
+
         mockkStatic(WorkManager::class)
         every { WorkManager.getInstance(any()) } returns mockk(relaxed = true)
 
@@ -51,9 +56,12 @@ class JournalViewModelTest {
 
         every { sessionManager.getUserEmail() } returns null
         every { application.applicationContext } returns application
+        every { application.getString(any()) } returns "test_client_id"
         
         coEvery { repository.allEntries } returns flowOf(emptyList())
-        viewModel = JournalViewModel(application, repository, authManager, sessionManager)
+        coEvery { repository.getEntriesSortedByDate(any()) } returns flowOf(emptyList())
+        
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, testDispatcher)
     }
 
     @After
@@ -68,6 +76,7 @@ class JournalViewModelTest {
         coEvery { repository.insert(any()) } returns Unit
         
         viewModel.addEntry(description)
+        testDispatcher.scheduler.advanceUntilIdle()
         
         coVerify { repository.insert(match { it.description == description }) }
     }
@@ -78,6 +87,7 @@ class JournalViewModelTest {
         coEvery { repository.insert(any()) } returns Unit
         
         viewModel.addEntry("Future", futureTimestamp)
+        testDispatcher.scheduler.advanceUntilIdle()
         
         coVerify(exactly = 0) { repository.insert(any()) }
     }
@@ -88,6 +98,7 @@ class JournalViewModelTest {
         coEvery { repository.insert(any()) } returns Unit
         
         viewModel.updateEntry(entry.copy(description = "New"))
+        testDispatcher.scheduler.advanceUntilIdle()
         
         coVerify { repository.insert(match { it.description == "New" }) }
     }
@@ -101,14 +112,16 @@ class JournalViewModelTest {
         
         coEvery { authManager.signIn(context) } returns credential
         every { sessionManager.saveUserEmail(email) } returns Unit
+        every { sessionManager.getUserEmail() } returns email
         
         val onResolution = slot<(android.app.PendingIntent) -> Unit>()
         val onSuccess = slot<(String) -> Unit>()
-        every { authManager.requestDriveAuthorization(eq(email), capture(onResolution), capture(onSuccess)) } answers {
-            onSuccess.captured.invoke("token")
+        every { authManager.requestDriveAuthorization(capture(onResolution), capture(onSuccess)) } answers {
+            onSuccess.captured.invoke("test_token")
         }
-
+        
         viewModel.signIn(context) {}
+        testDispatcher.scheduler.advanceUntilIdle()
         
         assertTrue(viewModel.isUserSignedIn.value)
         verify { sessionManager.saveUserEmail(email) }
@@ -120,6 +133,7 @@ class JournalViewModelTest {
         every { sessionManager.clearSession() } returns Unit
         
         viewModel.signOut()
+        testDispatcher.scheduler.advanceUntilIdle()
         
         assertFalse(viewModel.isUserSignedIn.value)
         coVerify { 
@@ -131,28 +145,36 @@ class JournalViewModelTest {
     }
 
     @Test
+    fun getEntryByIdCallsRepository() = runTest {
+        val entry = JournalEntry(description = "Test")
+        coEvery { repository.getEntryById("123") } returns entry
+
+        val result = viewModel.getEntryById("123")
+
+        assertEquals(entry, result)
+    }
+
+    @Test
     fun allEntriesReflectsSearchAndSort() = runTest {
         val entries = listOf(JournalEntry(description = "Apple"))
         val searchQuery = "App"
-
+        
         // Mock the search query call
         coEvery { repository.searchEntries(searchQuery, any()) } returns flowOf(entries)
-        coEvery { repository.allEntries } returns flowOf(emptyList())
-
+        
         // Re-initialize to pick up flow changes
-        viewModel = JournalViewModel(application, repository, authManager, sessionManager)
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, testDispatcher)
 
         // Start collecting
         val items = mutableListOf<List<JournalEntry>>()
         val collectJob = backgroundScope.launch {
             viewModel.allEntries.collect { items.add(it) }
         }
-
+        
         viewModel.setSearchQuery(searchQuery)
         testDispatcher.scheduler.advanceUntilIdle()
-
+        
         assertTrue(items.any { it.any { entry -> entry.description == "Apple" } })
         collectJob.cancel()
     }
-    }
-
+}

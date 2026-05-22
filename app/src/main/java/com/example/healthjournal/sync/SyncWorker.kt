@@ -9,10 +9,17 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
+import com.google.api.client.http.javanet.NetHttpTransport
+import com.google.api.client.json.gson.GsonFactory
+import com.google.api.services.drive.Drive
+import com.google.auth.http.HttpCredentialsAdapter
+import com.google.auth.oauth2.AccessToken
+import com.google.auth.oauth2.GoogleCredentials
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.first
@@ -21,16 +28,29 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
-        val sessionManager = SessionManager(applicationContext)
-        val email = sessionManager.getUserEmail() ?: return Result.failure()
+        val authManager = GoogleAuthManager(applicationContext)
 
         try {
+            // 1. Get Access Token Silently
+            val accessToken = authManager.getDriveAccessTokenSilent()
+            
+            if (accessToken == null) {
+                Log.e("SyncWorker", "Silent authorization failed. User interaction might be required.")
+                return Result.failure()
+            }
+
             val database = JournalDatabase.getDatabase(applicationContext)
             val dao = database.journalDao()
             val repository = JournalRepository(dao)
             
-            val account = android.accounts.Account(email, "com.google")
-            val driveService = DriveServiceHelper.createDriveService(applicationContext, account)
+            // 2. Initialize Drive with explicit token
+            val credentials = GoogleCredentials.create(AccessToken(accessToken, null))
+            val driveService = Drive.Builder(
+                NetHttpTransport(),
+                GsonFactory.getDefaultInstance(),
+                HttpCredentialsAdapter(credentials)
+            ).setApplicationName("Health Journal").build()
+            
             val driveHelper = DriveServiceHelper(driveService)
 
             // 1. Download cloud data
