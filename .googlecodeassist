@@ -1,9 +1,0 @@
-Rule: Superpowers Workflow
-
-Phase 1: Brainstorm. Before writing code, list 3 architectural approaches and wait for my approval.
-
-Phase 2: Plan. Generate a markdown list of all files to be modified.
-
-Phase 3: TDD. Write a failing test first. Do not write implementation code until the test is defined.
-
-Phase 4: Verify. After coding, run the tests and provide a summary of the changes.
