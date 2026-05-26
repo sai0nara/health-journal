@@ -87,7 +87,13 @@ class JournalViewModel(
                         }
                         WorkInfo.State.RUNNING -> "Syncing..."
                         WorkInfo.State.SUCCEEDED -> "Synced"
-                        WorkInfo.State.FAILED -> "Sync Failed"
+                        WorkInfo.State.FAILED -> {
+                            val errorMsg = info.outputData.getString("error_message") ?: "Sync Failed"
+                            viewModelScope.launch(Dispatchers.Main) {
+                                android.widget.Toast.makeText(getApplication(), "Sync failed: $errorMsg", android.widget.Toast.LENGTH_LONG).show()
+                            }
+                            errorMsg
+                        }
                         WorkInfo.State.CANCELLED -> "Sync Cancelled"
                         else -> null
                     }
@@ -178,6 +184,7 @@ class JournalViewModel(
         Log.d(TAG, "Sync now triggered for $email")
         SyncManager.enqueueSync(getApplication())
         _syncStatus.value = "Sync Requested"
+        android.widget.Toast.makeText(getApplication(), "Syncing with Google Drive...", android.widget.Toast.LENGTH_SHORT).show()
     }
 
     override fun signOut() {
@@ -187,6 +194,7 @@ class JournalViewModel(
             sessionManager.clearSession()
             _isUserSignedIn.value = false
             _syncStatus.value = null
+            android.widget.Toast.makeText(getApplication(), "Signed out successfully", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 

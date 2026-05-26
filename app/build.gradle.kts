@@ -58,6 +58,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
@@ -121,6 +122,7 @@ dependencies {
 
     // WorkManager for sync
     implementation("androidx.work:work-runtime-ktx:$work_version")
+    androidTestImplementation("androidx.work:work-testing:$work_version")
 
     // Health Connect
     implementation("androidx.health.connect:connect-client:1.1.0-alpha11")

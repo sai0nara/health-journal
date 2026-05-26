@@ -86,7 +86,7 @@ class JournalDaoTest {
         journalDao.insertEntry(entry2)
         journalDao.insertEntry(entry3)
         
-        val results = journalDao.searchEntries("juice").first()
+        val results = journalDao.searchEntries("juice", isAsc = false).first()
         assertEquals(2, results.size)
         assertTrue(results.any { it.description == "Apple juice" })
         assertTrue(results.any { it.description == "Orange juice" })

@@ -230,4 +230,32 @@ class HistoryScreenTest {
             composeTestRule.onNodeWithContentDescription("Sort order").assertIsDisplayed()
         }
     }
+
+    @Test
+    fun testHistoryScreen_AboutDialogOpens() {
+        step("Open History Screen") {
+            composeTestRule.setContent {
+                HistoryScreen(
+                    viewModel = viewModel,
+                    onAddEntryClick = {},
+                    onEntryClick = {}
+                )
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Click About App icon") {
+            composeTestRule.onNodeWithContentDescription("About App")
+                .performClick()
+            composeTestRule.waitForIdle()
+            allureScreenshot("about_dialog_opened")
+        }
+
+        step("Verify About dialog content") {
+            composeTestRule.onNodeWithText("About Health Journal").assertIsDisplayed()
+            composeTestRule.onNodeWithText("Version:").assertIsDisplayed()
+            // BuildConfig is present in instrumented tests
+            composeTestRule.onNodeWithText("OK").assertIsDisplayed()
+        }
+    }
 }

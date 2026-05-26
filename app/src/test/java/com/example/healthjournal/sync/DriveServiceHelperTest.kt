@@ -1,20 +1,20 @@
 package com.example.healthjournal.sync
 
+import android.content.Context
+import android.util.Log
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.model.File
 import com.google.api.services.drive.model.FileList
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import java.io.ByteArrayInputStream
-import java.io.InputStream
 
 class DriveServiceHelperTest {
 
+    private val context: Context = mockk()
     private val drive: Drive = mockk()
     private val driveFiles: Drive.Files = mockk()
     private val driveList: Drive.Files.List = mockk()
@@ -25,8 +25,13 @@ class DriveServiceHelperTest {
 
     @Before
     fun setup() {
+        mockkStatic(Log::class)
+        every { Log.d(any(), any()) } returns 0
+        every { Log.e(any(), any()) } returns 0
+        every { Log.e(any(), any(), any()) } returns 0
+
         every { drive.files() } returns driveFiles
-        helper = DriveServiceHelper(drive)
+        helper = DriveServiceHelper(context, drive)
     }
 
     @Test
@@ -48,7 +53,7 @@ class DriveServiceHelperTest {
 
         assertEquals("new_id", result)
         verify {
-            driveList.setSpaces("appDataFolder") // Failing expectation: current code uses "drive"
+            driveList.setSpaces("appDataFolder")
             driveFiles.create(match { 
                 it.parents?.contains("appDataFolder") == true 
             }, any())
@@ -74,7 +79,7 @@ class DriveServiceHelperTest {
 
         assertEquals(content, result)
         verify {
-            driveList.setSpaces("appDataFolder") // Failing expectation
+            driveList.setSpaces("appDataFolder")
         }
     }
 }

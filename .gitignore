@@ -1,5 +1,6 @@
 # Gemini
 .gemini/
+.googlecodeassist
 
 # IDE
 .vscode/

@@ -9,6 +9,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
@@ -28,16 +29,18 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
-        val authManager = GoogleAuthManager(applicationContext)
+        val authManager = authManagerProvider(applicationContext)
+        Log.d("SyncWorker", "Starting sync work...")
 
         try {
             // 1. Get Access Token Silently
             val accessToken = authManager.getDriveAccessTokenSilent()
             
-            if (accessToken == null) {
-                Log.e("SyncWorker", "Silent authorization failed. User interaction might be required.")
-                return Result.failure()
+            if (accessToken.isNullOrBlank()) {
+                Log.e("SyncWorker", "Silent authorization failed. No token.")
+                return Result.failure(workDataOf("error_message" to "Auth failed (No token)"))
             }
+            Log.d("SyncWorker", "Token obtained: ${accessToken.take(5)}...")
 
             val database = JournalDatabase.getDatabase(applicationContext)
             val dao = database.journalDao()
@@ -51,15 +54,37 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 HttpCredentialsAdapter(credentials)
             ).setApplicationName("Health Journal").build()
             
-            val driveHelper = DriveServiceHelper(driveService)
+            val driveHelper = driveHelperProvider(applicationContext, driveService)
 
             // 1. Download cloud data
+            Log.d("SyncWorker", "Downloading cloud data...")
             val cloudJson = driveHelper.downloadJournalData()
+            
             val cloudEntries: List<JournalEntry> = if (cloudJson != null) {
-                val type = object : TypeToken<List<JournalEntry>>() {}.type
-                Gson().fromJson(cloudJson, type)
+                try {
+                    val type = object : TypeToken<List<JournalEntry>>() {}.type
+                    Gson().fromJson<List<JournalEntry>>(cloudJson, type)
+                } catch (e: Exception) {
+                    Log.e("SyncWorker", "Failed to parse cloud JSON", e)
+                    emptyList()
+                }
             } else {
                 emptyList()
+            }
+
+            // 1a. Download missing photos from cloud
+            cloudEntries.forEach { entry ->
+                entry.photo_url?.let { url ->
+                    val filename = url.substringAfterLast("/")
+                    val localFile = java.io.File(applicationContext.filesDir, "photos/$filename")
+                    if (!localFile.exists()) {
+                        Log.d("SyncWorker", "Downloading missing photo: $filename")
+                        val cloudId = driveHelper.findFileByName(filename)
+                        if (cloudId != null) {
+                            driveHelper.downloadFile(cloudId, localFile)
+                        }
+                    }
+                }
             }
 
             // 2. Get local data
@@ -67,11 +92,15 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
 
             // 3. Merge (latest timestamp wins)
             val allEntriesMap = mutableMapOf<String, JournalEntry>()
+            cloudEntries.forEach { entry ->
+                // Ensure photo_url points to THIS device's path
+                val updatedEntry = entry.photo_url?.let { url ->
+                    val filename = url.substringAfterLast("/")
+                    entry.copy(photo_url = java.io.File(applicationContext.filesDir, "photos/$filename").toURI().toString())
+                } ?: entry
+                allEntriesMap[updatedEntry.entry_id] = updatedEntry 
+            }
             
-            // Add all cloud entries first
-            cloudEntries.forEach { allEntriesMap[it.entry_id] = it }
-            
-            // Overwrite or add local entries if they are newer
             localEntries.forEach { local ->
                 val existing = allEntriesMap[local.entry_id]
                 if (existing == null || local.timestamp > existing.timestamp) {
@@ -79,20 +108,46 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 }
             }
 
-            val mergedEntries = allEntriesMap.values.toList().map { it.copy(isSynced = true) }
+            val mergedEntries = allEntriesMap.values.toList()
 
             // 4. Update local DB
-            repository.importAll(mergedEntries)
+            repository.importAll(mergedEntries.map { it.copy(isSynced = true) })
 
-            // 5. Upload merged data back to cloud
-            driveHelper.uploadJournalData(Gson().toJson(mergedEntries))
-            
-            Log.d("SyncWorker", "Bidirectional sync successful")
+            // 5. Upload new local photos to cloud
+            mergedEntries.forEach { entry ->
+                entry.photo_url?.let { urlString ->
+                    try {
+                        val uri = android.net.Uri.parse(urlString)
+                        val localFile = java.io.File(uri.path ?: "")
+                        if (localFile.exists()) {
+                            driveHelper.uploadFile(localFile, "image/jpeg")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("SyncWorker", "Failed to upload photo for entry ${entry.entry_id}", e)
+                    }
+                }
+            }
+
+            // 6. Upload merged JSON back to cloud
+            val finalEntriesForCloud = mergedEntries.map { it.copy(isSynced = true) }
+            val uploadId = driveHelper.uploadJournalData(Gson().toJson(finalEntriesForCloud))
+            if (uploadId == null) {
+                Log.e("SyncWorker", "Cloud upload failed.")
+                return Result.failure(workDataOf("error_message" to "Cloud upload failed (Null ID)"))
+            }
+
+            Log.d("SyncWorker", "Bidirectional sync completed successfully.")
             return Result.success()
-        } catch (e: Exception) {
-            Log.e("SyncWorker", "Sync failed", e)
-            return Result.retry()
+        } catch (e: Throwable) {
+            Log.e("SyncWorker", "Sync FATAL failure!", e)
+            val errorMsg = "${e.javaClass.simpleName}: ${e.localizedMessage ?: "No message"}"
+            return Result.failure(workDataOf("error_message" to errorMsg))
         }
+    }
+
+    companion object {
+        var authManagerProvider: (Context) -> GoogleAuthManager = { GoogleAuthManager(it) }
+        var driveHelperProvider: (Context, Drive) -> DriveServiceHelper = { context, drive -> DriveServiceHelper(context, drive) }
     }
 }
 
