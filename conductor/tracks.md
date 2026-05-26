@@ -9,5 +9,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Fix Sync: Download Cloud Entries**
+- [x] **Track: Fix Sync: Download Cloud Entries**
   *Link: [./tracks/fix_sync_download_20260522/](./tracks/fix_sync_download_20260522/)*
