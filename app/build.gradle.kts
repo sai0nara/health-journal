@@ -1,9 +1,19 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
     id("io.qameta.allure")
 }
+
+fun calculateBuildTimestamp(): String {
+    val formatter = SimpleDateFormat("yyyyMMdd-HHmm")
+    return formatter.format(Date())
+}
+
+val buildTimestamp = calculateBuildTimestamp()
 
 allure {
     version.set("2.25.0")
@@ -27,6 +37,8 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+
+        buildConfigField("String", "BUILD_TIMESTAMP", "\"$buildTimestamp\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments["listener"] = "io.qameta.allure.kotlin.junit4.AllureJunit4"
@@ -60,6 +72,18 @@ android {
         compose = true
         buildConfig = true
     }
+
+    applicationVariants.all {
+        outputs.all {
+            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            val timestamp = buildTimestamp
+            val variantName = name // e.g. debug, release
+            val versionName = versionName ?: "unknown"
+            val baseName = "app-$variantName-v$versionName-$timestamp"
+            output.outputFileName = "$baseName.apk"
+        }
+    }
+
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
     }

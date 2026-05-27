@@ -33,7 +33,7 @@ fun AboutAppDialog(onDismiss: () -> Unit) {
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
-                        text = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                        text = "${BuildConfig.VERSION_NAME} (Build: ${BuildConfig.BUILD_TIMESTAMP})",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
