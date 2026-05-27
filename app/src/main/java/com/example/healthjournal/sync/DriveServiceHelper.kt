@@ -1,31 +1,30 @@
 package com.example.healthjournal.sync
 
 import android.content.Context
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.http.ByteArrayContent
-import com.google.api.client.http.javanet.NetHttpTransport
-import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
-import com.google.api.services.drive.DriveScopes
 import com.google.api.services.drive.model.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Collections
 
-class DriveServiceHelper(private val driveService: Drive) {
+class DriveServiceHelper(private val context: Context, private val driveService: Drive) {
 
     suspend fun uploadJournalData(content: String): String? = withContext(Dispatchers.IO) {
         val metadata = File()
             .setName("health_journal_data.json")
             .setMimeType("application/json")
+            .setParents(Collections.singletonList("appDataFolder"))
 
         val contentStream = ByteArrayContent.fromString("application/json", content)
 
         val existingFileId = findDataFile()
         
         val file = if (existingFileId == null) {
+            android.util.Log.d("DriveServiceHelper", "Creating new cloud file...")
             driveService.files().create(metadata, contentStream).execute()
         } else {
+            android.util.Log.d("DriveServiceHelper", "Updating existing cloud file: $existingFileId")
             driveService.files().update(existingFileId, null, contentStream).execute()
         }
         
@@ -40,27 +39,55 @@ class DriveServiceHelper(private val driveService: Drive) {
         }
     }
 
-    private suspend fun findDataFile(): String? = withContext(Dispatchers.IO) {
+    suspend fun uploadFile(localFile: java.io.File, mimeType: String): String? = withContext(Dispatchers.IO) {
+        val metadata = File()
+            .setName(localFile.name)
+            .setMimeType(mimeType)
+            .setParents(Collections.singletonList("appDataFolder"))
+
+        val contentStream = com.google.api.client.http.FileContent(mimeType, localFile)
+
+        val existingFileId = findFileByName(localFile.name)
+        
+        val file = if (existingFileId == null) {
+            android.util.Log.d("DriveServiceHelper", "Uploading new file: ${localFile.name}")
+            driveService.files().create(metadata, contentStream).execute()
+        } else {
+            android.util.Log.d("DriveServiceHelper", "File already exists in cloud: ${localFile.name}")
+            return@withContext existingFileId
+        }
+        
+        file.id
+    }
+
+    suspend fun downloadFile(fileId: String, targetFile: java.io.File): Boolean = withContext(Dispatchers.IO) {
+        try {
+            targetFile.parentFile?.let { parent ->
+                if (!parent.exists()) {
+                    parent.mkdirs()
+                }
+            }
+            driveService.files().get(fileId).executeMediaAsInputStream().use { inputStream ->
+                targetFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("DriveServiceHelper", "Error downloading file $fileId: ${e.message}")
+            false
+        }
+    }
+
+    suspend fun findFileByName(name: String): String? = withContext(Dispatchers.IO) {
         val result = driveService.files().list()
-            .setQ("name = 'health_journal_data.json' and trashed = false")
-            .setSpaces("drive")
+            .setQ("name = '$name' and trashed = false")
+            .setSpaces("appDataFolder")
             .setFields("files(id)")
             .execute()
         
         result.files.firstOrNull()?.id
     }
 
-    companion object {
-        fun createDriveService(context: Context, account: android.accounts.Account): Drive {
-            val credential = GoogleAccountCredential.usingOAuth2(
-                context, Collections.singletonList(DriveScopes.DRIVE_FILE)
-            ).setSelectedAccount(account)
-
-            return Drive.Builder(
-                NetHttpTransport(),
-                GsonFactory.getDefaultInstance(),
-                credential
-            ).setApplicationName("Health Journal").build()
-        }
-    }
+    private suspend fun findDataFile(): String? = findFileByName("health_journal_data.json")
 }

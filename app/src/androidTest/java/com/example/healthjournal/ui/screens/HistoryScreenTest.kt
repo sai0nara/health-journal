@@ -30,18 +30,32 @@ class HistoryScreenTest {
         override val allEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
         override val isUserSignedIn = MutableStateFlow(false)
         override val syncStatus = MutableStateFlow<String?>(null)
+        override val searchQuery = MutableStateFlow("")
+        override val isAscending = MutableStateFlow(false)
         
         var syncNowCalled = false
 
-        override fun addEntry(description: String, timestamp: Long) {}
+        override fun addEntry(description: String, timestamp: Long, photoUrl: String?) {}
+        override fun updateEntry(entry: JournalEntry) {}
+        override suspend fun getEntryById(entryId: String): JournalEntry? = null
+        
         override fun signIn(activityContext: Context, onResolutionRequired: (PendingIntent) -> Unit) {}
         override fun syncNow() {
             syncNowCalled = true
         }
         override fun signOut() {}
+        override fun setSearchQuery(query: String) { searchQuery.value = query }
+        override fun setSortOrder(isAsc: Boolean) { isAscending.value = isAsc }
     }
 
     private val viewModel = MockJournalViewModel()
+
+    @Step("{0}")
+    private fun step(description: String, block: () -> Unit) {
+        io.qameta.allure.kotlin.Allure.step(description) {
+            block()
+        }
+    }
 
     @Test
     fun testHistoryScreen_DisplaysEntries() {
@@ -56,7 +70,8 @@ class HistoryScreenTest {
             composeTestRule.setContent {
                 HistoryScreen(
                     viewModel = viewModel,
-                    onAddEntryClick = {}
+                    onAddEntryClick = {},
+                    onEntryClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -79,7 +94,8 @@ class HistoryScreenTest {
             composeTestRule.setContent {
                 HistoryScreen(
                     viewModel = viewModel,
-                    onAddEntryClick = { addEntryClicked = true }
+                    onAddEntryClick = { addEntryClicked = true },
+                    onEntryClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -105,7 +121,11 @@ class HistoryScreenTest {
         step("Set signed out state and open History Screen") {
             viewModel.isUserSignedIn.value = false
             composeTestRule.setContent {
-                HistoryScreen(viewModel = viewModel, onAddEntryClick = {})
+                HistoryScreen(
+                    viewModel = viewModel, 
+                    onAddEntryClick = {},
+                    onEntryClick = {}
+                )
             }
             composeTestRule.waitForIdle()
             allureScreenshot("history_signed_out")
@@ -123,7 +143,11 @@ class HistoryScreenTest {
         step("Set signed in state and open History Screen") {
             viewModel.isUserSignedIn.value = true
             composeTestRule.setContent {
-                HistoryScreen(viewModel = viewModel, onAddEntryClick = {})
+                HistoryScreen(
+                    viewModel = viewModel, 
+                    onAddEntryClick = {},
+                    onEntryClick = {}
+                )
             }
             composeTestRule.waitForIdle()
             allureScreenshot("history_signed_in")
@@ -142,7 +166,11 @@ class HistoryScreenTest {
         step("Set sync status and open History Screen") {
             viewModel.syncStatus.value = status
             composeTestRule.setContent {
-                HistoryScreen(viewModel = viewModel, onAddEntryClick = {})
+                HistoryScreen(
+                    viewModel = viewModel, 
+                    onAddEntryClick = {},
+                    onEntryClick = {}
+                )
             }
             composeTestRule.waitForIdle()
             allureScreenshot("history_sync_status")
@@ -160,7 +188,11 @@ class HistoryScreenTest {
         step("Set signed in state and open History Screen") {
             viewModel.isUserSignedIn.value = true
             composeTestRule.setContent {
-                HistoryScreen(viewModel = viewModel, onAddEntryClick = {})
+                HistoryScreen(
+                    viewModel = viewModel, 
+                    onAddEntryClick = {},
+                    onEntryClick = {}
+                )
             }
             composeTestRule.waitForIdle()
         }
@@ -178,10 +210,52 @@ class HistoryScreenTest {
         }
     }
 
-    @Step("{0}")
-    private fun step(description: String, block: () -> Unit) {
-        io.qameta.allure.kotlin.Allure.step(description) {
-            block()
+    @Test
+    fun testHistoryScreen_SearchAndSortUIExists() {
+        step("Open History Screen and verify Search/Sort UI") {
+            composeTestRule.setContent {
+                HistoryScreen(
+                    viewModel = viewModel,
+                    onAddEntryClick = {},
+                    onEntryClick = {}
+                )
+            }
+            composeTestRule.waitForIdle()
+            allureScreenshot("history_with_search_sort")
+            
+            // Search Bar should be present (standard Material 3 search bar content)
+            composeTestRule.onNodeWithText("Search journal...").assertIsDisplayed()
+            
+            // Sort Button should be present
+            composeTestRule.onNodeWithContentDescription("Sort order").assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun testHistoryScreen_AboutDialogOpens() {
+        step("Open History Screen") {
+            composeTestRule.setContent {
+                HistoryScreen(
+                    viewModel = viewModel,
+                    onAddEntryClick = {},
+                    onEntryClick = {}
+                )
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Click About App icon") {
+            composeTestRule.onNodeWithContentDescription("About App")
+                .performClick()
+            composeTestRule.waitForIdle()
+            allureScreenshot("about_dialog_opened")
+        }
+
+        step("Verify About dialog content") {
+            composeTestRule.onNodeWithText("About Health Journal").assertIsDisplayed()
+            composeTestRule.onNodeWithText("Version:").assertIsDisplayed()
+            // BuildConfig is present in instrumented tests
+            composeTestRule.onNodeWithText("OK").assertIsDisplayed()
         }
     }
 }

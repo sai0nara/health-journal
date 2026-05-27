@@ -1,5 +1,6 @@
 # Gemini
 .gemini/
+.googlecodeassist
 
 # IDE
 .vscode/
@@ -55,4 +56,5 @@ Thumbs.db
 # Metadata
 .mtj.tmp/
 *.app_token
+
 

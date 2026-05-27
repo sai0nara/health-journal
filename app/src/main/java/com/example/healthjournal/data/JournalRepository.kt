@@ -7,6 +7,14 @@ import kotlinx.coroutines.flow.Flow
 class JournalRepository(private val journalDao: JournalDao) {
     val allEntries: Flow<List<JournalEntry>> = journalDao.getAllEntries()
 
+    fun getEntriesSortedByDate(isAsc: Boolean): Flow<List<JournalEntry>> {
+        return journalDao.getEntriesSortedByDate(isAsc)
+    }
+
+    fun searchEntries(query: String, isAsc: Boolean): Flow<List<JournalEntry>> {
+        return journalDao.searchEntries(query, isAsc)
+    }
+
     suspend fun insert(entry: JournalEntry) {
         journalDao.insertEntry(entry)
     }

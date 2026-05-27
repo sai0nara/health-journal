@@ -58,6 +58,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
@@ -121,15 +122,37 @@ dependencies {
 
     // WorkManager for sync
     implementation("androidx.work:work-runtime-ktx:$work_version")
+    androidTestImplementation("androidx.work:work-testing:$work_version")
+
+    // Health Connect
+    implementation("androidx.health.connect:connect-client:1.1.0-alpha11")
+
+    // CameraX
+    val camerax_version = "1.4.0"
+    implementation("androidx.camera:camera-core:$camerax_version")
+    implementation("androidx.camera:camera-camera2:$camerax_version")
+    implementation("androidx.camera:camera-lifecycle:$camerax_version")
+    implementation("androidx.camera:camera-view:$camerax_version")
+    implementation("androidx.camera:camera-extensions:$camerax_version")
+
+    // Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.7.0")
 
     // Gson for JSON serialization
     implementation("com.google.code.gson:gson:2.10.1")
+
+    // Networking for token exchange
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Secure Storage for Refresh Tokens
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.9")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
     testImplementation("androidx.credentials:credentials:1.3.0")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:rules:1.6.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation("io.mockk:mockk-android:1.13.9")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))

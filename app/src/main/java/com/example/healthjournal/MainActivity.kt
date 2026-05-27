@@ -11,6 +11,7 @@ import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.ui.screens.AddEntryScreen
 import com.example.healthjournal.ui.screens.HistoryScreen
+import com.example.healthjournal.ui.screens.ComponentPreviewScreen
 import com.example.healthjournal.ui.theme.HealthJournalTheme
 import com.example.healthjournal.viewmodel.JournalViewModel
 import com.example.healthjournal.viewmodel.JournalViewModelFactory
@@ -36,12 +37,29 @@ class MainActivity : ComponentActivity() {
                     composable("history") {
                         HistoryScreen(
                             viewModel = viewModel,
-                            onAddEntryClick = { navController.navigate("add_entry") }
+                            onAddEntryClick = { navController.navigate("add_entry") },
+                            onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") }
                         )
                     }
-                    composable("add_entry") {
+                    composable(
+                        route = "add_entry?entryId={entryId}",
+                        arguments = listOf(
+                            androidx.navigation.navArgument("entryId") {
+                                type = androidx.navigation.NavType.StringType
+                                nullable = true
+                                defaultValue = null
+                            }
+                        )
+                    ) { backStackEntry ->
+                        val entryId = backStackEntry.arguments?.getString("entryId")
                         AddEntryScreen(
                             viewModel = viewModel,
+                            entryId = entryId,
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("component_preview") {
+                        ComponentPreviewScreen(
                             onBack = { navController.popBackStack() }
                         )
                     }

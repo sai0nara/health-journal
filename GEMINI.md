@@ -24,6 +24,10 @@ This is an Android health journal application designed for personal event loggin
     - `PRD.md`: Product Requirements Document detailing the vision and features.
     - `Plan.md`: Implementation and development plan.
     - `Stories.md`: User stories and functional requirements.
+- `wiki/`: LLM Wiki for persistent knowledge management.
+    - `sources/`: Raw source documents.
+    - `pages/`: Interlinked knowledge pages.
+    - `GEMINI.md`: Wiki schema and workflows.
 
 ## Building and Running
 The project uses Gradle for build management.

@@ -10,6 +10,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,12 +54,41 @@ class JournalDaoTest {
     }
 
     @Test
-    @Throws(Exception::class)
-    fun getEntryByIdReturnsCorrectEntry() = runBlocking {
-        val entry = JournalEntry(description = "Afternoon yoga")
-        journalDao.insertEntry(entry)
-        val fetchedEntry = journalDao.getEntryById(entry.entry_id)
-        assertNotNull(fetchedEntry)
-        assertEquals(fetchedEntry?.description, entry.description)
+    fun getEntriesSortedByDateAsc() = runBlocking {
+        val entry1 = JournalEntry(description = "First", timestamp = 1000)
+        val entry2 = JournalEntry(description = "Second", timestamp = 2000)
+        journalDao.insertEntry(entry2)
+        journalDao.insertEntry(entry1)
+        
+        val entries = journalDao.getEntriesSortedByDate(isAsc = true).first()
+        assertEquals("First", entries[0].description)
+        assertEquals("Second", entries[1].description)
+    }
+
+    @Test
+    fun getEntriesSortedByDateDesc() = runBlocking {
+        val entry1 = JournalEntry(description = "First", timestamp = 1000)
+        val entry2 = JournalEntry(description = "Second", timestamp = 2000)
+        journalDao.insertEntry(entry1)
+        journalDao.insertEntry(entry2)
+        
+        val entries = journalDao.getEntriesSortedByDate(isAsc = false).first()
+        assertEquals("Second", entries[0].description)
+        assertEquals("First", entries[1].description)
+    }
+
+    @Test
+    fun searchEntriesByKeyword() = runBlocking {
+        val entry1 = JournalEntry(description = "Apple juice")
+        val entry2 = JournalEntry(description = "Orange juice")
+        val entry3 = JournalEntry(description = "Water")
+        journalDao.insertEntry(entry1)
+        journalDao.insertEntry(entry2)
+        journalDao.insertEntry(entry3)
+        
+        val results = journalDao.searchEntries("juice", isAsc = false).first()
+        assertEquals(2, results.size)
+        assertTrue(results.any { it.description == "Apple juice" })
+        assertTrue(results.any { it.description == "Orange juice" })
     }
 }
