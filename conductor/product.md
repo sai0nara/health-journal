@@ -14,7 +14,7 @@ Solving **Data Fragmentation** by bringing together:
 3. Secure cloud storage and synchronization via Google Drive.
 
 ## Key Features
-- **Unified Logging:** A seamless interface for recording physical and mental health events.
+- **Unified Logging:** A seamless interface for recording health events with support for multiple photos and document attachments (PDF, DOCX).
 - **Advanced List Management:** Efficiently manage logs with keyword search and customizable date sorting.
 - **Automated Data Integration:** Effortless importing of health data from wearables and other apps using Health Connect.
 - **Cloud Synchronization:** Reliable backup and multi-device sync using the user's personal Google Drive.
