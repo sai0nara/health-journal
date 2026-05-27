@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(entities = [JournalEntry::class], version = 2, exportSchema = false)
+@androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
 

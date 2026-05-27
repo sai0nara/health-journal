@@ -3,6 +3,7 @@ package com.example.healthjournal.ui.screens
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import io.qameta.allure.android.allureScreenshot
 import io.qameta.allure.android.rules.ScreenshotRule
@@ -37,10 +38,10 @@ class AddEntryScreenTest {
         override val searchQuery: StateFlow<String> = MutableStateFlow("")
         override val isAscending: StateFlow<Boolean> = MutableStateFlow(false)
         
-        var addEntryCalledWith: Triple<String, Long, String?>? = null
+        var addEntryCalledWith: Quadruple<String, Long, List<String>, List<AttachmentData>>? = null
         
-        override fun addEntry(description: String, timestamp: Long, photoUrl: String?) {
-            addEntryCalledWith = Triple(description, timestamp, photoUrl)
+        override fun addEntry(description: String, timestamp: Long, photoUrls: List<String>, attachments: List<AttachmentData>) {
+            addEntryCalledWith = Quadruple(description, timestamp, photoUrls, attachments)
         }
 
         override fun updateEntry(entry: JournalEntry) {}
@@ -52,6 +53,14 @@ class AddEntryScreenTest {
         override fun setSearchQuery(query: String) {}
         override fun setSortOrder(isAsc: Boolean) {}
     }
+
+    // Helper for Triple replacement
+    data class Quadruple<out A, out B, out C, out D>(
+        val first: A,
+        val second: B,
+        val third: C,
+        val fourth: D
+    )
 
     private val viewModel = MockJournalViewModel()
 
@@ -207,11 +216,19 @@ class AddEntryScreenTest {
 
         step("Click Attach Photo in EnrichmentPanel") {
             // Note: EnrichmentPanel is inside a verticalScroll Column
-            composeTestRule.onNodeWithText("Attach Photo")
+            composeTestRule.onNodeWithText("Photo")
                 .performScrollTo()
                 .performClick()
             composeTestRule.waitForIdle()
             allureScreenshot("attach_photo_clicked_in_screen")
+        }
+
+        step("Click Attach File in EnrichmentPanel") {
+            composeTestRule.onNodeWithText("File")
+                .performScrollTo()
+                .performClick()
+            composeTestRule.waitForIdle()
+            allureScreenshot("attach_file_clicked_in_screen")
         }
     }
 

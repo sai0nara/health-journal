@@ -1,8 +1,0 @@
-{
-  "track_id": "build_versioning_20260527",
-  "type": "feature",
-  "status": "in_progress",
-  "created_at": "2026-05-27T10:00:00Z",
-  "updated_at": "2026-05-27T10:00:00Z",
-  "description": "add versions to app-debug.apk name and on screen (about app) with build timestamp"
-}

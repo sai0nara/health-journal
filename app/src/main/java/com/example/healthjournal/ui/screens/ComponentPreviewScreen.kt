@@ -37,6 +37,7 @@ fun ComponentPreviewScreen(onBack: () -> Unit) {
             )
             EnrichmentPanel(
                 onAttachPhotoClick = { /* Preview Click */ },
+                onAttachFileClick = { /* Preview Click */ },
                 onSyncHealthClick = { /* Preview Click */ }
             )
         }

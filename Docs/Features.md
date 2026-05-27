@@ -9,8 +9,8 @@
 
 [//]: # (7. allure report with screenshots)
 
-8. add versions to app-debug.apk name and on screen (about app)
+[//]: # (8. add versions to app-debug.apk name and on screen &#40;about app&#41;)
 9. change color scheme to more common for medical apps. Add dark theme. 
 10. User should be able to add more than one attachment: common formats. 
-And more than one photo.
+And more than one photo. User should be able to save attachments synchronized from the cloud.
 11. Ability to move entry to archive. From archive user can delete any entry, couple or all of them 

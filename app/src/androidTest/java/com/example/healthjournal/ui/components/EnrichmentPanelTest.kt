@@ -21,12 +21,14 @@ class EnrichmentPanelTest {
         composeTestRule.setContent {
             EnrichmentPanel(
                 onAttachPhotoClick = {},
+                onAttachFileClick = {},
                 onSyncHealthClick = {}
             )
         }
 
-        composeTestRule.onNodeWithText("Attach Photo").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Sync Health").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Photo").assertIsDisplayed()
+        composeTestRule.onNodeWithText("File").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Health").assertIsDisplayed()
     }
 
     @Test
@@ -35,11 +37,27 @@ class EnrichmentPanelTest {
         composeTestRule.setContent {
             EnrichmentPanel(
                 onAttachPhotoClick = { clicked = true },
+                onAttachFileClick = {},
                 onSyncHealthClick = {}
             )
         }
 
-        composeTestRule.onNodeWithText("Attach Photo").performClick()
+        composeTestRule.onNodeWithText("Photo").performClick()
+        assert(clicked)
+    }
+
+    @Test
+    fun enrichmentPanel_attachFileClick_triggersCallback() {
+        var clicked = false
+        composeTestRule.setContent {
+            EnrichmentPanel(
+                onAttachPhotoClick = {},
+                onAttachFileClick = { clicked = true },
+                onSyncHealthClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("File").performClick()
         assert(clicked)
     }
 
@@ -49,11 +67,12 @@ class EnrichmentPanelTest {
         composeTestRule.setContent {
             EnrichmentPanel(
                 onAttachPhotoClick = {},
+                onAttachFileClick = {},
                 onSyncHealthClick = { clicked = true }
             )
         }
 
-        composeTestRule.onNodeWithText("Sync Health").performClick()
+        composeTestRule.onNodeWithText("Health").performClick()
         assert(clicked)
     }
 }

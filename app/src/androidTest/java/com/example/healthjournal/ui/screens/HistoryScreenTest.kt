@@ -1,11 +1,9 @@
 package com.example.healthjournal.ui.screens
 
-import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import io.qameta.allure.android.allureScreenshot
 import io.qameta.allure.android.rules.ScreenshotRule
@@ -35,7 +33,7 @@ class HistoryScreenTest {
         
         var syncNowCalled = false
 
-        override fun addEntry(description: String, timestamp: Long, photoUrl: String?) {}
+        override fun addEntry(description: String, timestamp: Long, photoUrls: List<String>, attachments: List<AttachmentData>) {}
         override fun updateEntry(entry: JournalEntry) {}
         override suspend fun getEntryById(entryId: String): JournalEntry? = null
         
