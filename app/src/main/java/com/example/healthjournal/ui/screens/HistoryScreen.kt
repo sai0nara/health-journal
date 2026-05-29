@@ -198,11 +198,22 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(Date(entry.timestamp)),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Light
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(Date(entry.timestamp)),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Light
+                    )
+                    if (entry.lastModified > entry.timestamp + 60000) { // More than 1 minute diff
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "(Edited)",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraLight,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(text = entry.description, fontSize = 16.sp)
                 

@@ -104,22 +104,24 @@ class SyncDownloadTest {
     }
 
     @Test
-    fun testSyncWorker_LocalEditWinsOverOlderCloud() = runBlocking {
-        // 1. Prepare local data with a NEWER timestamp
-        val entryId = "test_conflict_id"
+    fun testSyncWorker_PreservesCreationDateOnConflict() = runBlocking {
+        // 1. Prepare local data: Created at 1000, Modified at 5000
+        val entryId = "preserve_date_id"
         val localEntry = JournalEntry(
             entry_id = entryId,
             description = "Local Updated Content",
-            timestamp = 5000 // Newer
+            timestamp = 1000, // Original creation
+            lastModified = 5000 // Newer modification
         )
         database.journalDao().insertEntry(localEntry)
 
-        // 2. Prepare mock cloud data with an OLDER timestamp
+        // 2. Prepare mock cloud data: Created at 1000, Modified at 3000
         val cloudEntries = listOf(
             JournalEntry(
                 entry_id = entryId,
                 description = "Cloud Older Content",
-                timestamp = 3000 // Older
+                timestamp = 1000,
+                lastModified = 3000 // Older modification
             )
         )
         val cloudJson = Gson().toJson(cloudEntries)
@@ -138,11 +140,12 @@ class SyncDownloadTest {
 
         assertEquals(ListenableWorker.Result.success(), result)
 
-        // 3. Verify that local content was PRESERVED
+        // 3. Verify that local content was PRESERVED and date is still 1000
         val localEntries = database.journalDao().getAllEntries().first()
         val entry = localEntries.find { it.entry_id == entryId }
         assertNotNull(entry)
         assertEquals("Local Updated Content", entry?.description)
-        assertEquals(5000L, entry?.timestamp)
+        assertEquals(1000L, entry?.timestamp) // Creation date PRESERVED
+        assertEquals(5000L, entry?.lastModified)
     }
 }

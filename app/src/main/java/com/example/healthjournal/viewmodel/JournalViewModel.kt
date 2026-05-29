@@ -133,8 +133,9 @@ class JournalViewModel(
 
     override fun updateEntry(entry: JournalEntry) {
         viewModelScope.launch {
-            // Update timestamp to ensure local edits "win" in sync conflict resolution
-            repository.insert(entry.copy(isSynced = false, timestamp = System.currentTimeMillis()))
+            // Update lastModified to ensure local edits "win" in sync conflict resolution
+            // Keep the original timestamp (creation date)
+            repository.insert(entry.copy(isSynced = false, lastModified = System.currentTimeMillis()))
             if (_isUserSignedIn.value) {
                 SyncManager.enqueueSync(getApplication())
             }

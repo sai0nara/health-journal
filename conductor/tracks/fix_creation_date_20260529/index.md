@@ -1,4 +1,4 @@
-# Track fix_sync_camera_20260529 Context
+# Track fix_creation_date_20260529 Context
 
 - [Specification](./spec.md)
 - [Implementation Plan](./plan.md)

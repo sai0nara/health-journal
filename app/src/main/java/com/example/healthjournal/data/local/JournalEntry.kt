@@ -14,6 +14,7 @@ data class AttachmentData(
 data class JournalEntry(
     @PrimaryKey val entry_id: String = UUID.randomUUID().toString(),
     val timestamp: Long = System.currentTimeMillis(),
+    val lastModified: Long = timestamp,
     val description: String,
     val photo_urls: List<String> = emptyList(),
     val attachments: List<AttachmentData> = emptyList(),
