@@ -9,23 +9,33 @@ class JournalTypeConverters {
 
     @TypeConverter
     fun fromStringList(value: List<String>): String {
-        return gson.toJson(value)
+        return gson.toJson(value ?: emptyList<String>())
     }
 
     @TypeConverter
-    fun toStringList(value: String): List<String> {
-        val listType = object : TypeToken<List<String>>() {}.type
-        return gson.fromJson(value, listType)
+    fun toStringList(value: String?): List<String> {
+        if (value == null) return emptyList()
+        return try {
+            val listType = object : TypeToken<List<String>>() {}.type
+            gson.fromJson(value, listType) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     @TypeConverter
     fun fromAttachmentList(value: List<AttachmentData>): String {
-        return gson.toJson(value)
+        return gson.toJson(value ?: emptyList<AttachmentData>())
     }
 
     @TypeConverter
-    fun toAttachmentList(value: String): List<AttachmentData> {
-        val listType = object : TypeToken<List<AttachmentData>>() {}.type
-        return gson.fromJson(value, listType)
+    fun toAttachmentList(value: String?): List<AttachmentData> {
+        if (value == null) return emptyList()
+        return try {
+            val listType = object : TypeToken<List<AttachmentData>>() {}.type
+            gson.fromJson(value, listType) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 }

@@ -206,13 +206,13 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(text = entry.description, fontSize = 16.sp)
                 
-                if (entry.photo_urls.isNotEmpty()) {
+                if (!entry.photo_urls.isNullOrEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     androidx.compose.foundation.lazy.LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(entry.photo_urls) { photoUrl ->
+                        items(entry.photo_urls ?: emptyList()) { photoUrl ->
                             AsyncImage(
                                 model = photoUrl,
                                 contentDescription = null,

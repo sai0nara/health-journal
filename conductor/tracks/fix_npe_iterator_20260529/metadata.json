@@ -1,0 +1,8 @@
+{
+  "track_id": "fix_npe_iterator_20260529",
+  "type": "bug",
+  "status": "in_progress",
+  "created_at": "2026-05-29T10:30:00Z",
+  "updated_at": "2026-05-29T10:30:00Z",
+  "description": "Fix NullPointerException: java.lang.Iterable.iterator() on null object after update/wipe"
+}

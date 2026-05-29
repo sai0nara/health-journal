@@ -63,7 +63,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             val cloudEntries: List<JournalEntry> = if (cloudJson != null) {
                 try {
                     val type = object : TypeToken<List<JournalEntry>>() {}.type
-                    Gson().fromJson<List<JournalEntry>>(cloudJson, type)
+                    Gson().fromJson<List<JournalEntry>>(cloudJson, type) ?: emptyList()
                 } catch (e: Exception) {
                     Log.e("SyncWorker", "Failed to parse cloud JSON", e)
                     emptyList()
@@ -75,7 +75,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             // 1a. Download missing files from cloud
             cloudEntries.forEach { entry ->
                 // Photos
-                entry.photo_urls.forEach { url ->
+                entry.photo_urls?.forEach { url ->
                     val filename = url.substringAfterLast("/")
                     val localFile = java.io.File(applicationContext.filesDir, "photos/$filename")
                     if (!localFile.exists()) {
@@ -84,7 +84,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                     }
                 }
                 // Attachments
-                entry.attachments.forEach { att ->
+                entry.attachments?.forEach { att ->
                     val filename = att.uri.substringAfterLast("/")
                     val localFile = java.io.File(applicationContext.filesDir, "attachments/$filename")
                     if (!localFile.exists()) {
@@ -101,14 +101,14 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             val allEntriesMap = mutableMapOf<String, JournalEntry>()
             cloudEntries.forEach { entry ->
                 // Remap URIs to this device
-                val updatedPhotos = entry.photo_urls.map { url ->
+                val updatedPhotos = entry.photo_urls?.map { url ->
                     val filename = url.substringAfterLast("/")
                     java.io.File(applicationContext.filesDir, "photos/$filename").toURI().toString()
-                }
-                val updatedAttachments = entry.attachments.map { att ->
+                } ?: emptyList()
+                val updatedAttachments = entry.attachments?.map { att ->
                     val filename = att.uri.substringAfterLast("/")
                     att.copy(uri = java.io.File(applicationContext.filesDir, "attachments/$filename").toURI().toString())
-                }
+                } ?: emptyList()
                 val updatedEntry = entry.copy(photo_urls = updatedPhotos, attachments = updatedAttachments)
                 allEntriesMap[updatedEntry.entry_id] = updatedEntry 
             }
@@ -128,7 +128,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             // 5. Upload new local files to cloud
             mergedEntries.forEach { entry ->
                 // Photos
-                entry.photo_urls.forEach { urlString ->
+                entry.photo_urls?.forEach { urlString ->
                     try {
                         val uri = android.net.Uri.parse(urlString)
                         val localFile = java.io.File(uri.path ?: "")
@@ -138,7 +138,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                     }
                 }
                 // Attachments
-                entry.attachments.forEach { att ->
+                entry.attachments?.forEach { att ->
                     try {
                         val uri = android.net.Uri.parse(att.uri)
                         val localFile = java.io.File(uri.path ?: "")

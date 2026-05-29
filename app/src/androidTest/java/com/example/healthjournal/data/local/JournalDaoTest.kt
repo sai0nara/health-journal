@@ -91,4 +91,17 @@ class JournalDaoTest {
         assertTrue(results.any { it.description == "Apple juice" })
         assertTrue(results.any { it.description == "Orange juice" })
     }
+
+    @Test
+    fun testTypeConverters_HandlesNullAndMalformedInput() {
+        val converters = JournalTypeConverters()
+        
+        // String List
+        assertEquals(emptyList<String>(), converters.toStringList(null))
+        assertEquals(emptyList<String>(), converters.toStringList("invalid json"))
+        
+        // Attachment List
+        assertEquals(emptyList<AttachmentData>(), converters.toAttachmentList(null))
+        assertEquals(emptyList<AttachmentData>(), converters.toAttachmentList("invalid json"))
+    }
 }
