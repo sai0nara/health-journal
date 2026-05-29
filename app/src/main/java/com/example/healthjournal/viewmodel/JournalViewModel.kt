@@ -12,6 +12,7 @@ import androidx.work.WorkManager
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
+import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.sync.SyncManager
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +27,12 @@ interface IJournalViewModel {
     val searchQuery: StateFlow<String>
     val isAscending: StateFlow<Boolean>
     
-    fun addEntry(description: String, timestamp: Long = System.currentTimeMillis(), photoUrl: String? = null)
+    fun addEntry(
+        description: String, 
+        timestamp: Long = System.currentTimeMillis(), 
+        photoUrls: List<String> = emptyList(),
+        attachments: List<AttachmentData> = emptyList()
+    )
     fun updateEntry(entry: JournalEntry)
     suspend fun getEntryById(entryId: String): JournalEntry?
     fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit)
@@ -101,7 +107,12 @@ class JournalViewModel(
         }
     }
 
-    override fun addEntry(description: String, timestamp: Long, photoUrl: String?) {
+    override fun addEntry(
+        description: String, 
+        timestamp: Long, 
+        photoUrls: List<String>,
+        attachments: List<AttachmentData>
+    ) {
         if (timestamp > System.currentTimeMillis()) {
             Log.w(TAG, "Attempted to add entry in the future. Ignoring.")
             return
@@ -110,7 +121,8 @@ class JournalViewModel(
             val newEntry = JournalEntry(
                 description = description,
                 timestamp = timestamp,
-                photo_url = photoUrl
+                photo_urls = photoUrls,
+                attachments = attachments
             )
             repository.insert(newEntry)
             if (_isUserSignedIn.value) {

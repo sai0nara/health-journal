@@ -63,7 +63,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             val cloudEntries: List<JournalEntry> = if (cloudJson != null) {
                 try {
                     val type = object : TypeToken<List<JournalEntry>>() {}.type
-                    Gson().fromJson<List<JournalEntry>>(cloudJson, type)
+                    Gson().fromJson<List<JournalEntry>>(cloudJson, type) ?: emptyList()
                 } catch (e: Exception) {
                     Log.e("SyncWorker", "Failed to parse cloud JSON", e)
                     emptyList()
@@ -72,17 +72,24 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 emptyList()
             }
 
-            // 1a. Download missing photos from cloud
+            // 1a. Download missing files from cloud
             cloudEntries.forEach { entry ->
-                entry.photo_url?.let { url ->
+                // Photos
+                entry.photo_urls?.forEach { url ->
                     val filename = url.substringAfterLast("/")
                     val localFile = java.io.File(applicationContext.filesDir, "photos/$filename")
                     if (!localFile.exists()) {
                         Log.d("SyncWorker", "Downloading missing photo: $filename")
-                        val cloudId = driveHelper.findFileByName(filename)
-                        if (cloudId != null) {
-                            driveHelper.downloadFile(cloudId, localFile)
-                        }
+                        driveHelper.findFileByName(filename)?.let { driveHelper.downloadFile(it, localFile) }
+                    }
+                }
+                // Attachments
+                entry.attachments?.forEach { att ->
+                    val filename = att.uri.substringAfterLast("/")
+                    val localFile = java.io.File(applicationContext.filesDir, "attachments/$filename")
+                    if (!localFile.exists()) {
+                        Log.d("SyncWorker", "Downloading missing attachment: $filename")
+                        driveHelper.findFileByName(filename)?.let { driveHelper.downloadFile(it, localFile) }
                     }
                 }
             }
@@ -93,11 +100,16 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             // 3. Merge (latest timestamp wins)
             val allEntriesMap = mutableMapOf<String, JournalEntry>()
             cloudEntries.forEach { entry ->
-                // Ensure photo_url points to THIS device's path
-                val updatedEntry = entry.photo_url?.let { url ->
+                // Remap URIs to this device
+                val updatedPhotos = entry.photo_urls?.map { url ->
                     val filename = url.substringAfterLast("/")
-                    entry.copy(photo_url = java.io.File(applicationContext.filesDir, "photos/$filename").toURI().toString())
-                } ?: entry
+                    java.io.File(applicationContext.filesDir, "photos/$filename").toURI().toString()
+                } ?: emptyList()
+                val updatedAttachments = entry.attachments?.map { att ->
+                    val filename = att.uri.substringAfterLast("/")
+                    att.copy(uri = java.io.File(applicationContext.filesDir, "attachments/$filename").toURI().toString())
+                } ?: emptyList()
+                val updatedEntry = entry.copy(photo_urls = updatedPhotos, attachments = updatedAttachments)
                 allEntriesMap[updatedEntry.entry_id] = updatedEntry 
             }
             
@@ -113,17 +125,26 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             // 4. Update local DB
             repository.importAll(mergedEntries.map { it.copy(isSynced = true) })
 
-            // 5. Upload new local photos to cloud
+            // 5. Upload new local files to cloud
             mergedEntries.forEach { entry ->
-                entry.photo_url?.let { urlString ->
+                // Photos
+                entry.photo_urls?.forEach { urlString ->
                     try {
                         val uri = android.net.Uri.parse(urlString)
                         val localFile = java.io.File(uri.path ?: "")
-                        if (localFile.exists()) {
-                            driveHelper.uploadFile(localFile, "image/jpeg")
-                        }
+                        if (localFile.exists()) driveHelper.uploadFile(localFile, "image/jpeg")
                     } catch (e: Exception) {
                         Log.e("SyncWorker", "Failed to upload photo for entry ${entry.entry_id}", e)
+                    }
+                }
+                // Attachments
+                entry.attachments?.forEach { att ->
+                    try {
+                        val uri = android.net.Uri.parse(att.uri)
+                        val localFile = java.io.File(uri.path ?: "")
+                        if (localFile.exists()) driveHelper.uploadFile(localFile, att.mimeType)
+                    } catch (e: Exception) {
+                        Log.e("SyncWorker", "Failed to upload attachment ${att.name}", e)
                     }
                 }
             }

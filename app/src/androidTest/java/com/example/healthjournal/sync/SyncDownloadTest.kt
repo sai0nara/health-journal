@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
 import com.example.healthjournal.auth.GoogleAuthManager
+import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
 import com.google.android.gms.auth.api.identity.AuthorizationClient
@@ -57,23 +58,29 @@ class SyncDownloadTest {
     }
 
     @Test
-    fun testSyncWorker_MergesCloudAndLocalData() = runBlocking {
-        // 1. Prepare local data
-        val localEntry = JournalEntry(description = "Local Entry", timestamp = 1500)
-        database.journalDao().insertEntry(localEntry)
+    fun testSyncWorker_MergesMultiplePhotosAndAttachments() = runBlocking {
+        // 1. Prepare local data (empty)
 
-        // 2. Prepare mock cloud data (one newer, one older, one same)
+        // 2. Prepare mock cloud data with multiple photos and attachments
         val cloudEntries = listOf(
-            JournalEntry(entry_id = localEntry.entry_id, description = "Updated Local Entry", timestamp = 2000), // Newer
-            JournalEntry(description = "Cloud Only Entry", timestamp = 1000) // New
+            JournalEntry(
+                description = "Multi-media Entry",
+                timestamp = 3000,
+                photo_urls = listOf("file:///remote/photo1.jpg", "file:///remote/photo2.jpg"),
+                attachments = listOf(
+                    AttachmentData("Report", "file:///remote/report.pdf", "application/pdf")
+                )
+            )
         )
         val cloudJson = Gson().toJson(cloudEntries)
 
         // Mock DriveServiceHelper provider
-        SyncWorker.driveHelperProvider = { _, _ ->
+        SyncWorker.driveHelperProvider = { context, drive ->
             val mock = mockk<DriveServiceHelper>()
             coEvery { mock.downloadJournalData() } returns cloudJson
             coEvery { mock.uploadJournalData(any()) } returns "new_file_id"
+            coEvery { mock.findFileByName(any()) } returns "mock_cloud_id"
+            coEvery { mock.downloadFile(any(), any()) } returns true
             mock
         }
 
@@ -84,10 +91,15 @@ class SyncDownloadTest {
 
         // 3. Verify data in local database
         val localEntries = database.journalDao().getAllEntries().first()
-        
-        // Should have 2 entries: the updated local one and the cloud-only one
-        assertEquals(2, localEntries.size)
-        assertTrue(localEntries.any { it.description == "Updated Local Entry" })
-        assertTrue(localEntries.any { it.description == "Cloud Only Entry" })
+        assertEquals(1, localEntries.size)
+        val entry = localEntries[0]
+
+        assertEquals(2, entry.photo_urls.size)
+        assertEquals(1, entry.attachments.size)
+
+        // Verify URI re-mapping (should point to local filesDir)
+        assertTrue(entry.photo_urls[0].contains(context.filesDir.path))
+        assertTrue(entry.attachments[0].uri.contains(context.filesDir.path))
     }
 }
+

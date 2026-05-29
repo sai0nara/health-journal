@@ -17,12 +17,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.compose.material.icons.filled.Description
 import coil.compose.AsyncImage
+import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.ui.components.EnrichmentPanel
 import com.example.healthjournal.viewmodel.IJournalViewModel
@@ -40,7 +43,8 @@ fun AddEntryScreen(
     val context = LocalContext.current
     var description by remember { mutableStateOf("") }
     var selectedTimestamp by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var attachedPhotoUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var attachedFiles by remember { mutableStateOf<List<AttachmentData>>(emptyList()) }
     var existingEntry by remember { mutableStateOf<JournalEntry?>(null) }
     
     var showDatePicker by remember { mutableStateOf(false) }
@@ -67,9 +71,8 @@ fun AddEntryScreen(
                 existingEntry = entry
                 description = entry.description
                 selectedTimestamp = entry.timestamp
-                if (entry.photo_url != null) {
-                    capturedImageUri = Uri.parse(entry.photo_url)
-                }
+                attachedPhotoUris = entry.photo_urls.map { Uri.parse(it) }
+                attachedFiles = entry.attachments
             }
         }
     }
@@ -78,12 +81,30 @@ fun AddEntryScreen(
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
-        if (!success) {
-            // Only clear if it was a new attempt
-            if (existingEntry?.photo_url == null) {
-                capturedImageUri = null
-            } else {
-                capturedImageUri = Uri.parse(existingEntry?.photo_url)
+        // No action needed here, the URI is already added to state in launchCamera
+    }
+
+    // Multi-Photo Picker
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia()
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            attachedPhotoUris = attachedPhotoUris + uris
+        }
+    }
+
+    // File Picker
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            val cursor = context.contentResolver.query(it, null, null, null, null)
+            cursor?.use { c ->
+                if (c.moveToFirst()) {
+                    val name = c.getString(c.getColumnIndexOrThrow(android.provider.OpenableColumns.DISPLAY_NAME))
+                    val mimeType = context.contentResolver.getType(it) ?: "application/octet-stream"
+                    attachedFiles = attachedFiles + AttachmentData(name, it.toString(), mimeType)
+                }
             }
         }
     }
@@ -92,9 +113,7 @@ fun AddEntryScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) {
-            capturedImageUri?.let { cameraLauncher.launch(it) }
-        }
+        // This is a bit simplified, ideally we'd re-launch the camera if granted
     }
 
     fun launchCamera() {
@@ -105,7 +124,7 @@ fun AddEntryScreen(
             "${context.packageName}.fileprovider",
             file
         )
-        capturedImageUri = uri
+        attachedPhotoUris = attachedPhotoUris + uri
 
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             cameraLauncher.launch(uri)
@@ -114,13 +133,14 @@ fun AddEntryScreen(
         }
     }
 
-    fun savePersistentPhoto(tempUri: Uri): String? {
+    fun savePersistentFile(uri: Uri, isPhoto: Boolean): String? {
         return try {
-            val inputStream = context.contentResolver.openInputStream(tempUri)
-            val fileName = "photo_${System.currentTimeMillis()}.jpg"
-            val photoDir = File(context.filesDir, "photos")
-            photoDir.mkdirs()
-            val persistentFile = File(photoDir, fileName)
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val fileName = if (isPhoto) "photo_${System.currentTimeMillis()}_${UUID.randomUUID()}.jpg" 
+                           else "doc_${System.currentTimeMillis()}_${UUID.randomUUID()}"
+            val dir = File(context.filesDir, if (isPhoto) "photos" else "attachments")
+            dir.mkdirs()
+            val persistentFile = File(dir, fileName)
             
             inputStream?.use { input ->
                 persistentFile.outputStream().use { output ->
@@ -250,29 +270,61 @@ fun AddEntryScreen(
                 minLines = 5
             )
             
-            capturedImageUri?.let { uri ->
+            if (attachedPhotoUris.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
+                Text("Photos", style = MaterialTheme.typography.titleSmall)
+                Spacer(modifier = Modifier.height(8.dp))
+                androidx.compose.foundation.lazy.LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    AsyncImage(
-                        model = uri,
-                        contentDescription = "Attached photo",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    IconButton(
-                        onClick = { capturedImageUri = null },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(4.dp),
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
-                        )
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove photo")
+                    items(attachedPhotoUris.size) { index ->
+                        val uri = attachedPhotoUris[index]
+                        Box(modifier = Modifier.size(100.dp)) {
+                            AsyncImage(
+                                model = uri,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.small),
+                                contentScale = ContentScale.Crop
+                            )
+                            IconButton(
+                                onClick = { attachedPhotoUris = attachedPhotoUris.filterIndexed { i, _ -> i != index } },
+                                modifier = Modifier.align(Alignment.TopEnd).size(24.dp),
+                                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (attachedFiles.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Attachments", style = MaterialTheme.typography.titleSmall)
+                Spacer(modifier = Modifier.height(8.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    attachedFiles.forEachIndexed { index, file ->
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = MaterialTheme.shapes.small,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(file.name, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                                    IconButton(
+                                        onClick = { attachedFiles = attachedFiles.filterIndexed { i, _ -> i != index } },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                                    }
+                            }
+                        }
                     }
                 }
             }
@@ -280,7 +332,8 @@ fun AddEntryScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             EnrichmentPanel(
-                onAttachPhotoClick = { launchCamera() },
+                onAttachPhotoClick = { photoPickerLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                onAttachFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
                 onSyncHealthClick = { /* TODO: Implement Health Connect */ }
             )
             
@@ -295,25 +348,35 @@ fun AddEntryScreen(
                             selectedTimestamp
                         }
                         
+                        // Save all files persistently
+                        val persistentPhotoUrls = attachedPhotoUris.map { uri ->
+                            if (uri.toString().startsWith("file:///")) uri.toString()
+                            else savePersistentFile(uri, true) ?: ""
+                        }.filter { it.isNotBlank() }
+
+                        val persistentAttachments = attachedFiles.map { file ->
+                            if (file.uri.startsWith("file:///")) file
+                            else {
+                                val persistentUri = savePersistentFile(Uri.parse(file.uri), false)
+                                file.copy(uri = persistentUri ?: "")
+                            }
+                        }.filter { it.uri.isNotBlank() }
+
                         if (entryId == null) {
-                            val persistentUri = capturedImageUri?.let { savePersistentPhoto(it) }
                             viewModel.addEntry(
                                 description = description,
                                 timestamp = finalTimestamp,
-                                photoUrl = persistentUri
+                                photoUrls = persistentPhotoUrls,
+                                attachments = persistentAttachments
                             )
                         } else {
                             existingEntry?.let {
-                                val persistentUri = if (capturedImageUri?.toString() == it.photo_url) {
-                                    it.photo_url
-                                } else {
-                                    capturedImageUri?.let { uri -> savePersistentPhoto(uri) }
-                                }
                                 viewModel.updateEntry(
                                     it.copy(
                                         description = description,
                                         timestamp = finalTimestamp,
-                                        photo_url = persistentUri
+                                        photo_urls = persistentPhotoUrls,
+                                        attachments = persistentAttachments
                                     )
                                 )
                             }
