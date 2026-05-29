@@ -132,12 +132,9 @@ class JournalViewModel(
     }
 
     override fun updateEntry(entry: JournalEntry) {
-        if (entry.timestamp > System.currentTimeMillis()) {
-            Log.w(TAG, "Attempted to update entry with future date. Ignoring.")
-            return
-        }
         viewModelScope.launch {
-            repository.insert(entry.copy(isSynced = false)) // Reset sync status on edit
+            // Update timestamp to ensure local edits "win" in sync conflict resolution
+            repository.insert(entry.copy(isSynced = false, timestamp = System.currentTimeMillis()))
             if (_isUserSignedIn.value) {
                 SyncManager.enqueueSync(getApplication())
             }

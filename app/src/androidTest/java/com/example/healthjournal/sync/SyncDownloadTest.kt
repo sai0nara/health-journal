@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -101,5 +102,47 @@ class SyncDownloadTest {
         assertTrue(entry.photo_urls[0].contains(context.filesDir.path))
         assertTrue(entry.attachments[0].uri.contains(context.filesDir.path))
     }
-}
 
+    @Test
+    fun testSyncWorker_LocalEditWinsOverOlderCloud() = runBlocking {
+        // 1. Prepare local data with a NEWER timestamp
+        val entryId = "test_conflict_id"
+        val localEntry = JournalEntry(
+            entry_id = entryId,
+            description = "Local Updated Content",
+            timestamp = 5000 // Newer
+        )
+        database.journalDao().insertEntry(localEntry)
+
+        // 2. Prepare mock cloud data with an OLDER timestamp
+        val cloudEntries = listOf(
+            JournalEntry(
+                entry_id = entryId,
+                description = "Cloud Older Content",
+                timestamp = 3000 // Older
+            )
+        )
+        val cloudJson = Gson().toJson(cloudEntries)
+
+        // Mock DriveServiceHelper provider
+        SyncWorker.driveHelperProvider = { _, _ ->
+            val mock = mockk<DriveServiceHelper>()
+            coEvery { mock.downloadJournalData() } returns cloudJson
+            coEvery { mock.uploadJournalData(any()) } returns "new_file_id"
+            coEvery { mock.findFileByName(any()) } returns "mock_cloud_id"
+            mock
+        }
+
+        val worker = TestListenableWorkerBuilder<SyncWorker>(context).build()
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.success(), result)
+
+        // 3. Verify that local content was PRESERVED
+        val localEntries = database.journalDao().getAllEntries().first()
+        val entry = localEntries.find { it.entry_id == entryId }
+        assertNotNull(entry)
+        assertEquals("Local Updated Content", entry?.description)
+        assertEquals(5000L, entry?.timestamp)
+    }
+}

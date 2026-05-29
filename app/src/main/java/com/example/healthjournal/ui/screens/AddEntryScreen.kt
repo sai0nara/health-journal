@@ -4,15 +4,14 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +22,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.compose.material.icons.filled.Description
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
@@ -47,20 +45,18 @@ fun AddEntryScreen(
     var attachedFiles by remember { mutableStateOf<List<AttachmentData>>(emptyList()) }
     var existingEntry by remember { mutableStateOf<JournalEntry?>(null) }
     
+    var cameraTempUri by remember { mutableStateOf<Uri?>(null) }
+
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selectedTimestamp,
-        selectableDates = object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return utcTimeMillis <= System.currentTimeMillis()
-            }
-        }
+        initialSelectedDateMillis = selectedTimestamp
     )
+    val calendar = Calendar.getInstance().apply { timeInMillis = selectedTimestamp }
     val timePickerState = rememberTimePickerState(
-        initialHour = Calendar.getInstance().apply { timeInMillis = selectedTimestamp }.get(Calendar.HOUR_OF_DAY),
-        initialMinute = Calendar.getInstance().apply { timeInMillis = selectedTimestamp }.get(Calendar.MINUTE)
+        initialHour = calendar.get(Calendar.HOUR_OF_DAY),
+        initialMinute = calendar.get(Calendar.MINUTE)
     )
 
     // Load existing entry if editing
@@ -81,7 +77,12 @@ fun AddEntryScreen(
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
-        // No action needed here, the URI is already added to state in launchCamera
+        if (success) {
+            cameraTempUri?.let { uri ->
+                attachedPhotoUris = attachedPhotoUris + uri
+            }
+        }
+        cameraTempUri = null
     }
 
     // Multi-Photo Picker
@@ -113,7 +114,9 @@ fun AddEntryScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        // This is a bit simplified, ideally we'd re-launch the camera if granted
+        if (isGranted) {
+            cameraTempUri?.let { cameraLauncher.launch(it) }
+        }
     }
 
     fun launchCamera() {
@@ -124,7 +127,7 @@ fun AddEntryScreen(
             "${context.packageName}.fileprovider",
             file
         )
-        attachedPhotoUris = attachedPhotoUris + uri
+        cameraTempUri = uri
 
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             cameraLauncher.launch(uri)
@@ -160,26 +163,17 @@ fun AddEntryScreen(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let {
-                        val calendar = Calendar.getInstance()
-                        val currentCalendar = Calendar.getInstance().apply { timeInMillis = selectedTimestamp }
-                        calendar.timeInMillis = it
-                        calendar.set(Calendar.HOUR_OF_DAY, currentCalendar.get(Calendar.HOUR_OF_DAY))
-                        calendar.set(Calendar.MINUTE, currentCalendar.get(Calendar.MINUTE))
-                        
-                        // Re-validate against current time
-                        if (calendar.timeInMillis <= System.currentTimeMillis()) {
-                            selectedTimestamp = calendar.timeInMillis
-                        }
+                        val newCal = Calendar.getInstance().apply { timeInMillis = it }
+                        calendar.set(Calendar.YEAR, newCal.get(Calendar.YEAR))
+                        calendar.set(Calendar.MONTH, newCal.get(Calendar.MONTH))
+                        calendar.set(Calendar.DAY_OF_MONTH, newCal.get(Calendar.DAY_OF_MONTH))
+                        selectedTimestamp = calendar.timeInMillis
                     }
                     showDatePicker = false
-                }) {
-                    Text("OK")
-                }
+                }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -191,30 +185,17 @@ fun AddEntryScreen(
             onDismissRequest = { showTimePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    val calendar = Calendar.getInstance()
-                    calendar.timeInMillis = selectedTimestamp
                     calendar.set(Calendar.HOUR_OF_DAY, timePickerState.hour)
                     calendar.set(Calendar.MINUTE, timePickerState.minute)
-                    
-                    // Re-validate against current time
-                    if (calendar.timeInMillis <= System.currentTimeMillis()) {
-                        selectedTimestamp = calendar.timeInMillis
-                    }
+                    selectedTimestamp = calendar.timeInMillis
                     showTimePicker = false
-                }) {
-                    Text("OK")
-                }
+                }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
             },
-            title = { Text("Select Time") },
             text = {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    TimePicker(state = timePickerState)
-                }
+                TimePicker(state = timePickerState)
             }
         )
     }
@@ -222,7 +203,7 @@ fun AddEntryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (entryId == null) "New Entry" else "Edit Entry") },
+                title = { Text(if (entryId == null) "Add Entry" else "Edit Entry") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -236,8 +217,10 @@ fun AddEntryScreen(
                 .padding(padding)
                 .padding(16.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Date and Time Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -246,22 +229,21 @@ fun AddEntryScreen(
                     onClick = { showDatePicker = true },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.CalendarToday, contentDescription = null)
+                    Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(selectedTimestamp)))
                 }
+                
                 OutlinedButton(
                     onClick = { showTimePicker = true },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.Schedule, contentDescription = null)
+                    Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(selectedTimestamp)))
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
+
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
@@ -332,7 +314,8 @@ fun AddEntryScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             EnrichmentPanel(
-                onAttachPhotoClick = { photoPickerLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                onCameraClick = { launchCamera() },
+                onGalleryClick = { photoPickerLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                 onAttachFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
                 onSyncHealthClick = { /* TODO: Implement Health Connect */ }
             )

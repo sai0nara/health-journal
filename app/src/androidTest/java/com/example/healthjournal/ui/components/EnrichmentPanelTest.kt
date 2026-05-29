@@ -20,29 +20,48 @@ class EnrichmentPanelTest {
     fun enrichmentPanel_displaysButtons() {
         composeTestRule.setContent {
             EnrichmentPanel(
-                onAttachPhotoClick = {},
+                onCameraClick = {},
+                onGalleryClick = {},
                 onAttachFileClick = {},
                 onSyncHealthClick = {}
             )
         }
 
-        composeTestRule.onNodeWithText("Photo").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Camera").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Gallery").assertIsDisplayed()
         composeTestRule.onNodeWithText("File").assertIsDisplayed()
         composeTestRule.onNodeWithText("Health").assertIsDisplayed()
     }
 
     @Test
-    fun enrichmentPanel_attachPhotoClick_triggersCallback() {
+    fun enrichmentPanel_cameraClick_triggersCallback() {
         var clicked = false
         composeTestRule.setContent {
             EnrichmentPanel(
-                onAttachPhotoClick = { clicked = true },
+                onCameraClick = { clicked = true },
+                onGalleryClick = {},
                 onAttachFileClick = {},
                 onSyncHealthClick = {}
             )
         }
 
-        composeTestRule.onNodeWithText("Photo").performClick()
+        composeTestRule.onNodeWithText("Camera").performClick()
+        assert(clicked)
+    }
+
+    @Test
+    fun enrichmentPanel_galleryClick_triggersCallback() {
+        var clicked = false
+        composeTestRule.setContent {
+            EnrichmentPanel(
+                onCameraClick = {},
+                onGalleryClick = { clicked = true },
+                onAttachFileClick = {},
+                onSyncHealthClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Gallery").performClick()
         assert(clicked)
     }
 
@@ -51,7 +70,8 @@ class EnrichmentPanelTest {
         var clicked = false
         composeTestRule.setContent {
             EnrichmentPanel(
-                onAttachPhotoClick = {},
+                onCameraClick = {},
+                onGalleryClick = {},
                 onAttachFileClick = { clicked = true },
                 onSyncHealthClick = {}
             )
@@ -66,7 +86,8 @@ class EnrichmentPanelTest {
         var clicked = false
         composeTestRule.setContent {
             EnrichmentPanel(
-                onAttachPhotoClick = {},
+                onCameraClick = {},
+                onGalleryClick = {},
                 onAttachFileClick = {},
                 onSyncHealthClick = { clicked = true }
             )
