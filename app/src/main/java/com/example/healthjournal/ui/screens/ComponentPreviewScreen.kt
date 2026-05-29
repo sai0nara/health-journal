@@ -36,7 +36,8 @@ fun ComponentPreviewScreen(onBack: () -> Unit) {
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             EnrichmentPanel(
-                onAttachPhotoClick = { /* Preview Click */ },
+                onCameraClick = { /* Preview Click */ },
+                onGalleryClick = { /* Preview Click */ },
                 onAttachFileClick = { /* Preview Click */ },
                 onSyncHealthClick = { /* Preview Click */ }
             )
