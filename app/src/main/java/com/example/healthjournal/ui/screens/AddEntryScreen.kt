@@ -22,11 +22,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.health.connect.client.PermissionController
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.ui.components.EnrichmentPanel
 import com.example.healthjournal.viewmodel.IJournalViewModel
+import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -39,12 +41,19 @@ fun AddEntryScreen(
     entryId: String? = null
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var description by remember { mutableStateOf("") }
     var selectedTimestamp by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var attachedPhotoUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var attachedFiles by remember { mutableStateOf<List<AttachmentData>>(emptyList()) }
     var existingEntry by remember { mutableStateOf<JournalEntry?>(null) }
     
+    // Health Metrics State
+    var steps by remember { mutableStateOf<Int?>(null) }
+    var heartRate by remember { mutableStateOf<Int?>(null) }
+    var sleepHours by remember { mutableStateOf<Float?>(null) }
+    var isHealthSyncing by remember { mutableStateOf(false) }
+
     var cameraTempUri by remember { mutableStateOf<Uri?>(null) }
 
     var showDatePicker by remember { mutableStateOf(false) }
@@ -59,6 +68,24 @@ fun AddEntryScreen(
         initialMinute = calendar.get(Calendar.MINUTE)
     )
 
+    // Health Connect Permission Launcher
+    val healthPermissionsLauncher = rememberLauncherForActivityResult(
+        contract = PermissionController.createRequestPermissionResultContract()
+    ) { granted ->
+        if (granted.containsAll(viewModel.healthPermissions)) {
+            scope.launch {
+                isHealthSyncing = true
+                val result = viewModel.syncHealthData(selectedTimestamp)
+                steps = result.steps
+                heartRate = result.heartRate
+                sleepHours = result.sleepHours
+                isHealthSyncing = false
+            }
+        } else {
+            android.widget.Toast.makeText(context, "Health permissions required for sync", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // Load existing entry if editing
     LaunchedEffect(entryId) {
         if (entryId != null) {
@@ -69,6 +96,9 @@ fun AddEntryScreen(
                 selectedTimestamp = entry.timestamp
                 attachedPhotoUris = entry.photo_urls.map { Uri.parse(it) }
                 attachedFiles = entry.attachments
+                steps = entry.steps
+                heartRate = entry.heart_rate_avg
+                sleepHours = entry.sleep_hours
             }
         }
     }
@@ -252,6 +282,29 @@ fun AddEntryScreen(
                 minLines = 5
             )
             
+            // Health Metrics Section
+            if (steps != null || heartRate != null || sleepHours != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        steps?.let {
+                            HealthMetricItem(icon = Icons.Default.DirectionsWalk, value = "$it", label = "Steps")
+                        }
+                        heartRate?.let {
+                            HealthMetricItem(icon = Icons.Default.Favorite, value = "$it", label = "Avg HR")
+                        }
+                        sleepHours?.let {
+                            HealthMetricItem(icon = Icons.Default.Bedtime, value = "%.1fh".format(it), label = "Sleep")
+                        }
+                    }
+                }
+            }
+
             if (attachedPhotoUris.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("Photos", style = MaterialTheme.typography.titleSmall)
@@ -317,9 +370,26 @@ fun AddEntryScreen(
                 onCameraClick = { launchCamera() },
                 onGalleryClick = { photoPickerLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                 onAttachFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
-                onSyncHealthClick = { /* TODO: Implement Health Connect */ }
+                onSyncHealthClick = { 
+                    scope.launch {
+                        if (viewModel.hasHealthPermissions()) {
+                            isHealthSyncing = true
+                            val result = viewModel.syncHealthData(selectedTimestamp)
+                            steps = result.steps
+                            heartRate = result.heartRate
+                            sleepHours = result.sleepHours
+                            isHealthSyncing = false
+                        } else {
+                            healthPermissionsLauncher.launch(viewModel.healthPermissions)
+                        }
+                    }
+                }
             )
             
+            if (isHealthSyncing) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
             
             Button(
@@ -350,7 +420,10 @@ fun AddEntryScreen(
                                 description = description,
                                 timestamp = finalTimestamp,
                                 photoUrls = persistentPhotoUrls,
-                                attachments = persistentAttachments
+                                attachments = persistentAttachments,
+                                steps = steps,
+                                heartRate = heartRate,
+                                sleepHours = sleepHours
                             )
                         } else {
                             existingEntry?.let {
@@ -359,7 +432,10 @@ fun AddEntryScreen(
                                         description = description,
                                         timestamp = finalTimestamp,
                                         photo_urls = persistentPhotoUrls,
-                                        attachments = persistentAttachments
+                                        attachments = persistentAttachments,
+                                        steps = steps,
+                                        heart_rate_avg = heartRate,
+                                        sleep_hours = sleepHours
                                     )
                                 )
                             }
@@ -372,5 +448,14 @@ fun AddEntryScreen(
                 Text(if (entryId == null) "Save Entry" else "Update Entry")
             }
         }
+    }
+}
+
+@Composable
+fun HealthMetricItem(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+        Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
     }
 }

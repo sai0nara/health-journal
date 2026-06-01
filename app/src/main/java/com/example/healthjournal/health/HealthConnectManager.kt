@@ -1,0 +1,75 @@
+package com.example.healthjournal.health
+
+import android.content.Context
+import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.SleepSessionRecord
+import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.request.AggregateRequest
+import androidx.health.connect.client.time.TimeRangeFilter
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
+
+class HealthConnectManager(private val context: Context) {
+
+    private val healthConnectClient by lazy { HealthConnectClient.getOrCreate(context) }
+
+    val requiredPermissions = setOf(
+        HealthPermission.getReadPermission(StepsRecord::class),
+        HealthPermission.getReadPermission(HeartRateRecord::class),
+        HealthPermission.getReadPermission(SleepSessionRecord::class)
+    )
+
+    suspend fun hasAllPermissions(): Boolean {
+        val granted = healthConnectClient.permissionController.getGrantedPermissions()
+        return granted.containsAll(requiredPermissions)
+    }
+
+    suspend fun getSteps(startTime: Instant, endTime: Instant): Long? {
+        return try {
+            val response = healthConnectClient.aggregate(
+                AggregateRequest(
+                    metrics = setOf(StepsRecord.COUNT_TOTAL),
+                    timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+                )
+            )
+            response[StepsRecord.COUNT_TOTAL]
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    suspend fun getAverageHeartRate(startTime: Instant, endTime: Instant): Long? {
+        return try {
+            val response = healthConnectClient.aggregate(
+                AggregateRequest(
+                    metrics = setOf(HeartRateRecord.BPM_AVG),
+                    timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+                )
+            )
+            response[HeartRateRecord.BPM_AVG]
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    suspend fun getSleepDurationHours(startTime: Instant, endTime: Instant): Float? {
+        return try {
+            val response = healthConnectClient.aggregate(
+                AggregateRequest(
+                    metrics = setOf(SleepSessionRecord.SLEEP_DURATION_TOTAL),
+                    timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+                )
+            )
+            val duration = response[SleepSessionRecord.SLEEP_DURATION_TOTAL]
+            duration?.toMinutes()?.let { it / 60f }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+}

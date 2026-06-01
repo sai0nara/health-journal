@@ -9,6 +9,7 @@ import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.health.HealthConnectManager
 import com.example.healthjournal.sync.SyncManager
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +31,7 @@ class JournalViewModelTest {
     private val repository: JournalRepository = mockk()
     private val authManager: GoogleAuthManager = mockk()
     private val sessionManager: SessionManager = mockk()
+    private val healthManager: HealthConnectManager = mockk()
     private val application: Application = mockk()
     private val testDispatcher = StandardTestDispatcher()
 
@@ -61,7 +63,7 @@ class JournalViewModelTest {
         coEvery { repository.allEntries } returns flowOf(emptyList())
         coEvery { repository.getEntriesSortedByDate(any()) } returns flowOf(emptyList())
         
-        viewModel = JournalViewModel(application, repository, authManager, sessionManager, testDispatcher)
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, testDispatcher)
     }
 
     @After
@@ -163,7 +165,7 @@ class JournalViewModelTest {
         coEvery { repository.searchEntries(searchQuery, any()) } returns flowOf(entries)
         
         // Re-initialize to pick up flow changes
-        viewModel = JournalViewModel(application, repository, authManager, sessionManager, testDispatcher)
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, testDispatcher)
 
         // Start collecting
         val items = mutableListOf<List<JournalEntry>>()
