@@ -47,6 +47,8 @@
             </intent-filter>
         </activity-alias>
 
+        <meta-data android:name="health_permissions" android:resource="@array/health_permissions" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

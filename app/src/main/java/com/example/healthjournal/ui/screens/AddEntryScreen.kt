@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.AttachmentData
@@ -372,6 +373,12 @@ fun AddEntryScreen(
                 onAttachFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
                 onSyncHealthClick = { 
                     scope.launch {
+                        val availability = viewModel.checkHealthAvailability()
+                        if (availability != androidx.health.connect.client.HealthConnectClient.SDK_AVAILABLE) {
+                            android.widget.Toast.makeText(context, "Health Connect is not available on this device", android.widget.Toast.LENGTH_LONG).show()
+                            return@launch
+                        }
+
                         if (viewModel.hasHealthPermissions()) {
                             isHealthSyncing = true
                             val result = viewModel.syncHealthData(selectedTimestamp)
@@ -380,6 +387,7 @@ fun AddEntryScreen(
                             sleepHours = result.sleepHours
                             isHealthSyncing = false
                         } else {
+                            android.util.Log.d("AddEntryScreen", "Launching Health permissions for: ${viewModel.healthPermissions}")
                             healthPermissionsLauncher.launch(viewModel.healthPermissions)
                         }
                     }

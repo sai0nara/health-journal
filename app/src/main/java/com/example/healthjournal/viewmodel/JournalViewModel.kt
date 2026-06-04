@@ -58,6 +58,7 @@ interface IJournalViewModel {
     // Health Connect
     val healthPermissions: Set<String>
     suspend fun hasHealthPermissions(): Boolean
+    fun checkHealthAvailability(): Int
     suspend fun syncHealthData(timestamp: Long): HealthSyncResult
 }
 
@@ -248,6 +249,10 @@ class JournalViewModel(
 
     override suspend fun hasHealthPermissions(): Boolean {
         return healthManager.hasAllPermissions()
+    }
+
+    override fun checkHealthAvailability(): Int {
+        return healthManager.checkAvailability()
     }
 
     override suspend fun syncHealthData(timestamp: Long): HealthSyncResult = withContext(ioContext) {

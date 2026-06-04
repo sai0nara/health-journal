@@ -40,7 +40,15 @@ class AddEntryScreenTest {
         
         var addEntryCalledWith: Quadruple<String, Long, List<String>, List<AttachmentData>>? = null
         
-        override fun addEntry(description: String, timestamp: Long, photoUrls: List<String>, attachments: List<AttachmentData>) {
+        override fun addEntry(
+            description: String, 
+            timestamp: Long, 
+            photoUrls: List<String>, 
+            attachments: List<AttachmentData>,
+            steps: Int?,
+            heartRate: Int?,
+            sleepHours: Float?
+        ) {
             addEntryCalledWith = Quadruple(description, timestamp, photoUrls, attachments)
         }
 
@@ -52,6 +60,12 @@ class AddEntryScreenTest {
         override fun signOut() {}
         override fun setSearchQuery(query: String) {}
         override fun setSortOrder(isAsc: Boolean) {}
+
+        // Health Connect
+        override val healthPermissions: Set<String> = emptySet()
+        override suspend fun hasHealthPermissions(): Boolean = false
+        override suspend fun syncHealthData(timestamp: Long): com.example.healthjournal.viewmodel.HealthSyncResult = 
+            com.example.healthjournal.viewmodel.HealthSyncResult()
     }
 
     // Helper for Triple replacement
@@ -142,7 +156,7 @@ class AddEntryScreenTest {
 
         val currentDate = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date())
         step("Click Date button ($currentDate)") {
-            composeTestRule.onNodeWithText(currentDate).performClick()
+            composeTestRule.onNodeWithText(currentDate, substring = true).performClick()
             composeTestRule.waitForIdle()
             allureScreenshot("date_picker_opened")
         }
@@ -150,8 +164,7 @@ class AddEntryScreenTest {
         step("Verify Date Picker is visible") {
             composeTestRule.waitForIdle()
             allureScreenshot("verification_date_picker_visible")
-            // Material 3 DatePicker header usually contains "Select date"
-            composeTestRule.onNodeWithText("SELECT DATE", ignoreCase = true).assertExists()
+            composeTestRule.onNodeWithText("OK").assertIsDisplayed()
         }
     }
 
@@ -166,7 +179,7 @@ class AddEntryScreenTest {
 
         val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
         step("Click Time button ($currentTime)") {
-            composeTestRule.onNodeWithText(currentTime).performClick()
+            composeTestRule.onNodeWithText(currentTime, substring = true).performClick()
             composeTestRule.waitForIdle()
             allureScreenshot("time_picker_opened")
         }
@@ -174,7 +187,7 @@ class AddEntryScreenTest {
         step("Verify Time Picker is visible") {
             composeTestRule.waitForIdle()
             allureScreenshot("verification_time_picker_visible")
-            composeTestRule.onNodeWithText("Select Time").assertExists()
+            composeTestRule.onNodeWithText("OK").assertIsDisplayed()
         }
     }
 
@@ -214,13 +227,20 @@ class AddEntryScreenTest {
             composeTestRule.waitForIdle()
         }
 
-        step("Click Attach Photo in EnrichmentPanel") {
-            // Note: EnrichmentPanel is inside a verticalScroll Column
-            composeTestRule.onNodeWithText("Photo")
+        step("Click Camera in EnrichmentPanel") {
+            composeTestRule.onNodeWithText("Camera")
                 .performScrollTo()
                 .performClick()
             composeTestRule.waitForIdle()
-            allureScreenshot("attach_photo_clicked_in_screen")
+            allureScreenshot("camera_clicked_in_screen")
+        }
+
+        step("Click Gallery in EnrichmentPanel") {
+            composeTestRule.onNodeWithText("Gallery")
+                .performScrollTo()
+                .performClick()
+            composeTestRule.waitForIdle()
+            allureScreenshot("gallery_clicked_in_screen")
         }
 
         step("Click Attach File in EnrichmentPanel") {

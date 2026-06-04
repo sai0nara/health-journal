@@ -9,8 +9,6 @@ import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import java.time.Instant
-import java.time.ZoneOffset
-import java.time.temporal.ChronoUnit
 
 class HealthConnectManager(private val context: Context) {
 
@@ -22,9 +20,16 @@ class HealthConnectManager(private val context: Context) {
         HealthPermission.getReadPermission(SleepSessionRecord::class)
     )
 
+    fun checkAvailability(): Int {
+        return HealthConnectClient.getSdkStatus(context)
+    }
+
     suspend fun hasAllPermissions(): Boolean {
+        android.util.Log.d("HealthConnectManager", "Checking permissions for: $requiredPermissions")
         val granted = healthConnectClient.permissionController.getGrantedPermissions()
-        return granted.containsAll(requiredPermissions)
+        val hasAll = granted.containsAll(requiredPermissions)
+        android.util.Log.d("HealthConnectManager", "Has all permissions: $hasAll (Granted: $granted)")
+        return hasAll
     }
 
     suspend fun getSteps(startTime: Instant, endTime: Instant): Long? {
