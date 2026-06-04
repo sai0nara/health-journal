@@ -1,8 +1,0 @@
-{
-  "track_id": "fix_health_permission_20260604",
-  "type": "bug",
-  "status": "in_progress",
-  "created_at": "2026-06-04T10:00:00Z",
-  "updated_at": "2026-06-04T10:00:00Z",
-  "description": "Fix Health Connect permission dialog not appearing"
-}

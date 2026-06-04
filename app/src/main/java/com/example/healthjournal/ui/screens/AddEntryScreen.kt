@@ -73,6 +73,7 @@ fun AddEntryScreen(
     val healthPermissionsLauncher = rememberLauncherForActivityResult(
         contract = PermissionController.createRequestPermissionResultContract()
     ) { granted ->
+        android.util.Log.d("AddEntryScreen", "Health permissions result: $granted")
         if (granted.containsAll(viewModel.healthPermissions)) {
             scope.launch {
                 isHealthSyncing = true
@@ -83,6 +84,7 @@ fun AddEntryScreen(
                 isHealthSyncing = false
             }
         } else {
+            android.util.Log.w("AddEntryScreen", "Not all health permissions granted. Required: ${viewModel.healthPermissions}, Granted: $granted")
             android.widget.Toast.makeText(context, "Health permissions required for sync", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
