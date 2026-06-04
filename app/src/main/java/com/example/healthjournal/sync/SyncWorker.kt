@@ -115,7 +115,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             
             localEntries.forEach { local ->
                 val existing = allEntriesMap[local.entry_id]
-                if (existing == null || local.timestamp > existing.timestamp) {
+                if (existing == null || local.lastModified > existing.lastModified) {
                     allEntriesMap[local.entry_id] = local
                 }
             }
