@@ -40,10 +40,14 @@ fun ArchiveScreen(
             TopAppBar(
                 title = { Text(if (isSelectionMode) "${selectedIds.size} Selected" else "Archive") },
                 navigationIcon = {
-                    IconButton(onClick = if (isSelectionMode) { { 
-                        selectedIds = emptySet()
-                        isSelectionMode = false 
-                    } } else onBack) {
+                    IconButton(onClick = {
+                        if (isSelectionMode) {
+                            selectedIds = emptySet()
+                            isSelectionMode = false
+                        } else {
+                            onBack()
+                        }
+                    }) {
                         Icon(
                             if (isSelectionMode) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack, 
                             contentDescription = "Back"

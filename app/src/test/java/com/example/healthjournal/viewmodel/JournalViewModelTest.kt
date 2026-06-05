@@ -86,6 +86,28 @@ class JournalViewModelTest {
     }
 
     @Test
+    fun addEntryPreventsFutureDates() = runTest {
+        val futureTimestamp = System.currentTimeMillis() + 100000
+        coEvery { repository.insert(any()) } returns Unit
+        
+        viewModel.addEntry("Future", futureTimestamp)
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        coVerify(exactly = 0) { repository.insert(any()) }
+    }
+
+    @Test
+    fun updateEntryCallsRepository() = runTest {
+        val entry = JournalEntry(description = "Old")
+        coEvery { repository.insert(any()) } returns Unit
+        
+        viewModel.updateEntry(entry.copy(description = "New"))
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        coVerify { repository.insert(match { it.description == "New" }) }
+    }
+
+    @Test
     fun archiveEntryCallsRepositoryAndSync() = runTest {
         val entryId = "entry_to_archive"
         coEvery { repository.archiveEntry(entryId) } returns Unit
