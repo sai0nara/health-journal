@@ -4,11 +4,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Archive and Multi-Delete Functionality**
-  *Link: [./tracks/archive_delete_20260605/](./tracks/archive_delete_20260605/)*
-
----
-
 - [x] **Track: Switch Steps Sync to Blood Pressure Sync**
   *Link: [./tracks/blood_pressure_sync_20260604/](./tracks/blood_pressure_sync_20260604/)*
 
