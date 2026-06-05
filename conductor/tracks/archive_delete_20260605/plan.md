@@ -32,3 +32,6 @@
 - [x] Task: Unit & Instrumented Tests 5881d34
     - Add tests for archiving, restoring, and bulk deletion logic.
 - [x] Task: Conductor - User Manual Verification 'Archive & Delete' (Protocol in workflow.md) 5881d34
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions cf0f663
