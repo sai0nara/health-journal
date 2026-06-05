@@ -3,10 +3,11 @@ package com.example.healthjournal.health
 import android.content.Context
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
-import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.request.AggregateRequest
+import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import java.time.Instant
 
@@ -15,7 +16,7 @@ class HealthConnectManager(private val context: Context) {
     private val healthConnectClient by lazy { HealthConnectClient.getOrCreate(context) }
 
     val requiredPermissions = setOf(
-        HealthPermission.getReadPermission(StepsRecord::class),
+        HealthPermission.getReadPermission(BloodPressureRecord::class),
         HealthPermission.getReadPermission(HeartRateRecord::class),
         HealthPermission.getReadPermission(SleepSessionRecord::class)
     )
@@ -32,15 +33,19 @@ class HealthConnectManager(private val context: Context) {
         return hasAll
     }
 
-    suspend fun getSteps(startTime: Instant, endTime: Instant): Long? {
+    suspend fun getLatestBloodPressure(startTime: Instant, endTime: Instant): Pair<Double, Double>? {
         return try {
-            val response = healthConnectClient.aggregate(
-                AggregateRequest(
-                    metrics = setOf(StepsRecord.COUNT_TOTAL),
-                    timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+            val response = healthConnectClient.readRecords(
+                ReadRecordsRequest(
+                    recordType = BloodPressureRecord::class,
+                    timeRangeFilter = TimeRangeFilter.between(startTime, endTime),
+                    ascendingOrder = false
                 )
             )
-            response[StepsRecord.COUNT_TOTAL]
+            val latest = response.records.firstOrNull()
+            if (latest != null) {
+                latest.systolic.inMillimetersOfMercury to latest.diastolic.inMillimetersOfMercury
+            } else null
         } catch (e: Exception) {
             e.printStackTrace()
             null

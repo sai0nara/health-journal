@@ -70,13 +70,15 @@ class SyncDownloadTest {
                 photo_urls = listOf("file:///remote/photo1.jpg", "file:///remote/photo2.jpg"),
                 attachments = listOf(
                     AttachmentData("Report", "file:///remote/report.pdf", "application/pdf")
-                )
+                ),
+                bp_systolic = 120.0,
+                bp_diastolic = 80.0
             )
         )
         val cloudJson = Gson().toJson(cloudEntries)
 
         // Mock DriveServiceHelper provider
-        SyncWorker.driveHelperProvider = { context, drive ->
+        SyncWorker.driveHelperProvider = { _, _ ->
             val mock = mockk<DriveServiceHelper>()
             coEvery { mock.downloadJournalData() } returns cloudJson
             coEvery { mock.uploadJournalData(any()) } returns "new_file_id"
@@ -97,6 +99,8 @@ class SyncDownloadTest {
 
         assertEquals(2, entry.photo_urls.size)
         assertEquals(1, entry.attachments.size)
+        assertEquals(120.0, entry.bp_systolic!!, 0.1)
+        assertEquals(80.0, entry.bp_diastolic!!, 0.1)
 
         // Verify URI re-mapping (should point to local filesDir)
         assertTrue(entry.photo_urls[0].contains(context.filesDir.path))

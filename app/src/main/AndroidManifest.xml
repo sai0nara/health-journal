@@ -8,7 +8,7 @@
     <uses-feature android:name="android.hardware.camera" required="false" />
 
     <!-- Health Connect Permissions -->
-    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" />
     <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
 

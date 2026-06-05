@@ -239,14 +239,17 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
                     }
                 }
 
-                if (entry.steps != null || entry.heart_rate_avg != null || entry.sleep_hours != null) {
+                if (entry.bp_systolic != null || entry.heart_rate_avg != null || entry.sleep_hours != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        entry.steps?.let {
-                            CompactMetricItem(icon = Icons.Default.DirectionsWalk, value = "$it")
+                        if (entry.bp_systolic != null && entry.bp_diastolic != null) {
+                            CompactMetricItem(
+                                icon = Icons.Default.MonitorHeart, 
+                                value = "${entry.bp_systolic?.toInt()}/${entry.bp_diastolic?.toInt()}"
+                            )
                         }
                         entry.heart_rate_avg?.let {
                             CompactMetricItem(icon = Icons.Default.Favorite, value = "$it")

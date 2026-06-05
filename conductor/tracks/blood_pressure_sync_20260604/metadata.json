@@ -1,0 +1,8 @@
+{
+  "track_id": "blood_pressure_sync_20260604",
+  "type": "feature",
+  "status": "in_progress",
+  "created_at": "2026-06-04T13:00:00Z",
+  "updated_at": "2026-06-04T13:00:00Z",
+  "description": "Switch Health Connect sync from steps to blood pressure"
+}
