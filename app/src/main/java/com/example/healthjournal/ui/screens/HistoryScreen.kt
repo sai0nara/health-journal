@@ -19,8 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,6 +49,8 @@ fun HistoryScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    val snackbarHostState = remember { SnackbarHostState() }
     
     val authorizationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
@@ -66,6 +70,7 @@ fun HistoryScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Health Journal") },
@@ -164,7 +169,20 @@ fun HistoryScreen(
                     ) {
                         items(entries, key = { it.entry_id }) { entry ->
                             SwipeToArchiveWrapper(
-                                onArchive = { viewModel.archiveEntry(entry.entry_id) }
+                                onArchive = { 
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    viewModel.archiveEntry(entry.entry_id)
+                                    scope.launch {
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "Entry archived",
+                                            actionLabel = "Undo",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            viewModel.restoreEntry(entry.entry_id)
+                                        }
+                                    }
+                                }
                             ) {
                                 JournalEntryItem(
                                     entry = entry,
