@@ -1,7 +1,9 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import com.example.healthjournal.MainActivity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.viewmodel.IJournalViewModel
@@ -23,7 +25,7 @@ import androidx.test.rule.GrantPermissionRule
 class AddEntryScreenTest {
 
     @get:Rule
-    val composeTestRule = createComposeRule()
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @get:Rule
     val screenshotRule = ScreenshotRule(mode = ScreenshotRule.Mode.FAILURE)
@@ -45,7 +47,8 @@ class AddEntryScreenTest {
             timestamp: Long, 
             photoUrls: List<String>, 
             attachments: List<AttachmentData>,
-            steps: Int?,
+            bpSystolic: Double?,
+            bpDiastolic: Double?,
             heartRate: Int?,
             sleepHours: Float?
         ) {
@@ -64,6 +67,7 @@ class AddEntryScreenTest {
         // Health Connect
         override val healthPermissions: Set<String> = emptySet()
         override suspend fun hasHealthPermissions(): Boolean = false
+        override fun checkHealthAvailability(): Int = 1 // SDK_AVAILABLE
         override suspend fun syncHealthData(timestamp: Long): com.example.healthjournal.viewmodel.HealthSyncResult = 
             com.example.healthjournal.viewmodel.HealthSyncResult()
     }

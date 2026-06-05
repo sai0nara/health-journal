@@ -50,7 +50,8 @@ fun AddEntryScreen(
     var existingEntry by remember { mutableStateOf<JournalEntry?>(null) }
     
     // Health Metrics State
-    var steps by remember { mutableStateOf<Int?>(null) }
+    var bpSystolic by remember { mutableStateOf<Double?>(null) }
+    var bpDiastolic by remember { mutableStateOf<Double?>(null) }
     var heartRate by remember { mutableStateOf<Int?>(null) }
     var sleepHours by remember { mutableStateOf<Float?>(null) }
     var isHealthSyncing by remember { mutableStateOf(false) }
@@ -78,7 +79,8 @@ fun AddEntryScreen(
             scope.launch {
                 isHealthSyncing = true
                 val result = viewModel.syncHealthData(selectedTimestamp)
-                steps = result.steps
+                bpSystolic = result.bpSystolic
+                bpDiastolic = result.bpDiastolic
                 heartRate = result.heartRate
                 sleepHours = result.sleepHours
                 isHealthSyncing = false
@@ -99,7 +101,8 @@ fun AddEntryScreen(
                 selectedTimestamp = entry.timestamp
                 attachedPhotoUris = entry.photo_urls.map { Uri.parse(it) }
                 attachedFiles = entry.attachments
-                steps = entry.steps
+                bpSystolic = entry.bp_systolic
+                bpDiastolic = entry.bp_diastolic
                 heartRate = entry.heart_rate_avg
                 sleepHours = entry.sleep_hours
             }
@@ -286,7 +289,7 @@ fun AddEntryScreen(
             )
             
             // Health Metrics Section
-            if (steps != null || heartRate != null || sleepHours != null) {
+            if (bpSystolic != null || heartRate != null || sleepHours != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
@@ -295,8 +298,12 @@ fun AddEntryScreen(
                         modifier = Modifier.padding(12.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        steps?.let {
-                            HealthMetricItem(icon = Icons.Default.DirectionsWalk, value = "$it", label = "Steps")
+                        if (bpSystolic != null && bpDiastolic != null) {
+                            HealthMetricItem(
+                                icon = Icons.Default.MonitorHeart, 
+                                value = "${bpSystolic?.toInt()}/${bpDiastolic?.toInt()}", 
+                                label = "BP (mmHg)"
+                            )
                         }
                         heartRate?.let {
                             HealthMetricItem(icon = Icons.Default.Favorite, value = "$it", label = "Avg HR")
@@ -376,7 +383,7 @@ fun AddEntryScreen(
                 onSyncHealthClick = { 
                     scope.launch {
                         val availability = viewModel.checkHealthAvailability()
-                        if (availability != androidx.health.connect.client.HealthConnectClient.SDK_AVAILABLE) {
+                        if (availability != HealthConnectClient.SDK_AVAILABLE) {
                             android.widget.Toast.makeText(context, "Health Connect is not available on this device", android.widget.Toast.LENGTH_LONG).show()
                             return@launch
                         }
@@ -384,7 +391,8 @@ fun AddEntryScreen(
                         if (viewModel.hasHealthPermissions()) {
                             isHealthSyncing = true
                             val result = viewModel.syncHealthData(selectedTimestamp)
-                            steps = result.steps
+                            bpSystolic = result.bpSystolic
+                            bpDiastolic = result.bpDiastolic
                             heartRate = result.heartRate
                             sleepHours = result.sleepHours
                             isHealthSyncing = false
@@ -431,7 +439,8 @@ fun AddEntryScreen(
                                 timestamp = finalTimestamp,
                                 photoUrls = persistentPhotoUrls,
                                 attachments = persistentAttachments,
-                                steps = steps,
+                                bpSystolic = bpSystolic,
+                                bpDiastolic = bpDiastolic,
                                 heartRate = heartRate,
                                 sleepHours = sleepHours
                             )
@@ -443,7 +452,8 @@ fun AddEntryScreen(
                                         timestamp = finalTimestamp,
                                         photo_urls = persistentPhotoUrls,
                                         attachments = persistentAttachments,
-                                        steps = steps,
+                                        bp_systolic = bpSystolic,
+                                        bp_diastolic = bpDiastolic,
                                         heart_rate_avg = heartRate,
                                         sleep_hours = sleepHours
                                     )

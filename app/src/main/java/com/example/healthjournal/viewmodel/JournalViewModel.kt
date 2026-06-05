@@ -25,7 +25,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 data class HealthSyncResult(
-    val steps: Int? = null,
+    val bpSystolic: Double? = null,
+    val bpDiastolic: Double? = null,
     val heartRate: Int? = null,
     val sleepHours: Float? = null
 )
@@ -42,7 +43,8 @@ interface IJournalViewModel {
         timestamp: Long = System.currentTimeMillis(), 
         photoUrls: List<String> = emptyList(),
         attachments: List<AttachmentData> = emptyList(),
-        steps: Int? = null,
+        bpSystolic: Double? = null,
+        bpDiastolic: Double? = null,
         heartRate: Int? = null,
         sleepHours: Float? = null
     )
@@ -132,7 +134,8 @@ class JournalViewModel(
         timestamp: Long, 
         photoUrls: List<String>,
         attachments: List<AttachmentData>,
-        steps: Int?,
+        bpSystolic: Double?,
+        bpDiastolic: Double?,
         heartRate: Int?,
         sleepHours: Float?
     ) {
@@ -146,7 +149,8 @@ class JournalViewModel(
                 timestamp = timestamp,
                 photo_urls = photoUrls,
                 attachments = attachments,
-                steps = steps,
+                bp_systolic = bpSystolic,
+                bp_diastolic = bpDiastolic,
                 heart_rate_avg = heartRate,
                 sleep_hours = sleepHours,
                 lastModified = System.currentTimeMillis()
@@ -261,12 +265,13 @@ class JournalViewModel(
         val startOfDay = instant.atZone(zoneId).toLocalDate().atStartOfDay(zoneId).toInstant()
         val endOfDay = startOfDay.plus(1, java.time.temporal.ChronoUnit.DAYS)
 
-        val steps = healthManager.getSteps(startOfDay, endOfDay)
+        val bp = healthManager.getLatestBloodPressure(startOfDay, endOfDay)
         val hr = healthManager.getAverageHeartRate(startOfDay, endOfDay)
         val sleep = healthManager.getSleepDurationHours(startOfDay.minus(12, java.time.temporal.ChronoUnit.HOURS), endOfDay)
 
         HealthSyncResult(
-            steps = steps?.toInt(),
+            bpSystolic = bp?.first,
+            bpDiastolic = bp?.second,
             heartRate = hr?.toInt(),
             sleepHours = sleep
         )
