@@ -9,13 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.CloudSync
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -23,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -44,22 +39,18 @@ fun HistoryScreen(
     onEntryClick: (String) -> Unit
 ) {
     val entries by viewModel.allEntries.collectAsState()
-    val isSignedIn by viewModel.isUserSignedIn.collectAsState()
+    val isAscending by viewModel.isAscending.collectAsState()
+    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
-    val isAscending by viewModel.isAscending.collectAsState()
-    
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
+    
     val authorizationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
-            // Re-invoke the authorization request to get the result (code)
-            (viewModel as? com.example.healthjournal.viewmodel.JournalViewModel)?.requestDriveAuth { 
-                // Resolution required again - ignore or log
-            }
+            viewModel.syncNow()
         }
     }
 
@@ -89,19 +80,9 @@ fun HistoryScreen(
                             contentDescription = "Sort order"
                         )
                     }
-                    if (isSignedIn) {
+                    if (isUserSignedIn) {
                         IconButton(onClick = { viewModel.syncNow() }) {
                             Icon(Icons.Default.Sync, contentDescription = "Sync Now")
-                        }
-                    } else {
-                        TextButton(onClick = {
-                            viewModel.signIn(context) { pendingIntent ->
-                                authorizationLauncher.launch(
-                                    IntentSenderRequest.Builder(pendingIntent).build()
-                                )
-                            }
-                        }) {
-                            Text("Sign In")
                         }
                     }
                 }
@@ -116,35 +97,42 @@ fun HistoryScreen(
         Column(modifier = Modifier.padding(padding)) {
             // Search Bar
             SearchBar(
-                inputField = {
-                    SearchBarDefaults.InputField(
-                        query = searchQuery,
-                        onQueryChange = { viewModel.setSearchQuery(it) },
-                        onSearch = { /* Handle explicit search */ },
-                        expanded = false,
-                        onExpandedChange = { },
-                        placeholder = { Text("Search journal...") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
-                    )
-                },
-                expanded = false,
-                onExpandedChange = { },
+                query = searchQuery,
+                onQueryChange = { viewModel.setSearchQuery(it) },
+                onSearch = { },
+                active = false,
+                onActiveChange = { },
+                placeholder = { Text("Search journal...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {}
+                    .padding(16.dp)
+            ) { }
 
-            syncStatus?.let {
-                Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+            // Sync Status
+            if (isUserSignedIn) {
+                syncStatus?.let {
                     Text(
                         text = it,
-                        modifier = Modifier.padding(8.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.primary
                     )
+                }
+            } else {
+                Button(
+                    onClick = { 
+                        viewModel.signIn(context) { pendingIntent ->
+                            authorizationLauncher.launch(
+                                IntentSenderRequest.Builder(pendingIntent).build()
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Text("Sign In")
                 }
             }
 
@@ -154,8 +142,6 @@ fun HistoryScreen(
                     scope.launch {
                         isRefreshing = true
                         viewModel.syncNow()
-                        // Simulate some delay for visual feedback
-                        kotlinx.coroutines.delay(1000)
                         isRefreshing = false
                     }
                 },
@@ -164,19 +150,18 @@ fun HistoryScreen(
             ) {
                 if (entries.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = if (searchQuery.isBlank()) "No entries yet. Start by adding one!" else "No matches found.",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                        Text("No entries yet. Start by adding one!")
                     }
                 } else {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(entries) { entry ->
-                            JournalEntryItem(entry, onClick = { onEntryClick(entry.entry_id) })
+                        items(entries, key = { it.entry_id }) { entry ->
+                            JournalEntryItem(
+                                entry = entry,
+                                onClick = { onEntryClick(entry.entry_id) }
+                            )
                         }
                     }
                 }
@@ -223,7 +208,7 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(entry.photo_urls ?: emptyList()) { photoUrl ->
+                        items(entry.photo_urls) { photoUrl ->
                             AsyncImage(
                                 model = photoUrl,
                                 contentDescription = null,
@@ -253,6 +238,24 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
                         )
                     }
                 }
+
+                if (entry.steps != null || entry.heart_rate_avg != null || entry.sleep_hours != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        entry.steps?.let {
+                            CompactMetricItem(icon = Icons.Default.DirectionsWalk, value = "$it")
+                        }
+                        entry.heart_rate_avg?.let {
+                            CompactMetricItem(icon = Icons.Default.Favorite, value = "$it")
+                        }
+                        entry.sleep_hours?.let {
+                            CompactMetricItem(icon = Icons.Default.Bedtime, value = "%.1fh".format(it))
+                        }
+                    }
+                }
             }
             
             if (entry.isSynced) {
@@ -271,5 +274,14 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+@Composable
+fun CompactMetricItem(icon: ImageVector, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.outline)
+        Spacer(modifier = Modifier.width(2.dp))
+        Text(text = value, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
     }
 }

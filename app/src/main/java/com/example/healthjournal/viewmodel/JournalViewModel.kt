@@ -14,11 +14,21 @@ import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.health.HealthConnectManager
 import com.example.healthjournal.sync.SyncManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+
+data class HealthSyncResult(
+    val steps: Int? = null,
+    val heartRate: Int? = null,
+    val sleepHours: Float? = null
+)
 
 interface IJournalViewModel {
     val allEntries: StateFlow<List<JournalEntry>>
@@ -31,7 +41,10 @@ interface IJournalViewModel {
         description: String, 
         timestamp: Long = System.currentTimeMillis(), 
         photoUrls: List<String> = emptyList(),
-        attachments: List<AttachmentData> = emptyList()
+        attachments: List<AttachmentData> = emptyList(),
+        steps: Int? = null,
+        heartRate: Int? = null,
+        sleepHours: Float? = null
     )
     fun updateEntry(entry: JournalEntry)
     suspend fun getEntryById(entryId: String): JournalEntry?
@@ -41,6 +54,12 @@ interface IJournalViewModel {
     
     fun setSearchQuery(query: String)
     fun setSortOrder(isAsc: Boolean)
+
+    // Health Connect
+    val healthPermissions: Set<String>
+    suspend fun hasHealthPermissions(): Boolean
+    fun checkHealthAvailability(): Int
+    suspend fun syncHealthData(timestamp: Long): HealthSyncResult
 }
 
 class JournalViewModel(
@@ -48,6 +67,7 @@ class JournalViewModel(
     private val repository: JournalRepository,
     private val authManager: GoogleAuthManager,
     private val sessionManager: SessionManager,
+    private val healthManager: HealthConnectManager,
     private val ioContext: kotlin.coroutines.CoroutineContext = Dispatchers.IO
 ) : AndroidViewModel(application), IJournalViewModel {
 
@@ -111,7 +131,10 @@ class JournalViewModel(
         description: String, 
         timestamp: Long, 
         photoUrls: List<String>,
-        attachments: List<AttachmentData>
+        attachments: List<AttachmentData>,
+        steps: Int?,
+        heartRate: Int?,
+        sleepHours: Float?
     ) {
         if (timestamp > System.currentTimeMillis()) {
             Log.w(TAG, "Attempted to add entry in the future. Ignoring.")
@@ -122,7 +145,11 @@ class JournalViewModel(
                 description = description,
                 timestamp = timestamp,
                 photo_urls = photoUrls,
-                attachments = attachments
+                attachments = attachments,
+                steps = steps,
+                heart_rate_avg = heartRate,
+                sleep_hours = sleepHours,
+                lastModified = System.currentTimeMillis()
             )
             repository.insert(newEntry)
             if (_isUserSignedIn.value) {
@@ -215,6 +242,35 @@ class JournalViewModel(
     override fun setSortOrder(isAsc: Boolean) {
         _isAscending.value = isAsc
     }
+
+    // Health Connect Implementation
+    override val healthPermissions: Set<String>
+        get() = healthManager.requiredPermissions.map { it }.toSet()
+
+    override suspend fun hasHealthPermissions(): Boolean {
+        return healthManager.hasAllPermissions()
+    }
+
+    override fun checkHealthAvailability(): Int {
+        return healthManager.checkAvailability()
+    }
+
+    override suspend fun syncHealthData(timestamp: Long): HealthSyncResult = withContext(ioContext) {
+        val instant = Instant.ofEpochMilli(timestamp)
+        val zoneId = ZoneId.systemDefault()
+        val startOfDay = instant.atZone(zoneId).toLocalDate().atStartOfDay(zoneId).toInstant()
+        val endOfDay = startOfDay.plus(1, java.time.temporal.ChronoUnit.DAYS)
+
+        val steps = healthManager.getSteps(startOfDay, endOfDay)
+        val hr = healthManager.getAverageHeartRate(startOfDay, endOfDay)
+        val sleep = healthManager.getSleepDurationHours(startOfDay.minus(12, java.time.temporal.ChronoUnit.HOURS), endOfDay)
+
+        HealthSyncResult(
+            steps = steps?.toInt(),
+            heartRate = hr?.toInt(),
+            sleepHours = sleep
+        )
+    }
 }
 
 class JournalViewModelFactory(
@@ -225,8 +281,9 @@ class JournalViewModelFactory(
         if (modelClass.isAssignableFrom(JournalViewModel::class.java)) {
             val authManager = GoogleAuthManager(application)
             val sessionManager = SessionManager(application)
+            val healthManager = HealthConnectManager(application)
             @Suppress("UNCHECKED_CAST")
-            return JournalViewModel(application, repository, authManager, sessionManager) as T
+            return JournalViewModel(application, repository, authManager, sessionManager, healthManager) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
