@@ -35,6 +35,7 @@ class AddEntryScreenTest {
 
     class MockJournalViewModel : IJournalViewModel {
         override val allEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
+        override val archivedEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
         override val isUserSignedIn: StateFlow<Boolean> = MutableStateFlow(false)
         override val syncStatus: StateFlow<String?> = MutableStateFlow(null)
         override val searchQuery: StateFlow<String> = MutableStateFlow("")
@@ -70,6 +71,12 @@ class AddEntryScreenTest {
         override fun checkHealthAvailability(): Int = 1 // SDK_AVAILABLE
         override suspend fun syncHealthData(timestamp: Long): com.example.healthjournal.viewmodel.HealthSyncResult = 
             com.example.healthjournal.viewmodel.HealthSyncResult()
+
+        // Archive & Delete
+        override fun archiveEntry(entryId: String) {}
+        override fun restoreEntry(entryId: String) {}
+        override fun deleteEntries(entryIds: List<String>) {}
+        override fun emptyArchive() {}
     }
 
     // Helper for Triple replacement

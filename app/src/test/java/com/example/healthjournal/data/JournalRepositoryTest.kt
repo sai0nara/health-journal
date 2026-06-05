@@ -19,6 +19,7 @@ class JournalRepositoryTest {
     @Before
     fun setup() {
         coEvery { journalDao.getAllEntries() } returns flowOf(emptyList())
+        coEvery { journalDao.getArchivedEntries() } returns flowOf(emptyList())
         repository = JournalRepository(journalDao)
     }
 

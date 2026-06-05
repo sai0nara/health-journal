@@ -60,7 +60,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             Log.d("SyncWorker", "Downloading cloud data...")
             val cloudJson = driveHelper.downloadJournalData()
             
-            val cloudEntries: List<JournalEntry> = if (cloudJson != null) {
+            var cloudEntries: List<JournalEntry> = if (cloudJson != null) {
                 try {
                     val type = object : TypeToken<List<JournalEntry>>() {}.type
                     Gson().fromJson<List<JournalEntry>>(cloudJson, type) ?: emptyList()
@@ -72,7 +72,14 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 emptyList()
             }
 
-            // 1a. Download missing files from cloud
+            // 1a. Filter cloud entries by local deletions
+            val deletedIds = repository.getDeletedEntryIds()
+            if (deletedIds.isNotEmpty()) {
+                Log.d("SyncWorker", "Removing ${deletedIds.size} deleted entries from cloud list.")
+                cloudEntries = cloudEntries.filterNot { it.entry_id in deletedIds }
+            }
+
+            // 1b. Download missing files from cloud
             cloudEntries.forEach { entry ->
                 // Photos
                 entry.photo_urls?.forEach { url ->
@@ -94,8 +101,8 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 }
             }
 
-            // 2. Get local data
-            val localEntries = dao.getAllEntries().first()
+            // 2. Get local data (including archived)
+            val localEntries = dao.getAllEntriesIncludingArchived().first()
 
             // 3. Merge (latest timestamp wins)
             val allEntriesMap = mutableMapOf<String, JournalEntry>()
@@ -155,6 +162,11 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             if (uploadId == null) {
                 Log.e("SyncWorker", "Cloud upload failed.")
                 return Result.failure(workDataOf("error_message" to "Cloud upload failed (Null ID)"))
+            }
+
+            // 7. Clear local deleted tombstones after successful sync
+            if (deletedIds.isNotEmpty()) {
+                repository.clearDeletedEntries(deletedIds)
             }
 
             Log.d("SyncWorker", "Bidirectional sync completed successfully.")

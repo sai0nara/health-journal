@@ -33,6 +33,7 @@ data class HealthSyncResult(
 
 interface IJournalViewModel {
     val allEntries: StateFlow<List<JournalEntry>>
+    val archivedEntries: StateFlow<List<JournalEntry>>
     val isUserSignedIn: StateFlow<Boolean>
     val syncStatus: StateFlow<String?>
     val searchQuery: StateFlow<String>
@@ -62,6 +63,12 @@ interface IJournalViewModel {
     suspend fun hasHealthPermissions(): Boolean
     fun checkHealthAvailability(): Int
     suspend fun syncHealthData(timestamp: Long): HealthSyncResult
+
+    // Archive & Delete
+    fun archiveEntry(entryId: String)
+    fun restoreEntry(entryId: String)
+    fun deleteEntries(entryIds: List<String>)
+    fun emptyArchive()
 }
 
 class JournalViewModel(
@@ -93,6 +100,13 @@ class JournalViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    override val archivedEntries: StateFlow<List<JournalEntry>> = repository.archivedEntries
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     private val _isUserSignedIn = MutableStateFlow(sessionManager.getUserEmail() != null)
     override val isUserSignedIn: StateFlow<Boolean> = _isUserSignedIn.asStateFlow()
@@ -275,6 +289,43 @@ class JournalViewModel(
             heartRate = hr?.toInt(),
             sleepHours = sleep
         )
+    }
+
+    // Archive & Delete
+    override fun archiveEntry(entryId: String) {
+        viewModelScope.launch {
+            repository.archiveEntry(entryId)
+            if (_isUserSignedIn.value) {
+                SyncManager.enqueueSync(getApplication())
+            }
+        }
+    }
+
+    override fun restoreEntry(entryId: String) {
+        viewModelScope.launch {
+            repository.restoreEntry(entryId)
+            if (_isUserSignedIn.value) {
+                SyncManager.enqueueSync(getApplication())
+            }
+        }
+    }
+
+    override fun deleteEntries(entryIds: List<String>) {
+        viewModelScope.launch {
+            repository.deleteEntries(entryIds)
+            if (_isUserSignedIn.value) {
+                SyncManager.enqueueSync(getApplication())
+            }
+        }
+    }
+
+    override fun emptyArchive() {
+        viewModelScope.launch {
+            repository.deleteAllArchived()
+            if (_isUserSignedIn.value) {
+                SyncManager.enqueueSync(getApplication())
+            }
+        }
     }
 }
 

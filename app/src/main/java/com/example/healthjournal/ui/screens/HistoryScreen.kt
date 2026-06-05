@@ -3,6 +3,7 @@ package com.example.healthjournal.ui.screens
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,7 +37,8 @@ import java.util.*
 fun HistoryScreen(
     viewModel: IJournalViewModel,
     onAddEntryClick: () -> Unit,
-    onEntryClick: (String) -> Unit
+    onEntryClick: (String) -> Unit,
+    onArchiveClick: () -> Unit
 ) {
     val entries by viewModel.allEntries.collectAsState()
     val isAscending by viewModel.isAscending.collectAsState()
@@ -68,6 +70,9 @@ fun HistoryScreen(
             TopAppBar(
                 title = { Text("Health Journal") },
                 actions = {
+                    IconButton(onClick = onArchiveClick) {
+                        Icon(Icons.Default.Archive, contentDescription = "View Archive")
+                    }
                     IconButton(onClick = { showAboutDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Info,
@@ -158,16 +163,59 @@ fun HistoryScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(entries, key = { it.entry_id }) { entry ->
-                            JournalEntryItem(
-                                entry = entry,
-                                onClick = { onEntryClick(entry.entry_id) }
-                            )
+                            SwipeToArchiveWrapper(
+                                onArchive = { viewModel.archiveEntry(entry.entry_id) }
+                            ) {
+                                JournalEntryItem(
+                                    entry = entry,
+                                    onClick = { onEntryClick(entry.entry_id) }
+                                )
+                            }
                         }
                     }
                 }
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeToArchiveWrapper(
+    onArchive: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = {
+            if (it == SwipeToDismissBoxValue.EndToStart) {
+                onArchive()
+                true
+            } else false
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            val color = MaterialTheme.colorScheme.errorContainer
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(color)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    Icons.Default.Archive,
+                    contentDescription = "Archive",
+                    tint = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        },
+        content = { content() }
+    )
 }
 
 @Composable

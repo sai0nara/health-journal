@@ -56,11 +56,13 @@ class JournalViewModelTest {
         mockkObject(SyncManager)
         every { SyncManager.enqueueSync(any()) } returns Unit
 
-        every { sessionManager.getUserEmail() } returns null
+        // Mock signed in state for sync tests
+        every { sessionManager.getUserEmail() } returns "test@example.com"
         every { application.applicationContext } returns application
         every { application.getString(any()) } returns "test_client_id"
         
         coEvery { repository.allEntries } returns flowOf(emptyList())
+        coEvery { repository.archivedEntries } returns flowOf(emptyList())
         coEvery { repository.getEntriesSortedByDate(any()) } returns flowOf(emptyList())
         
         viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, testDispatcher)
@@ -84,29 +86,58 @@ class JournalViewModelTest {
     }
 
     @Test
-    fun addEntryPreventsFutureDates() = runTest {
-        val futureTimestamp = System.currentTimeMillis() + 100000
-        coEvery { repository.insert(any()) } returns Unit
+    fun archiveEntryCallsRepositoryAndSync() = runTest {
+        val entryId = "entry_to_archive"
+        coEvery { repository.archiveEntry(entryId) } returns Unit
         
-        viewModel.addEntry("Future", futureTimestamp)
+        viewModel.archiveEntry(entryId)
         testDispatcher.scheduler.advanceUntilIdle()
         
-        coVerify(exactly = 0) { repository.insert(any()) }
+        coVerify { repository.archiveEntry(entryId) }
+        verify { SyncManager.enqueueSync(any()) }
     }
 
     @Test
-    fun updateEntryCallsRepository() = runTest {
-        val entry = JournalEntry(description = "Old")
-        coEvery { repository.insert(any()) } returns Unit
+    fun restoreEntryCallsRepositoryAndSync() = runTest {
+        val entryId = "entry_to_restore"
+        coEvery { repository.restoreEntry(entryId) } returns Unit
         
-        viewModel.updateEntry(entry.copy(description = "New"))
+        viewModel.restoreEntry(entryId)
         testDispatcher.scheduler.advanceUntilIdle()
         
-        coVerify { repository.insert(match { it.description == "New" }) }
+        coVerify { repository.restoreEntry(entryId) }
+        verify { SyncManager.enqueueSync(any()) }
+    }
+
+    @Test
+    fun deleteEntriesCallsRepositoryAndSync() = runTest {
+        val ids = listOf("id1", "id2")
+        coEvery { repository.deleteEntries(ids) } returns Unit
+        
+        viewModel.deleteEntries(ids)
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        coVerify { repository.deleteEntries(ids) }
+        verify { SyncManager.enqueueSync(any()) }
+    }
+
+    @Test
+    fun emptyArchiveCallsRepositoryAndSync() = runTest {
+        coEvery { repository.deleteAllArchived() } returns Unit
+        
+        viewModel.emptyArchive()
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        coVerify { repository.deleteAllArchived() }
+        verify { SyncManager.enqueueSync(any()) }
     }
 
     @Test
     fun signInSuccessUpdatesState() = runTest {
+        // Overwrite default signed in state for this test
+        every { sessionManager.getUserEmail() } returns null
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, testDispatcher)
+
         val context: Context = mockk()
         val email = "test@example.com"
         val credential = mockk<com.google.android.libraries.identity.googleid.GoogleIdTokenCredential>()

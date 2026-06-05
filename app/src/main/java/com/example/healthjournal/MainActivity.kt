@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.ui.screens.AddEntryScreen
+import com.example.healthjournal.ui.screens.ArchiveScreen
 import com.example.healthjournal.ui.screens.HistoryScreen
 import com.example.healthjournal.ui.screens.ComponentPreviewScreen
 import com.example.healthjournal.ui.theme.HealthJournalTheme
@@ -38,7 +39,14 @@ class MainActivity : ComponentActivity() {
                         HistoryScreen(
                             viewModel = viewModel,
                             onAddEntryClick = { navController.navigate("add_entry") },
-                            onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") }
+                            onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") },
+                            onArchiveClick = { navController.navigate("archive") }
+                        )
+                    }
+                    composable("archive") {
+                        ArchiveScreen(
+                            viewModel = viewModel,
+                            onBack = { navController.popBackStack() }
                         )
                     }
                     composable(

@@ -28,6 +28,7 @@ class HistoryScreenTest {
 
     class MockJournalViewModel : IJournalViewModel {
         override val allEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
+        override val archivedEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
         override val isUserSignedIn = MutableStateFlow(false)
         override val syncStatus = MutableStateFlow<String?>(null)
         override val searchQuery = MutableStateFlow("")
@@ -62,6 +63,12 @@ class HistoryScreenTest {
         override fun checkHealthAvailability(): Int = 1 // SDK_AVAILABLE
         override suspend fun syncHealthData(timestamp: Long): com.example.healthjournal.viewmodel.HealthSyncResult = 
             com.example.healthjournal.viewmodel.HealthSyncResult()
+
+        // Archive & Delete
+        override fun archiveEntry(entryId: String) {}
+        override fun restoreEntry(entryId: String) {}
+        override fun deleteEntries(entryIds: List<String>) {}
+        override fun emptyArchive() {}
     }
 
     private val viewModel = MockJournalViewModel()
@@ -87,7 +94,8 @@ class HistoryScreenTest {
                 HistoryScreen(
                     viewModel = viewModel,
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -111,7 +119,8 @@ class HistoryScreenTest {
                 HistoryScreen(
                     viewModel = viewModel,
                     onAddEntryClick = { addEntryClicked = true },
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -140,7 +149,8 @@ class HistoryScreenTest {
                 HistoryScreen(
                     viewModel = viewModel, 
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -162,7 +172,8 @@ class HistoryScreenTest {
                 HistoryScreen(
                     viewModel = viewModel, 
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -186,7 +197,8 @@ class HistoryScreenTest {
                 HistoryScreen(
                     viewModel = viewModel, 
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -207,7 +219,8 @@ class HistoryScreenTest {
                 HistoryScreen(
                     viewModel = viewModel,
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()

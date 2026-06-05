@@ -20,7 +20,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -78,7 +80,7 @@ class SyncDownloadTest {
         val cloudJson = Gson().toJson(cloudEntries)
 
         // Mock DriveServiceHelper provider
-        SyncWorker.driveHelperProvider = { _, _ ->
+        SyncWorker.driveHelperProvider = { context, drive ->
             val mock = mockk<DriveServiceHelper>()
             coEvery { mock.downloadJournalData() } returns cloudJson
             coEvery { mock.uploadJournalData(any()) } returns "new_file_id"
@@ -93,7 +95,7 @@ class SyncDownloadTest {
         assertEquals(ListenableWorker.Result.success(), result)
 
         // 3. Verify data in local database
-        val localEntries = database.journalDao().getAllEntries().first()
+        val localEntries = database.journalDao().getAllEntriesIncludingArchived().first()
         assertEquals(1, localEntries.size)
         val entry = localEntries[0]
 
@@ -145,11 +147,44 @@ class SyncDownloadTest {
         assertEquals(ListenableWorker.Result.success(), result)
 
         // 3. Verify that local content was PRESERVED and date is still 1000
-        val localEntries = database.journalDao().getAllEntries().first()
+        val localEntries = database.journalDao().getAllEntriesIncludingArchived().first()
         val entry = localEntries.find { it.entry_id == entryId }
         assertNotNull(entry)
         assertEquals("Local Updated Content", entry?.description)
         assertEquals(1000L, entry?.timestamp) // Creation date PRESERVED
         assertEquals(5000L, entry?.lastModified)
+    }
+
+    @Test
+    fun testSyncWorker_HandlesPermanentDeletions() = runBlocking {
+        // 1. Prepare local "deleted" record
+        val deletedId = "deleted_id"
+        val repository = com.example.healthjournal.data.JournalRepository(database.journalDao())
+        repository.deleteEntries(listOf(deletedId))
+
+        // 2. Prepare mock cloud data containing that ID
+        val cloudEntries = listOf(
+            JournalEntry(entry_id = deletedId, description = "Should be deleted")
+        )
+        val cloudJson = Gson().toJson(cloudEntries)
+
+        val capturedUpload = slot<String>()
+        SyncWorker.driveHelperProvider = { _, _ ->
+            val mock = mockk<DriveServiceHelper>()
+            coEvery { mock.downloadJournalData() } returns cloudJson
+            coEvery { mock.uploadJournalData(capture(capturedUpload)) } returns "new_file_id"
+            mock
+        }
+
+        val worker = TestListenableWorkerBuilder<SyncWorker>(context).build()
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.success(), result)
+
+        // 3. Verify that cloud JSON NO LONGER contains the deleted ID
+        assertFalse(capturedUpload.captured.contains(deletedId))
+
+        // 4. Verify local tombstone is cleared
+        assertTrue(repository.getDeletedEntryIds().isEmpty())
     }
 }

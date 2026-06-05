@@ -28,6 +28,7 @@ class CloudSyncTest {
 
     class MockJournalViewModel : IJournalViewModel {
         override val allEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
+        override val archivedEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
         override val isUserSignedIn = MutableStateFlow(false)
         override val syncStatus = MutableStateFlow<String?>(null)
         override val searchQuery = MutableStateFlow("")
@@ -67,6 +68,12 @@ class CloudSyncTest {
         override fun checkHealthAvailability(): Int = 1 // SDK_AVAILABLE
         override suspend fun syncHealthData(timestamp: Long): com.example.healthjournal.viewmodel.HealthSyncResult = 
             com.example.healthjournal.viewmodel.HealthSyncResult()
+
+        // Archive & Delete
+        override fun archiveEntry(entryId: String) {}
+        override fun restoreEntry(entryId: String) {}
+        override fun deleteEntries(entryIds: List<String>) {}
+        override fun emptyArchive() {}
     }
 
     private val viewModel = MockJournalViewModel()
@@ -79,7 +86,8 @@ class CloudSyncTest {
                 HistoryScreen(
                     viewModel = viewModel, 
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -101,7 +109,8 @@ class CloudSyncTest {
                 HistoryScreen(
                     viewModel = viewModel, 
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -124,7 +133,8 @@ class CloudSyncTest {
                 HistoryScreen(
                     viewModel = viewModel, 
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -138,8 +148,6 @@ class CloudSyncTest {
         }
     }
 
-    // --- 2. Data Consistency & Feedback ---
-
     @Test
     fun testSyncIndicatorState() {
         step("Launch app signed in") {
@@ -148,7 +156,8 @@ class CloudSyncTest {
                 HistoryScreen(
                     viewModel = viewModel, 
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -178,7 +187,8 @@ class CloudSyncTest {
                 HistoryScreen(
                     viewModel = viewModel, 
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -204,7 +214,8 @@ class CloudSyncTest {
                 HistoryScreen(
                     viewModel = viewModel, 
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -232,7 +243,8 @@ class CloudSyncTest {
                 HistoryScreen(
                     viewModel = viewModel, 
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
@@ -260,7 +272,8 @@ class CloudSyncTest {
                 HistoryScreen(
                     viewModel = viewModel, 
                     onAddEntryClick = {},
-                    onEntryClick = {}
+                    onEntryClick = {},
+                    onArchiveClick = {}
                 )
             }
             composeTestRule.waitForIdle()
