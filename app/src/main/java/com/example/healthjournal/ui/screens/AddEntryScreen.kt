@@ -244,6 +244,16 @@ fun AddEntryScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    if (existingEntry?.isArchived == true) {
+                        IconButton(onClick = {
+                            viewModel.restoreEntry(existingEntry!!.entry_id)
+                            onBack()
+                        }) {
+                            Icon(Icons.Default.Restore, contentDescription = "Unarchive")
+                        }
+                    }
                 }
             )
         }

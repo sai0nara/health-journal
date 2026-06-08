@@ -328,6 +328,7 @@ class JournalViewModel(
     }
 
     override fun restoreEntry(entryId: String) {
+        Log.d(TAG, "Restoring entry: $entryId")
         viewModelScope.launch {
             repository.restoreEntry(entryId)
             if (_isUserSignedIn.value) {

@@ -46,7 +46,8 @@ class MainActivity : ComponentActivity() {
                     composable("archive") {
                         ArchiveScreen(
                             viewModel = viewModel,
-                            onBack = { navController.popBackStack() }
+                            onBack = { navController.popBackStack() },
+                            onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") }
                         )
                     }
                     composable(

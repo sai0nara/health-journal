@@ -25,7 +25,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun ArchiveScreen(
     viewModel: IJournalViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onEntryClick: (String) -> Unit
 ) {
     val archivedEntries by viewModel.reactiveArchivedEntries.collectAsState()
     val searchQuery by viewModel.archiveSearchQuery.collectAsState()
@@ -222,7 +223,11 @@ fun ArchiveScreen(
                                 .clip(MaterialTheme.shapes.medium)
                                 .combinedClickable(
                                     onClick = { 
-                                        if (isSelectionMode) onToggleSelect(entry.entry_id)
+                                        if (isSelectionMode) {
+                                            onToggleSelect(entry.entry_id)
+                                        } else {
+                                            onEntryClick(entry.entry_id)
+                                        }
                                     },
                                     onLongClick = {
                                         if (!isSelectionMode) {
