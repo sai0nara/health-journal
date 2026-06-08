@@ -1,4 +1,4 @@
-# Track enhanced_archive_ux_20260605 Context
+# Track archive_management_20260606 Context
 
 - [Specification](./spec.md)
 - [Implementation Plan](./plan.md)

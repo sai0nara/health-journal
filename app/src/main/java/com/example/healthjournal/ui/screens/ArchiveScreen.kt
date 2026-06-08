@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
+import com.example.healthjournal.ui.components.SharedSearchBar
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
 
@@ -26,7 +27,8 @@ fun ArchiveScreen(
     viewModel: IJournalViewModel,
     onBack: () -> Unit
 ) {
-    val archivedEntries by viewModel.archivedEntries.collectAsState()
+    val archivedEntries by viewModel.reactiveArchivedEntries.collectAsState()
+    val searchQuery by viewModel.archiveSearchQuery.collectAsState()
     var selectedIds by remember { mutableStateOf(setOf<String>()) }
     var isSelectionMode by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
@@ -182,45 +184,38 @@ fun ArchiveScreen(
             )
         }
     ) { padding ->
-        if (archivedEntries.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.Inventory2, 
-                        contentDescription = null, 
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "Your archive is clean.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+        Column(modifier = Modifier.padding(padding)) {
+            SharedSearchBar(
+                query = searchQuery,
+                onQueryChanged = { viewModel.setArchiveSearchQuery(it) },
+                placeholder = "Search archive..."
+            )
+
+            if (archivedEntries.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.Inventory2, 
+                            contentDescription = null, 
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "Your archive is clean.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
                 }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(archivedEntries, key = { it.entry_id }) { entry ->
-                    val isSelected = selectedIds.contains(entry.entry_id)
-                    
-                    SwipeToDeleteArchiveWrapper(
-                        onDelete = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            // Soft delete locally first
-                            // For permanent deletion with Undo, we can't easily undo a DB delete
-                            // but we can "mark for deletion" or just provide a quick snackbar.
-                            // In this simple app, we'll just delete and toast.
-                            viewModel.deleteEntries(listOf(entry.entry_id))
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Entry permanently deleted")
-                            }
-                        }
-                    ) {
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(archivedEntries, key = { it.entry_id }) { entry ->
+                        val isSelected = selectedIds.contains(entry.entry_id)
+                        
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -263,43 +258,4 @@ fun ArchiveScreen(
             }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SwipeToDeleteArchiveWrapper(
-    onDelete: () -> Unit,
-    content: @Composable () -> Unit
-) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = {
-            if (it == SwipeToDismissBoxValue.EndToStart) {
-                onDelete()
-                true
-            } else false
-        }
-    )
-
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        backgroundContent = {
-            val color = MaterialTheme.colorScheme.error
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(color)
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onError
-                )
-            }
-        },
-        content = { content() }
-    )
 }

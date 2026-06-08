@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.ui.components.AboutAppDialog
+import com.example.healthjournal.ui.components.SharedSearchBar
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -106,18 +107,11 @@ fun HistoryScreen(
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             // Search Bar
-            SearchBar(
+            SharedSearchBar(
                 query = searchQuery,
-                onQueryChange = { viewModel.setSearchQuery(it) },
-                onSearch = { },
-                active = false,
-                onActiveChange = { },
-                placeholder = { Text("Search journal...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) { }
+                onQueryChanged = { viewModel.setSearchQuery(it) },
+                placeholder = "Search journal..."
+            )
 
             // Sync Status
             if (isUserSignedIn) {

@@ -35,6 +35,13 @@ interface JournalDao {
     @Query("SELECT * FROM journal_entries WHERE isArchived = 1 ORDER BY lastModified DESC")
     fun getArchivedEntries(): Flow<List<JournalEntry>>
 
+    @Query("""
+        SELECT * FROM journal_entries 
+        WHERE isArchived = 1 AND description LIKE '%' || :query || '%'
+        ORDER BY lastModified DESC
+    """)
+    fun searchArchivedEntries(query: String): Flow<List<JournalEntry>>
+
     @Query("SELECT entry_id FROM journal_entries WHERE isArchived = 1")
     suspend fun getArchivedEntriesIds(): List<String>
 

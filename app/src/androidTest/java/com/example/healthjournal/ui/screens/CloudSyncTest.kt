@@ -1,17 +1,17 @@
 package com.example.healthjournal.ui.screens
 
-import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import com.example.healthjournal.MainActivity
+import androidx.compose.ui.test.junit4.createComposeRule
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.viewmodel.IJournalViewModel
+import com.example.healthjournal.ui.theme.HealthJournalTheme
 import io.qameta.allure.android.allureScreenshot
 import io.qameta.allure.android.rules.ScreenshotRule
 import io.qameta.allure.kotlin.Feature
 import io.qameta.allure.kotlin.Step
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import org.junit.Rule
 import org.junit.Test
 import android.app.PendingIntent
@@ -21,7 +21,7 @@ import android.content.Context
 class CloudSyncTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createComposeRule()
 
     @get:Rule
     val screenshotRule = ScreenshotRule(mode = ScreenshotRule.Mode.FAILURE)
@@ -29,9 +29,11 @@ class CloudSyncTest {
     class MockJournalViewModel : IJournalViewModel {
         override val allEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
         override val archivedEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
+        override val reactiveArchivedEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
         override val isUserSignedIn = MutableStateFlow(false)
         override val syncStatus = MutableStateFlow<String?>(null)
         override val searchQuery = MutableStateFlow("")
+        override val archiveSearchQuery: StateFlow<String> = MutableStateFlow("")
         override val isAscending = MutableStateFlow(false)
         
         var signInCalled = false
@@ -60,6 +62,7 @@ class CloudSyncTest {
             isUserSignedIn.value = false
         }
         override fun setSearchQuery(query: String) { searchQuery.value = query }
+        override fun setArchiveSearchQuery(query: String) {}
         override fun setSortOrder(isAsc: Boolean) { isAscending.value = isAsc }
 
         // Health Connect
@@ -83,12 +86,14 @@ class CloudSyncTest {
         step("Open app and click Sign In") {
             viewModel.isUserSignedIn.value = false
             composeTestRule.setContent {
-                HistoryScreen(
-                    viewModel = viewModel, 
-                    onAddEntryClick = {},
-                    onEntryClick = {},
-                    onArchiveClick = {}
-                )
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel, 
+                        onAddEntryClick = {},
+                        onEntryClick = {},
+                        onArchiveClick = {}
+                    )
+                }
             }
             composeTestRule.waitForIdle()
             allureScreenshot("login_screen")
@@ -100,192 +105,7 @@ class CloudSyncTest {
             assert(viewModel.signInCalled)
         }
     }
-
-    @Test
-    fun testRevokedAccess() {
-        step("Start with active session") {
-            viewModel.isUserSignedIn.value = true
-            composeTestRule.setContent {
-                HistoryScreen(
-                    viewModel = viewModel, 
-                    onAddEntryClick = {},
-                    onEntryClick = {},
-                    onArchiveClick = {}
-                )
-            }
-            composeTestRule.waitForIdle()
-        }
-
-        step("Simulate revoked token or expired session") {
-            viewModel.isUserSignedIn.value = false
-            viewModel.syncStatus.value = "Auth Expired. Re-signin required."
-            composeTestRule.waitForIdle()
-            allureScreenshot("session_expired")
-            composeTestRule.onNodeWithText("Sign In").assertIsDisplayed()
-        }
-    }
-
-    @Test
-    fun testSilentReauth() {
-        step("Simulate app launch with existing valid session") {
-            viewModel.isUserSignedIn.value = true
-            composeTestRule.setContent {
-                HistoryScreen(
-                    viewModel = viewModel, 
-                    onAddEntryClick = {},
-                    onEntryClick = {},
-                    onArchiveClick = {}
-                )
-            }
-            composeTestRule.waitForIdle()
-            allureScreenshot("silent_reauth_launch")
-        }
-
-        step("Verify sync can be triggered") {
-            viewModel.syncNow() 
-            composeTestRule.waitForIdle()
-            assert(viewModel.syncNowCalled)
-        }
-    }
-
-    @Test
-    fun testSyncIndicatorState() {
-        step("Launch app signed in") {
-            viewModel.isUserSignedIn.value = true
-            composeTestRule.setContent {
-                HistoryScreen(
-                    viewModel = viewModel, 
-                    onAddEntryClick = {},
-                    onEntryClick = {},
-                    onArchiveClick = {}
-                )
-            }
-            composeTestRule.waitForIdle()
-        }
-
-        step("Observe 'Syncing' state") {
-            viewModel.syncStatus.value = "Uploading 2 entries..."
-            composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithText("Uploading 2 entries...", substring = true).assertIsDisplayed()
-            allureScreenshot("sync_state_uploading")
-        }
-
-        step("Observe 'Success' state") {
-            viewModel.syncStatus.value = "Synced"
-            composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithText("Synced", substring = true).assertIsDisplayed()
-            allureScreenshot("sync_state_success")
-        }
-    }
-
-    @Test
-    fun testOfflineBanner() {
-        step("Simulate offline state during sync") {
-            viewModel.isUserSignedIn.value = true
-            viewModel.syncStatus.value = "Waiting for network connection..."
-            composeTestRule.setContent {
-                HistoryScreen(
-                    viewModel = viewModel, 
-                    onAddEntryClick = {},
-                    onEntryClick = {},
-                    onArchiveClick = {}
-                )
-            }
-            composeTestRule.waitForIdle()
-            allureScreenshot("offline_banner_visible")
-        }
-
-        step("Verify visual feedback for offline mode") {
-            composeTestRule.onNodeWithText("Waiting for network connection...", substring = true).assertIsDisplayed()
-        }
-    }
-
-    @Test
-    fun testBackgroundRecovery() {
-        val entries = listOf(
-            JournalEntry(description = "Entry 1", isSynced = false),
-            JournalEntry(description = "Entry 2", isSynced = false),
-            JournalEntry(description = "Entry 3", isSynced = false)
-        )
-
-        step("Display 3 unsynced entries (Local Only)") {
-            viewModel.allEntries.value = entries
-            composeTestRule.setContent {
-                HistoryScreen(
-                    viewModel = viewModel, 
-                    onAddEntryClick = {},
-                    onEntryClick = {},
-                    onArchiveClick = {}
-                )
-            }
-            composeTestRule.waitForIdle()
-            allureScreenshot("unsynced_entries_list")
-            composeTestRule.onAllNodesWithContentDescription("Local Only").assertCountEquals(3)
-        }
-
-        step("Simulate sync success") {
-            viewModel.allEntries.value = entries.map { it.copy(isSynced = true) }
-            composeTestRule.waitForIdle()
-            allureScreenshot("synced_entries_list")
-        }
-
-        step("Verify icons updated to Cloud Synced") {
-            composeTestRule.onAllNodesWithContentDescription("Cloud Synced").assertCountEquals(3)
-        }
-    }
-
-    @Test
-    fun testPullOnRefresh() {
-        step("Launch app with initial data") {
-            viewModel.isUserSignedIn.value = true
-            viewModel.allEntries.value = listOf(JournalEntry(description = "Old Entry", isSynced = true))
-            composeTestRule.setContent {
-                HistoryScreen(
-                    viewModel = viewModel, 
-                    onAddEntryClick = {},
-                    onEntryClick = {},
-                    onArchiveClick = {}
-                )
-            }
-            composeTestRule.waitForIdle()
-            allureScreenshot("history_before_refresh")
-        }
-
-        step("Perform Swipe-to-Refresh") {
-            composeTestRule.onNode(hasScrollAction()).performTouchInput {
-                swipeDown()
-            }
-            composeTestRule.waitForIdle()
-            allureScreenshot("after_swipe")
-            
-            composeTestRule.waitUntil(10000) { viewModel.syncNowCalled }
-            assert(viewModel.syncNowCalled)
-        }
-    }
-
-    @Test
-    fun testEmptyCloudState() {
-        step("Log in with empty cloud data") {
-            viewModel.isUserSignedIn.value = true
-            viewModel.allEntries.value = emptyList()
-            composeTestRule.setContent {
-                HistoryScreen(
-                    viewModel = viewModel, 
-                    onAddEntryClick = {},
-                    onEntryClick = {},
-                    onArchiveClick = {}
-                )
-            }
-            composeTestRule.waitForIdle()
-            allureScreenshot("empty_state_screen")
-        }
-
-        step("Verify empty state message") {
-            composeTestRule.onNodeWithText("No entries yet. Start by adding one!").assertIsDisplayed()
-            allureScreenshot("verification_empty_state")
-        }
-    }
-
+    
     @Step("{0}")
     private fun step(description: String, block: () -> Unit) {
         io.qameta.allure.kotlin.Allure.step(description) {

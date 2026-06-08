@@ -34,9 +34,11 @@ data class HealthSyncResult(
 interface IJournalViewModel {
     val allEntries: StateFlow<List<JournalEntry>>
     val archivedEntries: StateFlow<List<JournalEntry>>
+    val reactiveArchivedEntries: StateFlow<List<JournalEntry>>
     val isUserSignedIn: StateFlow<Boolean>
     val syncStatus: StateFlow<String?>
     val searchQuery: StateFlow<String>
+    val archiveSearchQuery: StateFlow<String>
     val isAscending: StateFlow<Boolean>
     
     fun addEntry(
@@ -56,6 +58,7 @@ interface IJournalViewModel {
     fun signOut()
     
     fun setSearchQuery(query: String)
+    fun setArchiveSearchQuery(query: String)
     fun setSortOrder(isAsc: Boolean)
 
     // Health Connect
@@ -102,6 +105,25 @@ class JournalViewModel(
     )
 
     override val archivedEntries: StateFlow<List<JournalEntry>> = repository.archivedEntries
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    private val _archiveSearchQuery = MutableStateFlow("")
+    override val archiveSearchQuery: StateFlow<String> = _archiveSearchQuery.asStateFlow()
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    override val reactiveArchivedEntries: StateFlow<List<JournalEntry>> = _archiveSearchQuery
+        .debounce(300L)
+        .flatMapLatest { query ->
+            if (query.isBlank()) {
+                repository.archivedEntries
+            } else {
+                repository.searchArchivedEntries(query)
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -255,6 +277,10 @@ class JournalViewModel(
 
     override fun setSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    override fun setArchiveSearchQuery(query: String) {
+        _archiveSearchQuery.value = query
     }
 
     override fun setSortOrder(isAsc: Boolean) {

@@ -36,9 +36,11 @@ class AddEntryScreenTest {
     class MockJournalViewModel : IJournalViewModel {
         override val allEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
         override val archivedEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
+        override val reactiveArchivedEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
         override val isUserSignedIn: StateFlow<Boolean> = MutableStateFlow(false)
         override val syncStatus: StateFlow<String?> = MutableStateFlow(null)
         override val searchQuery: StateFlow<String> = MutableStateFlow("")
+        override val archiveSearchQuery: StateFlow<String> = MutableStateFlow("")
         override val isAscending: StateFlow<Boolean> = MutableStateFlow(false)
         
         var addEntryCalledWith: Quadruple<String, Long, List<String>, List<AttachmentData>>? = null
@@ -63,6 +65,7 @@ class AddEntryScreenTest {
         override fun syncNow() {}
         override fun signOut() {}
         override fun setSearchQuery(query: String) {}
+        override fun setArchiveSearchQuery(query: String) {}
         override fun setSortOrder(isAsc: Boolean) {}
 
         // Health Connect
