@@ -7,7 +7,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Local Storage & Compression Service' (Protocol in workflow.md) [51a9bc3]
 
 ## Phase 2: Database Schema & Repository Updates
-- [ ] Task: Update `JournalEntry` and local database schemas to support a list of attachment paths with `syncStatus`.
+- [~] Task: Update `JournalEntry` and local database schemas to support a list of attachment paths with `syncStatus`.
     - [ ] Write Room migration and DAO unit tests.
     - [ ] Update `JournalEntryRepository` to handle local URI saving and metadata splitting.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Database Schema & Repository Updates' (Protocol in workflow.md)

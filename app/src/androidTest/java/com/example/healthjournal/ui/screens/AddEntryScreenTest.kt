@@ -59,7 +59,8 @@ class AddEntryScreenTest {
         }
 
         override fun updateEntry(entry: JournalEntry) {}
-        override suspend fun getEntryById(entryId: String): JournalEntry? = null
+        var entryToReturn: JournalEntry? = null
+        override suspend fun getEntryById(entryId: String): JournalEntry? = entryToReturn
         
         override fun signIn(activityContext: Context, onResolutionRequired: (PendingIntent) -> Unit) {}
         override fun syncNow() {}
@@ -263,6 +264,34 @@ class AddEntryScreenTest {
                 .performClick()
             composeTestRule.waitForIdle()
             allureScreenshot("attach_file_clicked_in_screen")
+        }
+    }
+
+    @Test
+    fun testAddEntryScreen_UnarchiveAction() {
+        var backCalled = false
+        val archivedEntry = JournalEntry(entry_id = "1", description = "Archived", isArchived = true)
+        
+        step("Open Add Entry Screen with archived entry") {
+            viewModel.entryToReturn = archivedEntry
+            composeTestRule.setContent {
+                AddEntryScreen(
+                    viewModel = viewModel,
+                    onBack = { backCalled = true },
+                    entryId = "1"
+                )
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Click Unarchive button") {
+            composeTestRule.onNodeWithContentDescription("Unarchive").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify back was called") {
+            composeTestRule.waitUntil(5000) { backCalled }
+            assert(backCalled)
         }
     }
 

@@ -7,7 +7,10 @@ import java.util.UUID
 data class AttachmentData(
     val name: String,
     val uri: String,
-    val mimeType: String
+    val mimeType: String,
+    val isLocalOnly: Boolean = true,
+    val remoteUrl: String? = null,
+    val syncStatus: String = "PENDING"
 )
 
 @Entity(tableName = "journal_entries")
@@ -24,5 +27,6 @@ data class JournalEntry(
     val sleep_hours: Float? = null,
     val ai_advice: String? = null,
     val isArchived: Boolean = false,
-    val isSynced: Boolean = false
+    val isSynced: Boolean = false,
+    val syncStatus: String = "PENDING_SYNC"
 )

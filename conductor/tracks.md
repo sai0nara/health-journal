@@ -29,5 +29,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Rich Attachments & Archive Integration**
+- [~] **Track: Rich Attachments & Archive Integration**
   *Link: [./tracks/rich_attachments_20260609/](./tracks/rich_attachments_20260609/)*
