@@ -1,9 +1,9 @@
 # Implementation Plan: Rich Attachments & Archive Integration
 
 ## Phase 1: Local Storage & Compression Service
-- [ ] Task: Create `MediaCompressionService` interface and implementation using `Bitmap.compress`.
-    - [ ] Write unit tests for successful and failed compression scenarios.
-    - [ ] Implement local saving logic directly to `context.filesDir`.
+- [x] Task: Create `MediaCompressionService` interface and implementation using `Bitmap.compress`. [e89d31e]
+    - [x] Write unit tests for successful and failed compression scenarios.
+    - [x] Implement local saving logic directly to `context.filesDir`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Local Storage & Compression Service' (Protocol in workflow.md)
 
 ## Phase 2: Database Schema & Repository Updates
