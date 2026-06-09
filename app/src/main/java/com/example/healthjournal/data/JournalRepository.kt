@@ -97,7 +97,7 @@ class JournalRepository(private val journalDao: JournalDao) {
      */
     suspend fun saveAttachmentLocally(entryId: String, attachment: AttachmentData) {
         val entry = journalDao.getEntryById(entryId) ?: return
-        val updatedAttachments = entry.attachments + attachment
+        val updatedAttachments = (entry.attachments ?: emptyList()) + attachment
         val updatedEntry = entry.copy(
             attachments = updatedAttachments,
             syncStatus = "PENDING_SYNC",

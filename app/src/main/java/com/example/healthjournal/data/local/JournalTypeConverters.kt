@@ -33,7 +33,13 @@ class JournalTypeConverters {
         if (value == null) return emptyList()
         return try {
             val listType = object : TypeToken<List<AttachmentData>>() {}.type
-            gson.fromJson(value, listType) ?: emptyList()
+            val rawList = gson.fromJson<List<AttachmentData>>(value, listType) ?: emptyList()
+            rawList.map { att ->
+                att.copy(
+                    syncStatus = att.syncStatus ?: "PENDING",
+                    isLocalOnly = att.isLocalOnly ?: true
+                )
+            }
         } catch (e: Exception) {
             emptyList()
         }

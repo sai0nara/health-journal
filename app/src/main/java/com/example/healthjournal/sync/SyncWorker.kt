@@ -63,7 +63,18 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             var cloudEntries: List<JournalEntry> = if (cloudJson != null) {
                 try {
                     val type = object : TypeToken<List<JournalEntry>>() {}.type
-                    Gson().fromJson<List<JournalEntry>>(cloudJson, type) ?: emptyList()
+                    val rawEntries = Gson().fromJson<List<JournalEntry>>(cloudJson, type) ?: emptyList()
+                    // Fix nulls from old cloud data
+                    rawEntries.map { entry ->
+                        entry.copy(
+                            isSynced = entry.isSynced ?: true,
+                            syncStatus = entry.syncStatus ?: "SYNCED",
+                            attachments = entry.attachments?.map { att ->
+                                att.copy(syncStatus = att.syncStatus ?: "SYNCED", isLocalOnly = att.isLocalOnly ?: false)
+                            } ?: emptyList(),
+                            photo_urls = entry.photo_urls ?: emptyList()
+                        )
+                    }
                 } catch (e: Exception) {
                     Log.e("SyncWorker", "Failed to parse cloud JSON", e)
                     emptyList()

@@ -281,7 +281,7 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
                     }
                 }
 
-                if (entry.attachments.isNotEmpty()) {
+                if (entry.attachments?.isNotEmpty() == true) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -292,7 +292,7 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${entry.attachments.size} attachment(s)",
+                            text = "${entry.attachments?.size ?: 0} attachment(s)",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -321,7 +321,7 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
                 }
             }
             
-            if (entry.isSynced) {
+            if (entry.isSynced == true) {
                 Icon(
                     Icons.Default.CloudDone,
                     contentDescription = "Cloud Synced",
