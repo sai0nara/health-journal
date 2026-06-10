@@ -32,6 +32,7 @@ class JournalViewModelTest {
     private val authManager: GoogleAuthManager = mockk()
     private val sessionManager: SessionManager = mockk()
     private val healthManager: HealthConnectManager = mockk()
+    private val mediaService: com.example.healthjournal.media.MediaCompressionService = mockk()
     private val application: Application = mockk()
     private val testDispatcher = StandardTestDispatcher()
 
@@ -65,7 +66,7 @@ class JournalViewModelTest {
         coEvery { repository.archivedEntries } returns flowOf(emptyList())
         coEvery { repository.getEntriesSortedByDate(any()) } returns flowOf(emptyList())
         
-        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, testDispatcher)
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
     }
 
     @After

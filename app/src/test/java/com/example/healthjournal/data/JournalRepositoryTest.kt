@@ -131,8 +131,8 @@ class JournalRepositoryTest {
         coVerify {
             journalDao.insertEntry(match {
                 it.entry_id == "entry-1" &&
-                it.attachments.size == 2 &&
-                it.attachments[1].name == "new.pdf" &&
+                it.attachments?.size == 2 &&
+                it.attachments!![1].name == "new.pdf" &&
                 it.syncStatus == "PENDING_SYNC"
             })
         }
@@ -161,8 +161,8 @@ class JournalRepositoryTest {
         coVerify {
             journalDao.insertEntry(match {
                 it.entry_id == "entry-2" &&
-                it.attachments.size == 1 &&
-                it.attachments[0].name == "doc.pdf" &&
+                it.attachments?.size == 1 &&
+                it.attachments!![0].name == "doc.pdf" &&
                 it.syncStatus == "PENDING_SYNC"
             })
         }
