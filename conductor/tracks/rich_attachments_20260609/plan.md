@@ -30,3 +30,6 @@
     - [ ] Write UI tests for viewing archived entries with media thumbnails.
     - [ ] Ensure "Unarchive" transitions to active editable mode smoothly.
 - [ ] Task: Conductor - User Manual Verification 'Phase 5: UI Updates - Archive/Read-Only Flow' (Protocol in workflow.md)
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions [b52a50b]
