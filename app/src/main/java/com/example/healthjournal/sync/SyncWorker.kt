@@ -195,19 +195,22 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
     }
 }
 
+import androidx.work.PeriodicWorkRequestBuilder
+import java.util.concurrent.TimeUnit
+...
 object SyncManager {
     fun enqueueSync(context: Context) {
         val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .setRequiredNetworkType(NetworkType.UNMETERED)
             .build()
 
-        val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+        val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.HOURS)
             .setConstraints(constraints)
             .build()
 
-        WorkManager.getInstance(context).enqueueUniqueWork(
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             "journal_sync",
-            ExistingWorkPolicy.REPLACE,
+            ExistingPeriodicWorkPolicy.KEEP,
             syncRequest
         )
     }

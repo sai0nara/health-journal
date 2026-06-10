@@ -13,10 +13,10 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Database Schema & Repository Updates' (Protocol in workflow.md)
 
 ## Phase 3: Sync Worker (WorkManager)
-- [ ] Task: Implement `PeriodicSyncWorker` for two-stage synchronization.
-    - [ ] Write WorkManager unit tests (mocking cloud upload).
-    - [ ] Configure network constraints (UNMETERED).
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Sync Worker (WorkManager)' (Protocol in workflow.md)
+- [x] Task: Implement `PeriodicSyncWorker` for two-stage synchronization.
+    - [x] Write WorkManager unit tests (mocking cloud upload).
+    - [x] Configure network constraints (UNMETERED).
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Sync Worker (WorkManager)' (Protocol in workflow.md)
 
 ## Phase 4: UI Updates - AddAttachment Flow
 - [ ] Task: Update `AddEntryScreen` with "Add Attachment" button and visual picker contracts (`PickVisualMedia`, `OpenDocument`).
