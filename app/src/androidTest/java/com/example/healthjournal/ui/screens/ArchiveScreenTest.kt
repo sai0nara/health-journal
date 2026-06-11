@@ -2,6 +2,7 @@ package com.example.healthjournal.ui.screens
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import com.example.healthjournal.MainActivity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.viewmodel.IJournalViewModel
@@ -72,6 +73,7 @@ class ArchiveScreenTest {
         override fun emptyArchive() {
             emptyArchiveCalled = true
         }
+        override fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
     }
 
     private val viewModel = MockJournalViewModel()

@@ -52,8 +52,8 @@ class AttachmentSchemaTest {
         journalDao.insertEntry(entry)
         val retrieved = journalDao.getEntryById(entry.entry_id)
         assertNotNull(retrieved)
-        assertEquals(1, retrieved!!.attachments.size)
-        val retrievedAttachment = retrieved.attachments[0]
+        assertEquals(1, retrieved!!.attachments?.size)
+        val retrievedAttachment = retrieved.attachments!![0]
         assertEquals("SYNCED", retrievedAttachment.syncStatus)
         assertEquals("https://cloud.com/report.pdf", retrievedAttachment.remoteUrl)
     }

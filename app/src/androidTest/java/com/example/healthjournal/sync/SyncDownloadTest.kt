@@ -99,14 +99,14 @@ class SyncDownloadTest {
         assertEquals(1, localEntries.size)
         val entry = localEntries[0]
 
-        assertEquals(2, entry.photo_urls.size)
-        assertEquals(1, entry.attachments.size)
+        assertEquals(2, entry.photo_urls?.size)
+        assertEquals(1, entry.attachments?.size)
         assertEquals(120.0, entry.bp_systolic!!, 0.1)
         assertEquals(80.0, entry.bp_diastolic!!, 0.1)
 
         // Verify URI re-mapping (should point to local filesDir)
-        assertTrue(entry.photo_urls[0].contains(context.filesDir.path))
-        assertTrue(entry.attachments[0].uri.contains(context.filesDir.path))
+        assertTrue(entry.photo_urls!![0].contains(context.filesDir.path))
+        assertTrue(entry.attachments!![0].uri.contains(context.filesDir.path))
     }
 
     @Test

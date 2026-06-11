@@ -5,6 +5,8 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
@@ -26,6 +29,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.ui.components.AboutAppDialog
@@ -45,6 +50,7 @@ fun HistoryScreen(
 ) {
     val entries by viewModel.allEntries.collectAsState()
     val isAscending by viewModel.isAscending.collectAsState()
+    var expandedImageUri by remember { mutableStateOf<String?>(null) }
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -180,12 +186,35 @@ fun HistoryScreen(
                             ) {
                                 JournalEntryItem(
                                     entry = entry,
-                                    onClick = { onEntryClick(entry.entry_id) }
+                                    onClick = { onEntryClick(entry.entry_id) },
+                                    onPhotoClick = { expandedImageUri = it }
                                 )
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+
+    if (expandedImageUri != null) {
+        Dialog(
+            onDismissRequest = { expandedImageUri = null },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .clickable { expandedImageUri = null },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = expandedImageUri,
+                    contentDescription = "Expanded Image",
+                    modifier = Modifier.fillMaxWidth(),
+                    contentScale = ContentScale.Fit
+                )
             }
         }
     }
@@ -231,7 +260,7 @@ fun SwipeToArchiveWrapper(
 }
 
 @Composable
-fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
+fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit, onPhotoClick: (String) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -274,7 +303,8 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
                                 contentDescription = null,
                                 modifier = Modifier
                                     .size(80.dp)
-                                    .clip(MaterialTheme.shapes.extraSmall),
+                                    .clip(MaterialTheme.shapes.extraSmall)
+                                    .clickable { onPhotoClick(photoUrl) },
                                 contentScale = ContentScale.Crop
                             )
                         }

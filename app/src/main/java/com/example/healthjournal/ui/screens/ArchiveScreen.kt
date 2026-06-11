@@ -2,6 +2,7 @@ package com.example.healthjournal.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,9 +15,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import coil.compose.AsyncImage
 import com.example.healthjournal.ui.components.SharedSearchBar
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
@@ -32,6 +37,7 @@ fun ArchiveScreen(
     val searchQuery by viewModel.archiveSearchQuery.collectAsState()
     var selectedIds by remember { mutableStateOf(setOf<String>()) }
     var isSelectionMode by remember { mutableStateOf(false) }
+    var expandedImageUri by remember { mutableStateOf<String?>(null) }
     val haptic = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -247,7 +253,8 @@ fun ArchiveScreen(
                                 }
                                 JournalEntryItem(
                                     entry = entry,
-                                    onClick = { if (isSelectionMode) onToggleSelect(entry.entry_id) }
+                                    onClick = { if (isSelectionMode) onToggleSelect(entry.entry_id) else onEntryClick(entry.entry_id) },
+                                    onPhotoClick = { expandedImageUri = it }
                                 )
                             }
                             if (isSelected) {
@@ -260,6 +267,28 @@ fun ArchiveScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+
+    if (expandedImageUri != null) {
+        Dialog(
+            onDismissRequest = { expandedImageUri = null },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .clickable { expandedImageUri = null },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = expandedImageUri,
+                    contentDescription = "Expanded Image",
+                    modifier = Modifier.fillMaxWidth(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                )
             }
         }
     }

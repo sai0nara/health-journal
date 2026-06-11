@@ -55,7 +55,7 @@ class JournalViewModelTest {
         every { WorkManager.getInstance(any()) } returns mockk(relaxed = true)
 
         mockkObject(SyncManager)
-        every { SyncManager.enqueueSync(any()) } returns Unit
+        every { SyncManager.enqueuePeriodicSync(any()) } returns Unit
 
         // Mock signed in state for sync tests
         every { sessionManager.getUserEmail() } returns "test@example.com"
@@ -117,7 +117,7 @@ class JournalViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
         
         coVerify { repository.archiveEntry(entryId) }
-        verify { SyncManager.enqueueSync(any()) }
+        verify { SyncManager.enqueuePeriodicSync(any()) }
     }
 
     @Test
@@ -129,7 +129,7 @@ class JournalViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
         
         coVerify { repository.restoreEntry(entryId) }
-        verify { SyncManager.enqueueSync(any()) }
+        verify { SyncManager.enqueuePeriodicSync(any()) }
     }
 
     @Test
@@ -141,7 +141,7 @@ class JournalViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
         
         coVerify { repository.deleteEntries(ids) }
-        verify { SyncManager.enqueueSync(any()) }
+        verify { SyncManager.enqueuePeriodicSync(any()) }
     }
 
     @Test
@@ -152,7 +152,7 @@ class JournalViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
         
         coVerify { repository.deleteAllArchived() }
-        verify { SyncManager.enqueueSync(any()) }
+        verify { SyncManager.enqueuePeriodicSync(any()) }
     }
 
     @Test

@@ -6,6 +6,8 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,9 +19,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.health.connect.client.HealthConnectClient
@@ -60,6 +65,7 @@ fun AddEntryScreen(
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var expandedImageUri by remember { mutableStateOf<Uri?>(null) }
 
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = selectedTimestamp
@@ -169,27 +175,6 @@ fun AddEntryScreen(
             cameraLauncher.launch(uri)
         } else {
             permissionLauncher.launch(Manifest.permission.CAMERA)
-        }
-    }
-
-    fun savePersistentFile(uri: Uri, isPhoto: Boolean): String? {
-        return try {
-            val inputStream = context.contentResolver.openInputStream(uri)
-            val fileName = if (isPhoto) "photo_${System.currentTimeMillis()}_${UUID.randomUUID()}.jpg" 
-                           else "doc_${System.currentTimeMillis()}_${UUID.randomUUID()}"
-            val dir = File(context.filesDir, if (isPhoto) "photos" else "attachments")
-            dir.mkdirs()
-            val persistentFile = File(dir, fileName)
-            
-            inputStream?.use { input ->
-                persistentFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-            Uri.fromFile(persistentFile).toString()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
         }
     }
 
@@ -344,7 +329,10 @@ fun AddEntryScreen(
                             AsyncImage(
                                 model = uri,
                                 contentDescription = null,
-                                modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.small),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(MaterialTheme.shapes.small)
+                                    .clickable { expandedImageUri = uri },
                                 contentScale = ContentScale.Crop
                             )
                             if (!isReadOnly) {
@@ -357,6 +345,28 @@ fun AddEntryScreen(
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            if (expandedImageUri != null) {
+                Dialog(
+                    onDismissRequest = { expandedImageUri = null },
+                    properties = DialogProperties(usePlatformDefaultWidth = false)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black)
+                            .clickable { expandedImageUri = null },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = expandedImageUri,
+                            contentDescription = "Expanded Image",
+                            modifier = Modifier.fillMaxWidth(),
+                            contentScale = ContentScale.Fit
+                        )
                     }
                 }
             }
@@ -378,6 +388,17 @@ fun AddEntryScreen(
                             ) {
                                 Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
+                                    
+                                    if (file.mimeType.startsWith("image/")) {
+                                        AsyncImage(
+                                            model = file.uri,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(40.dp).clip(MaterialTheme.shapes.small),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                    }
+
                                     Text(file.name, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
                                     if (!isReadOnly) {
                                         IconButton(
@@ -442,13 +463,16 @@ fun AddEntryScreen(
                         // Save all files persistently
                         val persistentPhotoUrls = attachedPhotoUris.map { uri ->
                             if (uri.toString().startsWith("file:///")) uri.toString()
-                            else savePersistentFile(uri, true) ?: ""
+                            else viewModel.savePersistentFile(uri, true) ?: ""
                         }.filter { it.isNotBlank() }
 
                         val persistentAttachments = attachedFiles.map { file ->
                             if (file.uri.startsWith("file:///")) file
                             else {
-                                val persistentUri = savePersistentFile(Uri.parse(file.uri), false)
+                                val persistentUri = viewModel.savePersistentFile(Uri.parse(file.uri), false)
+                                if (persistentUri == null) {
+                                    android.widget.Toast.makeText(context, "Failed to save attachment: ${file.name}", android.widget.Toast.LENGTH_SHORT).show()
+                                }
                                 file.copy(uri = persistentUri ?: "")
                             }
                         }.filter { it.uri.isNotBlank() }

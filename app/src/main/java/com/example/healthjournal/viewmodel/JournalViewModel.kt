@@ -197,7 +197,7 @@ class JournalViewModel(
             )
             repository.insert(newEntry)
             if (_isUserSignedIn.value) {
-                SyncManager.enqueueSync(getApplication())
+                SyncManager.enqueuePeriodicSync(getApplication())
             }
         }
     }
@@ -208,7 +208,7 @@ class JournalViewModel(
             // Keep the original timestamp (creation date)
             repository.insert(entry.copy(isSynced = false, lastModified = System.currentTimeMillis()))
             if (_isUserSignedIn.value) {
-                SyncManager.enqueueSync(getApplication())
+                SyncManager.enqueuePeriodicSync(getApplication())
             }
         }
     }
@@ -326,7 +326,7 @@ class JournalViewModel(
         viewModelScope.launch {
             repository.archiveEntry(entryId)
             if (_isUserSignedIn.value) {
-                SyncManager.enqueueSync(getApplication())
+                SyncManager.enqueuePeriodicSync(getApplication())
             }
         }
     }
@@ -336,7 +336,7 @@ class JournalViewModel(
         viewModelScope.launch {
             repository.restoreEntry(entryId)
             if (_isUserSignedIn.value) {
-                SyncManager.enqueueSync(getApplication())
+                SyncManager.enqueuePeriodicSync(getApplication())
             }
         }
     }
@@ -345,7 +345,7 @@ class JournalViewModel(
         viewModelScope.launch {
             repository.deleteEntries(entryIds)
             if (_isUserSignedIn.value) {
-                SyncManager.enqueueSync(getApplication())
+                SyncManager.enqueuePeriodicSync(getApplication())
             }
         }
     }
@@ -354,7 +354,7 @@ class JournalViewModel(
         viewModelScope.launch {
             repository.deleteAllArchived()
             if (_isUserSignedIn.value) {
-                SyncManager.enqueueSync(getApplication())
+                SyncManager.enqueuePeriodicSync(getApplication())
             }
         }
     }
