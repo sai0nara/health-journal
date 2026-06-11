@@ -32,6 +32,7 @@ class JournalViewModelTest {
     private val authManager: GoogleAuthManager = mockk()
     private val sessionManager: SessionManager = mockk()
     private val healthManager: HealthConnectManager = mockk()
+    private val mediaService: com.example.healthjournal.media.MediaCompressionService = mockk()
     private val application: Application = mockk()
     private val testDispatcher = StandardTestDispatcher()
 
@@ -54,16 +55,18 @@ class JournalViewModelTest {
         every { WorkManager.getInstance(any()) } returns mockk(relaxed = true)
 
         mockkObject(SyncManager)
-        every { SyncManager.enqueueSync(any()) } returns Unit
+        every { SyncManager.enqueuePeriodicSync(any()) } returns Unit
 
-        every { sessionManager.getUserEmail() } returns null
+        // Mock signed in state for sync tests
+        every { sessionManager.getUserEmail() } returns "test@example.com"
         every { application.applicationContext } returns application
         every { application.getString(any()) } returns "test_client_id"
         
         coEvery { repository.allEntries } returns flowOf(emptyList())
+        coEvery { repository.archivedEntries } returns flowOf(emptyList())
         coEvery { repository.getEntriesSortedByDate(any()) } returns flowOf(emptyList())
         
-        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, testDispatcher)
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
     }
 
     @After
@@ -106,7 +109,58 @@ class JournalViewModelTest {
     }
 
     @Test
+    fun archiveEntryCallsRepositoryAndSync() = runTest {
+        val entryId = "entry_to_archive"
+        coEvery { repository.archiveEntry(entryId) } returns Unit
+        
+        viewModel.archiveEntry(entryId)
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        coVerify { repository.archiveEntry(entryId) }
+        verify { SyncManager.enqueuePeriodicSync(any()) }
+    }
+
+    @Test
+    fun restoreEntryCallsRepositoryAndSync() = runTest {
+        val entryId = "entry_to_restore"
+        coEvery { repository.restoreEntry(entryId) } returns Unit
+        
+        viewModel.restoreEntry(entryId)
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        coVerify { repository.restoreEntry(entryId) }
+        verify { SyncManager.enqueuePeriodicSync(any()) }
+    }
+
+    @Test
+    fun deleteEntriesCallsRepositoryAndSync() = runTest {
+        val ids = listOf("id1", "id2")
+        coEvery { repository.deleteEntries(ids) } returns Unit
+        
+        viewModel.deleteEntries(ids)
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        coVerify { repository.deleteEntries(ids) }
+        verify { SyncManager.enqueuePeriodicSync(any()) }
+    }
+
+    @Test
+    fun emptyArchiveCallsRepositoryAndSync() = runTest {
+        coEvery { repository.deleteAllArchived() } returns Unit
+        
+        viewModel.emptyArchive()
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        coVerify { repository.deleteAllArchived() }
+        verify { SyncManager.enqueuePeriodicSync(any()) }
+    }
+
+    @Test
     fun signInSuccessUpdatesState() = runTest {
+        // Overwrite default signed in state for this test
+        every { sessionManager.getUserEmail() } returns null
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, testDispatcher)
+
         val context: Context = mockk()
         val email = "test@example.com"
         val credential = mockk<com.google.android.libraries.identity.googleid.GoogleIdTokenCredential>()

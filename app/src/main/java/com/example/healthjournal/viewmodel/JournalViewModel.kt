@@ -15,6 +15,8 @@ import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.health.HealthConnectManager
+import com.example.healthjournal.media.AndroidMediaCompressionService
+import com.example.healthjournal.media.MediaCompressionService
 import com.example.healthjournal.sync.SyncManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -33,9 +35,12 @@ data class HealthSyncResult(
 
 interface IJournalViewModel {
     val allEntries: StateFlow<List<JournalEntry>>
+    val archivedEntries: StateFlow<List<JournalEntry>>
+    val reactiveArchivedEntries: StateFlow<List<JournalEntry>>
     val isUserSignedIn: StateFlow<Boolean>
     val syncStatus: StateFlow<String?>
     val searchQuery: StateFlow<String>
+    val archiveSearchQuery: StateFlow<String>
     val isAscending: StateFlow<Boolean>
     
     fun addEntry(
@@ -55,6 +60,7 @@ interface IJournalViewModel {
     fun signOut()
     
     fun setSearchQuery(query: String)
+    fun setArchiveSearchQuery(query: String)
     fun setSortOrder(isAsc: Boolean)
 
     // Health Connect
@@ -62,6 +68,13 @@ interface IJournalViewModel {
     suspend fun hasHealthPermissions(): Boolean
     fun checkHealthAvailability(): Int
     suspend fun syncHealthData(timestamp: Long): HealthSyncResult
+
+    // Archive & Delete
+    fun archiveEntry(entryId: String)
+    fun restoreEntry(entryId: String)
+    fun deleteEntries(entryIds: List<String>)
+    fun emptyArchive()
+    fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String?
 }
 
 class JournalViewModel(
@@ -70,6 +83,7 @@ class JournalViewModel(
     private val authManager: GoogleAuthManager,
     private val sessionManager: SessionManager,
     private val healthManager: HealthConnectManager,
+    private val mediaService: MediaCompressionService,
     private val ioContext: kotlin.coroutines.CoroutineContext = Dispatchers.IO
 ) : AndroidViewModel(application), IJournalViewModel {
 
@@ -93,6 +107,32 @@ class JournalViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    override val archivedEntries: StateFlow<List<JournalEntry>> = repository.archivedEntries
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    private val _archiveSearchQuery = MutableStateFlow("")
+    override val archiveSearchQuery: StateFlow<String> = _archiveSearchQuery.asStateFlow()
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    override val reactiveArchivedEntries: StateFlow<List<JournalEntry>> = _archiveSearchQuery
+        .debounce(300L)
+        .flatMapLatest { query ->
+            if (query.isBlank()) {
+                repository.archivedEntries
+            } else {
+                repository.searchArchivedEntries(query)
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     private val _isUserSignedIn = MutableStateFlow(sessionManager.getUserEmail() != null)
     override val isUserSignedIn: StateFlow<Boolean> = _isUserSignedIn.asStateFlow()
@@ -157,7 +197,7 @@ class JournalViewModel(
             )
             repository.insert(newEntry)
             if (_isUserSignedIn.value) {
-                SyncManager.enqueueSync(getApplication())
+                SyncManager.enqueuePeriodicSync(getApplication())
             }
         }
     }
@@ -168,7 +208,7 @@ class JournalViewModel(
             // Keep the original timestamp (creation date)
             repository.insert(entry.copy(isSynced = false, lastModified = System.currentTimeMillis()))
             if (_isUserSignedIn.value) {
-                SyncManager.enqueueSync(getApplication())
+                SyncManager.enqueuePeriodicSync(getApplication())
             }
         }
     }
@@ -223,7 +263,7 @@ class JournalViewModel(
     override fun syncNow() {
         val email = sessionManager.getUserEmail() ?: return
         Log.d(TAG, "Sync now triggered for $email")
-        SyncManager.enqueueSync(getApplication())
+        SyncManager.triggerManualSync(getApplication())
         _syncStatus.value = "Sync Requested"
         android.widget.Toast.makeText(getApplication(), "Syncing with Google Drive...", android.widget.Toast.LENGTH_SHORT).show()
     }
@@ -241,6 +281,10 @@ class JournalViewModel(
 
     override fun setSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    override fun setArchiveSearchQuery(query: String) {
+        _archiveSearchQuery.value = query
     }
 
     override fun setSortOrder(isAsc: Boolean) {
@@ -276,6 +320,68 @@ class JournalViewModel(
             sleepHours = sleep
         )
     }
+
+    // Archive & Delete
+    override fun archiveEntry(entryId: String) {
+        viewModelScope.launch {
+            repository.archiveEntry(entryId)
+            if (_isUserSignedIn.value) {
+                SyncManager.enqueuePeriodicSync(getApplication())
+            }
+        }
+    }
+
+    override fun restoreEntry(entryId: String) {
+        Log.d(TAG, "Restoring entry: $entryId")
+        viewModelScope.launch {
+            repository.restoreEntry(entryId)
+            if (_isUserSignedIn.value) {
+                SyncManager.enqueuePeriodicSync(getApplication())
+            }
+        }
+    }
+
+    override fun deleteEntries(entryIds: List<String>) {
+        viewModelScope.launch {
+            repository.deleteEntries(entryIds)
+            if (_isUserSignedIn.value) {
+                SyncManager.enqueuePeriodicSync(getApplication())
+            }
+        }
+    }
+
+    override fun emptyArchive() {
+        viewModelScope.launch {
+            repository.deleteAllArchived()
+            if (_isUserSignedIn.value) {
+                SyncManager.enqueuePeriodicSync(getApplication())
+            }
+        }
+    }
+
+    override fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? {
+        val context = getApplication<Application>()
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+            if (isPhoto) {
+                mediaService.compressAndSaveImage(inputStream, uri.lastPathSegment)
+            } else {
+                val fileName = "doc_${System.currentTimeMillis()}_${java.util.UUID.randomUUID()}"
+                val dir = java.io.File(context.filesDir, "attachments")
+                dir.mkdirs()
+                val persistentFile = java.io.File(dir, fileName)
+                inputStream.use { input ->
+                    persistentFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                android.net.Uri.fromFile(persistentFile).toString()
+            }
+        } catch (e: Exception) {
+            Log.e("JournalViewModel", "Error saving persistent file for URI: $uri", e)
+            null
+        }
+    }
 }
 
 class JournalViewModelFactory(
@@ -287,8 +393,9 @@ class JournalViewModelFactory(
             val authManager = GoogleAuthManager(application)
             val sessionManager = SessionManager(application)
             val healthManager = HealthConnectManager(application)
+            val mediaService = AndroidMediaCompressionService(application)
             @Suppress("UNCHECKED_CAST")
-            return JournalViewModel(application, repository, authManager, sessionManager, healthManager) as T
+            return JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

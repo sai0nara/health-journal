@@ -15,6 +15,7 @@ Solving **Data Fragmentation** by bringing together:
 
 ## Key Features
 - **Unified Logging:** A seamless interface for recording health events with support for multiple photos and document attachments (PDF, DOCX).
+- **Archive & Multi-Delete:** A two-stage deletion process to keep the main history clean, supporting bulk restoration or permanent removal.
 - **Advanced List Management:** Efficiently manage logs with keyword search and customizable date sorting.
 - **Automated Data Integration:** Effortless importing of health data from wearables and other apps using Health Connect.
 - **Cloud Synchronization:** Reliable backup and multi-device sync using the user's personal Google Drive.

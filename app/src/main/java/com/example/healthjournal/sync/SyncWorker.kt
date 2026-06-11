@@ -5,11 +5,14 @@ import android.util.Log
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import androidx.work.PeriodicWorkRequestBuilder
+import java.util.concurrent.TimeUnit
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
@@ -60,10 +63,21 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             Log.d("SyncWorker", "Downloading cloud data...")
             val cloudJson = driveHelper.downloadJournalData()
             
-            val cloudEntries: List<JournalEntry> = if (cloudJson != null) {
+            var cloudEntries: List<JournalEntry> = if (cloudJson != null) {
                 try {
                     val type = object : TypeToken<List<JournalEntry>>() {}.type
-                    Gson().fromJson<List<JournalEntry>>(cloudJson, type) ?: emptyList()
+                    val rawEntries = Gson().fromJson<List<JournalEntry>>(cloudJson, type) ?: emptyList()
+                    // Fix nulls from old cloud data
+                    rawEntries.map { entry ->
+                        entry.copy(
+                            isSynced = entry.isSynced ?: true,
+                            syncStatus = entry.syncStatus ?: "SYNCED",
+                            attachments = entry.attachments?.map { att ->
+                                att.copy(syncStatus = att.syncStatus ?: "SYNCED", isLocalOnly = att.isLocalOnly ?: false)
+                            } ?: emptyList(),
+                            photo_urls = entry.photo_urls ?: emptyList()
+                        )
+                    }
                 } catch (e: Exception) {
                     Log.e("SyncWorker", "Failed to parse cloud JSON", e)
                     emptyList()
@@ -72,7 +86,14 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 emptyList()
             }
 
-            // 1a. Download missing files from cloud
+            // 1a. Filter cloud entries by local deletions
+            val deletedIds = repository.getDeletedEntryIds()
+            if (deletedIds.isNotEmpty()) {
+                Log.d("SyncWorker", "Removing ${deletedIds.size} deleted entries from cloud list.")
+                cloudEntries = cloudEntries.filterNot { it.entry_id in deletedIds }
+            }
+
+            // 1b. Download missing files from cloud
             cloudEntries.forEach { entry ->
                 // Photos
                 entry.photo_urls?.forEach { url ->
@@ -94,8 +115,8 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 }
             }
 
-            // 2. Get local data
-            val localEntries = dao.getAllEntries().first()
+            // 2. Get local data (including archived)
+            val localEntries = dao.getAllEntriesIncludingArchived().first()
 
             // 3. Merge (latest timestamp wins)
             val allEntriesMap = mutableMapOf<String, JournalEntry>()
@@ -157,6 +178,11 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 return Result.failure(workDataOf("error_message" to "Cloud upload failed (Null ID)"))
             }
 
+            // 7. Clear local deleted tombstones after successful sync
+            if (deletedIds.isNotEmpty()) {
+                repository.clearDeletedEntries(deletedIds)
+            }
+
             Log.d("SyncWorker", "Bidirectional sync completed successfully.")
             return Result.success()
         } catch (e: Throwable) {
@@ -170,22 +196,39 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
         var authManagerProvider: (Context) -> GoogleAuthManager = { GoogleAuthManager(it) }
         var driveHelperProvider: (Context, Drive) -> DriveServiceHelper = { context, drive -> DriveServiceHelper(context, drive) }
     }
-}
-
-object SyncManager {
-    fun enqueueSync(context: Context) {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-
-        val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setConstraints(constraints)
-            .build()
-
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            "journal_sync",
-            ExistingWorkPolicy.REPLACE,
-            syncRequest
-        )
     }
-}
+
+    object SyncManager {
+        fun enqueuePeriodicSync(context: Context) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.UNMETERED)
+                .build()
+
+            val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "journal_sync_periodic",
+                ExistingPeriodicWorkPolicy.KEEP,
+                syncRequest
+            )
+        }
+
+        fun triggerManualSync(context: Context) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+                .setConstraints(constraints)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                "journal_sync_manual",
+                ExistingWorkPolicy.REPLACE,
+                syncRequest
+            )
+        }
+    }
+

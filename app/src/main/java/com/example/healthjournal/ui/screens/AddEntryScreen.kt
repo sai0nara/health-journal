@@ -6,6 +6,8 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,9 +19,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.health.connect.client.HealthConnectClient
@@ -60,6 +65,7 @@ fun AddEntryScreen(
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var expandedImageUri by remember { mutableStateOf<Uri?>(null) }
 
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = selectedTimestamp
@@ -99,8 +105,8 @@ fun AddEntryScreen(
                 existingEntry = entry
                 description = entry.description
                 selectedTimestamp = entry.timestamp
-                attachedPhotoUris = entry.photo_urls.map { Uri.parse(it) }
-                attachedFiles = entry.attachments
+                attachedPhotoUris = entry.photo_urls?.map { Uri.parse(it) } ?: emptyList()
+                attachedFiles = entry.attachments ?: emptyList()
                 bpSystolic = entry.bp_systolic
                 bpDiastolic = entry.bp_diastolic
                 heartRate = entry.heart_rate_avg
@@ -172,27 +178,6 @@ fun AddEntryScreen(
         }
     }
 
-    fun savePersistentFile(uri: Uri, isPhoto: Boolean): String? {
-        return try {
-            val inputStream = context.contentResolver.openInputStream(uri)
-            val fileName = if (isPhoto) "photo_${System.currentTimeMillis()}_${UUID.randomUUID()}.jpg" 
-                           else "doc_${System.currentTimeMillis()}_${UUID.randomUUID()}"
-            val dir = File(context.filesDir, if (isPhoto) "photos" else "attachments")
-            dir.mkdirs()
-            val persistentFile = File(dir, fileName)
-            
-            inputStream?.use { input ->
-                persistentFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-            Uri.fromFile(persistentFile).toString()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
     if (showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -244,10 +229,22 @@ fun AddEntryScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    if (existingEntry?.isArchived == true) {
+                        IconButton(onClick = {
+                            viewModel.restoreEntry(existingEntry!!.entry_id)
+                            existingEntry = existingEntry?.copy(isArchived = false)
+                        }) {
+                            Icon(Icons.Default.Restore, contentDescription = "Unarchive")
+                        }
+                    }
                 }
             )
         }
     ) { padding ->
+        val isReadOnly = existingEntry?.isArchived == true
+
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -262,8 +259,9 @@ fun AddEntryScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(
-                    onClick = { showDatePicker = true },
-                    modifier = Modifier.weight(1f)
+                    onClick = { if (!isReadOnly) showDatePicker = true },
+                    modifier = Modifier.weight(1f),
+                    enabled = !isReadOnly
                 ) {
                     Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -271,8 +269,9 @@ fun AddEntryScreen(
                 }
                 
                 OutlinedButton(
-                    onClick = { showTimePicker = true },
-                    modifier = Modifier.weight(1f)
+                    onClick = { if (!isReadOnly) showTimePicker = true },
+                    modifier = Modifier.weight(1f),
+                    enabled = !isReadOnly
                 ) {
                     Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -282,10 +281,11 @@ fun AddEntryScreen(
 
             OutlinedTextField(
                 value = description,
-                onValueChange = { description = it },
-                label = { Text("How are you feeling today?") },
+                onValueChange = { if (!isReadOnly) description = it },
+                label = { Text(if (isReadOnly) "Entry Description" else "How are you feeling today?") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 5
+                minLines = 5,
+                enabled = !isReadOnly
             )
             
             // Health Metrics Section
@@ -329,17 +329,44 @@ fun AddEntryScreen(
                             AsyncImage(
                                 model = uri,
                                 contentDescription = null,
-                                modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.small),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(MaterialTheme.shapes.small)
+                                    .clickable { expandedImageUri = uri },
                                 contentScale = ContentScale.Crop
                             )
-                            IconButton(
-                                onClick = { attachedPhotoUris = attachedPhotoUris.filterIndexed { i, _ -> i != index } },
-                                modifier = Modifier.align(Alignment.TopEnd).size(24.dp),
-                                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                            ) {
-                                Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                            if (!isReadOnly) {
+                                IconButton(
+                                    onClick = { attachedPhotoUris = attachedPhotoUris.filterIndexed { i, _ -> i != index } },
+                                    modifier = Modifier.align(Alignment.TopEnd).size(24.dp),
+                                    colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                ) {
+                                    Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                                }
                             }
                         }
+                    }
+                }
+            }
+
+            if (expandedImageUri != null) {
+                Dialog(
+                    onDismissRequest = { expandedImageUri = null },
+                    properties = DialogProperties(usePlatformDefaultWidth = false)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black)
+                            .clickable { expandedImageUri = null },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = expandedImageUri,
+                            contentDescription = "Expanded Image",
+                            modifier = Modifier.fillMaxWidth(),
+                            contentScale = ContentScale.Fit
+                        )
                     }
                 }
             }
@@ -361,12 +388,25 @@ fun AddEntryScreen(
                             ) {
                                 Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
+                                    
+                                    if (file.mimeType.startsWith("image/")) {
+                                        AsyncImage(
+                                            model = file.uri,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(40.dp).clip(MaterialTheme.shapes.small),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                    }
+
                                     Text(file.name, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                                    IconButton(
-                                        onClick = { attachedFiles = attachedFiles.filterIndexed { i, _ -> i != index } },
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                                    if (!isReadOnly) {
+                                        IconButton(
+                                            onClick = { attachedFiles = attachedFiles.filterIndexed { i, _ -> i != index } },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                                        }
                                     }
                             }
                         }
@@ -374,44 +414,45 @@ fun AddEntryScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            EnrichmentPanel(
-                onCameraClick = { launchCamera() },
-                onGalleryClick = { photoPickerLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                onAttachFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
-                onSyncHealthClick = { 
-                    scope.launch {
-                        val availability = viewModel.checkHealthAvailability()
-                        if (availability != HealthConnectClient.SDK_AVAILABLE) {
-                            android.widget.Toast.makeText(context, "Health Connect is not available on this device", android.widget.Toast.LENGTH_LONG).show()
-                            return@launch
-                        }
+            if (!isReadOnly) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                EnrichmentPanel(
+                    onCameraClick = { launchCamera() },
+                    onGalleryClick = { photoPickerLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    onAttachFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
+                    onSyncHealthClick = { 
+                        scope.launch {
+                            val availability = viewModel.checkHealthAvailability()
+                            if (availability != HealthConnectClient.SDK_AVAILABLE) {
+                                android.widget.Toast.makeText(context, "Health Connect is not available on this device", android.widget.Toast.LENGTH_LONG).show()
+                                return@launch
+                            }
 
-                        if (viewModel.hasHealthPermissions()) {
-                            isHealthSyncing = true
-                            val result = viewModel.syncHealthData(selectedTimestamp)
-                            bpSystolic = result.bpSystolic
-                            bpDiastolic = result.bpDiastolic
-                            heartRate = result.heartRate
-                            sleepHours = result.sleepHours
-                            isHealthSyncing = false
-                        } else {
-                            android.util.Log.d("AddEntryScreen", "Launching Health permissions for: ${viewModel.healthPermissions}")
-                            healthPermissionsLauncher.launch(viewModel.healthPermissions)
+                            if (viewModel.hasHealthPermissions()) {
+                                isHealthSyncing = true
+                                val result = viewModel.syncHealthData(selectedTimestamp)
+                                bpSystolic = result.bpSystolic
+                                bpDiastolic = result.bpDiastolic
+                                heartRate = result.heartRate
+                                sleepHours = result.sleepHours
+                                isHealthSyncing = false
+                            } else {
+                                android.util.Log.d("AddEntryScreen", "Launching Health permissions for: ${viewModel.healthPermissions}")
+                                healthPermissionsLauncher.launch(viewModel.healthPermissions)
+                            }
                         }
                     }
+                )
+                
+                if (isHealthSyncing) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 }
-            )
-            
-            if (isHealthSyncing) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Button(
-                onClick = {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Button(
+                    onClick = {
                     if (description.isNotBlank()) {
                         val finalTimestamp = if (selectedTimestamp > System.currentTimeMillis()) {
                             System.currentTimeMillis()
@@ -422,13 +463,16 @@ fun AddEntryScreen(
                         // Save all files persistently
                         val persistentPhotoUrls = attachedPhotoUris.map { uri ->
                             if (uri.toString().startsWith("file:///")) uri.toString()
-                            else savePersistentFile(uri, true) ?: ""
+                            else viewModel.savePersistentFile(uri, true) ?: ""
                         }.filter { it.isNotBlank() }
 
                         val persistentAttachments = attachedFiles.map { file ->
                             if (file.uri.startsWith("file:///")) file
                             else {
-                                val persistentUri = savePersistentFile(Uri.parse(file.uri), false)
+                                val persistentUri = viewModel.savePersistentFile(Uri.parse(file.uri), false)
+                                if (persistentUri == null) {
+                                    android.widget.Toast.makeText(context, "Failed to save attachment: ${file.name}", android.widget.Toast.LENGTH_SHORT).show()
+                                }
                                 file.copy(uri = persistentUri ?: "")
                             }
                         }.filter { it.uri.isNotBlank() }
@@ -469,6 +513,7 @@ fun AddEntryScreen(
             }
         }
     }
+}
 }
 
 @Composable

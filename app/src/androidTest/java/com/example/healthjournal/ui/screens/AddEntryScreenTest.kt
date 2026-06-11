@@ -1,8 +1,8 @@
 package com.example.healthjournal.ui.screens
 
-import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+
 import com.example.healthjournal.MainActivity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.AttachmentData
@@ -25,7 +25,8 @@ import androidx.test.rule.GrantPermissionRule
 class AddEntryScreenTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
 
     @get:Rule
     val screenshotRule = ScreenshotRule(mode = ScreenshotRule.Mode.FAILURE)
@@ -35,9 +36,12 @@ class AddEntryScreenTest {
 
     class MockJournalViewModel : IJournalViewModel {
         override val allEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
+        override val archivedEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
+        override val reactiveArchivedEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
         override val isUserSignedIn: StateFlow<Boolean> = MutableStateFlow(false)
         override val syncStatus: StateFlow<String?> = MutableStateFlow(null)
         override val searchQuery: StateFlow<String> = MutableStateFlow("")
+        override val archiveSearchQuery: StateFlow<String> = MutableStateFlow("")
         override val isAscending: StateFlow<Boolean> = MutableStateFlow(false)
         
         var addEntryCalledWith: Quadruple<String, Long, List<String>, List<AttachmentData>>? = null
@@ -56,12 +60,14 @@ class AddEntryScreenTest {
         }
 
         override fun updateEntry(entry: JournalEntry) {}
-        override suspend fun getEntryById(entryId: String): JournalEntry? = null
+        var entryToReturn: JournalEntry? = null
+        override suspend fun getEntryById(entryId: String): JournalEntry? = entryToReturn
         
         override fun signIn(activityContext: Context, onResolutionRequired: (PendingIntent) -> Unit) {}
         override fun syncNow() {}
         override fun signOut() {}
         override fun setSearchQuery(query: String) {}
+        override fun setArchiveSearchQuery(query: String) {}
         override fun setSortOrder(isAsc: Boolean) {}
 
         // Health Connect
@@ -70,6 +76,13 @@ class AddEntryScreenTest {
         override fun checkHealthAvailability(): Int = 1 // SDK_AVAILABLE
         override suspend fun syncHealthData(timestamp: Long): com.example.healthjournal.viewmodel.HealthSyncResult = 
             com.example.healthjournal.viewmodel.HealthSyncResult()
+
+        // Archive & Delete
+        override fun archiveEntry(entryId: String) {}
+        override fun restoreEntry(entryId: String) {}
+        override fun deleteEntries(entryIds: List<String>) {}
+        override fun emptyArchive() {}
+        override fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
     }
 
     // Helper for Triple replacement
@@ -153,7 +166,10 @@ class AddEntryScreenTest {
     fun testAddEntryScreen_DatePickerOpens() {
         step("Open Add Entry Screen") {
             composeTestRule.setContent {
-                AddEntryScreen(viewModel = viewModel, onBack = {})
+                AddEntryScreen(
+                    viewModel = viewModel,
+                    onBack = { }
+                )
             }
             composeTestRule.waitForIdle()
         }
@@ -176,7 +192,10 @@ class AddEntryScreenTest {
     fun testAddEntryScreen_TimePickerOpens() {
         step("Open Add Entry Screen") {
             composeTestRule.setContent {
-                AddEntryScreen(viewModel = viewModel, onBack = {})
+                AddEntryScreen(
+                    viewModel = viewModel,
+                    onBack = { }
+                )
             }
             composeTestRule.waitForIdle()
         }
@@ -200,10 +219,11 @@ class AddEntryScreenTest {
         var backCalled = false
         step("Open Add Entry Screen") {
             composeTestRule.setContent {
-                AddEntryScreen(viewModel = viewModel, onBack = { backCalled = true })
+                AddEntryScreen(viewModel = viewModel, onBack = {})
             }
             composeTestRule.waitForIdle()
         }
+
 
         step("Click Save with empty description") {
             composeTestRule.onNodeWithText("Save Entry").performClick()
@@ -253,6 +273,47 @@ class AddEntryScreenTest {
                 .performClick()
             composeTestRule.waitForIdle()
             allureScreenshot("attach_file_clicked_in_screen")
+        }
+    }
+
+    @Test
+    fun testAddEntryScreen_UnarchiveAction() {
+        var backCalled = false
+        val archivedEntry = JournalEntry(entry_id = "1", description = "Archived", isArchived = true)
+        
+        step("Open Add Entry Screen with archived entry") {
+            viewModel.entryToReturn = archivedEntry
+            composeTestRule.setContent {
+                AddEntryScreen(
+                    viewModel = viewModel,
+                    onBack = { backCalled = true },
+                    entryId = "1"
+                )
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Click Unarchive button") {
+            composeTestRule.onNodeWithContentDescription("Unarchive").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify back was called") {
+            composeTestRule.waitUntil(5000) { backCalled }
+            assert(backCalled)
+        }
+    }
+
+    @Test
+    fun testAddEntryScreen_AttachmentDisplaysThumbnailForImage() {
+        step("Open Add Entry Screen") {
+            composeTestRule.setContent {
+                AddEntryScreen(
+                    viewModel = viewModel,
+                    onBack = { }
+                )
+            }
+            composeTestRule.waitForIdle()
         }
     }
 

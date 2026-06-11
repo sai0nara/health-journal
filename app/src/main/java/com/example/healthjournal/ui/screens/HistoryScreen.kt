@@ -3,6 +3,9 @@ package com.example.healthjournal.ui.screens
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,15 +20,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.ui.components.AboutAppDialog
+import com.example.healthjournal.ui.components.SharedSearchBar
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -36,15 +45,19 @@ import java.util.*
 fun HistoryScreen(
     viewModel: IJournalViewModel,
     onAddEntryClick: () -> Unit,
-    onEntryClick: (String) -> Unit
+    onEntryClick: (String) -> Unit,
+    onArchiveClick: () -> Unit
 ) {
     val entries by viewModel.allEntries.collectAsState()
     val isAscending by viewModel.isAscending.collectAsState()
+    var expandedImageUri by remember { mutableStateOf<String?>(null) }
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    val snackbarHostState = remember { SnackbarHostState() }
     
     val authorizationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
@@ -64,10 +77,14 @@ fun HistoryScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Health Journal") },
                 actions = {
+                    IconButton(onClick = onArchiveClick) {
+                        Icon(Icons.Default.Archive, contentDescription = "View Archive")
+                    }
                     IconButton(onClick = { showAboutDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Info,
@@ -96,18 +113,11 @@ fun HistoryScreen(
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             // Search Bar
-            SearchBar(
+            SharedSearchBar(
                 query = searchQuery,
-                onQueryChange = { viewModel.setSearchQuery(it) },
-                onSearch = { },
-                active = false,
-                onActiveChange = { },
-                placeholder = { Text("Search journal...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) { }
+                onQueryChanged = { viewModel.setSearchQuery(it) },
+                placeholder = "Search journal..."
+            )
 
             // Sync Status
             if (isUserSignedIn) {
@@ -158,20 +168,99 @@ fun HistoryScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(entries, key = { it.entry_id }) { entry ->
-                            JournalEntryItem(
-                                entry = entry,
-                                onClick = { onEntryClick(entry.entry_id) }
-                            )
+                            SwipeToArchiveWrapper(
+                                onArchive = { 
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    viewModel.archiveEntry(entry.entry_id)
+                                    scope.launch {
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "Entry archived",
+                                            actionLabel = "Undo",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            viewModel.restoreEntry(entry.entry_id)
+                                        }
+                                    }
+                                }
+                            ) {
+                                JournalEntryItem(
+                                    entry = entry,
+                                    onClick = { onEntryClick(entry.entry_id) },
+                                    onPhotoClick = { expandedImageUri = it }
+                                )
+                            }
                         }
                     }
                 }
             }
         }
     }
+
+    if (expandedImageUri != null) {
+        Dialog(
+            onDismissRequest = { expandedImageUri = null },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .clickable { expandedImageUri = null },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = expandedImageUri,
+                    contentDescription = "Expanded Image",
+                    modifier = Modifier.fillMaxWidth(),
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeToArchiveWrapper(
+    onArchive: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = {
+            if (it == SwipeToDismissBoxValue.EndToStart) {
+                onArchive()
+                true
+            } else false
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            val color = MaterialTheme.colorScheme.errorContainer
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(color)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    Icons.Default.Archive,
+                    contentDescription = "Archive",
+                    tint = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        },
+        content = { content() }
+    )
 }
 
 @Composable
-fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
+fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit, onPhotoClick: (String) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -214,14 +303,15 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
                                 contentDescription = null,
                                 modifier = Modifier
                                     .size(80.dp)
-                                    .clip(MaterialTheme.shapes.extraSmall),
+                                    .clip(MaterialTheme.shapes.extraSmall)
+                                    .clickable { onPhotoClick(photoUrl) },
                                 contentScale = ContentScale.Crop
                             )
                         }
                     }
                 }
 
-                if (entry.attachments.isNotEmpty()) {
+                if (entry.attachments?.isNotEmpty() == true) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -232,7 +322,7 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${entry.attachments.size} attachment(s)",
+                            text = "${entry.attachments?.size ?: 0} attachment(s)",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -261,7 +351,7 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit) {
                 }
             }
             
-            if (entry.isSynced) {
+            if (entry.isSynced == true) {
                 Icon(
                     Icons.Default.CloudDone,
                     contentDescription = "Cloud Synced",
