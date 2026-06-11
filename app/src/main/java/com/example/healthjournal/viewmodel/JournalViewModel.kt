@@ -15,6 +15,8 @@ import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.health.HealthConnectManager
+import com.example.healthjournal.media.AndroidMediaCompressionService
+import com.example.healthjournal.media.MediaCompressionService
 import com.example.healthjournal.sync.SyncManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -72,6 +74,7 @@ interface IJournalViewModel {
     fun restoreEntry(entryId: String)
     fun deleteEntries(entryIds: List<String>)
     fun emptyArchive()
+    fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String?
 }
 
 class JournalViewModel(
@@ -80,6 +83,7 @@ class JournalViewModel(
     private val authManager: GoogleAuthManager,
     private val sessionManager: SessionManager,
     private val healthManager: HealthConnectManager,
+    private val mediaService: MediaCompressionService,
     private val ioContext: kotlin.coroutines.CoroutineContext = Dispatchers.IO
 ) : AndroidViewModel(application), IJournalViewModel {
 
@@ -259,7 +263,7 @@ class JournalViewModel(
     override fun syncNow() {
         val email = sessionManager.getUserEmail() ?: return
         Log.d(TAG, "Sync now triggered for $email")
-        SyncManager.enqueueSync(getApplication())
+        SyncManager.triggerManualSync(getApplication())
         _syncStatus.value = "Sync Requested"
         android.widget.Toast.makeText(getApplication(), "Syncing with Google Drive...", android.widget.Toast.LENGTH_SHORT).show()
     }
@@ -354,6 +358,30 @@ class JournalViewModel(
             }
         }
     }
+
+    override fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? {
+        val context = getApplication<Application>()
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+            if (isPhoto) {
+                mediaService.compressAndSaveImage(inputStream, uri.lastPathSegment)
+            } else {
+                val fileName = "doc_${System.currentTimeMillis()}_${java.util.UUID.randomUUID()}"
+                val dir = java.io.File(context.filesDir, "attachments")
+                dir.mkdirs()
+                val persistentFile = java.io.File(dir, fileName)
+                inputStream.use { input ->
+                    persistentFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                android.net.Uri.fromFile(persistentFile).toString()
+            }
+        } catch (e: Exception) {
+            Log.e("JournalViewModel", "Error saving persistent file for URI: $uri", e)
+            null
+        }
+    }
 }
 
 class JournalViewModelFactory(
@@ -365,8 +393,9 @@ class JournalViewModelFactory(
             val authManager = GoogleAuthManager(application)
             val sessionManager = SessionManager(application)
             val healthManager = HealthConnectManager(application)
+            val mediaService = AndroidMediaCompressionService(application)
             @Suppress("UNCHECKED_CAST")
-            return JournalViewModel(application, repository, authManager, sessionManager, healthManager) as T
+            return JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

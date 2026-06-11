@@ -5,11 +5,14 @@ import android.util.Log
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import androidx.work.PeriodicWorkRequestBuilder
+import java.util.concurrent.TimeUnit
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
@@ -193,25 +196,39 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
         var authManagerProvider: (Context) -> GoogleAuthManager = { GoogleAuthManager(it) }
         var driveHelperProvider: (Context, Drive) -> DriveServiceHelper = { context, drive -> DriveServiceHelper(context, drive) }
     }
-}
-
-import androidx.work.PeriodicWorkRequestBuilder
-import java.util.concurrent.TimeUnit
-...
-object SyncManager {
-    fun enqueueSync(context: Context) {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.UNMETERED)
-            .build()
-
-        val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.HOURS)
-            .setConstraints(constraints)
-            .build()
-
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            "journal_sync",
-            ExistingPeriodicWorkPolicy.KEEP,
-            syncRequest
-        )
     }
-}
+
+    object SyncManager {
+        fun enqueuePeriodicSync(context: Context) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.UNMETERED)
+                .build()
+
+            val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "journal_sync_periodic",
+                ExistingPeriodicWorkPolicy.KEEP,
+                syncRequest
+            )
+        }
+
+        fun triggerManualSync(context: Context) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+                .setConstraints(constraints)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                "journal_sync_manual",
+                ExistingWorkPolicy.REPLACE,
+                syncRequest
+            )
+        }
+    }
+

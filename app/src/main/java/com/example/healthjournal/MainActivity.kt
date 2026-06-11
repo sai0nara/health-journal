@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
         val viewModelFactory = JournalViewModelFactory(application, repository)
 
         // Trigger sync on start
-        SyncManager.enqueueSync(this)
+        SyncManager.enqueuePeriodicSync(this)
 
         setContent {
             HealthJournalTheme {
