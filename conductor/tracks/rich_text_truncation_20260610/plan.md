@@ -16,6 +16,9 @@
 ## Phase 3: Detail Screen Expansion
 - [~] Task: Update `AddEntryScreen` (or Detail Screen) to render fully parsed HTML content.
     - [x] Update UI to display full formatted content.
-    - [ ] Update to use `HtmlParser`.
+    - [x] Update to use `HtmlParser`.
     - [ ] Write UI tests for verifying full rendering.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Detail Screen Expansion' (Protocol in workflow.md)
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions [e16a721]
