@@ -1,10 +1,10 @@
 # Implementation Plan: Rich Text and Truncation
 
 ## Phase 1: Markdown Parsing Logic
-- [ ] Task: Create `MarkdownParser` utility to convert raw text to `AnnotatedString`.
-    - [ ] Write unit tests for Markdown to `AnnotatedString` conversion (bold, italics, headers).
-    - [ ] Implement parsing logic.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Markdown Parsing Logic' (Protocol in workflow.md)
+- [x] Task: Create `MarkdownParser` utility to convert raw text to `AnnotatedString`.
+    - [x] Write unit tests for Markdown to `AnnotatedString` conversion (bold, italics, headers).
+    - [x] Implement parsing logic.
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Markdown Parsing Logic' (Protocol in workflow.md)
 
 ## Phase 2: Feed View Truncation
 - [ ] Task: Update `HistoryScreen` and `ArchiveScreen` card components to use truncated text.
