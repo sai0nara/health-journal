@@ -2,9 +2,10 @@ package com.example.healthjournal.util
 
 import android.text.Html
 import android.text.Spanned
+import android.text.style.AbsoluteSizeSpan
+import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
-import android.text.style.TypefaceSpan
 import android.graphics.Typeface
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -12,6 +13,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.sp
 
 object HtmlParser {
     fun parse(html: String): AnnotatedString {
@@ -32,6 +34,12 @@ object HtmlParser {
                     }
                     is UnderlineSpan -> {
                         addStyle(SpanStyle(textDecoration = TextDecoration.Underline), start, end)
+                    }
+                    is AbsoluteSizeSpan -> {
+                        addStyle(SpanStyle(fontSize = span.size.sp), start, end)
+                    }
+                    is RelativeSizeSpan -> {
+                        addStyle(SpanStyle(fontSize = (16 * span.sizeChange).sp), start, end)
                     }
                 }
             }

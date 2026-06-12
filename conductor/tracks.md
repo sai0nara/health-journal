@@ -34,6 +34,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Rich Text and Truncation**
+- [~] **Track: Rich Text and Truncation**
   *Link: [./tracks/rich_text_truncation_20260610/](./tracks/rich_text_truncation_20260610/)*
 

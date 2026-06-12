@@ -2,6 +2,7 @@ package com.example.healthjournal.util
 
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -38,5 +39,16 @@ class HtmlParserTest {
         assertEquals("bold and italic", parsed.text)
         // Verify multiple spans
         assertEquals(2, parsed.spanStyles.size)
+    }
+
+    @Test
+    fun testParseHeader() {
+        val input = "<h1>Header</h1>"
+        val parsed = HtmlParser.parse(input)
+        
+        assertEquals("Header", parsed.text.trim())
+        val span = parsed.spanStyles.first()
+        // Check that font size is set
+        assert(span.item.fontSize.value > 0f)
     }
 }

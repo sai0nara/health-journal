@@ -1,5 +1,6 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 

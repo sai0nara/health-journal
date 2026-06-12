@@ -14,8 +14,8 @@ Personal health journal app
 
 ```
 
-# Resume Gemini
+# Build apk
 
 ```shell
-gemini --resume 498b026d-b2ef-4b26-9917-e16bd82e1b3d    
+JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home ./gradlew assembleDebug
 ```
