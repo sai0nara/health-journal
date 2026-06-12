@@ -279,14 +279,22 @@ fun AddEntryScreen(
                 }
             }
 
-            OutlinedTextField(
-                value = description,
-                onValueChange = { if (!isReadOnly) description = it },
-                label = { Text(if (isReadOnly) "Entry Description" else "How are you feeling today?") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 5,
-                enabled = !isReadOnly
-            )
+            if (isReadOnly) {
+                Text(
+                    text = com.example.healthjournal.util.HtmlParser.parse(description),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            } else {
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { if (!isReadOnly) description = it },
+                    label = { Text("How are you feeling today?") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 5,
+                    enabled = true
+                )
+            }
             
             // Health Metrics Section
             if (bpSystolic != null || heartRate != null || sleepHours != null) {

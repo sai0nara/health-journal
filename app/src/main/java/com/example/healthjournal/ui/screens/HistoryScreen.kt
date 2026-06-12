@@ -27,6 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -35,6 +36,7 @@ import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.ui.components.AboutAppDialog
 import com.example.healthjournal.ui.components.SharedSearchBar
+import com.example.healthjournal.util.HtmlParser
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -289,7 +291,12 @@ fun JournalEntryItem(entry: JournalEntry, onClick: () -> Unit, onPhotoClick: (St
                     }
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = entry.description, fontSize = 16.sp)
+                Text(
+                    text = HtmlParser.parse(entry.description), 
+                    fontSize = 16.sp,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
                 
                 if (!entry.photo_urls.isNullOrEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
