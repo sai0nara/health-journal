@@ -8,7 +8,7 @@
 ## Architecture & Logic
 - **Pattern:** MVVM (Model-View-ViewModel) - Ensures separation of concerns between UI, business logic, and data.
 - **Data Serialization:** [Gson](https://github.com/google/gson) - Used with Room TypeConverters to persist multi-media collections.
-- **Rich Text Rendering:** Native Jetpack Compose `AnnotatedString` combined with a custom `MarkdownParser` utility for lightweight formatting support.
+- **Rich Text Rendering:** Native Jetpack Compose `AnnotatedString` combined with a custom `HtmlParser` utility utilizing `android.text.Html` for standard formatting support.
 - **Repository Pattern:** Centralizes data access from local and potentially remote sources.
 - **Background Tasks:** [WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager) - For reliable background synchronization with Google Drive.
 
