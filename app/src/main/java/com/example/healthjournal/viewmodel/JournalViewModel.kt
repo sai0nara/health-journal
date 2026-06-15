@@ -74,7 +74,7 @@ interface IJournalViewModel {
     fun restoreEntry(entryId: String)
     fun deleteEntries(entryIds: List<String>)
     fun emptyArchive()
-    fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String?
+    suspend fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String?
 }
 
 class JournalViewModel(
@@ -293,7 +293,7 @@ class JournalViewModel(
 
     // Health Connect Implementation
     override val healthPermissions: Set<String>
-        get() = healthManager.requiredPermissions.map { it }.toSet()
+        get() = healthManager.requiredPermissions.toSet()
 
     override suspend fun hasHealthPermissions(): Boolean {
         return healthManager.hasAllPermissions()
@@ -359,10 +359,10 @@ class JournalViewModel(
         }
     }
 
-    override fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? {
+    override suspend fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = withContext(ioContext) {
         val context = getApplication<Application>()
-        return try {
-            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+        try {
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return@withContext null
             if (isPhoto) {
                 mediaService.compressAndSaveImage(inputStream, uri.lastPathSegment)
             } else {
@@ -375,7 +375,7 @@ class JournalViewModel(
                         input.copyTo(output)
                     }
                 }
-                android.net.Uri.fromFile(persistentFile).toString()
+                "file://${persistentFile.absolutePath}"
             }
         } catch (e: Exception) {
             Log.e("JournalViewModel", "Error saving persistent file for URI: $uri", e)

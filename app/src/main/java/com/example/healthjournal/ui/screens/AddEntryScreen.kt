@@ -462,57 +462,60 @@ fun AddEntryScreen(
                 Button(
                     onClick = {
                     if (description.isNotBlank()) {
-                        val finalTimestamp = if (selectedTimestamp > System.currentTimeMillis()) {
-                            System.currentTimeMillis()
-                        } else {
-                            selectedTimestamp
-                        }
-                        
-                        // Save all files persistently
-                        val persistentPhotoUrls = attachedPhotoUris.map { uri ->
-                            if (uri.toString().startsWith("file:///")) uri.toString()
-                            else viewModel.savePersistentFile(uri, true) ?: ""
-                        }.filter { it.isNotBlank() }
+                        scope.launch {
+                            val finalTimestamp = if (selectedTimestamp > System.currentTimeMillis()) {
+                                System.currentTimeMillis()
+                            } else {
+                                selectedTimestamp
+                            }
+                            
+                            // Save all files persistently
+                            val persistentPhotoUrls = attachedPhotoUris.map { uri ->
+                                if (uri.scheme == "file") uri.toString()
+                                else viewModel.savePersistentFile(uri, true) ?: ""
+                            }.filter { it.isNotBlank() }
 
-                        val persistentAttachments = attachedFiles.map { file ->
-                            if (file.uri.startsWith("file:///")) file
-                            else {
-                                val persistentUri = viewModel.savePersistentFile(Uri.parse(file.uri), false)
-                                if (persistentUri == null) {
-                                    android.widget.Toast.makeText(context, "Failed to save attachment: ${file.name}", android.widget.Toast.LENGTH_SHORT).show()
+                            val persistentAttachments = attachedFiles.map { file ->
+                                val fileUri = Uri.parse(file.uri)
+                                if (fileUri.scheme == "file") file
+                                else {
+                                    val persistentUri = viewModel.savePersistentFile(fileUri, false)
+                                    if (persistentUri == null) {
+                                        android.widget.Toast.makeText(context, "Failed to save attachment: ${file.name}", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                    file.copy(uri = persistentUri ?: "")
                                 }
-                                file.copy(uri = persistentUri ?: "")
-                            }
-                        }.filter { it.uri.isNotBlank() }
+                            }.filter { it.uri.isNotBlank() }
 
-                        if (entryId == null) {
-                            viewModel.addEntry(
-                                description = description,
-                                timestamp = finalTimestamp,
-                                photoUrls = persistentPhotoUrls,
-                                attachments = persistentAttachments,
-                                bpSystolic = bpSystolic,
-                                bpDiastolic = bpDiastolic,
-                                heartRate = heartRate,
-                                sleepHours = sleepHours
-                            )
-                        } else {
-                            existingEntry?.let {
-                                viewModel.updateEntry(
-                                    it.copy(
-                                        description = description,
-                                        timestamp = finalTimestamp,
-                                        photo_urls = persistentPhotoUrls,
-                                        attachments = persistentAttachments,
-                                        bp_systolic = bpSystolic,
-                                        bp_diastolic = bpDiastolic,
-                                        heart_rate_avg = heartRate,
-                                        sleep_hours = sleepHours
-                                    )
+                            if (entryId == null) {
+                                viewModel.addEntry(
+                                    description = description,
+                                    timestamp = finalTimestamp,
+                                    photoUrls = persistentPhotoUrls,
+                                    attachments = persistentAttachments,
+                                    bpSystolic = bpSystolic,
+                                    bpDiastolic = bpDiastolic,
+                                    heartRate = heartRate,
+                                    sleepHours = sleepHours
                                 )
+                            } else {
+                                existingEntry?.let {
+                                    viewModel.updateEntry(
+                                        it.copy(
+                                            description = description,
+                                            timestamp = finalTimestamp,
+                                            photo_urls = persistentPhotoUrls,
+                                            attachments = persistentAttachments,
+                                            bp_systolic = bpSystolic,
+                                            bp_diastolic = bpDiastolic,
+                                            heart_rate_avg = heartRate,
+                                            sleep_hours = sleepHours
+                                        )
+                                    )
+                                }
                             }
+                            onBack()
                         }
-                        onBack()
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

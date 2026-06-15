@@ -31,3 +31,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Rich Attachments & Archive Integration**
   *Link: [./tracks/rich_attachments_20260609/](./tracks/rich_attachments_20260609/)*
+
+---
+
+- [ ] **Track: Rich Text Formatting Toolbar**
+  *Link: [./tracks/formatting_toolbar_20260615/](./tracks/formatting_toolbar_20260615/)*

@@ -73,7 +73,7 @@ class ArchiveScreenTest {
         override fun emptyArchive() {
             emptyArchiveCalled = true
         }
-        override fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
+        override suspend fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
     }
 
     private val viewModel = MockJournalViewModel()

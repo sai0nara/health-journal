@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalDatabase
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -13,7 +12,6 @@ import com.google.api.services.drive.Drive
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.AccessToken
 import com.google.auth.oauth2.GoogleCredentials
-import com.google.gson.Gson
 
 class SyncUploadWorker(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
@@ -36,7 +34,7 @@ class SyncUploadWorker(appContext: Context, workerParams: WorkerParameters) :
                 HttpCredentialsAdapter(credentials)
             ).setApplicationName("Health Journal").build()
             
-            val driveHelper = SyncWorker.driveHelperProvider(applicationContext, driveService)
+            // val driveHelper = SyncWorker.driveHelperProvider(applicationContext, driveService) // Unused but kept for reference
 
             val pendingEntries = repository.getPendingSyncEntries()
             if (pendingEntries.isEmpty()) return Result.success()

@@ -1,4 +1,4 @@
-# Track rich_text_truncation_20260610 Context
+# Track formatting_toolbar_20260615 Context
 
 - [Specification](./spec.md)
 - [Implementation Plan](./plan.md)

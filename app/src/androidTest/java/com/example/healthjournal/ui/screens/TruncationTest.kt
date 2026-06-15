@@ -48,7 +48,7 @@ class TruncationTest {
         override fun restoreEntry(id: String) {}
         override fun deleteEntries(ids: List<String>) {}
         override fun emptyArchive() {}
-        override fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
+        override suspend fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
     }
 
     @Test

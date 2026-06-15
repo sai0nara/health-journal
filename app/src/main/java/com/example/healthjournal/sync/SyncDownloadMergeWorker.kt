@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.healthjournal.auth.GoogleAuthManager
-import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalDatabase
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
@@ -13,9 +12,6 @@ import com.google.api.services.drive.Drive
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.AccessToken
 import com.google.auth.oauth2.GoogleCredentials
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import kotlinx.coroutines.flow.first
 
 class SyncDownloadMergeWorker(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
@@ -30,7 +26,7 @@ class SyncDownloadMergeWorker(appContext: Context, workerParams: WorkerParameter
 
             val database = JournalDatabase.getDatabase(applicationContext)
             val dao = database.journalDao()
-            val repository = JournalRepository(dao)
+            // val repository = JournalRepository(dao) // Unused but kept for reference
             
             val credentials = GoogleCredentials.create(AccessToken(accessToken, null))
             val driveService = Drive.Builder(
@@ -39,7 +35,7 @@ class SyncDownloadMergeWorker(appContext: Context, workerParams: WorkerParameter
                 HttpCredentialsAdapter(credentials)
             ).setApplicationName("Health Journal").build()
             
-            val driveHelper = SyncWorker.driveHelperProvider(applicationContext, driveService)
+            // val driveHelper = SyncWorker.driveHelperProvider(applicationContext, driveService) // Unused but kept for reference
 
             // Download and merge...
             

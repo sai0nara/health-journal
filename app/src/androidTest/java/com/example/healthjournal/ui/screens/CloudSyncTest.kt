@@ -78,7 +78,7 @@ class CloudSyncTest {
         override fun restoreEntry(entryId: String) {}
         override fun deleteEntries(entryIds: List<String>) {}
         override fun emptyArchive() {}
-        override fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
+        override suspend fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
     }
 
     private val viewModel = MockJournalViewModel()

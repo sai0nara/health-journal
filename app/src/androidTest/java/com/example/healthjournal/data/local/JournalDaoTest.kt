@@ -104,4 +104,49 @@ class JournalDaoTest {
         assertEquals(emptyList<AttachmentData>(), converters.toAttachmentList(null))
         assertEquals(emptyList<AttachmentData>(), converters.toAttachmentList("invalid json"))
     }
+
+    @Test
+    fun getPendingSyncEntries_returnsOnlyPendingEntries() = runBlocking {
+        val entry1 = JournalEntry(description = "Pending", syncStatus = "PENDING_SYNC")
+        val entry2 = JournalEntry(description = "Synced", syncStatus = "SYNCED")
+        
+        journalDao.insertEntry(entry1)
+        journalDao.insertEntry(entry2)
+        
+        val pending = journalDao.getPendingSyncEntries()
+        assertEquals(1, pending.size)
+        assertEquals("Pending", pending[0].description)
+        assertEquals("PENDING_SYNC", pending[0].syncStatus)
+    }
+
+    @Test
+    fun updateSyncStatus_correctlyUpdatesStatus() = runBlocking {
+        val entry = JournalEntry(description = "Test", syncStatus = "PENDING_SYNC")
+        journalDao.insertEntry(entry)
+        
+        journalDao.updateSyncStatus(entry.entry_id, "SYNCING")
+        
+        val updated = journalDao.getEntryById(entry.entry_id)
+        assertNotNull(updated)
+        assertEquals("SYNCING", updated!!.syncStatus)
+    }
+
+    @Test
+    fun updateAttachments_correctlyUpdatesAttachmentsAndStatus() = runBlocking {
+        val entry = JournalEntry(description = "Test", syncStatus = "PENDING_SYNC", attachments = emptyList())
+        journalDao.insertEntry(entry)
+        
+        val newAttachments = listOf(
+            AttachmentData(name = "report.pdf", uri = "file:///path/to/report.pdf", mimeType = "application/pdf")
+        )
+        
+        journalDao.updateAttachments(entry.entry_id, newAttachments, "SYNCED")
+        
+        val updated = journalDao.getEntryById(entry.entry_id)
+        assertNotNull(updated)
+        assertEquals("SYNCED", updated!!.syncStatus)
+        assertNotNull(updated.attachments)
+        assertEquals(1, updated.attachments!!.size)
+        assertEquals("report.pdf", updated.attachments!![0].name)
+    }
 }
