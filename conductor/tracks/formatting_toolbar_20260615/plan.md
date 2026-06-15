@@ -21,7 +21,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 3: AddEntryScreen Integration' (Protocol in workflow.md)
 
 ## Phase 4: UI Refinements & Truncation
-- [ ] Task: Implement "Show More" interaction for truncated cards.
-    - [ ] Add smooth ellipsis transition.
-    - [ ] Verify 3-line truncation logic in History and Archive screens.
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: UI Refinements & Truncation' (Protocol in workflow.md)
+- [x] Task: Implement "Show More" interaction for truncated cards.
+    - [x] Add smooth ellipsis transition.
+    - [x] Verify 3-line truncation logic in History and Archive screens.
+- [x] Task: Conductor - User Manual Verification 'Phase 4: UI Refinements & Truncation' (Protocol in workflow.md)

@@ -195,9 +195,10 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
     companion object {
         var authManagerProvider: (Context) -> GoogleAuthManager = { GoogleAuthManager(it) }
         var driveHelperProvider: (Context, Drive) -> DriveServiceHelper = { context, drive -> DriveServiceHelper(context, drive) }
+    }
 }
 
-    object SyncManager {
+object SyncManager {
         fun enqueuePeriodicSync(context: Context) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.UNMETERED)

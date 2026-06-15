@@ -1,12 +1,15 @@
 package com.example.healthjournal.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -123,7 +126,11 @@ private fun ToolbarButton(
             .size(40.dp)
             .clip(CircleShape)
             .background(if (isActive) Color.White.copy(alpha = 0.15f) else Color.Transparent)
-            .clickable { onClick() },
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(),
+                onClick = onClick
+            ),
         contentAlignment = Alignment.Center
     ) {
         if (label != null && !isActive) {
@@ -153,13 +160,3 @@ private fun ToolbarDivider() {
         color = Color.White.copy(alpha = 0.1f)
     )
 }
-
-// Extension to make Box clickable without material ripple constraints if needed
-@Composable
-private fun Modifier.clickable(onClick: () -> Unit): Modifier = this.then(
-    androidx.compose.foundation.clickable(
-        interactionSource = androidx.compose.foundation.remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-        indication = androidx.compose.material.ripple.rememberRipple(bounded = true),
-        onClick = onClick
-    )
-)

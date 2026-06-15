@@ -538,6 +538,7 @@ fun AddEntryScreen(
     }
 }
 }
+}
 
 @Composable
 fun HealthMetricItem(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String, label: String) {
