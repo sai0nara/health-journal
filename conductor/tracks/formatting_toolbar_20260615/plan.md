@@ -1,11 +1,11 @@
 # Implementation Plan: Rich Text Formatting Toolbar
 
 ## Phase 1: Toolbar UI Component
-- [ ] Task: Create `RichTextToolbar` composable.
-    - [ ] Implement dark mode styling (charcoal background).
-    - [ ] Create circular icon buttons with active state highlights.
-    - [ ] Add vertical dividers between logical groups.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Toolbar UI Component' (Protocol in workflow.md)
+- [x] Task: Create `RichTextToolbar` composable.
+    - [x] Implement dark mode styling (charcoal background).
+    - [x] Create circular icon buttons with active state highlights.
+    - [x] Add vertical dividers between logical groups.
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Toolbar UI Component' (Protocol in workflow.md)
 
 ## Phase 2: Rich Text State Management
 - [ ] Task: Integrate a rich text state controller (e.g., using a library like `RichText` or a custom `TextFieldValue` wrapper).

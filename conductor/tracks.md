@@ -34,5 +34,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Rich Text Formatting Toolbar**
+- [~] **Track: Rich Text Formatting Toolbar**
   *Link: [./tracks/formatting_toolbar_20260615/](./tracks/formatting_toolbar_20260615/)*
