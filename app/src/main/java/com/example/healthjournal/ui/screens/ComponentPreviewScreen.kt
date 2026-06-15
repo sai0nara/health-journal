@@ -50,10 +50,9 @@ fun ComponentPreviewScreen(onBack: () -> Unit) {
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
+            val richTextState = com.mohamedrejeb.richeditor.model.rememberRichTextState()
             RichTextToolbar(
-                activeBold = true,
-                activeItalic = false,
-                activeHeader = 1
+                state = richTextState
             )
         }
     }

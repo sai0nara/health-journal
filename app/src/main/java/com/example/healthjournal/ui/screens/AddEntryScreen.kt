@@ -30,9 +30,12 @@ import androidx.core.content.FileProvider
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import coil.compose.AsyncImage
+import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.ui.components.EnrichmentPanel
+import com.example.healthjournal.ui.components.RichTextToolbar
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
 import java.io.File
@@ -48,7 +51,7 @@ fun AddEntryScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var description by remember { mutableStateOf("") }
+    val richTextState = rememberRichTextState()
     var selectedTimestamp by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var attachedPhotoUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var attachedFiles by remember { mutableStateOf<List<AttachmentData>>(emptyList()) }
@@ -103,7 +106,7 @@ fun AddEntryScreen(
             val entry = viewModel.getEntryById(entryId)
             if (entry != null) {
                 existingEntry = entry
-                description = entry.description
+                richTextState.setHtml(entry.description)
                 selectedTimestamp = entry.timestamp
                 attachedPhotoUris = entry.photo_urls?.map { Uri.parse(it) } ?: emptyList()
                 attachedFiles = entry.attachments ?: emptyList()
@@ -248,53 +251,61 @@ fun AddEntryScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Date and Time Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { if (!isReadOnly) showDatePicker = true },
-                    modifier = Modifier.weight(1f),
-                    enabled = !isReadOnly
-                ) {
-                    Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(selectedTimestamp)))
-                }
-                
-                OutlinedButton(
-                    onClick = { if (!isReadOnly) showTimePicker = true },
-                    modifier = Modifier.weight(1f),
-                    enabled = !isReadOnly
-                ) {
-                    Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(selectedTimestamp)))
-                }
+            if (!isReadOnly) {
+                RichTextToolbar(
+                    state = richTextState,
+                    onAttachClick = { launchCamera() } // Or other media action
+                )
             }
 
-            if (isReadOnly) {
-                Text(
-                    text = com.example.healthjournal.util.HtmlParser.parse(description),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            } else {
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { if (!isReadOnly) description = it },
-                    label = { Text("How are you feeling today?") },
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Date and Time Row
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 5,
-                    enabled = true
-                )
-            }
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { if (!isReadOnly) showDatePicker = true },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isReadOnly
+                    ) {
+                        Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(selectedTimestamp)))
+                    }
+                    
+                    OutlinedButton(
+                        onClick = { if (!isReadOnly) showTimePicker = true },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isReadOnly
+                    ) {
+                        Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(selectedTimestamp)))
+                    }
+                }
+
+                if (isReadOnly) {
+                    Text(
+                        text = richTextState.annotatedString,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                } else {
+                    RichTextEditor(
+                        state = richTextState,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp),
+                        label = { Text("How are you feeling today?") }
+                    )
+                }
             
             // Health Metrics Section
             if (bpSystolic != null || heartRate != null || sleepHours != null) {
@@ -461,7 +472,8 @@ fun AddEntryScreen(
                 
                 Button(
                     onClick = {
-                    if (description.isNotBlank()) {
+                    val descriptionHtml = richTextState.toHtml()
+                    if (descriptionHtml.isNotBlank()) {
                         scope.launch {
                             val finalTimestamp = if (selectedTimestamp > System.currentTimeMillis()) {
                                 System.currentTimeMillis()
@@ -489,7 +501,7 @@ fun AddEntryScreen(
 
                             if (entryId == null) {
                                 viewModel.addEntry(
-                                    description = description,
+                                    description = descriptionHtml,
                                     timestamp = finalTimestamp,
                                     photoUrls = persistentPhotoUrls,
                                     attachments = persistentAttachments,
@@ -502,7 +514,7 @@ fun AddEntryScreen(
                                 existingEntry?.let {
                                     viewModel.updateEntry(
                                         it.copy(
-                                            description = description,
+                                            description = descriptionHtml,
                                             timestamp = finalTimestamp,
                                             photo_urls = persistentPhotoUrls,
                                             attachments = persistentAttachments,

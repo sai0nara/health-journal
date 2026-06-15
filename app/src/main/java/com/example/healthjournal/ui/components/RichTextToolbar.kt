@@ -14,22 +14,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import com.mohamedrejeb.richeditor.model.RichTextState
+
 @Composable
 fun RichTextToolbar(
+    state: RichTextState,
     modifier: Modifier = Modifier,
-    activeBold: Boolean = false,
-    activeItalic: Boolean = false,
-    activeUnderline: Boolean = false,
-    activeHeader: Int = 0, // 0: None, 1: H1, 2: H2
-    onBoldClick: () -> Unit = {},
-    onItalicClick: () -> Unit = {},
-    onUnderlineClick: () -> Unit = {},
-    onHeaderClick: () -> Unit = {},
-    onListNumberedClick: () -> Unit = {},
-    onListBulletClick: () -> Unit = {},
     onAttachClick: () -> Unit = {},
-    onLinkClick: () -> Unit = {},
-    onClearClick: () -> Unit = {}
+    onLinkClick: () -> Unit = {}
 ) {
     Surface(
         modifier = modifier
@@ -47,10 +43,10 @@ fun RichTextToolbar(
         ) {
             // Header Group
             ToolbarButton(
-                icon = if (activeHeader == 1) Icons.Default.FormatSize else Icons.Default.Title,
-                isActive = activeHeader > 0,
-                onClick = onHeaderClick,
-                label = if (activeHeader > 0) "H$activeHeader" else "H"
+                icon = Icons.Default.Title,
+                isActive = false, // state.isHeader
+                onClick = { /* state.toggleHeader() */ },
+                label = "H"
             )
 
             ToolbarDivider()
@@ -58,18 +54,18 @@ fun RichTextToolbar(
             // Inline Style Group
             ToolbarButton(
                 icon = Icons.Default.FormatBold,
-                isActive = activeBold,
-                onClick = onBoldClick
+                isActive = state.currentSpanStyle.fontWeight == FontWeight.Bold,
+                onClick = { state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold)) }
             )
             ToolbarButton(
                 icon = Icons.Default.FormatItalic,
-                isActive = activeItalic,
-                onClick = onItalicClick
+                isActive = state.currentSpanStyle.fontStyle == FontStyle.Italic,
+                onClick = { state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic)) }
             )
             ToolbarButton(
                 icon = Icons.Default.FormatUnderlined,
-                isActive = activeUnderline,
-                onClick = onUnderlineClick
+                isActive = state.currentSpanStyle.textDecoration == TextDecoration.Underline,
+                onClick = { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline)) }
             )
 
             ToolbarDivider()
@@ -77,13 +73,13 @@ fun RichTextToolbar(
             // List Group
             ToolbarButton(
                 icon = Icons.Default.FormatListNumbered,
-                isActive = false,
-                onClick = onListNumberedClick
+                isActive = false, // state.isOrderedList
+                onClick = { state.toggleOrderedList() }
             )
             ToolbarButton(
                 icon = Icons.Default.FormatListBulleted,
-                isActive = false,
-                onClick = onListBulletClick
+                isActive = false, // state.isUnorderedList
+                onClick = { state.toggleUnorderedList() }
             )
 
             ToolbarDivider()
@@ -106,7 +102,10 @@ fun RichTextToolbar(
             ToolbarButton(
                 icon = Icons.Default.FormatClear,
                 isActive = false,
-                onClick = onClearClick
+                onClick = { 
+                    state.removeParagraphStyle(state.currentParagraphStyle)
+                    state.removeSpanStyle(state.currentSpanStyle)
+                }
             )
         }
     }
