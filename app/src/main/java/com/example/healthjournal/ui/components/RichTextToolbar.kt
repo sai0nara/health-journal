@@ -6,6 +6,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.mohamedrejeb.richeditor.model.RichTextState
 
 @Composable
@@ -46,8 +48,14 @@ fun RichTextToolbar(
         ) {
             ToolbarButton(
                 icon = Icons.Default.Title,
-                isActive = false,
-                onClick = { /* state.toggleHeader() */ },
+                isActive = state.isH1 || state.isH2,
+                onClick = {
+                    if (state.isH1) {
+                        state.toggleSpanStyle(SpanStyle(fontSize = 16.sp, fontWeight = FontWeight.Normal))
+                    } else {
+                        state.toggleSpanStyle(SpanStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold))
+                    }
+                },
                 label = "H",
                 testTag = "header_button"
             )
@@ -77,12 +85,12 @@ fun RichTextToolbar(
 
             ToolbarButton(
                 icon = Icons.Default.FormatListNumbered,
-                isActive = false,
+                isActive = state.isOrderedList,
                 onClick = { state.toggleOrderedList() }
             )
             ToolbarButton(
-                icon = Icons.Default.FormatListBulleted,
-                isActive = false,
+                icon = Icons.AutoMirrored.Filled.FormatListBulleted,
+                isActive = state.isUnorderedList,
                 onClick = { state.toggleUnorderedList() }
             )
 
@@ -95,7 +103,7 @@ fun RichTextToolbar(
             )
             ToolbarButton(
                 icon = Icons.Default.Link,
-                isActive = state.isLink,
+                isActive = false, // state.isLink
                 onClick = onLinkClick
             )
 
@@ -121,11 +129,14 @@ private fun ToolbarButton(
     label: String? = null,
     testTag: String? = null
 ) {
+    val tint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val containerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+
     Box(
         modifier = Modifier
             .size(40.dp)
             .clip(CircleShape)
-            .background(if (isActive) Color.White.copy(alpha = 0.15f) else Color.Transparent)
+            .background(containerColor)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(),
@@ -138,14 +149,14 @@ private fun ToolbarButton(
            Text(
                text = label,
                style = MaterialTheme.typography.labelLarge,
-               color = if (isActive) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.7f)
+               color = tint
            )
         } else {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = if (isActive) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.7f)
+                tint = tint
             )
         }
     }
@@ -158,6 +169,9 @@ private fun ToolbarDivider() {
             .height(24.dp)
             .padding(horizontal = 4.dp),
         thickness = 1.dp,
-        color = Color.White.copy(alpha = 0.1f)
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
     )
 }
+
+private val RichTextState.isH1 get() = currentSpanStyle.fontSize == 24.sp
+private val RichTextState.isH2 get() = currentSpanStyle.fontSize == 20.sp

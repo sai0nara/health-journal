@@ -69,6 +69,48 @@ fun AddEntryScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var expandedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var showLinkDialog by remember { mutableStateOf(false) }
+    var linkText by remember { mutableStateOf("") }
+    var linkUrl by remember { mutableStateOf("") }
+
+    if (showLinkDialog) {
+        AlertDialog(
+            onDismissRequest = { showLinkDialog = false },
+            title = { Text("Insert Link") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = linkText,
+                        onValueChange = { linkText = it },
+                        label = { Text("Text to display") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = linkUrl,
+                        onValueChange = { linkUrl = it },
+                        label = { Text("URL") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (linkUrl.isNotBlank()) {
+                        richTextState.addLink(
+                            text = linkText.ifBlank { linkUrl },
+                            url = linkUrl
+                        )
+                    }
+                    showLinkDialog = false
+                    linkText = ""
+                    linkUrl = ""
+                }) { Text("Insert") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLinkDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
 
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = selectedTimestamp
@@ -256,7 +298,13 @@ fun AddEntryScreen(
             if (!isReadOnly) {
                 RichTextToolbar(
                     state = richTextState,
-                    onAttachClick = { launchCamera() } // Or other media action
+                    onAttachClick = { launchCamera() }, // Or other media action
+                    onLinkClick = {
+                        linkText = richTextState.selection.let { 
+                            richTextState.annotatedString.substring(it.start, it.end)
+                        }
+                        showLinkDialog = true
+                    }
                 )
             }
 
