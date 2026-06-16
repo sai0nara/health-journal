@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -43,50 +44,50 @@ fun RichTextToolbar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // Header Group
             ToolbarButton(
                 icon = Icons.Default.Title,
-                isActive = false, // state.isHeader
+                isActive = false,
                 onClick = { /* state.toggleHeader() */ },
-                label = "H"
+                label = "H",
+                testTag = "header_button"
             )
 
             ToolbarDivider()
 
-            // Inline Style Group
             ToolbarButton(
                 icon = Icons.Default.FormatBold,
                 isActive = state.currentSpanStyle.fontWeight == FontWeight.Bold,
-                onClick = { state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold)) }
+                onClick = { state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold)) },
+                testTag = "bold_button"
             )
             ToolbarButton(
                 icon = Icons.Default.FormatItalic,
                 isActive = state.currentSpanStyle.fontStyle == FontStyle.Italic,
-                onClick = { state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic)) }
+                onClick = { state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic)) },
+                testTag = "italic_button"
             )
             ToolbarButton(
                 icon = Icons.Default.FormatUnderlined,
                 isActive = state.currentSpanStyle.textDecoration == TextDecoration.Underline,
-                onClick = { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline)) }
+                onClick = { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline)) },
+                testTag = "underline_button"
             )
 
             ToolbarDivider()
 
-            // List Group
             ToolbarButton(
                 icon = Icons.Default.FormatListNumbered,
-                isActive = false, // state.isOrderedList
+                isActive = false,
                 onClick = { state.toggleOrderedList() }
             )
             ToolbarButton(
                 icon = Icons.Default.FormatListBulleted,
-                isActive = false, // state.isUnorderedList
+                isActive = false,
                 onClick = { state.toggleUnorderedList() }
             )
 
             ToolbarDivider()
 
-            // Media & Links Group
             ToolbarButton(
                 icon = Icons.Default.AttachFile,
                 isActive = false,
@@ -100,7 +101,6 @@ fun RichTextToolbar(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Clear Group
             ToolbarButton(
                 icon = Icons.Default.FormatClear,
                 isActive = false,
@@ -118,7 +118,8 @@ private fun ToolbarButton(
     icon: ImageVector,
     isActive: Boolean,
     onClick: () -> Unit,
-    label: String? = null
+    label: String? = null,
+    testTag: String? = null
 ) {
     Box(
         modifier = Modifier
@@ -129,7 +130,8 @@ private fun ToolbarButton(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(),
                 onClick = onClick
-            ),
+            )
+            .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
         contentAlignment = Alignment.Center
     ) {
         if (label != null && !isActive) {
