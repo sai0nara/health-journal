@@ -34,7 +34,7 @@ fun RichTextToolbar(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp),
-        color = Color(0xFF1A1C1E), // Dark charcoal
+        color = MaterialTheme.colorScheme.surfaceVariant,
         tonalElevation = 4.dp
     ) {
         Row(
@@ -78,15 +78,19 @@ fun RichTextToolbar(
                 icon = Icons.Default.FormatListNumbered,
                 isActive = false, // state.isOrderedList
                 onClick = { state.toggleOrderedList() }
-            )
+            // Header Group
             ToolbarButton(
-                icon = Icons.Default.FormatListBulleted,
-                isActive = false, // state.isUnorderedList
-                onClick = { state.toggleUnorderedList() }
+                icon = Icons.Default.Title,
+                isActive = state.isH1 || state.isH2,
+                onClick = {
+                    if (state.isH1) state.toggleHeader(0)
+                    else state.toggleHeader(1)
+                },
+                label = "H"
             )
 
             ToolbarDivider()
-
+            ...
             // Media & Links Group
             ToolbarButton(
                 icon = Icons.Default.AttachFile,
@@ -95,7 +99,7 @@ fun RichTextToolbar(
             )
             ToolbarButton(
                 icon = Icons.Default.Link,
-                isActive = false,
+                isActive = state.isLink,
                 onClick = onLinkClick
             )
 
