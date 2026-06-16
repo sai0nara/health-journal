@@ -1,7 +1,8 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.example.healthjournal.MainActivity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.AttachmentData
@@ -22,7 +23,7 @@ import android.content.Context
 class CloudSyncTest {
 
     @get:Rule
-    val composeTestRule = createComposeRule()
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     @get:Rule
     val screenshotRule = ScreenshotRule(mode = ScreenshotRule.Mode.FAILURE)

@@ -20,8 +20,8 @@
     - [x] Ensure HTML strings are correctly saved to the Room database.
 - [x] Task: Conductor - User Manual Verification 'Phase 3: AddEntryScreen Integration' (Protocol in workflow.md)
 
-## Phase 4: UI Refinements & Truncation
-- [x] Task: Implement "Show More" interaction for truncated cards.
-    - [x] Add smooth ellipsis transition.
-    - [x] Verify 3-line truncation logic in History and Archive screens.
-- [x] Task: Conductor - User Manual Verification 'Phase 4: UI Refinements & Truncation' (Protocol in workflow.md)
+## Phase 5: Bug Fixes
+- [~] Task: Fix formatting toolbar theme (use MaterialTheme colors).
+- [~] Task: Implement 'H' (Header) and Link button functionality.
+- [~] Task: Debug and fix numbered list serialization/restoration issue.
+- [ ] Task: Conductor - User Manual Verification 'Phase 5: Bug Fixes' (Protocol in workflow.md)

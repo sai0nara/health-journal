@@ -14,13 +14,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.JournalEntry
-import com.example.healthjournal.util.HtmlParser
+import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -62,12 +64,16 @@ fun JournalEntryItem(
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    val parsedText = HtmlParser.parse(entry.description)
-                    Text(
-                        text = parsedText,
-                        fontSize = 16.sp,
-                        maxLines = if (isExpanded) Int.MAX_VALUE else 3,
-                        overflow = TextOverflow.Ellipsis
+                    val richTextState = rememberRichTextState()
+                    LaunchedEffect(entry.description) {
+                        richTextState.setHtml(entry.description)
+                    }
+                    RichTextEditor(
+                        state = richTextState,
+                        readOnly = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                        maxLines = if (isExpanded) Int.MAX_VALUE else 3
                     )
                 }
 
@@ -78,7 +84,7 @@ fun JournalEntryItem(
                     TextButton(
                         onClick = { isExpanded = !isExpanded },
                         contentPadding = PaddingValues(0.dp),
-                        modifier = Modifier.height(32.dp)
+                        modifier = Modifier.height(32.dp).testTag("show_more_button")
                     ) {
                         Text(
                             text = if (isExpanded) "Show Less" else "Show More",
@@ -96,7 +102,7 @@ fun JournalEntryItem(
                     Spacer(modifier = Modifier.height(8.dp))
                     androidx.compose.foundation.lazy.LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().testTag("photo_thumbnails")
                     ) {
                         items(entry.photo_urls!!.size) { index ->
                             val photoUrl = entry.photo_urls!![index]

@@ -1,7 +1,8 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import com.example.healthjournal.ui.theme.HealthJournalTheme
@@ -16,7 +17,7 @@ import org.junit.Test
 class TruncationTest {
 
     @get:Rule
-    val composeTestRule = createComposeRule()
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     @get:Rule
     val screenshotRule = ScreenshotRule(mode = ScreenshotRule.Mode.FAILURE)
