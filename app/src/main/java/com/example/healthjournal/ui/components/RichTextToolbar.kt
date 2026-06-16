@@ -15,12 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
-
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.richeditor.model.RichTextState
 
 @Composable
@@ -78,19 +77,15 @@ fun RichTextToolbar(
                 icon = Icons.Default.FormatListNumbered,
                 isActive = false, // state.isOrderedList
                 onClick = { state.toggleOrderedList() }
-            // Header Group
+            )
             ToolbarButton(
-                icon = Icons.Default.Title,
-                isActive = state.isH1 || state.isH2,
-                onClick = {
-                    if (state.isH1) state.toggleHeader(0)
-                    else state.toggleHeader(1)
-                },
-                label = "H"
+                icon = Icons.Default.FormatListBulleted,
+                isActive = false, // state.isUnorderedList
+                onClick = { state.toggleUnorderedList() }
             )
 
             ToolbarDivider()
-            ...
+
             // Media & Links Group
             ToolbarButton(
                 icon = Icons.Default.AttachFile,
