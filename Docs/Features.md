@@ -6,7 +6,7 @@
 [//]: # (7. allure report with screenshots)
 [//]: # (8. add versions to app-debug.apk name and on screen &#40;about app&#41;)
 <!-- * Ability to move entry to archive. From archive user can delete any entry, couple or all of them  -->
-* Add different categories: illness, checkup, doctor, exercises
+* Add different categories/tags: illness, checkup, doctor, exercises. Search by these categories/tags
 * calendar with events from one day or period 
 * graph, trends
 * Body parts measurements 
