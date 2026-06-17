@@ -9,7 +9,7 @@ class JournalTypeConverters {
 
     @TypeConverter
     fun fromStringList(value: List<String>): String {
-        return gson.toJson(value ?: emptyList<String>())
+        return gson.toJson(value)
     }
 
     @TypeConverter
@@ -25,7 +25,7 @@ class JournalTypeConverters {
 
     @TypeConverter
     fun fromAttachmentList(value: List<AttachmentData>): String {
-        return gson.toJson(value ?: emptyList<AttachmentData>())
+        return gson.toJson(value)
     }
 
     @TypeConverter

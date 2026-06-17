@@ -172,6 +172,9 @@ dependencies {
     // Secure Storage for Refresh Tokens
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
+    // Rich Text Editor
+    implementation("com.mohamedrejeb.richeditor:richeditor-compose:1.0.0-rc10")
+
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.9")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")

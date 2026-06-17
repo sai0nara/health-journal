@@ -43,7 +43,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 Log.e("SyncWorker", "Silent authorization failed. No token.")
                 return Result.failure(workDataOf("error_message" to "Auth failed (No token)"))
             }
-            Log.d("SyncWorker", "Token obtained: ${accessToken.take(5)}...")
+            Log.d("SyncWorker", "Token obtained successfully")
 
             val database = JournalDatabase.getDatabase(applicationContext)
             val dao = database.journalDao()
@@ -196,15 +196,15 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
         var authManagerProvider: (Context) -> GoogleAuthManager = { GoogleAuthManager(it) }
         var driveHelperProvider: (Context, Drive) -> DriveServiceHelper = { context, drive -> DriveServiceHelper(context, drive) }
     }
-    }
+}
 
-    object SyncManager {
+object SyncManager {
         fun enqueuePeriodicSync(context: Context) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.UNMETERED)
                 .build()
 
-            val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.HOURS)
+            val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES)
                 .setConstraints(constraints)
                 .build()
 

@@ -1,5 +1,6 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 
@@ -82,7 +83,7 @@ class AddEntryScreenTest {
         override fun restoreEntry(entryId: String) {}
         override fun deleteEntries(entryIds: List<String>) {}
         override fun emptyArchive() {}
-        override fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
+        override suspend fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
     }
 
     // Helper for Triple replacement

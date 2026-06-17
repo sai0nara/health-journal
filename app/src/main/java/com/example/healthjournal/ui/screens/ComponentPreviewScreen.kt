@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.ui.components.EnrichmentPanel
+import com.example.healthjournal.ui.components.RichTextToolbar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +41,18 @@ fun ComponentPreviewScreen(onBack: () -> Unit) {
                 onGalleryClick = { /* Preview Click */ },
                 onAttachFileClick = { /* Preview Click */ },
                 onSyncHealthClick = { /* Preview Click */ }
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                text = "RichTextToolbar Preview:",
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            val richTextState = com.mohamedrejeb.richeditor.model.rememberRichTextState()
+            RichTextToolbar(
+                state = richTextState
             )
         }
     }

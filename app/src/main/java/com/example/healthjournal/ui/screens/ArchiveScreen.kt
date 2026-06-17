@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import com.example.healthjournal.ui.components.JournalEntryItem
 import com.example.healthjournal.ui.components.SharedSearchBar
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch

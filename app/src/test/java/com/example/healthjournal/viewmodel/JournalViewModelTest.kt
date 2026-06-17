@@ -159,7 +159,7 @@ class JournalViewModelTest {
     fun signInSuccessUpdatesState() = runTest {
         // Overwrite default signed in state for this test
         every { sessionManager.getUserEmail() } returns null
-        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, testDispatcher)
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
 
         val context: Context = mockk()
         val email = "test@example.com"
@@ -219,7 +219,7 @@ class JournalViewModelTest {
         coEvery { repository.searchEntries(searchQuery, any()) } returns flowOf(entries)
         
         // Re-initialize to pick up flow changes
-        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, testDispatcher)
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
 
         // Start collecting
         val items = mutableListOf<List<JournalEntry>>()

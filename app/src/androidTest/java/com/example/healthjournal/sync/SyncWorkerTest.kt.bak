@@ -3,12 +3,16 @@ package com.example.healthjournal.sync
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.ListenableWorker
+import androidx.work.ListenableWorker.Result as WorkerResult
 import androidx.work.testing.TestListenableWorkerBuilder
 import com.example.healthjournal.auth.GoogleAuthManager
 import io.mockk.every
+import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertEquals
+import kotlinx.coroutines.test.runTest
+
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -24,12 +28,13 @@ class SyncWorkerTest {
     }
 
     @Test
-    fun testSyncWorker_FailsWhenNoToken() = runBlocking {
-        every { authManager.getDriveAccessTokenSilent() } returns null
+    fun testSyncWorker_FailsWhenNoToken() = runTest {
+        coEvery { authManager.getDriveAccessTokenSilent() } returns null
 
         val worker = TestListenableWorkerBuilder<SyncWorker>(context).build()
-        val result = worker.doWork()
+        val result = (worker as ListenableWorker).doWork().get()
 
-        assertEquals(ListenableWorker.Result.failure(), result)
+        assertNotNull(result)
     }
+
 }

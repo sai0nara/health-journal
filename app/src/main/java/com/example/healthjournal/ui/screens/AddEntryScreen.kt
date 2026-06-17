@@ -30,9 +30,13 @@ import androidx.core.content.FileProvider
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import coil.compose.AsyncImage
+import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichText
+import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.ui.components.EnrichmentPanel
+import com.example.healthjournal.ui.components.RichTextToolbar
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
 import java.io.File
@@ -48,7 +52,7 @@ fun AddEntryScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var description by remember { mutableStateOf("") }
+    val richTextState = rememberRichTextState()
     var selectedTimestamp by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var attachedPhotoUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var attachedFiles by remember { mutableStateOf<List<AttachmentData>>(emptyList()) }
@@ -66,6 +70,48 @@ fun AddEntryScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var expandedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var showLinkDialog by remember { mutableStateOf(false) }
+    var linkText by remember { mutableStateOf("") }
+    var linkUrl by remember { mutableStateOf("") }
+
+    if (showLinkDialog) {
+        AlertDialog(
+            onDismissRequest = { showLinkDialog = false },
+            title = { Text("Insert Link") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = linkText,
+                        onValueChange = { linkText = it },
+                        label = { Text("Text to display") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = linkUrl,
+                        onValueChange = { linkUrl = it },
+                        label = { Text("URL") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (linkUrl.isNotBlank()) {
+                        richTextState.addLink(
+                            text = linkText.ifBlank { linkUrl },
+                            url = linkUrl
+                        )
+                    }
+                    showLinkDialog = false
+                    linkText = ""
+                    linkUrl = ""
+                }) { Text("Insert") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLinkDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
 
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = selectedTimestamp
@@ -103,7 +149,7 @@ fun AddEntryScreen(
             val entry = viewModel.getEntryById(entryId)
             if (entry != null) {
                 existingEntry = entry
-                description = entry.description
+                richTextState.setHtml(entry.description)
                 selectedTimestamp = entry.timestamp
                 attachedPhotoUris = entry.photo_urls?.map { Uri.parse(it) } ?: emptyList()
                 attachedFiles = entry.attachments ?: emptyList()
@@ -248,45 +294,67 @@ fun AddEntryScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Date and Time Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { if (!isReadOnly) showDatePicker = true },
-                    modifier = Modifier.weight(1f),
-                    enabled = !isReadOnly
-                ) {
-                    Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(selectedTimestamp)))
-                }
-                
-                OutlinedButton(
-                    onClick = { if (!isReadOnly) showTimePicker = true },
-                    modifier = Modifier.weight(1f),
-                    enabled = !isReadOnly
-                ) {
-                    Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(selectedTimestamp)))
-                }
+            if (!isReadOnly) {
+                RichTextToolbar(
+                    state = richTextState,
+                    onAttachClick = { launchCamera() }, // Or other media action
+                    onLinkClick = {
+                        linkText = richTextState.selection.let { 
+                            richTextState.annotatedString.substring(it.start, it.end)
+                        }
+                        showLinkDialog = true
+                    }
+                )
             }
 
-            OutlinedTextField(
-                value = description,
-                onValueChange = { if (!isReadOnly) description = it },
-                label = { Text(if (isReadOnly) "Entry Description" else "How are you feeling today?") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 5,
-                enabled = !isReadOnly
-            )
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Date and Time Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { if (!isReadOnly) showDatePicker = true },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isReadOnly
+                    ) {
+                        Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(selectedTimestamp)))
+                    }
+                    
+                    OutlinedButton(
+                        onClick = { if (!isReadOnly) showTimePicker = true },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isReadOnly
+                    ) {
+                        Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(selectedTimestamp)))
+                    }
+                }
+
+                if (isReadOnly) {
+                    RichText(
+                        state = richTextState,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                } else {
+                    RichTextEditor(
+                        state = richTextState,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp),
+                        label = { Text("How are you feeling today?") }
+                    )
+                }
             
             // Health Metrics Section
             if (bpSystolic != null || heartRate != null || sleepHours != null) {
@@ -453,58 +521,62 @@ fun AddEntryScreen(
                 
                 Button(
                     onClick = {
-                    if (description.isNotBlank()) {
-                        val finalTimestamp = if (selectedTimestamp > System.currentTimeMillis()) {
-                            System.currentTimeMillis()
-                        } else {
-                            selectedTimestamp
-                        }
-                        
-                        // Save all files persistently
-                        val persistentPhotoUrls = attachedPhotoUris.map { uri ->
-                            if (uri.toString().startsWith("file:///")) uri.toString()
-                            else viewModel.savePersistentFile(uri, true) ?: ""
-                        }.filter { it.isNotBlank() }
+                    val descriptionHtml = richTextState.toHtml()
+                    if (descriptionHtml.isNotBlank()) {
+                        scope.launch {
+                            val finalTimestamp = if (selectedTimestamp > System.currentTimeMillis()) {
+                                System.currentTimeMillis()
+                            } else {
+                                selectedTimestamp
+                            }
+                            
+                            // Save all files persistently
+                            val persistentPhotoUrls = attachedPhotoUris.map { uri ->
+                                if (uri.scheme == "file") uri.toString()
+                                else viewModel.savePersistentFile(uri, true) ?: ""
+                            }.filter { it.isNotBlank() }
 
-                        val persistentAttachments = attachedFiles.map { file ->
-                            if (file.uri.startsWith("file:///")) file
-                            else {
-                                val persistentUri = viewModel.savePersistentFile(Uri.parse(file.uri), false)
-                                if (persistentUri == null) {
-                                    android.widget.Toast.makeText(context, "Failed to save attachment: ${file.name}", android.widget.Toast.LENGTH_SHORT).show()
+                            val persistentAttachments = attachedFiles.map { file ->
+                                val fileUri = Uri.parse(file.uri)
+                                if (fileUri.scheme == "file") file
+                                else {
+                                    val persistentUri = viewModel.savePersistentFile(fileUri, false)
+                                    if (persistentUri == null) {
+                                        android.widget.Toast.makeText(context, "Failed to save attachment: ${file.name}", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                    file.copy(uri = persistentUri ?: "")
                                 }
-                                file.copy(uri = persistentUri ?: "")
-                            }
-                        }.filter { it.uri.isNotBlank() }
+                            }.filter { it.uri.isNotBlank() }
 
-                        if (entryId == null) {
-                            viewModel.addEntry(
-                                description = description,
-                                timestamp = finalTimestamp,
-                                photoUrls = persistentPhotoUrls,
-                                attachments = persistentAttachments,
-                                bpSystolic = bpSystolic,
-                                bpDiastolic = bpDiastolic,
-                                heartRate = heartRate,
-                                sleepHours = sleepHours
-                            )
-                        } else {
-                            existingEntry?.let {
-                                viewModel.updateEntry(
-                                    it.copy(
-                                        description = description,
-                                        timestamp = finalTimestamp,
-                                        photo_urls = persistentPhotoUrls,
-                                        attachments = persistentAttachments,
-                                        bp_systolic = bpSystolic,
-                                        bp_diastolic = bpDiastolic,
-                                        heart_rate_avg = heartRate,
-                                        sleep_hours = sleepHours
-                                    )
+                            if (entryId == null) {
+                                viewModel.addEntry(
+                                    description = descriptionHtml,
+                                    timestamp = finalTimestamp,
+                                    photoUrls = persistentPhotoUrls,
+                                    attachments = persistentAttachments,
+                                    bpSystolic = bpSystolic,
+                                    bpDiastolic = bpDiastolic,
+                                    heartRate = heartRate,
+                                    sleepHours = sleepHours
                                 )
+                            } else {
+                                existingEntry?.let {
+                                    viewModel.updateEntry(
+                                        it.copy(
+                                            description = descriptionHtml,
+                                            timestamp = finalTimestamp,
+                                            photo_urls = persistentPhotoUrls,
+                                            attachments = persistentAttachments,
+                                            bp_systolic = bpSystolic,
+                                            bp_diastolic = bpDiastolic,
+                                            heart_rate_avg = heartRate,
+                                            sleep_hours = sleepHours
+                                        )
+                                    )
+                                }
                             }
+                            onBack()
                         }
-                        onBack()
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -513,6 +585,7 @@ fun AddEntryScreen(
             }
         }
     }
+}
 }
 }
 
