@@ -1,13 +1,13 @@
 # Implementation Plan: Data Export (PDF & ZIP Archive)
 
-## Phase 1: Infrastructure & Safe Sharing
+## Phase 1: Infrastructure & Safe Sharing [checkpoint: 0894fea]
 - [x] Task: Configure `FileProvider` and `filepaths.xml` for safe internal cache sharing.
     - [x] Create `xml/file_paths.xml`.
     - [x] Update `AndroidManifest.xml` with `<provider>` declaration.
 - [x] Task: Create `ExportService` interface and basic implementation.
     - [x] Implement `cleanupCache()` to remove old temporary exports.
     - [x] Write unit tests for cache cleanup logic.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Safe Sharing' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Safe Sharing' (Protocol in workflow.md)
 
 ## Phase 2: ZIP Export Implementation
 - [ ] Task: Implement `ZipExportUseCase` using `ZipOutputStream`.
