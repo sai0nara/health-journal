@@ -31,6 +31,7 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import coil.compose.AsyncImage
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichText
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
@@ -342,8 +343,8 @@ fun AddEntryScreen(
                 }
 
                 if (isReadOnly) {
-                    Text(
-                        text = richTextState.annotatedString,
+                    RichText(
+                        state = richTextState,
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         style = MaterialTheme.typography.bodyLarge
                     )

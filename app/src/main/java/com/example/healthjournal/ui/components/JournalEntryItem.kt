@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.JournalEntry
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichText
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import java.text.SimpleDateFormat
 import java.util.*
@@ -68,11 +69,10 @@ fun JournalEntryItem(
                     LaunchedEffect(entry.description) {
                         richTextState.setHtml(entry.description)
                     }
-                    RichTextEditor(
+                    RichText(
                         state = richTextState,
-                        readOnly = true,
                         modifier = Modifier.fillMaxWidth(),
-                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                        style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
                         maxLines = if (isExpanded) Int.MAX_VALUE else 3
                     )
                 }
