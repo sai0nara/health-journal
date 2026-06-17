@@ -10,10 +10,10 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Safe Sharing' (Protocol in workflow.md)
 
 ## Phase 2: ZIP Export Implementation
-- [ ] Task: Implement `ZipExportUseCase` using `ZipOutputStream`.
-    - [ ] Implement text entry serialization to `data.json`.
-    - [ ] Implement stream-based media file copying.
-    - [ ] Write unit tests for ZIP structure and data integrity.
+- [x] Task: Implement `ZipExportUseCase` using `ZipOutputStream`.
+    - [x] Implement text entry serialization to `data.json`.
+    - [x] Implement stream-based media file copying.
+    - [x] Write unit tests for ZIP structure and data integrity.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: ZIP Export Implementation' (Protocol in workflow.md)
 
 ## Phase 3: PDF Export Implementation
