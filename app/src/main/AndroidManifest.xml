@@ -17,6 +17,7 @@
     </queries>
 
     <application
+        android:name=".HealthJournalApplication"
         android:allowBackup="true"
         android:label="Health Journal"
         android:supportsRtl="true"

@@ -17,11 +17,11 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: ZIP Export Implementation' (Protocol in workflow.md)
 
 ## Phase 3: PDF Export Implementation
-- [ ] Task: Integrate PDF library (e.g., PDFBox Android) and implement basic report layout.
-    - [ ] Implement text wrapping and pagination.
-- [ ] Task: Implement image downsampling for PDF embedding.
-    - [ ] Create `ImageResizer` utility.
-    - [ ] Write unit tests for downsampling logic (verifying reduced memory footprint).
+- [x] Task: Integrate PDF library (e.g., PDFBox Android) and implement basic report layout.
+    - [x] Implement text wrapping and pagination.
+- [x] Task: Implement image downsampling for PDF embedding.
+    - [x] Create `ImageResizer` utility.
+    - [x] Write unit tests for downsampling logic (verifying reduced memory footprint).
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: PDF Export Implementation' (Protocol in workflow.md)
 
 ## Phase 4: UI Integration
