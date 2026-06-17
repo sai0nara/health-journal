@@ -9,12 +9,12 @@
     - [x] Write unit tests for cache cleanup logic.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Safe Sharing' (Protocol in workflow.md)
 
-## Phase 2: ZIP Export Implementation
+## Phase 2: ZIP Export Implementation [checkpoint: cf9bba4]
 - [x] Task: Implement `ZipExportUseCase` using `ZipOutputStream`.
     - [x] Implement text entry serialization to `data.json`.
     - [x] Implement stream-based media file copying.
     - [x] Write unit tests for ZIP structure and data integrity.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: ZIP Export Implementation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: ZIP Export Implementation' (Protocol in workflow.md)
 
 ## Phase 3: PDF Export Implementation
 - [ ] Task: Integrate PDF library (e.g., PDFBox Android) and implement basic report layout.
