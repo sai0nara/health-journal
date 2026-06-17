@@ -25,10 +25,10 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: PDF Export Implementation' (Protocol in workflow.md)
 
 ## Phase 4: UI Integration
-- [ ] Task: Create `ExportViewModel` and `ExportScreen`.
-    - [ ] Implement date range picker and format selector.
-    - [ ] Bind progress state to UI indicator.
-- [ ] Task: Implement "Share" interaction using `ACTION_SEND`.
+- [x] Task: Create `ExportViewModel` and `ExportScreen`.
+    - [x] Implement date range picker and format selector.
+    - [x] Bind progress state to UI indicator.
+- [x] Task: Implement "Share" interaction using `ACTION_SEND`.
     - [ ] Write UI tests for the complete export-to-share flow.
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: UI Integration' (Protocol in workflow.md)
 
