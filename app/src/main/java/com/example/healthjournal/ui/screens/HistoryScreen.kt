@@ -72,6 +72,14 @@ fun HistoryScreen(
     }
 
     var isRefreshing by remember { mutableStateOf(false) }
+    
+    // Automatically stop refreshing when sync finishes
+    LaunchedEffect(syncStatus) {
+        if (syncStatus == "Synced" || syncStatus == "Sync Failed" || syncStatus == "Sync Cancelled") {
+            isRefreshing = false
+        }
+    }
+
     val pullToRefreshState = rememberPullToRefreshState()
 
     var showAboutDialog by remember { mutableStateOf(false) }
@@ -156,11 +164,8 @@ fun HistoryScreen(
             PullToRefreshBox(
                 isRefreshing = isRefreshing,
                 onRefresh = {
-                    scope.launch {
-                        isRefreshing = true
-                        viewModel.syncNow()
-                        isRefreshing = false
-                    }
+                    isRefreshing = true
+                    viewModel.syncNow()
                 },
                 state = pullToRefreshState,
                 modifier = Modifier.fillMaxSize()
