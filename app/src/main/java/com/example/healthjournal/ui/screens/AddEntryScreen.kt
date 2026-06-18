@@ -522,7 +522,8 @@ fun AddEntryScreen(
                 Button(
                     onClick = {
                     val descriptionHtml = richTextState.toHtml()
-                    if (descriptionHtml.isNotBlank()) {
+                    val plainText = richTextState.annotatedString.text
+                    if (plainText.isNotBlank()) {
                         scope.launch {
                             val finalTimestamp = if (selectedTimestamp > System.currentTimeMillis()) {
                                 System.currentTimeMillis()

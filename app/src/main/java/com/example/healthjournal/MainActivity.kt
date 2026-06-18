@@ -32,10 +32,6 @@ class MainActivity : ComponentActivity() {
         // Trigger sync on start
         SyncManager.enqueuePeriodicSync(this)
 
-        if (intent.getBooleanExtra("TEST_MODE", false)) {
-            return
-        }
-
         setContent {
             HealthJournalTheme {
                 val navController = rememberNavController()

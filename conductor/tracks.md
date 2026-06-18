@@ -34,5 +34,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Data Export (PDF & ZIP Archive)**
+- [x] **Track: Data Export (PDF & ZIP Archive)**
   *Link: [./tracks/data_export_20260616/](./tracks/data_export_20260616/)*
