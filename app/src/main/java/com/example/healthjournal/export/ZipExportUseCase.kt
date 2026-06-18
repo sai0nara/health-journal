@@ -29,9 +29,17 @@ class ZipExportUseCase(
             // 2. Copy media files
             entries.forEach { entry ->
                 entry.attachments?.forEach { attachment ->
-                    val file = File(attachment.uri.replace("file://", ""))
+                    val uri = Uri.parse(attachment.uri)
+                    val file = if (uri.scheme == "file") {
+                        File(uri.path ?: "")
+                    } else {
+                        // If it's not a file URI, try directly as path
+                        File(attachment.uri)
+                    }
+                    android.util.Log.d("ZipExport", "Checking attachment: ${attachment.name}, URI: ${attachment.uri}, Scheme: ${uri.scheme}, File: ${file.absolutePath}, Exists: ${file.exists()}")
                     if (file.exists() && file.isFile) {
                         val entryName = "media/${file.name}"
+
                         // Avoid duplicate entries in ZIP if the same file is attached multiple times
                         try {
                             zos.putNextEntry(ZipEntry(entryName))
