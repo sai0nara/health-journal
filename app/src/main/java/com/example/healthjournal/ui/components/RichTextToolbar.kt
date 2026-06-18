@@ -29,7 +29,6 @@ import com.mohamedrejeb.richeditor.model.RichTextState
 fun RichTextToolbar(
     state: RichTextState,
     modifier: Modifier = Modifier,
-    onAttachClick: () -> Unit = {},
     onLinkClick: () -> Unit = {}
 ) {
     Surface(
@@ -70,8 +69,8 @@ fun RichTextToolbar(
             )
             ToolbarButton(
                 icon = Icons.Default.FormatItalic,
-                isActive = state.currentSpanStyle.fontStyle == FontStyle.Italic,
-                onClick = { state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic)) },
+                isActive = state.currentSpanStyle.fontStyle == androidx.compose.ui.text.font.FontStyle.Italic,
+                onClick = { state.toggleSpanStyle(SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)) },
                 testTag = "italic_button"
             )
             ToolbarButton(
@@ -85,25 +84,20 @@ fun RichTextToolbar(
 
             ToolbarButton(
                 icon = Icons.Default.FormatListNumbered,
-                isActive = state.isOrderedList,
+                isActive = false, 
                 onClick = { state.toggleOrderedList() }
             )
             ToolbarButton(
                 icon = Icons.AutoMirrored.Filled.FormatListBulleted,
-                isActive = state.isUnorderedList,
+                isActive = false, 
                 onClick = { state.toggleUnorderedList() }
             )
 
             ToolbarDivider()
 
             ToolbarButton(
-                icon = Icons.Default.AttachFile,
-                isActive = false,
-                onClick = onAttachClick
-            )
-            ToolbarButton(
                 icon = Icons.Default.Link,
-                isActive = false, // state.isLink
+                isActive = false, 
                 onClick = onLinkClick
             )
 

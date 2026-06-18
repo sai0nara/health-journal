@@ -299,7 +299,6 @@ fun AddEntryScreen(
             if (!isReadOnly) {
                 RichTextToolbar(
                     state = richTextState,
-                    onAttachClick = { filePickerLauncher.launch(arrayOf("*/*")) },
                     onLinkClick = {
                         linkText = richTextState.selection.let { 
                             richTextState.annotatedString.substring(it.start, it.end)
