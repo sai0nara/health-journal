@@ -299,7 +299,7 @@ fun AddEntryScreen(
             if (!isReadOnly) {
                 RichTextToolbar(
                     state = richTextState,
-                    onAttachClick = { photoPickerLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    onAttachClick = { filePickerLauncher.launch(arrayOf("*/*")) },
                     onLinkClick = {
                         linkText = richTextState.selection.let { 
                             richTextState.annotatedString.substring(it.start, it.end)
