@@ -1,5 +1,7 @@
 package com.example.healthjournal.export
 
+import android.net.Uri
+import android.webkit.MimeTypeMap
 import com.example.healthjournal.data.JournalRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.first
@@ -38,7 +40,13 @@ class ZipExportUseCase(
                     }
                     android.util.Log.d("ZipExport", "Checking attachment: ${attachment.name}, URI: ${attachment.uri}, Scheme: ${uri.scheme}, File: ${file.absolutePath}, Exists: ${file.exists()}")
                     if (file.exists() && file.isFile) {
-                        val entryName = "media/${file.name}"
+                        val mime = MimeTypeMap.getSingleton()
+                        val extension = mime.getExtensionFromMimeType(attachment.mimeType)
+                        var fileName = attachment.name
+                        if (extension != null && !fileName.endsWith(".$extension", ignoreCase = true)) {
+                            fileName = "$fileName.$extension"
+                        }
+                        val entryName = "media/$fileName"
 
                         // Avoid duplicate entries in ZIP if the same file is attached multiple times
                         try {
