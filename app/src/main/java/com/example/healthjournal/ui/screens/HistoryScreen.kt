@@ -75,6 +75,7 @@ fun HistoryScreen(
     
     // Automatically stop refreshing when sync finishes
     LaunchedEffect(syncStatus) {
+        android.util.Log.d("HistoryScreen", "Sync status changed: $syncStatus")
         if (syncStatus == "Synced" || syncStatus == "Sync Failed" || syncStatus == "Sync Cancelled") {
             isRefreshing = false
         }
