@@ -31,3 +31,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Rich Attachments & Archive Integration**
   *Link: [./tracks/rich_attachments_20260609/](./tracks/rich_attachments_20260609/)*
+
+---
+
+- [x] **Track: Data Export (PDF & ZIP Archive)**
+  *Link: [./tracks/data_export_20260616/](./tracks/data_export_20260616/)*
