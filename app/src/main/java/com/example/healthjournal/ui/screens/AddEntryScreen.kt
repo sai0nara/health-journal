@@ -299,7 +299,6 @@ fun AddEntryScreen(
             if (!isReadOnly) {
                 RichTextToolbar(
                     state = richTextState,
-                    onAttachClick = { launchCamera() }, // Or other media action
                     onLinkClick = {
                         linkText = richTextState.selection.let { 
                             richTextState.annotatedString.substring(it.start, it.end)
@@ -522,7 +521,8 @@ fun AddEntryScreen(
                 Button(
                     onClick = {
                     val descriptionHtml = richTextState.toHtml()
-                    if (descriptionHtml.isNotBlank()) {
+                    val plainText = richTextState.annotatedString.text
+                    if (plainText.isNotBlank()) {
                         scope.launch {
                             val finalTimestamp = if (selectedTimestamp > System.currentTimeMillis()) {
                                 System.currentTimeMillis()

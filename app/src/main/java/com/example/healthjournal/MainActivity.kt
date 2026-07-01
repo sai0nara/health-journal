@@ -17,6 +17,8 @@ import com.example.healthjournal.ui.theme.HealthJournalTheme
 import com.example.healthjournal.viewmodel.JournalViewModel
 import com.example.healthjournal.viewmodel.JournalViewModelFactory
 import com.example.healthjournal.sync.SyncManager
+import com.example.healthjournal.export.ExportViewModel
+import com.example.healthjournal.ui.screens.ExportScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,13 +27,10 @@ class MainActivity : ComponentActivity() {
         val database = JournalDatabase.getDatabase(this)
         val repository = JournalRepository(database.journalDao())
         val viewModelFactory = JournalViewModelFactory(application, repository)
+        val exportViewModel = ExportViewModel(application, repository)
 
         // Trigger sync on start
         SyncManager.enqueuePeriodicSync(this)
-
-        if (intent.getBooleanExtra("TEST_MODE", false)) {
-            return
-        }
 
         setContent {
             HealthJournalTheme {
@@ -44,7 +43,14 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             onAddEntryClick = { navController.navigate("add_entry") },
                             onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") },
-                            onArchiveClick = { navController.navigate("archive") }
+                            onArchiveClick = { navController.navigate("archive") },
+                            onExportClick = { navController.navigate("export") }
+                        )
+                    }
+                    composable("export") {
+                        ExportScreen(
+                            viewModel = exportViewModel,
+                            onBack = { navController.popBackStack() }
                         )
                     }
                     composable("archive") {

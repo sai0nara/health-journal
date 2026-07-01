@@ -10,7 +10,7 @@
 - [x] Task: Update `JournalEntry` and local database schemas to support a list of attachment paths with `syncStatus`. [8e0a5eb]
     - [x] Write Room migration and DAO unit tests.
     - [x] Update `JournalEntryRepository` to handle local URI saving and metadata splitting.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Database Schema & Repository Updates' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Database Schema & Repository Updates' (Protocol in workflow.md) [12edc75]
 
 ## Phase 3: Sync Worker (WorkManager)
 - [x] Task: Implement `PeriodicSyncWorker` for two-stage synchronization.

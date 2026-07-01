@@ -9,9 +9,8 @@ Personal health journal app
 ```
 
 # Execute tests
-
 ```shell
-
+ JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home ./gradlew connectedAndroidTest
 ```
 
 # Build apk
