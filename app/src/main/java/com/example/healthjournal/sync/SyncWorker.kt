@@ -18,6 +18,7 @@ import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
@@ -86,6 +87,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 emptyList()
             }
 
+
             // 1a. Filter cloud entries by local deletions
             val deletedIds = repository.getDeletedEntryIds()
             if (deletedIds.isNotEmpty()) {
@@ -137,7 +139,9 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             localEntries.forEach { local ->
                 val existing = allEntriesMap[local.entry_id]
                 if (existing == null || local.lastModified > existing.lastModified) {
-                    allEntriesMap[local.entry_id] = local
+                    // Attach local tags to the entry for cloud upload
+                    val tags = dao.getTagsForEntry(local.entry_id)
+                    allEntriesMap[local.entry_id] = local.withTags(tags)
                 }
             }
 
@@ -145,6 +149,14 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
 
             // 4. Update local DB
             repository.importAll(mergedEntries.map { it.copy(isSynced = true) })
+            
+            // Persist tags from merged results back to the cross-ref table
+            mergedEntries.forEach { entry ->
+                if (entry.tags.isNotEmpty()) {
+                    dao.deleteAllTagsForEntry(entry.entry_id)
+                    entry.tags.forEach { tag -> dao.insertTag(EntryTagCrossRef(entry.entry_id, tag)) }
+                }
+            }
 
             // 5. Upload new local files to cloud
             mergedEntries.forEach { entry ->
@@ -199,36 +211,36 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
 }
 
 object SyncManager {
-        fun enqueuePeriodicSync(context: Context) {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.UNMETERED)
-                .build()
+    fun enqueuePeriodicSync(context: Context) {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.UNMETERED)
+            .build()
 
-            val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES)
-                .setConstraints(constraints)
-                .build()
+        val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES)
+            .setConstraints(constraints)
+            .build()
 
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-                "journal_sync_periodic",
-                ExistingPeriodicWorkPolicy.KEEP,
-                syncRequest
-            )
-        }
-
-        fun triggerManualSync(context: Context) {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-
-            val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-                .setConstraints(constraints)
-                .build()
-
-            WorkManager.getInstance(context).enqueueUniqueWork(
-                "journal_sync_manual",
-                ExistingWorkPolicy.REPLACE,
-                syncRequest
-            )
-        }
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            "journal_sync_periodic",
+            ExistingPeriodicWorkPolicy.KEEP,
+            syncRequest
+        )
     }
+
+    fun triggerManualSync(context: Context) {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            "journal_sync_manual",
+            ExistingWorkPolicy.REPLACE,
+            syncRequest
+        )
+    }
+}
 

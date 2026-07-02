@@ -2,6 +2,7 @@ package com.example.healthjournal.data
 
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.DeletedEntry
+import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.JournalDao
 import com.example.healthjournal.data.local.JournalEntry
 import kotlinx.coroutines.flow.Flow
@@ -18,8 +19,16 @@ class JournalRepository(private val journalDao: JournalDao) {
         return journalDao.searchEntries(query, isAsc)
     }
 
+    fun searchEntriesWithTags(query: String, tags: List<String>, isAsc: Boolean): Flow<List<JournalEntry>> {
+        return journalDao.searchEntriesWithTags(query, tags, tags.size, isAsc)
+    }
+
     fun searchArchivedEntries(query: String): Flow<List<JournalEntry>> {
         return journalDao.searchArchivedEntries(query)
+    }
+
+    fun searchArchivedEntriesWithTags(query: String, tags: List<String>): Flow<List<JournalEntry>> {
+        return journalDao.searchArchivedEntriesWithTags(query, tags, tags.size)
     }
 
     suspend fun insert(entry: JournalEntry) {
@@ -104,5 +113,17 @@ class JournalRepository(private val journalDao: JournalDao) {
             lastModified = System.currentTimeMillis()
         )
         journalDao.insertEntry(updatedEntry)
+    }
+
+    suspend fun addTag(entryId: String, tag: String) {
+        journalDao.insertTag(EntryTagCrossRef(entryId, tag))
+    }
+
+    suspend fun removeTag(entryId: String, tag: String) {
+        journalDao.deleteTag(entryId, tag)
+    }
+
+    suspend fun getTagsForEntry(entryId: String): List<String> {
+        return journalDao.getTagsForEntry(entryId)
     }
 }

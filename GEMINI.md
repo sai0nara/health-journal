@@ -33,11 +33,11 @@ This is an Android health journal application designed for personal event loggin
 The project uses Gradle for build management.
 
 ### Key Commands:
-- **Build the project:** `./gradlew build`
-- **Install debug build on connected device/emulator:** `./gradlew installDebug`
-- **Run unit tests:** `./gradlew test`
-- **Run instrumented tests:** `./gradlew connectedAndroidTest`
-- **Clean build artifacts:** `./gradlew clean`
+- **Build the project:** `JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home ./gradlew build`
+- **Install debug build on connected device/emulator:** `JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home ./gradlew installDebug`
+- **Run unit tests:** `JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home ./gradlew test`
+- **Run instrumented tests:** `JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home ./gradlew connectedAndroidTest`
+- **Clean build artifacts:** `JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home ./gradlew clean`
 
 ## Development Conventions
 - **UI:** Exclusively use Jetpack Compose for building user interfaces.

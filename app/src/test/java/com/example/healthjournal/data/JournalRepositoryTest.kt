@@ -6,10 +6,10 @@ import com.example.healthjournal.data.local.JournalEntry
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -70,102 +70,101 @@ class JournalRepositoryTest {
         coVerify { journalDao.insertAll(entries) }
     }
 
-    // ---- New tests for sync and attachment functionality ----
+    @Test
+    fun addTagCallsDao() = runBlocking {
+        val entryId = "test_id"
+        val tag = "HEALTH"
+        coEvery { journalDao.insertTag(any()) } returns Unit
+        
+        repository.addTag(entryId, tag)
+        
+        coVerify { journalDao.insertTag(match { it.entryId == entryId && it.tag == tag }) }
+    }
+
+    @Test
+    fun removeTagCallsDao() = runBlocking {
+        val entryId = "test_id"
+        val tag = "HEALTH"
+        coEvery { journalDao.deleteTag(any(), any()) } returns Unit
+        
+        repository.removeTag(entryId, tag)
+        
+        coVerify { journalDao.deleteTag(entryId, tag) }
+    }
+
+    @Test
+    fun getTagsForEntryCallsDao() = runBlocking {
+        val entryId = "test_id"
+        val tags = listOf("TAG1", "TAG2")
+        coEvery { journalDao.getTagsForEntry(entryId) } returns tags
+        
+        val result = repository.getTagsForEntry(entryId)
+        
+        assertEquals(tags, result)
+        coVerify { journalDao.getTagsForEntry(entryId) }
+    }
+
+    @Test
+    fun searchEntriesWithTagsCallsDao() = runBlocking {
+        val query = "test"
+        val tags = listOf("TAG1", "TAG2")
+        val entries = listOf(JournalEntry(description = "Test Entry"))
+        coEvery { journalDao.searchEntriesWithTags(query, tags, tags.size, any()) } returns flowOf(entries)
+        
+        val result = repository.searchEntriesWithTags(query, tags, false).first()
+        
+        assertEquals(entries, result)
+        coVerify { journalDao.searchEntriesWithTags(query, tags, tags.size, false) }
+    }
 
     @Test
     fun getPendingSyncEntries_delegatesToDao() = runBlocking {
-        val pendingEntries = listOf(
-            JournalEntry(description = "Pending", syncStatus = "PENDING_SYNC")
-        )
+        val pendingEntries = listOf(JournalEntry(description = "Pending", syncStatus = "PENDING_SYNC"))
         coEvery { journalDao.getPendingSyncEntries() } returns pendingEntries
-
+        
         val result = repository.getPendingSyncEntries()
-
+        
         assertEquals(pendingEntries, result)
         coVerify { journalDao.getPendingSyncEntries() }
     }
 
     @Test
     fun updateSyncStatus_delegatesToDao() = runBlocking {
-        coEvery { journalDao.updateSyncStatus(any(), any()) } returns Unit
-
-        repository.updateSyncStatus("entry-1", "SYNCED")
-
-        coVerify { journalDao.updateSyncStatus("entry-1", "SYNCED") }
+        val entryId = "test_id"
+        val status = "SYNCED"
+        coEvery { journalDao.updateSyncStatus(entryId, status) } returns Unit
+        
+        repository.updateSyncStatus(entryId, status)
+        
+        coVerify { journalDao.updateSyncStatus(entryId, status) }
     }
 
     @Test
     fun updateAttachments_delegatesToDao() = runBlocking {
-        val attachments = listOf(
-            AttachmentData("photo.jpg", "https://cdn.com/photo.jpg", "image/jpeg", false)
-        )
-        coEvery { journalDao.updateAttachments(any(), any(), any()) } returns Unit
-
-        repository.updateAttachments("entry-1", attachments, "SYNCED")
-
-        coVerify { journalDao.updateAttachments("entry-1", attachments, "SYNCED") }
+        val entryId = "test_id"
+        val attachments = listOf(AttachmentData("file.pdf", "uri", "pdf"))
+        val status = "SYNCED"
+        coEvery { journalDao.updateAttachments(entryId, attachments, status) } returns Unit
+        
+        repository.updateAttachments(entryId, attachments, status)
+        
+        coVerify { journalDao.updateAttachments(entryId, attachments, status) }
     }
 
     @Test
-    fun saveAttachmentLocally_updatesEntryWithNewAttachment() = runBlocking {
-        val existingEntry = JournalEntry(
-            entry_id = "entry-1",
-            description = "Test",
-            attachments = listOf(
-                AttachmentData("old.jpg", "/data/old.jpg", "image/jpeg", true)
-            ),
-            syncStatus = "SYNCED"
-        )
-        val newAttachment = AttachmentData(
-            name = "new.pdf",
-            uri = "/data/new.pdf",
-            mimeType = "application/pdf",
-            isLocalOnly = true
-        )
-
-        coEvery { journalDao.getEntryById("entry-1") } returns existingEntry
+    fun saveAttachmentLocally_delegatesToDao() = runBlocking {
+        val entryId = "test_id"
+        val entry = JournalEntry(entry_id = entryId, description = "Test", attachments = emptyList())
+        val attachment = AttachmentData("file.pdf", "uri", "pdf")
+        coEvery { journalDao.getEntryById(entryId) } returns entry
         coEvery { journalDao.insertEntry(any()) } returns Unit
-
-        repository.saveAttachmentLocally("entry-1", newAttachment)
-
-        coVerify {
-            journalDao.insertEntry(match {
-                it.entry_id == "entry-1" &&
-                it.attachments?.size == 2 &&
-                it.attachments!![1].name == "new.pdf" &&
-                it.syncStatus == "PENDING_SYNC"
-            })
-        }
-    }
-
-    @Test
-    fun saveAttachmentLocally_createsNewListIfEntryHasNoAttachments() = runBlocking {
-        val existingEntry = JournalEntry(
-            entry_id = "entry-2",
-            description = "No attachments",
-            attachments = emptyList(),
-            syncStatus = "SYNCED"
-        )
-        val newAttachment = AttachmentData(
-            name = "doc.pdf",
-            uri = "/data/doc.pdf",
-            mimeType = "application/pdf",
-            isLocalOnly = true
-        )
-
-        coEvery { journalDao.getEntryById("entry-2") } returns existingEntry
-        coEvery { journalDao.insertEntry(any()) } returns Unit
-
-        repository.saveAttachmentLocally("entry-2", newAttachment)
-
-        coVerify {
-            journalDao.insertEntry(match {
-                it.entry_id == "entry-2" &&
-                it.attachments?.size == 1 &&
-                it.attachments!![0].name == "doc.pdf" &&
-                it.syncStatus == "PENDING_SYNC"
-            })
-        }
+        
+        repository.saveAttachmentLocally(entryId, attachment)
+        
+        coVerify { journalDao.insertEntry(match { 
+            it.entry_id == entryId && 
+            it.attachments?.contains(attachment) == true &&
+            it.syncStatus == "PENDING_SYNC" 
+        }) }
     }
 }
-

@@ -102,7 +102,7 @@ class JournalViewModelTest {
         val entry = JournalEntry(description = "Old")
         coEvery { repository.insert(any()) } returns Unit
         
-        viewModel.updateEntry(entry.copy(description = "New"))
+        viewModel.updateEntry(entry.copy(description = "New"), emptySet())
         testDispatcher.scheduler.advanceUntilIdle()
         
         coVerify { repository.insert(match { it.description == "New" }) }
