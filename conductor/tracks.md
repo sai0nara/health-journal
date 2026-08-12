@@ -27,7 +27,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Fix NullPointerException in List Iteration**
   *Link: [./tracks/fix_npe_iterator_20260529/](./tracks/fix_npe_iterator_20260529/)*
 
----
-
-- [~] **Track: Categorization and Tagging (Illness, Checkup, Doctor, Exercises)**
-  *Link: [./tracks/categorization_tagging_20260701/](./tracks/categorization_tagging_20260701/)*
