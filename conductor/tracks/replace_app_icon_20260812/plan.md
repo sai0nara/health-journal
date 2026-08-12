@@ -5,4 +5,4 @@
     - Process `Docs/Images/Icon.png` and output icons for mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi.
 - [x] Task: Update AndroidManifest.xml to reference app launcher icons [e1be2a4]
     - Update `<application>` tags with `android:icon` and `android:roundIcon`.
-- [ ] Task: Conductor - User Manual Verification 'Replace App Icon' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Replace App Icon' (Protocol in workflow.md) [e8a6f18]
