@@ -100,13 +100,19 @@ class JournalViewModel(
     override val selectedTags: StateFlow<Set<String>> = _selectedTags.asStateFlow()
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    override val allEntries: StateFlow<List<JournalEntry>> = combine(_searchQuery, _isAscending) { query, isAsc ->
-        query to isAsc
-    }.flatMapLatest { (query, isAsc) ->
-        if (query.isBlank()) {
-            repository.getEntriesSortedByDate(isAsc)
+    override val allEntries: StateFlow<List<JournalEntry>> = combine(
+        _searchQuery, _isAscending, _selectedTags
+    ) { query, isAsc, tags ->
+        Triple(query, isAsc, tags)
+    }.flatMapLatest { (query, isAsc, tags) ->
+        if (tags.isEmpty()) {
+            if (query.isBlank()) {
+                repository.getEntriesSortedByDate(isAsc)
+            } else {
+                repository.searchEntries(query, isAsc)
+            }
         } else {
-            repository.searchEntries(query, isAsc)
+            repository.searchEntriesWithTags(query, tags.toList(), isAsc)
         }
     }.stateIn(
         scope = viewModelScope,
@@ -221,7 +227,7 @@ class JournalViewModel(
         viewModelScope.launch {
             // Update lastModified to ensure local edits "win" in sync conflict resolution
             // Keep the original timestamp (creation date)
-            repository.insert(entry.copy(isSynced = false, lastModified = System.currentTimeMillis()))
+            repository.insert(entry.copy(syncStatus = "PENDING_SYNC", lastModified = System.currentTimeMillis()))
             
             // Refresh tags: remove all existing and add current selection
             val existingTags = repository.getTagsForEntry(entry.entry_id)
@@ -274,7 +280,7 @@ class JournalViewModel(
                 Log.d(TAG, "Resolution required for Drive access")
                 onResolutionRequired(pendingIntent)
             },
-            onSuccess = { accessToken ->
+            onSuccess = { _ ->
                 Log.d(TAG, "Drive authorization successful")
                 _syncStatus.value = "Authenticated & Authorized"
                 viewModelScope.launch(Dispatchers.Main) {

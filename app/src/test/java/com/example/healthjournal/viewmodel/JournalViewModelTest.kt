@@ -101,10 +101,13 @@ class JournalViewModelTest {
     fun updateEntryCallsRepository() = runTest {
         val entry = JournalEntry(description = "Old")
         coEvery { repository.insert(any()) } returns Unit
-        
+        coEvery { repository.getTagsForEntry(any()) } returns emptyList()
+        coEvery { repository.removeTag(any(), any()) } returns Unit
+        coEvery { repository.addTag(any(), any()) } returns Unit
+
         viewModel.updateEntry(entry.copy(description = "New"), emptySet())
         testDispatcher.scheduler.advanceUntilIdle()
-        
+
         coVerify { repository.insert(match { it.description == "New" }) }
     }
 

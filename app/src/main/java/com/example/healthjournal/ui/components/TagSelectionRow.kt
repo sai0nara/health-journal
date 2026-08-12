@@ -26,7 +26,7 @@ fun TagSelectionRow(
             FilterChip(
                 selected = selectedTags.contains(tag.name),
                 onClick = { onTagToggle(tag.name) },
-                label = { Text(tag.name.lowercase().replace("_", " ")) }
+                label = { Text(tag.name.lowercase().replaceFirstChar { it.uppercase() }) }
             )
         }
     }

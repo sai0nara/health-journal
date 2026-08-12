@@ -1,10 +1,16 @@
 package com.example.healthjournal.export
 
+import android.net.Uri
+import android.util.Log
+import android.webkit.MimeTypeMap
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalEntry
 import com.google.gson.Gson
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotNull
@@ -54,35 +60,55 @@ class ZipExportUseCaseTest {
         val internalDir = File(tempDir, "internal")
         exportsDir.mkdirs()
         internalDir.mkdirs()
-        
+
         val mediaFile = File(internalDir, "test_photo.jpg")
         mediaFile.writeText("fake photo content")
-        
+
         val entries = listOf(
             JournalEntry(
                 description = "Entry with photo",
                 attachments = listOf(
                     com.example.healthjournal.data.local.AttachmentData(
-                        name = "Photo",
+                        name = "test_photo",
                         uri = "file://${mediaFile.absolutePath}",
                         mimeType = "image/jpeg"
                     )
                 )
             )
         )
-        
+
         coEvery { repository.allEntries } returns flowOf(entries)
-        
-        val useCase = ZipExportUseCase(repository, exportsDir, gson)
-        val resultFile = useCase.execute()
-        
-        val zipFile = ZipFile(resultFile)
-        val mediaEntry = zipFile.getEntry("media/test_photo.jpg")
-        assertNotNull("ZIP should contain media file", mediaEntry)
-        
-        val content = zipFile.getInputStream(mediaEntry).bufferedReader().use { it.readText() }
-        assertTrue("Media content should match", content == "fake photo content")
-        
-        zipFile.close()
+
+        // Mock android.net.Uri.parse() since it's not available in unit tests
+        mockkStatic(Uri::class)
+        mockkStatic(Log::class)
+        mockkStatic(MimeTypeMap::class)
+        val mockUri = mockk<Uri>()
+        val mockMimeTypeMap = mockk<MimeTypeMap>()
+        every { Uri.parse("file://${mediaFile.absolutePath}") } returns mockUri
+        every { mockUri.scheme } returns "file"
+        every { mockUri.path } returns mediaFile.absolutePath
+        every { Log.d(any(), any()) } returns 0
+        every { Log.e(any(), any(), any()) } returns 0
+        every { MimeTypeMap.getSingleton() } returns mockMimeTypeMap
+        every { mockMimeTypeMap.getExtensionFromMimeType("image/jpeg") } returns "jpg"
+
+        try {
+            val useCase = ZipExportUseCase(repository, exportsDir, gson)
+            val resultFile = useCase.execute()
+
+            val zipFile = ZipFile(resultFile)
+            val mediaEntry = zipFile.getEntry("media/test_photo.jpg")
+            assertNotNull("ZIP should contain media file", mediaEntry)
+
+            val content = zipFile.getInputStream(mediaEntry).bufferedReader().use { it.readText() }
+            assertTrue("Media content should match", content == "fake photo content")
+
+            zipFile.close()
+        } finally {
+            unmockkStatic(Uri::class)
+            unmockkStatic(Log::class)
+            unmockkStatic(MimeTypeMap::class)
+        }
     }
 }

@@ -152,10 +152,8 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             
             // Persist tags from merged results back to the cross-ref table
             mergedEntries.forEach { entry ->
-                if (entry.tags.isNotEmpty()) {
-                    dao.deleteAllTagsForEntry(entry.entry_id)
-                    entry.tags.forEach { tag -> dao.insertTag(EntryTagCrossRef(entry.entry_id, tag)) }
-                }
+                dao.deleteAllTagsForEntry(entry.entry_id)
+                entry.tags.forEach { tag -> dao.insertTag(EntryTagCrossRef(entry.entry_id, tag)) }
             }
 
             // 5. Upload new local files to cloud
