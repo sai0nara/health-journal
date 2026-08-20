@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
@@ -14,6 +15,7 @@ import com.example.healthjournal.sync.SyncManager
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.*
@@ -234,6 +236,69 @@ class JournalViewModelTest {
 
         coVerify { repository.addTag(entryId, "EXERCISES") }
         coVerify { repository.markEntryDirty(entryId) }
+    }
+
+    @Test
+    fun syncStatus_observesPeriodicAndManualWorkNames() = runTest {
+        val workManager = mockk<WorkManager>(relaxed = true)
+        every { WorkManager.getInstance(any()) } returns workManager
+        every { workManager.getWorkInfosForUniqueWorkFlow(any()) } returns MutableStateFlow(emptyList())
+
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_periodic") }
+        verify { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_manual") }
+    }
+
+    @Test
+    fun syncStatus_reflectsManualWorkCompletion() = runTest {
+        val workManager = mockk<WorkManager>(relaxed = true)
+        val workFlow = MutableStateFlow(listOf(workInfo(WorkInfo.State.SUCCEEDED)))
+        every { WorkManager.getInstance(any()) } returns workManager
+        every { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_periodic") } returns MutableStateFlow(emptyList())
+        every { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_manual") } returns workFlow
+
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Synced", viewModel.syncStatus.value)
+    }
+
+    @Test
+    fun syncStatus_failureEmitsSyncFailed() = runTest {
+        val workManager = mockk<WorkManager>(relaxed = true)
+        val workFlow = MutableStateFlow(listOf(workInfo(WorkInfo.State.FAILED)))
+        every { WorkManager.getInstance(any()) } returns workManager
+        every { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_periodic") } returns MutableStateFlow(emptyList())
+        every { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_manual") } returns workFlow
+
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Sync Failed", viewModel.syncStatus.value)
+    }
+
+    @Test
+    fun syncStatus_runningEmittedForEnqueuedWork() = runTest {
+        val workManager = mockk<WorkManager>(relaxed = true)
+        val workFlow = MutableStateFlow(listOf(workInfo(WorkInfo.State.RUNNING)))
+        every { WorkManager.getInstance(any()) } returns workManager
+        every { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_periodic") } returns MutableStateFlow(emptyList())
+        every { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_manual") } returns workFlow
+
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Syncing...", viewModel.syncStatus.value)
+    }
+
+    private fun workInfo(state: WorkInfo.State): WorkInfo {
+        val info = mockk<WorkInfo>()
+        every { info.state } returns state
+        every { info.runAttemptCount } returns 0
+        every { info.outputData } returns androidx.work.Data.EMPTY
+        return info
     }
 
     @Test

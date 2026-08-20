@@ -158,29 +158,31 @@ class JournalViewModel(
     private val TAG = "JournalViewModel"
 
     init {
-        // Observe WorkManager for "journal_sync"
+        // Observe WorkManager for the sync work names actually used by SyncManager
         viewModelScope.launch {
-            WorkManager.getInstance(getApplication())
-                .getWorkInfosForUniqueWorkFlow("journal_sync")
-                .collect { workInfos ->
-                    val info = workInfos.firstOrNull()
-                    _syncStatus.value = when (info?.state) {
-                        WorkInfo.State.ENQUEUED -> {
-                            if (info.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
-                        }
-                        WorkInfo.State.RUNNING -> "Syncing..."
-                        WorkInfo.State.SUCCEEDED -> "Synced"
-                        WorkInfo.State.FAILED -> {
-                            val errorMsg = info.outputData.getString("error_message") ?: "Sync Failed"
-                            viewModelScope.launch(Dispatchers.Main) {
-                                android.widget.Toast.makeText(getApplication(), "Sync failed: $errorMsg", android.widget.Toast.LENGTH_LONG).show()
-                            }
-                            errorMsg
-                        }
-                        WorkInfo.State.CANCELLED -> "Sync Cancelled"
-                        else -> null
+            val workManager = WorkManager.getInstance(getApplication())
+            merge(
+                workManager.getWorkInfosForUniqueWorkFlow(SyncManager.PERIODIC_WORK_NAME),
+                workManager.getWorkInfosForUniqueWorkFlow(SyncManager.MANUAL_WORK_NAME)
+            ).collect { workInfos ->
+                val info = workInfos.firstOrNull()
+                _syncStatus.value = when (info?.state) {
+                    WorkInfo.State.ENQUEUED -> {
+                        if (info.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
                     }
+                    WorkInfo.State.RUNNING -> "Syncing..."
+                    WorkInfo.State.SUCCEEDED -> "Synced"
+                    WorkInfo.State.FAILED -> {
+                        val errorMsg = info.outputData.getString("error_message") ?: "Sync Failed"
+                        viewModelScope.launch(Dispatchers.Main) {
+                            android.widget.Toast.makeText(getApplication(), "Sync failed: $errorMsg", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                        "Sync Failed"
+                    }
+                    WorkInfo.State.CANCELLED -> "Sync Cancelled"
+                    else -> null
                 }
+            }
         }
     }
 
