@@ -3,7 +3,8 @@ package com.example.healthjournal.media
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
+import android.media.ExifInterface
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -17,7 +18,36 @@ interface MediaCompressionService {
     fun compressAndSaveImage(inputStream: InputStream, originalFileName: String?): String?
 }
 
-class AndroidMediaCompressionService(private val context: Context) : MediaCompressionService {
+interface ExifOrientationHandler {
+    fun read(bytes: ByteArray): Int
+    fun write(file: File, orientation: Int)
+}
+
+class AndroidExifOrientationHandler : ExifOrientationHandler {
+    override fun read(bytes: ByteArray): Int {
+        return try {
+            ExifInterface(ByteArrayInputStream(bytes))
+                .getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+        } catch (e: Exception) {
+            ExifInterface.ORIENTATION_NORMAL
+        }
+    }
+
+    override fun write(file: File, orientation: Int) {
+        try {
+            val exif = ExifInterface(file)
+            exif.setAttribute(ExifInterface.TAG_ORIENTATION, orientation.toString())
+            exif.saveAttributes()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}
+
+class AndroidMediaCompressionService(
+    private val context: Context,
+    private val exifHandler: ExifOrientationHandler = AndroidExifOrientationHandler()
+) : MediaCompressionService {
 
     override fun compressAndSaveImage(inputStream: InputStream, originalFileName: String?): String? {
         val photosDir = File(context.filesDir, "photos")
@@ -29,30 +59,38 @@ class AndroidMediaCompressionService(private val context: Context) : MediaCompre
         val destFile = File(photosDir, uniqueFileName)
 
         return try {
-            val bitmap = BitmapFactory.decodeStream(inputStream)
+            // Buffer the entire stream first so fallbacks have the original bytes
+            // (a consumed stream cannot be re-read, previously producing 0-byte files)
+            val bytes = inputStream.readBytes()
+            if (bytes.isEmpty()) return null
+
+            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             if (bitmap == null) {
-                // Decode failed, try raw fallback
-                saveRawFallback(inputStream, destFile)
+                saveRawFallback(bytes, destFile)
             } else {
+                val orientation = exifHandler.read(bytes)
                 val success = FileOutputStream(destFile).use { outputStream ->
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream).also {
                         outputStream.flush()
                     }
                 }
                 bitmap.recycle()
-                
+
                 if (success) {
+                    if (orientation != ExifInterface.ORIENTATION_NORMAL) {
+                        exifHandler.write(destFile, orientation)
+                    }
                     "file://${destFile.absolutePath}"
                 } else {
                     // Compression failed, save raw fallback
-                    saveRawFallback(inputStream, destFile)
+                    saveRawFallback(bytes, destFile)
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
             // Exception caught, try raw fallback as last resort
             try {
-                saveRawFallback(inputStream, destFile)
+                saveRawFallback(inputStream.readBytes(), destFile)
             } catch (ex: Exception) {
                 ex.printStackTrace()
                 null
@@ -60,17 +98,12 @@ class AndroidMediaCompressionService(private val context: Context) : MediaCompre
         }
     }
 
-    private fun saveRawFallback(inputStream: InputStream, destFile: File): String? {
+    private fun saveRawFallback(bytes: ByteArray, destFile: File): String? {
         return try {
-            // Re-open/copy stream to destFile if possible.
-            // Note: the original inputStream might have been consumed/read already.
-            // But if it supports marking/resetting, we can reset it.
-            // If not, we just attempt to copy what remains or catch the failure.
-            if (inputStream.markSupported()) {
-                inputStream.reset()
-            }
+            if (bytes.isEmpty()) return null
             FileOutputStream(destFile).use { outputStream ->
-                inputStream.copyTo(outputStream)
+                outputStream.write(bytes)
+                outputStream.flush()
             }
             "file://${destFile.absolutePath}"
         } catch (e: Exception) {
