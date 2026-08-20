@@ -219,7 +219,8 @@ class SyncDownloadTest {
         // 3. Verify that cloud JSON NO LONGER contains the deleted ID
         assertFalse(capturedUpload.captured.contains(deletedId))
 
-        // 4. Verify local tombstone is cleared
-        assertTrue(repository.getDeletedEntryIds().isEmpty())
+        // 4. Verify local tombstone is RETAINED (grace period) so a stale cloud
+        // copy in a later sync cycle cannot resurrect the deleted entry.
+        assertTrue(repository.getDeletedEntryIds().contains(deletedId))
     }
 }

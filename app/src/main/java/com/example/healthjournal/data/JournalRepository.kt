@@ -71,9 +71,18 @@ class JournalRepository(private val journalDao: JournalDao) {
     suspend fun getDeletedEntryIds(): List<String> {
         return journalDao.getAllDeletedEntries().map { it.entry_id }
     }
-    
-    suspend fun clearDeletedEntries(entryIds: List<String>) {
-        journalDao.removeDeletedEntries(entryIds)
+
+    /**
+     * Removes tombstone records older than the grace period. Tombstones younger
+     * than [TOMBSTONE_GRACE_PERIOD_MS] are kept so that a stale cloud copy arriving
+     * in a later sync cycle cannot resurrect a deleted entry.
+     */
+    suspend fun clearDeletedEntries(now: Long = System.currentTimeMillis()) {
+        journalDao.removeDeletedEntriesBefore(now - TOMBSTONE_GRACE_PERIOD_MS)
+    }
+
+    companion object {
+        const val TOMBSTONE_GRACE_PERIOD_MS = 30L * 24 * 60 * 60 * 1000 // 30 days
     }
 
     /**
