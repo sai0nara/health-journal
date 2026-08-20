@@ -209,6 +209,9 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
 }
 
 object SyncManager {
+    const val PERIODIC_WORK_NAME = "journal_sync_periodic"
+    const val MANUAL_WORK_NAME = "journal_sync_manual"
+
     fun enqueuePeriodicSync(context: Context) {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.UNMETERED)
@@ -219,7 +222,7 @@ object SyncManager {
             .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            "journal_sync_periodic",
+            PERIODIC_WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
             syncRequest
         )
@@ -235,7 +238,7 @@ object SyncManager {
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(
-            "journal_sync_manual",
+            MANUAL_WORK_NAME,
             ExistingWorkPolicy.REPLACE,
             syncRequest
         )
