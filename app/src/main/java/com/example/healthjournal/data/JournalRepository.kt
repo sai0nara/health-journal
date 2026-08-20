@@ -36,7 +36,8 @@ class JournalRepository(private val journalDao: JournalDao) {
     }
 
     suspend fun getEntryById(entryId: String): JournalEntry? {
-        return journalDao.getEntryById(entryId)
+        val entry = journalDao.getEntryById(entryId) ?: return null
+        return entry.withTags(journalDao.getTagsForEntry(entryId))
     }
 
     suspend fun importAll(entries: List<JournalEntry>) {

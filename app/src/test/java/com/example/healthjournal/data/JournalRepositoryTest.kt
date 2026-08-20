@@ -40,6 +40,7 @@ class JournalRepositoryTest {
         val entryId = "test_id"
         val entry = JournalEntry(entry_id = entryId, description = "Test Entry")
         coEvery { journalDao.getEntryById(entryId) } returns entry
+        coEvery { journalDao.getTagsForEntry(entryId) } returns emptyList()
         
         val result = repository.getEntryById(entryId)
         
@@ -115,6 +116,21 @@ class JournalRepositoryTest {
         
         assertEquals(entries, result)
         coVerify { journalDao.searchEntriesWithTags(query, tags, tags.size, false) }
+    }
+
+    @Test
+    fun getEntryByIdHydratesTagsFromCrossRef() = runBlocking {
+        val entryId = "test_id"
+        val entry = JournalEntry(entry_id = entryId, description = "Test Entry")
+        val tags = listOf("DOCTOR", "CHECKUP")
+        coEvery { journalDao.getEntryById(entryId) } returns entry
+        coEvery { journalDao.getTagsForEntry(entryId) } returns tags
+
+        val result = repository.getEntryById(entryId)
+
+        assertEquals(tags, result?.tags)
+        coVerify { journalDao.getEntryById(entryId) }
+        coVerify { journalDao.getTagsForEntry(entryId) }
     }
 
     @Test
