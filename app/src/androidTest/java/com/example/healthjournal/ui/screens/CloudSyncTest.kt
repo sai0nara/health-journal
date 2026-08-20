@@ -2,10 +2,6 @@ package com.example.healthjournal.ui.screens
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.test.core.app.ActivityScenario
-import android.content.Intent
-import androidx.test.platform.app.InstrumentationRegistry
-import com.example.healthjournal.MainActivity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.viewmodel.IJournalViewModel
@@ -18,8 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.junit.Rule
 import org.junit.Test
-import android.app.PendingIntent
-import android.content.Context
 
 @Feature("Cloud Synchronization")
 class CloudSyncTest {
@@ -29,15 +23,6 @@ class CloudSyncTest {
 
     @get:Rule
     val screenshotRule = ScreenshotRule(mode = ScreenshotRule.Mode.FAILURE)
-
-    @org.junit.Before
-    fun setup() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val intent = Intent(context, MainActivity::class.java).apply {
-            putExtra("TEST_MODE", true)
-        }
-        ActivityScenario.launch<MainActivity>(intent)
-    }
 
     class MockJournalViewModel : com.example.healthjournal.util.FakeJournalViewModel()
 

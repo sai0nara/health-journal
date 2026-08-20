@@ -1,7 +1,9 @@
 package com.example.healthjournal.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -27,18 +29,26 @@ import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun JournalEntryItem(
     entry: JournalEntry, 
     onClick: () -> Unit, 
-    onPhotoClick: (String) -> Unit
+    onPhotoClick: (String) -> Unit,
+    onLongClick: (() -> Unit)? = null
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .then(
+                if (onLongClick != null) {
+                    Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
+                } else {
+                    Modifier.clickable(onClick = onClick)
+                }
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(

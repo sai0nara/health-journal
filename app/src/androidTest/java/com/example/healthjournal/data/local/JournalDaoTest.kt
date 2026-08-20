@@ -10,6 +10,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -163,7 +164,8 @@ class JournalDaoTest {
         journalDao.insertTag(EntryTagCrossRef(entry3.entry_id, "CHECKUP"))
         journalDao.insertTag(EntryTagCrossRef(entry3.entry_id, "DOCTOR"))
 
-        // Search for "checkup" with tag "CHECKUP" -> should find entry1 and entry3
+        // Search for "checkup" with tag "CHECKUP" -> should find entry1 only
+        // (entry3 has the CHECKUP tag but its description does not contain "checkup")
         val results = journalDao.searchEntriesWithTags(
             query = "checkup", 
             tags = listOf("CHECKUP"), 
@@ -171,9 +173,9 @@ class JournalDaoTest {
             isAsc = false
         ).first()
         
-        assertEquals(2, results.size)
+        assertEquals(1, results.size)
         assertTrue(results.any { it.description == "Blood pressure checkup" })
-        assertTrue(results.any { it.description == "Doctor visit for fever" })
+        assertFalse(results.any { it.description == "Doctor visit for fever" })
     }
 
     @Test

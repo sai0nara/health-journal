@@ -99,6 +99,12 @@ android {
             excludes += "META-INF/LICENSE-notice.md"
         }
     }
+
+    sourceSets {
+        getByName("androidTest") {
+            assets.srcDirs("$projectDir/schemas")
+        }
+    }
 }
 
 kapt {
