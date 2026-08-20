@@ -4,7 +4,6 @@ import android.net.Uri
 import android.webkit.MimeTypeMap
 import com.example.healthjournal.data.JournalRepository
 import com.google.gson.Gson
-import kotlinx.coroutines.flow.first
 import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipEntry
@@ -16,10 +15,10 @@ class ZipExportUseCase(
     private val exportsDir: File,
     private val gson: Gson
 ) {
-    suspend fun execute(): File {
+    suspend fun execute(startDate: Long = 0L, endDate: Long = Long.MAX_VALUE): File {
         exportsDir.mkdirs()
         val zipFile = File(exportsDir, "health_journal_export_${System.currentTimeMillis()}.zip")
-        val entries = repository.allEntries.first()
+        val entries = repository.getAllEntriesInDateRange(startDate, endDate)
         
         ZipOutputStream(FileOutputStream(zipFile)).use { zos ->
             // 1. Write data.json
