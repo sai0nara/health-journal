@@ -41,7 +41,7 @@ class ExportViewModel(
             try {
                 val file = when (format.uppercase()) {
                     "PDF" -> pdfExportUseCase.execute(startDate, endDate)
-                    "ZIP" -> zipExportUseCase.execute() // TODO: Add date range to ZIP use case if needed
+                    "ZIP" -> zipExportUseCase.execute(startDate, endDate)
                     else -> throw IllegalArgumentException("Unsupported format")
                 }
                 

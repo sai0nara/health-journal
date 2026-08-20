@@ -14,6 +14,9 @@ interface JournalDao {
     @Query("SELECT * FROM journal_entries ORDER BY lastModified DESC")
     fun getAllEntriesIncludingArchived(): Flow<List<JournalEntry>>
 
+    @Query("SELECT * FROM journal_entries WHERE timestamp BETWEEN :startDate AND :endDate ORDER BY timestamp DESC")
+    suspend fun getAllEntriesInDateRange(startDate: Long, endDate: Long): List<JournalEntry>
+
     @Query("""
         SELECT * FROM journal_entries 
         WHERE isArchived = 0

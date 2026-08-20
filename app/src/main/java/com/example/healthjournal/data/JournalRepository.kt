@@ -44,6 +44,14 @@ class JournalRepository(private val journalDao: JournalDao) {
         journalDao.insertAll(entries)
     }
 
+    /**
+     * Returns all entries (including archived) whose timestamp falls within the
+     * given range, for export purposes.
+     */
+    suspend fun getAllEntriesInDateRange(startDate: Long, endDate: Long): List<JournalEntry> {
+        return journalDao.getAllEntriesInDateRange(startDate, endDate)
+    }
+
     suspend fun archiveEntry(entryId: String) {
         journalDao.updateArchiveStatus(entryId, true, System.currentTimeMillis())
     }
