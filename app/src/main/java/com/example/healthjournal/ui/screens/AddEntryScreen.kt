@@ -37,6 +37,7 @@ import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.ui.components.EnrichmentPanel
 import com.example.healthjournal.ui.components.RichTextToolbar
+import com.example.healthjournal.ui.components.TagSelectionRow
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
 import java.io.File
@@ -57,6 +58,7 @@ fun AddEntryScreen(
     var attachedPhotoUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var attachedFiles by remember { mutableStateOf<List<AttachmentData>>(emptyList()) }
     var existingEntry by remember { mutableStateOf<JournalEntry?>(null) }
+    var entryTags by remember { mutableStateOf(setOf<String>()) }
     
     // Health Metrics State
     var bpSystolic by remember { mutableStateOf<Double?>(null) }
@@ -157,6 +159,7 @@ fun AddEntryScreen(
                 bpDiastolic = entry.bp_diastolic
                 heartRate = entry.heart_rate_avg
                 sleepHours = entry.sleep_hours
+                entryTags = entry.tags.toSet()
             }
         }
     }
@@ -341,17 +344,32 @@ fun AddEntryScreen(
                     }
                 }
 
-                if (isReadOnly) {
-                    RichText(
-                        state = richTextState,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        style = MaterialTheme.typography.bodyLarge
+                if (!isReadOnly) {
+                    Text("Category", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    TagSelectionRow(
+                        selectedTags = entryTags,
+                        onTagToggle = { tag ->
+                            if (entryTags.contains(tag)) {
+                                entryTags = entryTags - tag
+                            } else {
+                                entryTags = entryTags + tag
+                            }
+                        },
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
-                } else {
+                }
+
+                if (!isReadOnly) {
                     RichTextEditor(
                         state = richTextState,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp),
                         label = { Text("How are you feeling today?") }
+                    )
+                } else {
+                    RichText(
+                        state = richTextState,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        style = MaterialTheme.typography.bodyLarge
                     )
                 }
             
@@ -557,7 +575,8 @@ fun AddEntryScreen(
                                     bpSystolic = bpSystolic,
                                     bpDiastolic = bpDiastolic,
                                     heartRate = heartRate,
-                                    sleepHours = sleepHours
+                                    sleepHours = sleepHours,
+                                    tags = entryTags
                                 )
                             } else {
                                 existingEntry?.let {
@@ -571,7 +590,8 @@ fun AddEntryScreen(
                                             bp_diastolic = bpDiastolic,
                                             heart_rate_avg = heartRate,
                                             sleep_hours = sleepHours
-                                        )
+                                        ),
+                                        tags = entryTags
                                     )
                                 }
                             }
@@ -583,10 +603,10 @@ fun AddEntryScreen(
             ) {
                 Text(if (entryId == null) "Save Entry" else "Update Entry")
             }
+                }
+            }
         }
     }
-}
-}
 }
 
 @Composable

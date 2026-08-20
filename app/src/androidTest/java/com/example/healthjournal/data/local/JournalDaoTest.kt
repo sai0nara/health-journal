@@ -149,4 +149,70 @@ class JournalDaoTest {
         assertEquals(1, updated.attachments!!.size)
         assertEquals("report.pdf", updated.attachments!![0].name)
     }
+
+    @Test
+    fun searchEntriesWithTags_FiltersCorrectly() = runBlocking {
+        val entry1 = JournalEntry(description = "Blood pressure checkup")
+        val entry2 = JournalEntry(description = "Morning exercise")
+        val entry3 = JournalEntry(description = "Doctor visit for fever")
+        journalDao.insertEntry(entry1)
+        journalDao.insertEntry(entry2)
+        journalDao.insertEntry(entry3)
+
+        journalDao.insertTag(EntryTagCrossRef(entry1.entry_id, "CHECKUP"))
+        journalDao.insertTag(EntryTagCrossRef(entry3.entry_id, "CHECKUP"))
+        journalDao.insertTag(EntryTagCrossRef(entry3.entry_id, "DOCTOR"))
+
+        // Search for "checkup" with tag "CHECKUP" -> should find entry1 and entry3
+        val results = journalDao.searchEntriesWithTags(
+            query = "checkup", 
+            tags = listOf("CHECKUP"), 
+            tagCount = 1, 
+            isAsc = false
+        ).first()
+        
+        assertEquals(2, results.size)
+        assertTrue(results.any { it.description == "Blood pressure checkup" })
+        assertTrue(results.any { it.description == "Doctor visit for fever" })
+    }
+
+    @Test
+    fun searchEntriesWithTags_RequiresAllTags() = runBlocking {
+        val entry1 = JournalEntry(description = "Checkup with Dr. Smith")
+        val entry2 = JournalEntry(description = "General Checkup")
+        journalDao.insertEntry(entry1)
+        journalDao.insertEntry(entry2)
+
+        journalDao.insertTag(EntryTagCrossRef(entry1.entry_id, "CHECKUP"))
+        journalDao.insertTag(EntryTagCrossRef(entry1.entry_id, "DOCTOR"))
+        journalDao.insertTag(EntryTagCrossRef(entry2.entry_id, "CHECKUP"))
+
+        // Search for entries that have BOTH CHECKUP and DOCTOR
+        val results = journalDao.searchEntriesWithTags(
+            query = "", 
+            tags = listOf("CHECKUP", "DOCTOR"), 
+            tagCount = 2, 
+            isAsc = false
+        ).first()
+        
+        assertEquals(1, results.size)
+        assertEquals("Checkup with Dr. Smith", results[0].description)
+    }
+
+    @Test
+    fun tagManagement_InsertDeleteRead() = runBlocking {
+        val entry = JournalEntry(description = "Tagging test")
+        journalDao.insertEntry(entry)
+
+        // Test Insert
+        journalDao.insertTag(EntryTagCrossRef(entry.entry_id, "TEST_TAG"))
+        var tags = journalDao.getTagsForEntry(entry.entry_id)
+        assertEquals(1, tags.size)
+        assertEquals("TEST_TAG", tags[0])
+
+        // Test Delete
+        journalDao.deleteTag(entry.entry_id, "TEST_TAG")
+        tags = journalDao.getTagsForEntry(entry.entry_id)
+        assertTrue(tags.isEmpty())
+    }
 }

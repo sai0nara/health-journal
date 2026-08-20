@@ -25,6 +25,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.healthjournal.ui.components.JournalEntryItem
 import com.example.healthjournal.ui.components.SharedSearchBar
+import com.example.healthjournal.ui.components.TagSelectionRow
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
 
@@ -37,6 +38,7 @@ fun ArchiveScreen(
 ) {
     val archivedEntries by viewModel.reactiveArchivedEntries.collectAsState()
     val searchQuery by viewModel.archiveSearchQuery.collectAsState()
+    val selectedTags by viewModel.selectedTags.collectAsState()
     var selectedIds by remember { mutableStateOf(setOf<String>()) }
     var isSelectionMode by remember { mutableStateOf(false) }
     var expandedImageUri by remember { mutableStateOf<String?>(null) }
@@ -198,6 +200,12 @@ fun ArchiveScreen(
                 query = searchQuery,
                 onQueryChanged = { viewModel.setArchiveSearchQuery(it) },
                 placeholder = "Search archive..."
+            )
+
+            TagSelectionRow(
+                selectedTags = selectedTags,
+                onTagToggle = { tag -> viewModel.toggleTag(tag) },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
             if (archivedEntries.isEmpty()) {

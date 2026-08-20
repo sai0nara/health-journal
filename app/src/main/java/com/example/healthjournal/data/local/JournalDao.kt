@@ -24,13 +24,49 @@ interface JournalDao {
     fun getEntriesSortedByDate(isAsc: Boolean): Flow<List<JournalEntry>>
 
     @Query("""
-        SELECT * FROM journal_entries 
+        SELECT * FROM journal_entries
         WHERE isArchived = 0 AND description LIKE '%' || :query || '%'
-        ORDER BY 
+        ORDER BY
         CASE WHEN :isAsc = 1 THEN timestamp END ASC,
         CASE WHEN :isAsc = 0 THEN timestamp END DESC
     """)
     fun searchEntries(query: String, isAsc: Boolean): Flow<List<JournalEntry>>
+
+    @Query("""
+        SELECT * FROM journal_entries
+        WHERE isArchived = 0 
+        AND description LIKE '%' || :query || '%'
+        AND (
+            (:tagCount = 0) OR 
+            (entry_id IN (
+                SELECT entryId FROM EntryTagCrossRef 
+                WHERE tag IN (:tags) 
+                GROUP BY entryId 
+                HAVING COUNT(DISTINCT tag) = :tagCount
+            ))
+        )
+        ORDER BY
+        CASE WHEN :isAsc = 1 THEN timestamp END ASC,
+        CASE WHEN :isAsc = 0 THEN timestamp END DESC
+    """)
+    fun searchEntriesWithTags(query: String, tags: List<String>, tagCount: Int, isAsc: Boolean): Flow<List<JournalEntry>>
+
+    @Query("""
+        SELECT * FROM journal_entries
+        WHERE isArchived = 1 
+        AND description LIKE '%' || :query || '%'
+        AND (
+            (:tagCount = 0) OR 
+            (entry_id IN (
+                SELECT entryId FROM EntryTagCrossRef 
+                WHERE tag IN (:tags) 
+                GROUP BY entryId 
+                HAVING COUNT(DISTINCT tag) = :tagCount
+            ))
+        )
+        ORDER BY lastModified DESC
+    """)
+    fun searchArchivedEntriesWithTags(query: String, tags: List<String>, tagCount: Int): Flow<List<JournalEntry>>
 
     @Query("SELECT * FROM journal_entries WHERE isArchived = 1 ORDER BY lastModified DESC")
     fun getArchivedEntries(): Flow<List<JournalEntry>>
@@ -80,4 +116,16 @@ interface JournalDao {
 
     @Query("UPDATE journal_entries SET attachments = :attachments, syncStatus = :syncStatus WHERE entry_id = :entryId")
     suspend fun updateAttachments(entryId: String, attachments: List<AttachmentData>, syncStatus: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTag(crossRef: EntryTagCrossRef)
+
+    @Query("DELETE FROM EntryTagCrossRef WHERE entryId = :entryId AND tag = :tag")
+    suspend fun deleteTag(entryId: String, tag: String)
+
+    @Query("DELETE FROM EntryTagCrossRef WHERE entryId = :entryId")
+    suspend fun deleteAllTagsForEntry(entryId: String)
+
+    @Query("SELECT tag FROM EntryTagCrossRef WHERE entryId = :entryId")
+    suspend fun getTagsForEntry(entryId: String): List<String>
 }

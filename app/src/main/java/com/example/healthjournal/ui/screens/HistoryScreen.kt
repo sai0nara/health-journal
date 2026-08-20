@@ -37,6 +37,7 @@ import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.ui.components.AboutAppDialog
 import com.example.healthjournal.ui.components.JournalEntryItem
 import com.example.healthjournal.ui.components.SharedSearchBar
+import com.example.healthjournal.ui.components.TagSelectionRow
 import com.example.healthjournal.util.HtmlParser
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
@@ -54,6 +55,7 @@ fun HistoryScreen(
 ) {
     val entries by viewModel.allEntries.collectAsState()
     val isAscending by viewModel.isAscending.collectAsState()
+    val selectedTags by viewModel.selectedTags.collectAsState()
     var expandedImageUri by remember { mutableStateOf<String?>(null) }
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()
@@ -133,6 +135,12 @@ fun HistoryScreen(
                 query = searchQuery,
                 onQueryChanged = { viewModel.setSearchQuery(it) },
                 placeholder = "Search journal..."
+            )
+
+            TagSelectionRow(
+                selectedTags = selectedTags,
+                onTagToggle = { tag -> viewModel.toggleTag(tag) },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
             // Sync Status

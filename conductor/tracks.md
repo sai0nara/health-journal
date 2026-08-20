@@ -2,6 +2,9 @@
 
 This file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.
 
+- [x] **Track: Replace App Icon**
+  *Link: [./tracks/replace_app_icon_20260812/](./tracks/replace_app_icon_20260812/)*
+
 ---
 
 - [x] **Track: Archive Management Refinement (Search & Unarchive)**
@@ -27,7 +30,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Fix NullPointerException in List Iteration**
   *Link: [./tracks/fix_npe_iterator_20260529/](./tracks/fix_npe_iterator_20260529/)*
 
----
-
-- [x] **Track: Rich Attachments & Archive Integration**
-  *Link: [./tracks/rich_attachments_20260609/](./tracks/rich_attachments_20260609/)*

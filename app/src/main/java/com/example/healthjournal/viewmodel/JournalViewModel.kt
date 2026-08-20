@@ -42,26 +42,29 @@ interface IJournalViewModel {
     val searchQuery: StateFlow<String>
     val archiveSearchQuery: StateFlow<String>
     val isAscending: StateFlow<Boolean>
-    
+    val selectedTags: StateFlow<Set<String>>
+
     fun addEntry(
-        description: String, 
-        timestamp: Long = System.currentTimeMillis(), 
+        description: String,
+        timestamp: Long = System.currentTimeMillis(),
         photoUrls: List<String> = emptyList(),
         attachments: List<AttachmentData> = emptyList(),
         bpSystolic: Double? = null,
         bpDiastolic: Double? = null,
         heartRate: Int? = null,
-        sleepHours: Float? = null
+        sleepHours: Float? = null,
+        tags: Set<String> = emptySet()
     )
-    fun updateEntry(entry: JournalEntry)
+    fun updateEntry(entry: JournalEntry, tags: Set<String> = emptySet())
     suspend fun getEntryById(entryId: String): JournalEntry?
     fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit)
     fun syncNow()
     fun signOut()
-    
+
     fun setSearchQuery(query: String)
     fun setArchiveSearchQuery(query: String)
     fun setSortOrder(isAsc: Boolean)
+    fun toggleTag(tag: String)
 
     // Health Connect
     val healthPermissions: Set<String>
@@ -93,14 +96,23 @@ class JournalViewModel(
     private val _isAscending = MutableStateFlow(false) // Default Descending (newest first)
     override val isAscending: StateFlow<Boolean> = _isAscending.asStateFlow()
 
+    private val _selectedTags = MutableStateFlow(setOf<String>())
+    override val selectedTags: StateFlow<Set<String>> = _selectedTags.asStateFlow()
+
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    override val allEntries: StateFlow<List<JournalEntry>> = combine(_searchQuery, _isAscending) { query, isAsc ->
-        query to isAsc
-    }.flatMapLatest { (query, isAsc) ->
-        if (query.isBlank()) {
-            repository.getEntriesSortedByDate(isAsc)
+    override val allEntries: StateFlow<List<JournalEntry>> = combine(
+        _searchQuery, _isAscending, _selectedTags
+    ) { query, isAsc, tags ->
+        Triple(query, isAsc, tags)
+    }.flatMapLatest { (query, isAsc, tags) ->
+        if (tags.isEmpty()) {
+            if (query.isBlank()) {
+                repository.getEntriesSortedByDate(isAsc)
+            } else {
+                repository.searchEntries(query, isAsc)
+            }
         } else {
-            repository.searchEntries(query, isAsc)
+            repository.searchEntriesWithTags(query, tags.toList(), isAsc)
         }
     }.stateIn(
         scope = viewModelScope,
@@ -119,20 +131,23 @@ class JournalViewModel(
     override val archiveSearchQuery: StateFlow<String> = _archiveSearchQuery.asStateFlow()
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    override val reactiveArchivedEntries: StateFlow<List<JournalEntry>> = _archiveSearchQuery
-        .debounce(300L)
-        .flatMapLatest { query ->
+    override val reactiveArchivedEntries: StateFlow<List<JournalEntry>> = combine(_archiveSearchQuery, _selectedTags) { query, tags ->
+        query to tags
+    }.flatMapLatest { (query, tags) ->
+        if (tags.isEmpty()) {
             if (query.isBlank()) {
                 repository.archivedEntries
             } else {
                 repository.searchArchivedEntries(query)
             }
+        } else {
+            repository.searchArchivedEntriesWithTags(query, tags.toList())
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     private val _isUserSignedIn = MutableStateFlow(sessionManager.getUserEmail() != null)
     override val isUserSignedIn: StateFlow<Boolean> = _isUserSignedIn.asStateFlow()
@@ -177,7 +192,8 @@ class JournalViewModel(
         bpSystolic: Double?,
         bpDiastolic: Double?,
         heartRate: Int?,
-        sleepHours: Float?
+        sleepHours: Float?,
+        tags: Set<String>
     ) {
         if (timestamp > System.currentTimeMillis()) {
             Log.w(TAG, "Attempted to add entry in the future. Ignoring.")
@@ -196,17 +212,32 @@ class JournalViewModel(
                 lastModified = System.currentTimeMillis()
             )
             repository.insert(newEntry)
+            
+            tags.forEach { tag ->
+                repository.addTag(newEntry.entry_id, tag)
+            }
+
             if (_isUserSignedIn.value) {
                 SyncManager.enqueuePeriodicSync(getApplication())
             }
         }
     }
 
-    override fun updateEntry(entry: JournalEntry) {
+    override fun updateEntry(entry: JournalEntry, tags: Set<String>) {
         viewModelScope.launch {
             // Update lastModified to ensure local edits "win" in sync conflict resolution
             // Keep the original timestamp (creation date)
-            repository.insert(entry.copy(isSynced = false, lastModified = System.currentTimeMillis()))
+            repository.insert(entry.copy(syncStatus = "PENDING_SYNC", lastModified = System.currentTimeMillis()))
+            
+            // Refresh tags: remove all existing and add current selection
+            val existingTags = repository.getTagsForEntry(entry.entry_id)
+            existingTags.forEach { tag ->
+                repository.removeTag(entry.entry_id, tag)
+            }
+            tags.forEach { tag ->
+                repository.addTag(entry.entry_id, tag)
+            }
+
             if (_isUserSignedIn.value) {
                 SyncManager.enqueuePeriodicSync(getApplication())
             }
@@ -249,7 +280,7 @@ class JournalViewModel(
                 Log.d(TAG, "Resolution required for Drive access")
                 onResolutionRequired(pendingIntent)
             },
-            onSuccess = { accessToken ->
+            onSuccess = { _ ->
                 Log.d(TAG, "Drive authorization successful")
                 _syncStatus.value = "Authenticated & Authorized"
                 viewModelScope.launch(Dispatchers.Main) {
@@ -291,7 +322,32 @@ class JournalViewModel(
         _isAscending.value = isAsc
     }
 
+    override fun toggleTag(tag: String) {
+        val current = _selectedTags.value
+        if (current.contains(tag)) {
+            _selectedTags.value = current - tag
+        } else {
+            _selectedTags.value = current + tag
+        }
+    }
+
+    fun toggleEntryTag(entryId: String, tag: String) {
+        viewModelScope.launch {
+            val tags = repository.getTagsForEntry(entryId)
+            if (tags.contains(tag)) {
+                repository.removeTag(entryId, tag)
+            } else {
+                repository.addTag(entryId, tag)
+            }
+        }
+    }
+
+    suspend fun getTagsForEntry(entryId: String): List<String> {
+        return repository.getTagsForEntry(entryId)
+    }
+
     // Health Connect Implementation
+
     override val healthPermissions: Set<String>
         get() = healthManager.requiredPermissions.toSet()
 

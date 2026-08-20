@@ -1,6 +1,7 @@
 package com.example.healthjournal.data.local
 
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import java.util.UUID
 
@@ -29,4 +30,13 @@ data class JournalEntry(
     val isArchived: Boolean? = false,
     val isSynced: Boolean? = false,
     val syncStatus: String? = "PENDING_SYNC"
-)
+) {
+    @Ignore
+    var tags: List<String> = emptyList()
+
+    fun withTags(newTags: List<String>): JournalEntry {
+        val entry = this.copy()
+        entry.tags = newTags
+        return entry
+    }
+}
