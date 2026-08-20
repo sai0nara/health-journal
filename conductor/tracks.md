@@ -2,6 +2,9 @@
 
 This file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.
 
+- [x] **Track: Replace App Icon**
+  *Link: [./tracks/replace_app_icon_20260812/](./tracks/replace_app_icon_20260812/)*
+
 ---
 
 - [x] **Track: Archive Management Refinement (Search & Unarchive)**

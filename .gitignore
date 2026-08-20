@@ -18,6 +18,11 @@ local.properties
 *.log
 *.hprof
 
+# Node tooling (not part of the Android app)
+node_modules/
+package.json
+package-lock.json
+
 # Android Studio / IntelliJ IDEA files
 .idea/
 *.iml
