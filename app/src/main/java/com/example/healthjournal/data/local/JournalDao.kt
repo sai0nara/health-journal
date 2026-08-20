@@ -114,6 +114,9 @@ interface JournalDao {
     @Query("UPDATE journal_entries SET syncStatus = :syncStatus WHERE entry_id = :entryId")
     suspend fun updateSyncStatus(entryId: String, syncStatus: String)
 
+    @Query("UPDATE journal_entries SET syncStatus = 'PENDING_SYNC', lastModified = :lastModified WHERE entry_id = :entryId")
+    suspend fun markEntryDirty(entryId: String, lastModified: Long)
+
     @Query("UPDATE journal_entries SET attachments = :attachments, syncStatus = :syncStatus WHERE entry_id = :entryId")
     suspend fun updateAttachments(entryId: String, attachments: List<AttachmentData>, syncStatus: String)
 
