@@ -32,11 +32,7 @@ data class JournalEntry(
     val syncStatus: String? = "PENDING_SYNC"
 ) {
     @Ignore
-    var tags: List<String> = emptyList()
+    var tags: List<String>? = null
 
-    fun withTags(newTags: List<String>): JournalEntry {
-        val entry = this.copy()
-        entry.tags = newTags
-        return entry
-    }
+    fun withTags(newTags: List<String>): JournalEntry = copy().also { it.tags = newTags }
 }

@@ -93,6 +93,14 @@ class JournalRepository(private val journalDao: JournalDao) {
     }
 
     /**
+     * Marks an entry as dirty (PENDING_SYNC) and bumps lastModified so tag
+     * changes participate in last-write-wins conflict resolution.
+     */
+    suspend fun markEntryDirty(entryId: String) {
+        journalDao.markEntryDirty(entryId, System.currentTimeMillis())
+    }
+
+    /**
      * Replaces the full attachment list for an entry and updates its sync status.
      * Used after cloud upload completes to swap local URIs for cloud URLs.
      */

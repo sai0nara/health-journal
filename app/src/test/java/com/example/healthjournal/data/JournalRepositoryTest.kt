@@ -43,7 +43,7 @@ class JournalRepositoryTest {
         
         val result = repository.getEntryById(entryId)
         
-        assertEquals(entry, result)
+        assertEquals(entry.withTags(emptyList()), result)
         coVerify { journalDao.getEntryById(entryId) }
     }
 

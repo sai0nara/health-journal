@@ -339,6 +339,11 @@ class JournalViewModel(
             } else {
                 repository.addTag(entryId, tag)
             }
+            // Spec §4: tag changes must set PENDING_SYNC and bump lastModified
+            repository.markEntryDirty(entryId)
+            if (_isUserSignedIn.value) {
+                SyncManager.enqueuePeriodicSync(getApplication())
+            }
         }
     }
 

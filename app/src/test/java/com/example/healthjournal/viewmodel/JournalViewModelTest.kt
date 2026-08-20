@@ -204,6 +204,39 @@ class JournalViewModelTest {
     }
 
     @Test
+    fun toggleEntryTag_marksEntryDirtyAndTriggersSync() = runTest {
+        val entryId = "tagged_entry"
+        coEvery { repository.getTagsForEntry(entryId) } returns listOf("DOCTOR")
+        coEvery { repository.removeTag(entryId, "DOCTOR") } returns Unit
+        coEvery { repository.addTag(entryId, any()) } returns Unit
+        coEvery { repository.updateSyncStatus(entryId, "PENDING_SYNC") } returns Unit
+        coEvery { repository.markEntryDirty(entryId) } returns Unit
+
+        viewModel.toggleEntryTag(entryId, "DOCTOR")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { repository.removeTag(entryId, "DOCTOR") }
+        coVerify { repository.markEntryDirty(entryId) }
+        verify { SyncManager.enqueuePeriodicSync(any()) }
+    }
+
+    @Test
+    fun toggleEntryTag_addsMissingTagAndMarksDirty() = runTest {
+        val entryId = "untagged_entry"
+        coEvery { repository.getTagsForEntry(entryId) } returns emptyList()
+        coEvery { repository.removeTag(any(), any()) } returns Unit
+        coEvery { repository.addTag(entryId, "EXERCISES") } returns Unit
+        coEvery { repository.updateSyncStatus(entryId, "PENDING_SYNC") } returns Unit
+        coEvery { repository.markEntryDirty(entryId) } returns Unit
+
+        viewModel.toggleEntryTag(entryId, "EXERCISES")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { repository.addTag(entryId, "EXERCISES") }
+        coVerify { repository.markEntryDirty(entryId) }
+    }
+
+    @Test
     fun getEntryByIdCallsRepository() = runTest {
         val entry = JournalEntry(description = "Test")
         coEvery { repository.getEntryById("123") } returns entry
