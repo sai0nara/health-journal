@@ -156,6 +156,41 @@ class SyncDownloadTest {
     }
 
     @Test
+    fun testSyncWorker_AuthFailureReturnsRetry() = runBlocking {
+        // Token retrieval fails -> transient condition, periodic work must survive
+        SyncWorker.authManagerProvider = {
+            val mock = mockk<GoogleAuthManager>()
+            coEvery { mock.getDriveAccessTokenSilent() } returns null
+            mock
+        }
+
+        val worker = TestListenableWorkerBuilder<SyncWorker>(context).build()
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.retry(), result)
+    }
+
+    @Test
+    fun testSyncWorker_CloudUploadFailureReturnsRetry() = runBlocking {
+        val cloudEntries = listOf(
+            JournalEntry(entry_id = "upload_fail_id", description = "Entry")
+        )
+        val cloudJson = Gson().toJson(cloudEntries)
+
+        SyncWorker.driveHelperProvider = { _, _ ->
+            val mock = mockk<DriveServiceHelper>()
+            coEvery { mock.downloadJournalData() } returns cloudJson
+            coEvery { mock.uploadJournalData(any()) } returns null
+            mock
+        }
+
+        val worker = TestListenableWorkerBuilder<SyncWorker>(context).build()
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.retry(), result)
+    }
+
+    @Test
     fun testSyncWorker_HandlesPermanentDeletions() = runBlocking {
         // 1. Prepare local "deleted" record
         val deletedId = "deleted_id"
