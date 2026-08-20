@@ -101,6 +101,12 @@ android {
     }
 }
 
+kapt {
+    arguments {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
+}
+
 tasks.register<Exec>("pullAllureResults") {
     group = "verification"
     description = "Pulls Allure results from the connected device"
