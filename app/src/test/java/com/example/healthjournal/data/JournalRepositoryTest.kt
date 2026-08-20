@@ -36,6 +36,27 @@ class JournalRepositoryTest {
     }
 
     @Test
+    fun clearDeletedEntriesRemovesOnlyExpiredTombstones() = runBlocking {
+        val now = 1_000_000L
+        val graceMs = JournalRepository.TOMBSTONE_GRACE_PERIOD_MS
+        coEvery { journalDao.removeDeletedEntriesBefore(any()) } returns Unit
+
+        repository.clearDeletedEntries(now)
+
+        coVerify { journalDao.removeDeletedEntriesBefore(now - graceMs) }
+    }
+
+    @Test
+    fun clearDeletedEntriesWithNoTimestampUsesCurrentTime() = runBlocking {
+        val graceMs = JournalRepository.TOMBSTONE_GRACE_PERIOD_MS
+        coEvery { journalDao.removeDeletedEntriesBefore(any()) } returns Unit
+
+        repository.clearDeletedEntries()
+
+        coVerify { journalDao.removeDeletedEntriesBefore(match { it <= System.currentTimeMillis() - graceMs + 1 }) }
+    }
+
+    @Test
     fun getEntryByIdCallsDao() = runBlocking {
         val entryId = "test_id"
         val entry = JournalEntry(entry_id = entryId, description = "Test Entry")

@@ -188,10 +188,9 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 return Result.failure(workDataOf("error_message" to "Cloud upload failed (Null ID)"))
             }
 
-            // 7. Clear local deleted tombstones after successful sync
-            if (deletedIds.isNotEmpty()) {
-                repository.clearDeletedEntries(deletedIds)
-            }
+            // 7. Purge expired tombstones. Young tombstones are kept so a stale
+            // cloud copy in a later sync cycle cannot resurrect a deleted entry.
+            repository.clearDeletedEntries()
 
             Log.d("SyncWorker", "Bidirectional sync completed successfully.")
             return Result.success()
