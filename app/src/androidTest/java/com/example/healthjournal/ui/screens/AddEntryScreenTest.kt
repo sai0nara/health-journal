@@ -46,64 +46,7 @@ class AddEntryScreenTest {
         ActivityScenario.launch<MainActivity>(intent)
     }
 
-    class MockJournalViewModel : IJournalViewModel {
-        override val allEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
-        override val archivedEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
-        override val reactiveArchivedEntries: StateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
-        override val isUserSignedIn: StateFlow<Boolean> = MutableStateFlow(false)
-        override val syncStatus: StateFlow<String?> = MutableStateFlow(null)
-        override val searchQuery: StateFlow<String> = MutableStateFlow("")
-        override val archiveSearchQuery: StateFlow<String> = MutableStateFlow("")
-        override val isAscending: StateFlow<Boolean> = MutableStateFlow(false)
-        
-        var addEntryCalledWith: Quadruple<String, Long, List<String>, List<AttachmentData>>? = null
-        
-        override fun addEntry(
-            description: String, 
-            timestamp: Long, 
-            photoUrls: List<String>, 
-            attachments: List<AttachmentData>,
-            bpSystolic: Double?,
-            bpDiastolic: Double?,
-            heartRate: Int?,
-            sleepHours: Float?
-        ) {
-            addEntryCalledWith = Quadruple(description, timestamp, photoUrls, attachments)
-        }
-
-        override fun updateEntry(entry: JournalEntry) {}
-        var entryToReturn: JournalEntry? = null
-        override suspend fun getEntryById(entryId: String): JournalEntry? = entryToReturn
-        
-        override fun signIn(activityContext: Context, onResolutionRequired: (PendingIntent) -> Unit) {}
-        override fun syncNow() {}
-        override fun signOut() {}
-        override fun setSearchQuery(query: String) {}
-        override fun setArchiveSearchQuery(query: String) {}
-        override fun setSortOrder(isAsc: Boolean) {}
-
-        // Health Connect
-        override val healthPermissions: Set<String> = emptySet()
-        override suspend fun hasHealthPermissions(): Boolean = false
-        override fun checkHealthAvailability(): Int = 1 // SDK_AVAILABLE
-        override suspend fun syncHealthData(timestamp: Long): com.example.healthjournal.viewmodel.HealthSyncResult = 
-            com.example.healthjournal.viewmodel.HealthSyncResult()
-
-        // Archive & Delete
-        override fun archiveEntry(entryId: String) {}
-        override fun restoreEntry(entryId: String) {}
-        override fun deleteEntries(entryIds: List<String>) {}
-        override fun emptyArchive() {}
-        override suspend fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
-    }
-
-    // Helper for Triple replacement
-    data class Quadruple<out A, out B, out C, out D>(
-        val first: A,
-        val second: B,
-        val third: C,
-        val fourth: D
-    )
+    class MockJournalViewModel : com.example.healthjournal.util.FakeJournalViewModel()
 
     private val viewModel = MockJournalViewModel()
 
@@ -141,7 +84,7 @@ class AddEntryScreenTest {
             // Wait for onBack to be triggered (callback executed)
             composeTestRule.waitUntil(5000) { backCalled }
             // Substring check because RichTextState wraps in <p>
-            assert(viewModel.addEntryCalledWith?.first?.contains(testDescription) == true)
+            assert(viewModel.addEntryCalledWith?.description?.contains(testDescription) == true)
             assert(backCalled)
         }
     }

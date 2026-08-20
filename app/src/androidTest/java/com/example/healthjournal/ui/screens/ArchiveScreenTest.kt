@@ -39,54 +39,7 @@ class ArchiveScreenTest {
         ActivityScenario.launch<MainActivity>(intent)
     }
 
-    class MockJournalViewModel : IJournalViewModel {
-        override val allEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
-        override val archivedEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
-        override val reactiveArchivedEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
-        override val isUserSignedIn = MutableStateFlow(false)
-        override val syncStatus = MutableStateFlow<String?>(null)
-        override val searchQuery = MutableStateFlow("")
-        override val archiveSearchQuery = MutableStateFlow("")
-        override val isAscending = MutableStateFlow(false)
-        
-        var restoredEntryId: String? = null
-        var deletedEntriesIds: List<String>? = null
-        var emptyArchiveCalled = false
-
-        override fun addEntry(
-            description: String, timestamp: Long, photoUrls: List<String>, attachments: List<AttachmentData>,
-            bpSystolic: Double?, bpDiastolic: Double?, heartRate: Int?, sleepHours: Float?
-        ) {}
-        override fun updateEntry(entry: JournalEntry) {}
-        override suspend fun getEntryById(entryId: String): JournalEntry? = null
-        
-        override fun signIn(activityContext: Context, onResolutionRequired: (PendingIntent) -> Unit) {}
-        override fun syncNow() {}
-        override fun signOut() {}
-        override fun setSearchQuery(query: String) {}
-        override fun setArchiveSearchQuery(query: String) {
-            archiveSearchQuery.value = query
-        }
-        override fun setSortOrder(isAsc: Boolean) {}
-
-        override val healthPermissions: Set<String> = emptySet()
-        override suspend fun hasHealthPermissions(): Boolean = false
-        override fun checkHealthAvailability(): Int = 1
-        override suspend fun syncHealthData(timestamp: Long): com.example.healthjournal.viewmodel.HealthSyncResult = 
-            com.example.healthjournal.viewmodel.HealthSyncResult()
-
-        override fun archiveEntry(entryId: String) {}
-        override fun restoreEntry(entryId: String) {
-            restoredEntryId = entryId
-        }
-        override fun deleteEntries(entryIds: List<String>) {
-            deletedEntriesIds = entryIds
-        }
-        override fun emptyArchive() {
-            emptyArchiveCalled = true
-        }
-        override suspend fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
-    }
+    class MockJournalViewModel : com.example.healthjournal.util.FakeJournalViewModel()
 
     private val viewModel = MockJournalViewModel()
 
