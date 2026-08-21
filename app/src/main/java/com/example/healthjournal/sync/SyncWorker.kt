@@ -186,7 +186,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 }
             }
 
-// 6. Upload merged JSON back to cloud
+            // 6. Upload merged JSON back to cloud
             val finalEntriesForCloud = mergedEntries.map { it.copy(isSynced = true).also { e -> e.tags = it.tags } }
             val uploadId = driveHelper.uploadJournalData(Gson().toJson(finalEntriesForCloud))
             if (uploadId == null) {
