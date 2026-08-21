@@ -7,10 +7,12 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class], version = 9, exportSchema = true)
+@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class], version = 10, exportSchema = true)
 @androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
+
+    abstract fun bodyMeasurementDao(): BodyMeasurementDao
 
     companion object {
         @Volatile
@@ -104,6 +106,20 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        // v9 -> v10: add body_measurements table for body-composition tracking
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `body_measurements` (" +
+                        "`entry_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, " +
+                        "`lastModified` INTEGER NOT NULL, `weight_kg` REAL, " +
+                        "`chest_cm` REAL, `waist_cm` REAL, `glute_cm` REAL, " +
+                        "`thigh_cm` REAL, `calf_cm` REAL, `bicep_cm` REAL, " +
+                        "`isSynced` INTEGER, `syncStatus` TEXT, PRIMARY KEY(`entry_id`))"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -112,7 +128,7 @@ abstract class JournalDatabase : RoomDatabase() {
                     "journal_database"
                 ).addMigrations(
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
-                    MIGRATION_4_6, MIGRATION_6_8, MIGRATION_8_9
+                    MIGRATION_4_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10
                 ).build()
                 INSTANCE = instance
                 instance
