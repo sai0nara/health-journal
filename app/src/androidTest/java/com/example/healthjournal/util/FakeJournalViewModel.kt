@@ -20,6 +20,7 @@ open class FakeJournalViewModel : IJournalViewModel {
     override val reactiveArchivedEntries: MutableStateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
     override val isUserSignedIn: MutableStateFlow<Boolean> = MutableStateFlow(false)
     override val syncStatus: StateFlow<String?> = MutableStateFlow(null)
+    override val isManualSyncActive: StateFlow<Boolean> = MutableStateFlow(false)
     override val searchQuery: MutableStateFlow<String> = MutableStateFlow("")
     override val archiveSearchQuery: MutableStateFlow<String> = MutableStateFlow("")
     override val isAscending: MutableStateFlow<Boolean> = MutableStateFlow(false)

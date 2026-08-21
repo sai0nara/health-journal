@@ -74,11 +74,12 @@ fun HistoryScreen(
     }
 
     var isRefreshing by remember { mutableStateOf(false) }
-    
-    // Automatically stop refreshing when sync finishes
-    LaunchedEffect(syncStatus) {
-        android.util.Log.d("HistoryScreen", "Sync status changed: $syncStatus")
-        if (syncStatus == "Synced" || syncStatus == "Sync Failed" || syncStatus == "Sync Cancelled") {
+
+    // Stop the pull-to-refresh indicator as soon as the user-initiated sync is
+    // no longer in flight (finished, failed, or blocked on re-authorization).
+    val isManualSyncActive by viewModel.isManualSyncActive.collectAsState()
+    LaunchedEffect(isManualSyncActive) {
+        if (!isManualSyncActive) {
             isRefreshing = false
         }
     }

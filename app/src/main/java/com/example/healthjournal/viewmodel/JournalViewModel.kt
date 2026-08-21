@@ -40,6 +40,7 @@ interface IJournalViewModel {
     val reactiveArchivedEntries: StateFlow<List<JournalEntry>>
     val isUserSignedIn: StateFlow<Boolean>
     val syncStatus: StateFlow<String?>
+    val isManualSyncActive: StateFlow<Boolean>
     val searchQuery: StateFlow<String>
     val archiveSearchQuery: StateFlow<String>
     val isAscending: StateFlow<Boolean>
@@ -156,39 +157,73 @@ class JournalViewModel(
     private val _syncStatus = MutableStateFlow<String?>(null)
     override val syncStatus: StateFlow<String?> = _syncStatus.asStateFlow()
 
+    /**
+     * True while a user-initiated sync is still in flight. Drives the
+     * pull-to-refresh indicator; false as soon as the manual work reaches a
+     * terminal state or blocks on re-authorization (an endless spinner while
+     * waiting for the user to act is exactly the defect this avoids).
+     */
+    private val _isManualSyncActive = MutableStateFlow(false)
+    override val isManualSyncActive: StateFlow<Boolean> = _isManualSyncActive.asStateFlow()
+
     private val TAG = "JournalViewModel"
 
     init {
-        // Observe WorkManager for the sync work names actually used by SyncManager
+        // Observe WorkManager for the sync work names actually used by SyncManager.
+        // Manual work is evaluated first and wins over periodic work: the merged
+        // firstOrNull() approach let a periodic ENQUEUED emission overwrite a
+        // manual "Synced" before the UI ever observed it (StateFlow conflation).
         viewModelScope.launch {
             val workManager = WorkManager.getInstance(getApplication())
-            merge(
+            var failureToastShown = false
+            combine(
                 workManager.getWorkInfosForUniqueWorkFlow(SyncManager.PERIODIC_WORK_NAME),
                 workManager.getWorkInfosForUniqueWorkFlow(SyncManager.MANUAL_WORK_NAME)
-            ).collect { workInfos ->
-                val info = workInfos.firstOrNull()
-                // The worker flags silent Drive authorization failures via progress.
-                // Retry alone would loop forever without telling the user why sync
-                // never succeeds, so this state takes precedence over work state.
-                val authRequired = info?.progress?.getBoolean(SyncWorker.KEY_AUTH_REQUIRED, false) == true
-                _syncStatus.value = when {
-                    authRequired -> "Re-authorization required"
-                    else -> when (info?.state) {
-                        WorkInfo.State.ENQUEUED -> {
-                            if (info.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
+            ) { periodicInfos, manualInfos ->
+                val manual = manualInfos.firstOrNull()
+                val periodic = periodicInfos.firstOrNull()
+
+                fun WorkInfo?.authRequired(): Boolean =
+                    this?.progress?.getBoolean(SyncWorker.KEY_AUTH_REQUIRED, false) == true
+
+                val status: String? = when {
+                    manual?.state == WorkInfo.State.RUNNING -> "Syncing..."
+                    manual?.state == WorkInfo.State.ENQUEUED ->
+                        if (manual.authRequired()) "Re-authorization required"
+                        else if (manual.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
+                    manual?.state == WorkInfo.State.SUCCEEDED -> "Synced"
+                    manual?.state == WorkInfo.State.FAILED -> "Sync Failed"
+                    manual?.state == WorkInfo.State.CANCELLED -> "Sync Cancelled"
+                    periodic?.state == WorkInfo.State.RUNNING -> "Syncing..."
+                    periodic?.state == WorkInfo.State.ENQUEUED ->
+                        if (periodic.authRequired()) "Re-authorization required"
+                        else if (periodic.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
+                    else -> null
+                }
+
+                val manualActive = when (manual?.state) {
+                    WorkInfo.State.RUNNING -> true
+                    WorkInfo.State.ENQUEUED -> !manual.authRequired()
+                    else -> false
+                }
+
+                val failedMessage = if (manual?.state == WorkInfo.State.FAILED) {
+                    manual.outputData.getString("error_message") ?: "Sync Failed"
+                } else null
+
+                Triple(status, manualActive, failedMessage)
+            }.collect { (status, manualActive, failedMessage) ->
+                _syncStatus.value = status
+                _isManualSyncActive.value = manualActive
+                if (failedMessage != null) {
+                    if (!failureToastShown) {
+                        failureToastShown = true
+                        viewModelScope.launch(Dispatchers.Main) {
+                            android.widget.Toast.makeText(getApplication(), "Sync failed: $failedMessage", android.widget.Toast.LENGTH_LONG).show()
                         }
-                        WorkInfo.State.RUNNING -> "Syncing..."
-                        WorkInfo.State.SUCCEEDED -> "Synced"
-                        WorkInfo.State.FAILED -> {
-                            val errorMsg = info.outputData.getString("error_message") ?: "Sync Failed"
-                            viewModelScope.launch(Dispatchers.Main) {
-                                android.widget.Toast.makeText(getApplication(), "Sync failed: $errorMsg", android.widget.Toast.LENGTH_LONG).show()
-                            }
-                            "Sync Failed"
-                        }
-                        WorkInfo.State.CANCELLED -> "Sync Cancelled"
-                        else -> null
                     }
+                } else {
+                    failureToastShown = false
                 }
             }
         }
