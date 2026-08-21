@@ -1,6 +1,6 @@
 # Implementation Plan: Medical App Color System (Light & Dark)
 
-## Phase 1: Theme Foundation — Palettes, System Integration & Status Bar Fix
+## Phase 1: Theme Foundation — Palettes, System Integration & Status Bar Fix [checkpoint: 17d9cc9]
 - [x] Task: Write failing unit tests for semantic color system (TDD Red)
     - [x] Create `ColorTest` verifying Light palette exposes exact Medical Standard values (#F8F9FA, #FFFFFF, #0A66C2, #20C997, #212529, #6C757D, #DC3545)
     - [x] Add test verifying Dark palette exposes exact Eye-strain Reduction values (#121212, #1E1E1E, #4A90E2, #48D8A4, #E9ECEF, #A0AAB2, #EF5350)
@@ -17,7 +17,7 @@
 - [x] Task: Execute UI tests on emulator in BOTH light and dark modes (TDD Blue) — executed on physical device SM-F936B (Android 16); 46/46 green including both-mode status bar cases
 - [x] Task: Verify >80% coverage on new code — NOTE: project has no coverage tooling configured (no JaCoCo/Kover); all new public API members are directly exercised by `MedicalColorSystemTest` (8 tests) and instrumented suite. Adding coverage tooling proposed as follow-up chore.
 - [x] Task: Commit Phase 1 changes and attach git note (Workflow steps 8–11) 7fdcbcf
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) 17d9cc9
 
 ## Phase 2: Full Semantic Token Migration
 - [ ] Task: Audit and inventory hardcoded colors
