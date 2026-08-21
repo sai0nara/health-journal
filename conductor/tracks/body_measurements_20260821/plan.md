@@ -5,7 +5,7 @@
     - [ ] `BodyMeasurementEntryTest`: defaults (`syncStatus=PENDING_SYNC`, `isLocalOnly=true`), all 7 measurement fields nullable
     - [ ] `ValidateMeasurementsTest`: rejects malformed decimals, negatives, weight > 500 kg, girths > 300 cm with field-level errors; requires ≥ 1 value; accepts partial entries
     - [ ] Run tests and confirm FAIL as expected
-- [ ] Task: Implement entity, validator and repository to pass tests (TDD Green)
+- [x] Task: Implement entity, validator and repository to pass tests (TDD Green) [7005c45]
     - [ ] `BodyMeasurementEntry` Room entity + `BodyMeasurementDao` (insert, observe chronological, getById, tombstone delete/restore)
     - [ ] `ValidateMeasurements` domain component returning `Map<MeasurementField, String>` errors
     - [ ] `BodyMeasurementRepository` wrapping the DAO
