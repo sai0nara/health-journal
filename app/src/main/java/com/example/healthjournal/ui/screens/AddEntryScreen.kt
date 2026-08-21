@@ -35,6 +35,7 @@ import com.mohamedrejeb.richeditor.ui.material3.RichText
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.util.HtmlEntities
 import com.example.healthjournal.ui.components.EnrichmentPanel
 import com.example.healthjournal.ui.components.RichTextToolbar
 import com.example.healthjournal.ui.components.TagSelectionRow
@@ -538,7 +539,7 @@ fun AddEntryScreen(
                 
                 Button(
                     onClick = {
-                    val descriptionHtml = richTextState.toHtml()
+                    val descriptionHtml = HtmlEntities.decodeNonAsciiNamedEntities(richTextState.toHtml())
                     val plainText = richTextState.annotatedString.text
                     if (plainText.isNotBlank()) {
                         scope.launch {
