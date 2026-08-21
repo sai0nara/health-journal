@@ -19,7 +19,7 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Capture Flow — ViewModel, Speed-Dial FAB & Bottom Sheet
-- [ ] Task: Write failing unit tests for `BodyMeasurementViewModel` (TDD Red)
+- [~] Task: Write failing unit tests for `BodyMeasurementViewModel` (TDD Red)
     - [ ] Immutable `BodyMeasurementUiState` defaults (timestamp=now, empty fields, metric)
     - [ ] `OnFieldChanged` updates value and clears that field's error; malformed input sets inline error WITHOUT clearing typed value
     - [ ] Save enabled only when ≥ 1 valid value; `OnSaveClicked` persists via repository, emits save-success event, resets form
