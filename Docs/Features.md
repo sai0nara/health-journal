@@ -28,6 +28,5 @@ In XML/Themes (themes.xml):Add <item name="android:windowLightStatusBar">true</i
   systemOverlayStyle: SystemUiOverlayStyle(
     statusBarColor: Colors.transparent, // Match your background
     statusBarIconBrightness: Brightness.dark, // Dark icons for Light theme
-    statusBarBrightness: Brightness.light, // For iOS
   ),
 )
