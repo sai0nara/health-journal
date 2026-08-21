@@ -36,8 +36,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) df3b42b
 
 ## Phase 3: Final Validation & Cleanup
-- [ ] Task: Run hardcoded-color audit — confirm zero absolute colors outside theme definition files
-- [ ] Task: Full regression — all unit tests, lint/static analysis, and UI tests pass
-- [ ] Task: Update documentation (tech-stack/design notes) if implementation deviated
-- [ ] Task: Commit final cleanup changes and attach git note
+- [x] Task: Run hardcoded-color audit — confirm zero absolute colors outside theme definition files — grep sweep clean; HardcodedColorAuditTest green
+- [x] Task: Full regression — all unit tests, lint/static analysis, and UI tests pass — 71/71 unit, 48/48 instrumented (SM-F936B), lint 0 errors after fixing 2 pre-existing errors (MissingPrefix in manifest, NewApi ExifInterface(File))
+- [x] Task: Update documentation (tech-stack/design notes) if implementation deviated — no tech-stack changes; coverage-tooling gap and test-adaptation notes recorded in plan.md task entries
+- [x] Task: Commit final cleanup changes and attach git note d542324
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
