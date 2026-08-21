@@ -1,8 +1,0 @@
-{
-  "track_id": "dark_theme_color_system_20260821",
-  "type": "feature",
-  "status": "new",
-  "created_at": "2026-08-21T09:26:25Z",
-  "updated_at": "2026-08-21T09:26:25Z",
-  "description": "Medical App Color System (Light & Dark): semantic color tokens, system theme integration, and invisible status bar fix"
-}
