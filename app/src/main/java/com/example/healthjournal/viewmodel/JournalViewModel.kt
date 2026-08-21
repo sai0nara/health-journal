@@ -18,6 +18,7 @@ import com.example.healthjournal.health.HealthConnectManager
 import com.example.healthjournal.media.AndroidMediaCompressionService
 import com.example.healthjournal.media.MediaCompressionService
 import com.example.healthjournal.sync.SyncManager
+import com.example.healthjournal.sync.SyncWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -166,21 +167,28 @@ class JournalViewModel(
                 workManager.getWorkInfosForUniqueWorkFlow(SyncManager.MANUAL_WORK_NAME)
             ).collect { workInfos ->
                 val info = workInfos.firstOrNull()
-                _syncStatus.value = when (info?.state) {
-                    WorkInfo.State.ENQUEUED -> {
-                        if (info.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
-                    }
-                    WorkInfo.State.RUNNING -> "Syncing..."
-                    WorkInfo.State.SUCCEEDED -> "Synced"
-                    WorkInfo.State.FAILED -> {
-                        val errorMsg = info.outputData.getString("error_message") ?: "Sync Failed"
-                        viewModelScope.launch(Dispatchers.Main) {
-                            android.widget.Toast.makeText(getApplication(), "Sync failed: $errorMsg", android.widget.Toast.LENGTH_LONG).show()
+                // The worker flags silent Drive authorization failures via progress.
+                // Retry alone would loop forever without telling the user why sync
+                // never succeeds, so this state takes precedence over work state.
+                val authRequired = info?.progress?.getBoolean(SyncWorker.KEY_AUTH_REQUIRED, false) == true
+                _syncStatus.value = when {
+                    authRequired -> "Re-authorization required"
+                    else -> when (info?.state) {
+                        WorkInfo.State.ENQUEUED -> {
+                            if (info.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
                         }
-                        "Sync Failed"
+                        WorkInfo.State.RUNNING -> "Syncing..."
+                        WorkInfo.State.SUCCEEDED -> "Synced"
+                        WorkInfo.State.FAILED -> {
+                            val errorMsg = info.outputData.getString("error_message") ?: "Sync Failed"
+                            viewModelScope.launch(Dispatchers.Main) {
+                                android.widget.Toast.makeText(getApplication(), "Sync failed: $errorMsg", android.widget.Toast.LENGTH_LONG).show()
+                            }
+                            "Sync Failed"
+                        }
+                        WorkInfo.State.CANCELLED -> "Sync Cancelled"
+                        else -> null
                     }
-                    WorkInfo.State.CANCELLED -> "Sync Cancelled"
-                    else -> null
                 }
             }
         }
@@ -406,7 +414,10 @@ class JournalViewModel(
 
     override fun deleteEntries(entryIds: List<String>) {
         viewModelScope.launch {
+            // Capture file paths before the rows (and their attachment lists) are gone
+            val doomedEntries = repository.getEntriesByIds(entryIds)
             repository.deleteEntries(entryIds)
+            deleteLocalFiles(doomedEntries)
             if (_isUserSignedIn.value) {
                 SyncManager.enqueuePeriodicSync(getApplication())
             }
@@ -415,9 +426,40 @@ class JournalViewModel(
 
     override fun emptyArchive() {
         viewModelScope.launch {
+            val doomedEntries = repository.getArchivedEntriesList()
             repository.deleteAllArchived()
+            deleteLocalFiles(doomedEntries)
             if (_isUserSignedIn.value) {
                 SyncManager.enqueuePeriodicSync(getApplication())
+            }
+        }
+    }
+
+    /**
+     * Best-effort removal of photo/attachment files that belonged to deleted
+     * entries. Only paths inside the app's private filesDir are touched, so a
+     * stale or foreign URI can never delete anything outside the sandbox.
+     */
+    private fun deleteLocalFiles(entries: List<JournalEntry>) {
+        // Resolve filesDir lazily: only needed when there is actually something to remove
+        if (entries.none { !it.photo_urls.isNullOrEmpty() || !it.attachments.isNullOrEmpty() }) return
+        val filesDirPath = getApplication<Application>().filesDir.absolutePath
+        entries.forEach { entry ->
+            entry.photo_urls?.forEach { url -> deleteSandboxedFile(url, filesDirPath) }
+            entry.attachments?.forEach { att -> deleteSandboxedFile(att.uri, filesDirPath) }
+        }
+    }
+
+    private fun deleteSandboxedFile(uriString: String, filesDirPath: String) {
+        runCatching {
+            // Parse manually instead of android.net.Uri, which is a stub in JVM
+            // unit tests. Local files are always plain "file://" URIs created by
+            // savePersistentFile; anything else (https, content) fails the
+            // prefix check below and is ignored.
+            val rawPath = if (uriString.startsWith("file://")) uriString.removePrefix("file://") else uriString
+            val path = java.net.URLDecoder.decode(rawPath, "UTF-8")
+            if (path.startsWith(filesDirPath)) {
+                java.io.File(path).delete()
             }
         }
     }

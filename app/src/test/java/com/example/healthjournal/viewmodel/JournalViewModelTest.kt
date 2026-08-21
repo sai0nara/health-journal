@@ -9,9 +9,11 @@ import androidx.work.WorkManager
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
+import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.health.HealthConnectManager
 import com.example.healthjournal.sync.SyncManager
+import com.example.healthjournal.sync.SyncWorker
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -140,17 +142,20 @@ class JournalViewModelTest {
     @Test
     fun deleteEntriesCallsRepositoryAndSync() = runTest {
         val ids = listOf("id1", "id2")
+        coEvery { repository.getEntriesByIds(ids) } returns emptyList()
         coEvery { repository.deleteEntries(ids) } returns Unit
         
         viewModel.deleteEntries(ids)
         testDispatcher.scheduler.advanceUntilIdle()
         
+        coVerify { repository.getEntriesByIds(ids) }
         coVerify { repository.deleteEntries(ids) }
         verify { SyncManager.enqueuePeriodicSync(any()) }
     }
 
     @Test
     fun emptyArchiveCallsRepositoryAndSync() = runTest {
+        coEvery { repository.getArchivedEntriesList() } returns emptyList()
         coEvery { repository.deleteAllArchived() } returns Unit
         
         viewModel.emptyArchive()
@@ -158,6 +163,54 @@ class JournalViewModelTest {
         
         coVerify { repository.deleteAllArchived() }
         verify { SyncManager.enqueuePeriodicSync(any()) }
+    }
+
+    @Test
+    fun deleteEntriesRemovesLocalAttachmentFiles() = runTest {
+        // Simulate the app sandbox: photos/ and attachments/ under filesDir
+        val fakeFilesDir = java.nio.file.Files.createTempDirectory("journal_files").toFile()
+        every { application.filesDir } returns fakeFilesDir
+        val photo = java.io.File(java.io.File(fakeFilesDir, "photos").apply { mkdirs() }, "photo1.jpg").apply { writeText("x") }
+        val attachment = java.io.File(java.io.File(fakeFilesDir, "attachments").apply { mkdirs() }, "doc1.pdf").apply { writeText("y") }
+        val entry = JournalEntry(
+            description = "doomed",
+            timestamp = 1000L,
+            photo_urls = listOf("file://${photo.absolutePath}"),
+            attachments = listOf(AttachmentData(name = "doc1.pdf", uri = "file://${attachment.absolutePath}", mimeType = "application/pdf"))
+        )
+        val ids = listOf(entry.entry_id)
+        coEvery { repository.getEntriesByIds(ids) } returns listOf(entry)
+        coEvery { repository.deleteEntries(ids) } returns Unit
+
+        viewModel.deleteEntries(ids)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(photo.exists())
+        assertFalse(attachment.exists())
+        fakeFilesDir.deleteRecursively()
+    }
+
+    @Test
+    fun deleteEntriesKeepsFilesOutsideFilesDir() = runTest {
+        val fakeFilesDir = java.nio.file.Files.createTempDirectory("journal_files").toFile()
+        every { application.filesDir } returns fakeFilesDir
+        val outsideRoot = java.nio.file.Files.createTempDirectory("outside_root").toFile()
+        val outside = java.io.File(outsideRoot, "keep.txt").apply { writeText("precious") }
+        val entry = JournalEntry(
+            description = "foreign uri",
+            timestamp = 1000L,
+            photo_urls = listOf("file://${outside.absolutePath}")
+        )
+        val ids = listOf(entry.entry_id)
+        coEvery { repository.getEntriesByIds(ids) } returns listOf(entry)
+        coEvery { repository.deleteEntries(ids) } returns Unit
+
+        viewModel.deleteEntries(ids)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(outside.exists())
+        fakeFilesDir.deleteRecursively()
+        outsideRoot.deleteRecursively()
     }
 
     @Test
@@ -293,11 +346,29 @@ class JournalViewModelTest {
         assertEquals("Syncing...", viewModel.syncStatus.value)
     }
 
+    @Test
+    fun syncStatus_authRequiredSurfacedFromProgress() = runTest {
+        val workManager = mockk<WorkManager>(relaxed = true)
+        val info = workInfo(WorkInfo.State.ENQUEUED).also {
+            every { it.progress } returns androidx.work.workDataOf(SyncWorker.KEY_AUTH_REQUIRED to true)
+        }
+        val workFlow = MutableStateFlow(listOf(info))
+        every { WorkManager.getInstance(any()) } returns workManager
+        every { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_periodic") } returns MutableStateFlow(emptyList())
+        every { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_manual") } returns workFlow
+
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Re-authorization required", viewModel.syncStatus.value)
+    }
+
     private fun workInfo(state: WorkInfo.State): WorkInfo {
         val info = mockk<WorkInfo>()
         every { info.state } returns state
         every { info.runAttemptCount } returns 0
         every { info.outputData } returns androidx.work.Data.EMPTY
+        every { info.progress } returns androidx.work.Data.EMPTY
         return info
     }
 

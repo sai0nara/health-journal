@@ -102,6 +102,12 @@ interface JournalDao {
     @Query("DELETE FROM journal_entries WHERE isArchived = 1")
     suspend fun deleteAllArchivedEntries()
 
+    @Query("SELECT * FROM journal_entries WHERE entry_id IN (:entryIds)")
+    suspend fun getEntriesByIds(entryIds: List<String>): List<JournalEntry>
+
+    @Query("SELECT * FROM journal_entries WHERE isArchived = 1")
+    suspend fun getArchivedEntriesList(): List<JournalEntry>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDeletedEntry(deletedEntry: DeletedEntry)
 
@@ -134,6 +140,9 @@ interface JournalDao {
 
     @Query("DELETE FROM EntryTagCrossRef WHERE entryId = :entryId")
     suspend fun deleteAllTagsForEntry(entryId: String)
+
+    @Query("DELETE FROM EntryTagCrossRef WHERE entryId IN (:entryIds)")
+    suspend fun deleteAllTagsForEntries(entryIds: List<String>)
 
     @Query("SELECT tag FROM EntryTagCrossRef WHERE entryId = :entryId")
     suspend fun getTagsForEntry(entryId: String): List<String>

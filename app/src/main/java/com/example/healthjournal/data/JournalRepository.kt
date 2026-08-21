@@ -64,6 +64,10 @@ class JournalRepository(private val journalDao: JournalDao) {
         entryIds.forEach { id ->
             journalDao.insertDeletedEntry(DeletedEntry(id))
         }
+        // Remove tag cross-refs first: the table has no FK cascade, and orphaned
+        // rows would silently re-attach stale tags if the entry is ever
+        // re-imported (e.g. tombstone expired while another device kept it).
+        journalDao.deleteAllTagsForEntries(entryIds)
         journalDao.deleteEntriesByIds(entryIds)
     }
 
@@ -73,7 +77,24 @@ class JournalRepository(private val journalDao: JournalDao) {
         archivedIds.forEach { id ->
             journalDao.insertDeletedEntry(DeletedEntry(id))
         }
+        journalDao.deleteAllTagsForEntries(archivedIds)
         journalDao.deleteAllArchivedEntries()
+    }
+
+    /**
+     * Fetches full entries for the given IDs. Used by callers that need entry
+     * metadata (e.g. attachment file paths) before the rows are deleted.
+     */
+    suspend fun getEntriesByIds(entryIds: List<String>): List<JournalEntry> {
+        return journalDao.getEntriesByIds(entryIds)
+    }
+
+    /**
+     * Snapshot of all archived entries. Used by callers that need entry metadata
+     * (e.g. attachment file paths) before emptying the archive.
+     */
+    suspend fun getArchivedEntriesList(): List<JournalEntry> {
+        return journalDao.getArchivedEntriesList()
     }
     
     suspend fun getDeletedEntryIds(): List<String> {

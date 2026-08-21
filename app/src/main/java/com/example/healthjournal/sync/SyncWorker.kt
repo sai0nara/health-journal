@@ -44,10 +44,15 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             
             if (accessToken.isNullOrBlank()) {
                 Log.e("SyncWorker", "Silent authorization failed. No token.")
+                // Surface the blocker to the UI: silent auth only fails when the
+                // user must (re-)grant Drive consent, so retrying silently forever
+                // is not enough — the user needs to re-authorize from the app.
+                setProgress(workDataOf(KEY_AUTH_REQUIRED to true))
                 // Transient: token may be available on the next run (30-60 min
                 // lifetime). failure() would permanently kill periodic sync.
                 return Result.retry()
             }
+            setProgress(workDataOf(KEY_AUTH_REQUIRED to false))
             Log.d("SyncWorker", "Token obtained successfully")
 
             val database = JournalDatabase.getDatabase(applicationContext)
@@ -209,6 +214,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
     }
 
     companion object {
+        const val KEY_AUTH_REQUIRED = "auth_required"
         var authManagerProvider: (Context) -> GoogleAuthManager = { GoogleAuthManager(it) }
         var driveHelperProvider: (Context, Drive) -> DriveServiceHelper = { context, drive -> DriveServiceHelper(context, drive) }
     }

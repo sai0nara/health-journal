@@ -55,6 +55,22 @@ class JournalDaoTest {
     }
 
     @Test
+    fun deleteEntriesByIdsRemovesTagCrossRefs() = runBlocking {
+        val entry1 = JournalEntry(description = "Kept")
+        val entry2 = JournalEntry(description = "Deleted")
+        journalDao.insertEntry(entry1)
+        journalDao.insertEntry(entry2)
+        journalDao.insertTag(EntryTagCrossRef(entry1.entry_id, "RUN"))
+        journalDao.insertTag(EntryTagCrossRef(entry2.entry_id, "GYM"))
+
+        journalDao.deleteAllTagsForEntries(listOf(entry2.entry_id))
+        journalDao.deleteEntriesByIds(listOf(entry2.entry_id))
+
+        assertEquals(listOf("RUN"), journalDao.getTagsForEntry(entry1.entry_id))
+        assertTrue(journalDao.getTagsForEntry(entry2.entry_id).isEmpty())
+    }
+
+    @Test
     fun getEntriesSortedByDateAsc() = runBlocking {
         val entry1 = JournalEntry(description = "First", timestamp = 1000)
         val entry2 = JournalEntry(description = "Second", timestamp = 2000)
