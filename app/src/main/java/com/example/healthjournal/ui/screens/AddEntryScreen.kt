@@ -159,7 +159,7 @@ fun AddEntryScreen(
                 bpDiastolic = entry.bp_diastolic
                 heartRate = entry.heart_rate_avg
                 sleepHours = entry.sleep_hours
-                entryTags = entry.tags.toSet()
+                entryTags = entry.tags?.toSet() ?: emptySet()
             }
         }
     }

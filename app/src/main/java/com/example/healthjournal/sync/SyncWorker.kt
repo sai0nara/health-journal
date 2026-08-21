@@ -70,6 +70,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                     val rawEntries = Gson().fromJson<List<JournalEntry>>(cloudJson, type) ?: emptyList()
                     // Fix nulls from old cloud data
                     rawEntries.map { entry ->
+                        // Fix nulls from old cloud data (preserve tags through copy)
                         entry.copy(
                             isSynced = entry.isSynced ?: true,
                             syncStatus = entry.syncStatus ?: "SYNCED",
@@ -77,7 +78,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                                 att.copy(syncStatus = att.syncStatus ?: "SYNCED", isLocalOnly = att.isLocalOnly ?: false)
                             } ?: emptyList(),
                             photo_urls = entry.photo_urls ?: emptyList()
-                        )
+                        ).also { it.tags = entry.tags }
                     }
                 } catch (e: Exception) {
                     Log.e("SyncWorker", "Failed to parse cloud JSON", e)
@@ -120,9 +121,8 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             // 2. Get local data (including archived)
             val localEntries = dao.getAllEntriesIncludingArchived().first()
 
-            // 3. Merge (latest timestamp wins)
-            val allEntriesMap = mutableMapOf<String, JournalEntry>()
-            cloudEntries.forEach { entry ->
+            // 3. Merge (latest timestamp wins), preserving tags per LWW
+            val remappedCloud = cloudEntries.map { entry ->
                 // Remap URIs to this device
                 val updatedPhotos = entry.photo_urls?.map { url ->
                     val filename = url.substringAfterLast("/")
@@ -132,28 +132,25 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                     val filename = att.uri.substringAfterLast("/")
                     att.copy(uri = java.io.File(applicationContext.filesDir, "attachments/$filename").toURI().toString())
                 } ?: emptyList()
-                val updatedEntry = entry.copy(photo_urls = updatedPhotos, attachments = updatedAttachments)
-                allEntriesMap[updatedEntry.entry_id] = updatedEntry 
-            }
-            
-            localEntries.forEach { local ->
-                val existing = allEntriesMap[local.entry_id]
-                if (existing == null || local.lastModified > existing.lastModified) {
-                    // Attach local tags to the entry for cloud upload
-                    val tags = dao.getTagsForEntry(local.entry_id)
-                    allEntriesMap[local.entry_id] = local.withTags(tags)
-                }
+                entry.copy(photo_urls = updatedPhotos, attachments = updatedAttachments)
+                    .also { it.tags = entry.tags }
             }
 
-            val mergedEntries = allEntriesMap.values.toList()
+            val mergedEntries = SyncMerge.merge(remappedCloud, localEntries) { entryId ->
+                dao.getTagsForEntry(entryId)
+            }
 
             // 4. Update local DB
             repository.importAll(mergedEntries.map { it.copy(isSynced = true) })
             
-            // Persist tags from merged results back to the cross-ref table
+            // Persist tags from merged results back to the cross-ref table.
+            // Entries with null tags carry no tag info (legacy payload) and
+            // must not have local tags wiped.
             mergedEntries.forEach { entry ->
-                dao.deleteAllTagsForEntry(entry.entry_id)
-                entry.tags.forEach { tag -> dao.insertTag(EntryTagCrossRef(entry.entry_id, tag)) }
+                entry.tags?.let { tags ->
+                    dao.deleteAllTagsForEntry(entry.entry_id)
+                    tags.forEach { tag -> dao.insertTag(EntryTagCrossRef(entry.entry_id, tag)) }
+                }
             }
 
             // 5. Upload new local files to cloud
@@ -181,7 +178,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             }
 
             // 6. Upload merged JSON back to cloud
-            val finalEntriesForCloud = mergedEntries.map { it.copy(isSynced = true) }
+            val finalEntriesForCloud = mergedEntries.map { it.copy(isSynced = true).also { e -> e.tags = it.tags } }
             val uploadId = driveHelper.uploadJournalData(Gson().toJson(finalEntriesForCloud))
             if (uploadId == null) {
                 Log.e("SyncWorker", "Cloud upload failed.")
