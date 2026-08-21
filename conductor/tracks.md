@@ -30,3 +30,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Fix NullPointerException in List Iteration**
   *Link: [./tracks/fix_npe_iterator_20260529/](./tracks/fix_npe_iterator_20260529/)*
 
+---
+
+- [ ] **Track: Medical App Color System (Light & Dark)**
+  *Link: [./tracks/dark_theme_color_system_20260821/](./tracks/dark_theme_color_system_20260821/)*
+
