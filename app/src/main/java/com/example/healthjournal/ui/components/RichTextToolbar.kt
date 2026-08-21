@@ -79,7 +79,7 @@ fun RichTextToolbar(
                 testTag = "underline_button"
             )
             ToolbarButton(
-                icon = Icons.Default.Highlight,
+                icon = Icons.Default.FormatStrikethrough,
                 isActive = state.currentSpanStyle.textDecoration == TextDecoration.LineThrough,
                 onClick = { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) },
                 testTag = "strikethrough_button"
