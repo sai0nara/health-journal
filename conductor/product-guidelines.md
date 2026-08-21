@@ -12,6 +12,12 @@
 
 ## Design System
 - **Material 3 (Native):** Follow the latest Android design standards. Use Material 3 components, dynamic color, and native navigation patterns to provide a familiar and high-quality Android experience.
+- **Medical Color System (Semantic Tokens):** All UI colors must be referenced via `MaterialTheme.colorScheme` roles — never absolute colors. Two fixed palettes are defined:
+    - **Light ("Medical Standard"):** off-white background (#F8F9FA), pure white surfaces, trust-blue primary (#0A66C2), healing-teal secondary (#20C997).
+    - **Dark ("Eye-strain Reduction"):** deep charcoal background (#121212), elevated-gray surfaces (#1E1E1E), slightly desaturated blue primary (#4A90E2) to reduce eye strain.
+- **System Theme Follow:** The app follows the OS light/dark preference with instant re-theming; an in-app override and Material You dynamic color are intentionally out of scope.
+
+(Note: the existing "dynamic color" phrase in the Material 3 bullet predates this system; the Medical Color System entry takes precedence.)
 
 ## Privacy & Security Communications
 - **Cloud-Secure:** Emphasize that user data is securely backed up and synchronized using their personal Google Drive. Communicate the reliability and security of this approach, ensuring users feel confident that their data is safe and accessible across devices.
