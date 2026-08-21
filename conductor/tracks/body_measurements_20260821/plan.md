@@ -1,6 +1,6 @@
 # Implementation Plan: Body Measurements Tracking
 
-## Phase 1: Data Foundation — Entity, Migration, Validation & Repository
+## Phase 1: Data Foundation — Entity, Migration, Validation & Repository [checkpoint: f91acfc]
 - [x] Task: Write failing unit tests for data model and validation (TDD Red) [d1f97f9]
     - [ ] `BodyMeasurementEntryTest`: defaults (`syncStatus=PENDING_SYNC`, `isLocalOnly=true`), all 7 measurement fields nullable
     - [ ] `ValidateMeasurementsTest`: rejects malformed decimals, negatives, weight > 500 kg, girths > 300 cm with field-level errors; requires ≥ 1 value; accepts partial entries
