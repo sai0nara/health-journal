@@ -32,6 +32,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Medical App Color System (Light & Dark)**
+- [~] **Track: Medical App Color System (Light & Dark)**
   *Link: [./tracks/dark_theme_color_system_20260821/](./tracks/dark_theme_color_system_20260821/)*
 
