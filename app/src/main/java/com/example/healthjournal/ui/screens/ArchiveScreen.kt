@@ -15,7 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
@@ -281,7 +281,7 @@ fun ArchiveScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black)
+                    .background(MaterialTheme.colorScheme.scrim)
                     .clickable { expandedImageUri = null },
                 contentAlignment = Alignment.Center
             ) {
