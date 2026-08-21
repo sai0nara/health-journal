@@ -35,7 +35,7 @@ class AndroidExifOrientationHandler : ExifOrientationHandler {
 
     override fun write(file: File, orientation: Int) {
         try {
-            val exif = ExifInterface(file)
+            val exif = ExifInterface(file.absolutePath)
             exif.setAttribute(ExifInterface.TAG_ORIENTATION, orientation.toString())
             exif.saveAttributes()
         } catch (e: Exception) {

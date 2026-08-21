@@ -19,7 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -35,6 +35,7 @@ import com.mohamedrejeb.richeditor.ui.material3.RichText
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.util.HtmlEntities
 import com.example.healthjournal.ui.components.EnrichmentPanel
 import com.example.healthjournal.ui.components.RichTextToolbar
 import com.example.healthjournal.ui.components.TagSelectionRow
@@ -442,7 +443,7 @@ fun AddEntryScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Black)
+                            .background(MaterialTheme.colorScheme.scrim)
                             .clickable { expandedImageUri = null },
                         contentAlignment = Alignment.Center
                     ) {
@@ -538,7 +539,7 @@ fun AddEntryScreen(
                 
                 Button(
                     onClick = {
-                    val descriptionHtml = richTextState.toHtml()
+                    val descriptionHtml = HtmlEntities.decodeNonAsciiNamedEntities(richTextState.toHtml())
                     val plainText = richTextState.annotatedString.text
                     if (plainText.isNotBlank()) {
                         scope.launch {
