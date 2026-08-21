@@ -3,6 +3,7 @@ package com.example.healthjournal
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -23,7 +24,8 @@ import com.example.healthjournal.ui.screens.ExportScreen
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+        enableEdgeToEdge()
+
         val database = JournalDatabase.getDatabase(this)
         val repository = JournalRepository(database.journalDao())
         val viewModelFactory = JournalViewModelFactory(application, repository)
