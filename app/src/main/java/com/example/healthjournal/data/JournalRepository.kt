@@ -44,6 +44,14 @@ class JournalRepository(private val journalDao: JournalDao) {
         journalDao.insertAll(entries)
     }
 
+    /**
+     * Returns all entries (including archived) whose timestamp falls within the
+     * given range, for export purposes.
+     */
+    suspend fun getAllEntriesInDateRange(startDate: Long, endDate: Long): List<JournalEntry> {
+        return journalDao.getAllEntriesInDateRange(startDate, endDate)
+    }
+
     suspend fun archiveEntry(entryId: String) {
         journalDao.updateArchiveStatus(entryId, true, System.currentTimeMillis())
     }
@@ -56,6 +64,10 @@ class JournalRepository(private val journalDao: JournalDao) {
         entryIds.forEach { id ->
             journalDao.insertDeletedEntry(DeletedEntry(id))
         }
+        // Remove tag cross-refs first: the table has no FK cascade, and orphaned
+        // rows would silently re-attach stale tags if the entry is ever
+        // re-imported (e.g. tombstone expired while another device kept it).
+        journalDao.deleteAllTagsForEntries(entryIds)
         journalDao.deleteEntriesByIds(entryIds)
     }
 
@@ -65,15 +77,41 @@ class JournalRepository(private val journalDao: JournalDao) {
         archivedIds.forEach { id ->
             journalDao.insertDeletedEntry(DeletedEntry(id))
         }
+        journalDao.deleteAllTagsForEntries(archivedIds)
         journalDao.deleteAllArchivedEntries()
+    }
+
+    /**
+     * Fetches full entries for the given IDs. Used by callers that need entry
+     * metadata (e.g. attachment file paths) before the rows are deleted.
+     */
+    suspend fun getEntriesByIds(entryIds: List<String>): List<JournalEntry> {
+        return journalDao.getEntriesByIds(entryIds)
+    }
+
+    /**
+     * Snapshot of all archived entries. Used by callers that need entry metadata
+     * (e.g. attachment file paths) before emptying the archive.
+     */
+    suspend fun getArchivedEntriesList(): List<JournalEntry> {
+        return journalDao.getArchivedEntriesList()
     }
     
     suspend fun getDeletedEntryIds(): List<String> {
         return journalDao.getAllDeletedEntries().map { it.entry_id }
     }
-    
-    suspend fun clearDeletedEntries(entryIds: List<String>) {
-        journalDao.removeDeletedEntries(entryIds)
+
+    /**
+     * Removes tombstone records older than the grace period. Tombstones younger
+     * than [TOMBSTONE_GRACE_PERIOD_MS] are kept so that a stale cloud copy arriving
+     * in a later sync cycle cannot resurrect a deleted entry.
+     */
+    suspend fun clearDeletedEntries(now: Long = System.currentTimeMillis()) {
+        journalDao.removeDeletedEntriesBefore(now - TOMBSTONE_GRACE_PERIOD_MS)
+    }
+
+    companion object {
+        const val TOMBSTONE_GRACE_PERIOD_MS = 30L * 24 * 60 * 60 * 1000 // 30 days
     }
 
     /**

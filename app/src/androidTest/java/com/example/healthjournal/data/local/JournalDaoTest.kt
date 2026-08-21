@@ -10,6 +10,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -51,6 +52,22 @@ class JournalDaoTest {
     fun getEntryByIdReturnsNullForNonExistent() = runBlocking {
         val entry = journalDao.getEntryById("non_existent_id")
         assertNull(entry)
+    }
+
+    @Test
+    fun deleteEntriesByIdsRemovesTagCrossRefs() = runBlocking {
+        val entry1 = JournalEntry(description = "Kept")
+        val entry2 = JournalEntry(description = "Deleted")
+        journalDao.insertEntry(entry1)
+        journalDao.insertEntry(entry2)
+        journalDao.insertTag(EntryTagCrossRef(entry1.entry_id, "RUN"))
+        journalDao.insertTag(EntryTagCrossRef(entry2.entry_id, "GYM"))
+
+        journalDao.deleteAllTagsForEntries(listOf(entry2.entry_id))
+        journalDao.deleteEntriesByIds(listOf(entry2.entry_id))
+
+        assertEquals(listOf("RUN"), journalDao.getTagsForEntry(entry1.entry_id))
+        assertTrue(journalDao.getTagsForEntry(entry2.entry_id).isEmpty())
     }
 
     @Test
@@ -163,7 +180,8 @@ class JournalDaoTest {
         journalDao.insertTag(EntryTagCrossRef(entry3.entry_id, "CHECKUP"))
         journalDao.insertTag(EntryTagCrossRef(entry3.entry_id, "DOCTOR"))
 
-        // Search for "checkup" with tag "CHECKUP" -> should find entry1 and entry3
+        // Search for "checkup" with tag "CHECKUP" -> should find entry1 only
+        // (entry3 has the CHECKUP tag but its description does not contain "checkup")
         val results = journalDao.searchEntriesWithTags(
             query = "checkup", 
             tags = listOf("CHECKUP"), 
@@ -171,9 +189,9 @@ class JournalDaoTest {
             isAsc = false
         ).first()
         
-        assertEquals(2, results.size)
+        assertEquals(1, results.size)
         assertTrue(results.any { it.description == "Blood pressure checkup" })
-        assertTrue(results.any { it.description == "Doctor visit for fever" })
+        assertFalse(results.any { it.description == "Doctor visit for fever" })
     }
 
     @Test

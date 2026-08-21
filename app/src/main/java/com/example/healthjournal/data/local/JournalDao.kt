@@ -14,6 +14,9 @@ interface JournalDao {
     @Query("SELECT * FROM journal_entries ORDER BY lastModified DESC")
     fun getAllEntriesIncludingArchived(): Flow<List<JournalEntry>>
 
+    @Query("SELECT * FROM journal_entries WHERE timestamp BETWEEN :startDate AND :endDate ORDER BY timestamp DESC")
+    suspend fun getAllEntriesInDateRange(startDate: Long, endDate: Long): List<JournalEntry>
+
     @Query("""
         SELECT * FROM journal_entries 
         WHERE isArchived = 0
@@ -99,6 +102,12 @@ interface JournalDao {
     @Query("DELETE FROM journal_entries WHERE isArchived = 1")
     suspend fun deleteAllArchivedEntries()
 
+    @Query("SELECT * FROM journal_entries WHERE entry_id IN (:entryIds)")
+    suspend fun getEntriesByIds(entryIds: List<String>): List<JournalEntry>
+
+    @Query("SELECT * FROM journal_entries WHERE isArchived = 1")
+    suspend fun getArchivedEntriesList(): List<JournalEntry>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDeletedEntry(deletedEntry: DeletedEntry)
 
@@ -107,6 +116,9 @@ interface JournalDao {
 
     @Query("DELETE FROM deleted_entries WHERE entry_id IN (:entryIds)")
     suspend fun removeDeletedEntries(entryIds: List<String>)
+
+    @Query("DELETE FROM deleted_entries WHERE deletedAt < :cutoffTimestamp")
+    suspend fun removeDeletedEntriesBefore(cutoffTimestamp: Long)
 
     @Query("SELECT * FROM journal_entries WHERE syncStatus = 'PENDING_SYNC'")
     suspend fun getPendingSyncEntries(): List<JournalEntry>
@@ -128,6 +140,9 @@ interface JournalDao {
 
     @Query("DELETE FROM EntryTagCrossRef WHERE entryId = :entryId")
     suspend fun deleteAllTagsForEntry(entryId: String)
+
+    @Query("DELETE FROM EntryTagCrossRef WHERE entryId IN (:entryIds)")
+    suspend fun deleteAllTagsForEntries(entryIds: List<String>)
 
     @Query("SELECT tag FROM EntryTagCrossRef WHERE entryId = :entryId")
     suspend fun getTagsForEntry(entryId: String): List<String>

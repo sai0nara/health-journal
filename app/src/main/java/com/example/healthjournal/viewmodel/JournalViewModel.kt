@@ -18,6 +18,7 @@ import com.example.healthjournal.health.HealthConnectManager
 import com.example.healthjournal.media.AndroidMediaCompressionService
 import com.example.healthjournal.media.MediaCompressionService
 import com.example.healthjournal.sync.SyncManager
+import com.example.healthjournal.sync.SyncWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -39,6 +40,7 @@ interface IJournalViewModel {
     val reactiveArchivedEntries: StateFlow<List<JournalEntry>>
     val isUserSignedIn: StateFlow<Boolean>
     val syncStatus: StateFlow<String?>
+    val isManualSyncActive: StateFlow<Boolean>
     val searchQuery: StateFlow<String>
     val archiveSearchQuery: StateFlow<String>
     val isAscending: StateFlow<Boolean>
@@ -155,32 +157,75 @@ class JournalViewModel(
     private val _syncStatus = MutableStateFlow<String?>(null)
     override val syncStatus: StateFlow<String?> = _syncStatus.asStateFlow()
 
+    /**
+     * True while a user-initiated sync is still in flight. Drives the
+     * pull-to-refresh indicator; false as soon as the manual work reaches a
+     * terminal state or blocks on re-authorization (an endless spinner while
+     * waiting for the user to act is exactly the defect this avoids).
+     */
+    private val _isManualSyncActive = MutableStateFlow(false)
+    override val isManualSyncActive: StateFlow<Boolean> = _isManualSyncActive.asStateFlow()
+
     private val TAG = "JournalViewModel"
 
     init {
-        // Observe WorkManager for "journal_sync"
+        // Observe WorkManager for the sync work names actually used by SyncManager.
+        // Manual work is evaluated first and wins over periodic work: the merged
+        // firstOrNull() approach let a periodic ENQUEUED emission overwrite a
+        // manual "Synced" before the UI ever observed it (StateFlow conflation).
         viewModelScope.launch {
-            WorkManager.getInstance(getApplication())
-                .getWorkInfosForUniqueWorkFlow("journal_sync")
-                .collect { workInfos ->
-                    val info = workInfos.firstOrNull()
-                    _syncStatus.value = when (info?.state) {
-                        WorkInfo.State.ENQUEUED -> {
-                            if (info.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
-                        }
-                        WorkInfo.State.RUNNING -> "Syncing..."
-                        WorkInfo.State.SUCCEEDED -> "Synced"
-                        WorkInfo.State.FAILED -> {
-                            val errorMsg = info.outputData.getString("error_message") ?: "Sync Failed"
-                            viewModelScope.launch(Dispatchers.Main) {
-                                android.widget.Toast.makeText(getApplication(), "Sync failed: $errorMsg", android.widget.Toast.LENGTH_LONG).show()
-                            }
-                            errorMsg
-                        }
-                        WorkInfo.State.CANCELLED -> "Sync Cancelled"
-                        else -> null
-                    }
+            val workManager = WorkManager.getInstance(getApplication())
+            var failureToastShown = false
+            combine(
+                workManager.getWorkInfosForUniqueWorkFlow(SyncManager.PERIODIC_WORK_NAME),
+                workManager.getWorkInfosForUniqueWorkFlow(SyncManager.MANUAL_WORK_NAME)
+            ) { periodicInfos, manualInfos ->
+                val manual = manualInfos.firstOrNull()
+                val periodic = periodicInfos.firstOrNull()
+
+                fun WorkInfo?.authRequired(): Boolean =
+                    this?.progress?.getBoolean(SyncWorker.KEY_AUTH_REQUIRED, false) == true
+
+                val status: String? = when {
+                    manual?.state == WorkInfo.State.RUNNING -> "Syncing..."
+                    manual?.state == WorkInfo.State.ENQUEUED ->
+                        if (manual.authRequired()) "Re-authorization required"
+                        else if (manual.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
+                    manual?.state == WorkInfo.State.SUCCEEDED -> "Synced"
+                    manual?.state == WorkInfo.State.FAILED -> "Sync Failed"
+                    manual?.state == WorkInfo.State.CANCELLED -> "Sync Cancelled"
+                    periodic?.state == WorkInfo.State.RUNNING -> "Syncing..."
+                    periodic?.state == WorkInfo.State.ENQUEUED ->
+                        if (periodic.authRequired()) "Re-authorization required"
+                        else if (periodic.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
+                    else -> null
                 }
+
+                val manualActive = when (manual?.state) {
+                    WorkInfo.State.RUNNING -> true
+                    WorkInfo.State.ENQUEUED -> !manual.authRequired()
+                    else -> false
+                }
+
+                val failedMessage = if (manual?.state == WorkInfo.State.FAILED) {
+                    manual.outputData.getString("error_message") ?: "Sync Failed"
+                } else null
+
+                Triple(status, manualActive, failedMessage)
+            }.collect { (status, manualActive, failedMessage) ->
+                _syncStatus.value = status
+                _isManualSyncActive.value = manualActive
+                if (failedMessage != null) {
+                    if (!failureToastShown) {
+                        failureToastShown = true
+                        viewModelScope.launch(Dispatchers.Main) {
+                            android.widget.Toast.makeText(getApplication(), "Sync failed: $failedMessage", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } else {
+                    failureToastShown = false
+                }
+            }
         }
     }
 
@@ -404,7 +449,10 @@ class JournalViewModel(
 
     override fun deleteEntries(entryIds: List<String>) {
         viewModelScope.launch {
+            // Capture file paths before the rows (and their attachment lists) are gone
+            val doomedEntries = repository.getEntriesByIds(entryIds)
             repository.deleteEntries(entryIds)
+            deleteLocalFiles(doomedEntries)
             if (_isUserSignedIn.value) {
                 SyncManager.enqueuePeriodicSync(getApplication())
             }
@@ -413,9 +461,40 @@ class JournalViewModel(
 
     override fun emptyArchive() {
         viewModelScope.launch {
+            val doomedEntries = repository.getArchivedEntriesList()
             repository.deleteAllArchived()
+            deleteLocalFiles(doomedEntries)
             if (_isUserSignedIn.value) {
                 SyncManager.enqueuePeriodicSync(getApplication())
+            }
+        }
+    }
+
+    /**
+     * Best-effort removal of photo/attachment files that belonged to deleted
+     * entries. Only paths inside the app's private filesDir are touched, so a
+     * stale or foreign URI can never delete anything outside the sandbox.
+     */
+    private fun deleteLocalFiles(entries: List<JournalEntry>) {
+        // Resolve filesDir lazily: only needed when there is actually something to remove
+        if (entries.none { !it.photo_urls.isNullOrEmpty() || !it.attachments.isNullOrEmpty() }) return
+        val filesDirPath = getApplication<Application>().filesDir.absolutePath
+        entries.forEach { entry ->
+            entry.photo_urls?.forEach { url -> deleteSandboxedFile(url, filesDirPath) }
+            entry.attachments?.forEach { att -> deleteSandboxedFile(att.uri, filesDirPath) }
+        }
+    }
+
+    private fun deleteSandboxedFile(uriString: String, filesDirPath: String) {
+        runCatching {
+            // Parse manually instead of android.net.Uri, which is a stub in JVM
+            // unit tests. Local files are always plain "file://" URIs created by
+            // savePersistentFile; anything else (https, content) fails the
+            // prefix check below and is ignored.
+            val rawPath = if (uriString.startsWith("file://")) uriString.removePrefix("file://") else uriString
+            val path = java.net.URLDecoder.decode(rawPath, "UTF-8")
+            if (path.startsWith(filesDirPath)) {
+                java.io.File(path).delete()
             }
         }
     }

@@ -12,6 +12,8 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import androidx.work.PeriodicWorkRequestBuilder
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
@@ -42,8 +44,15 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             
             if (accessToken.isNullOrBlank()) {
                 Log.e("SyncWorker", "Silent authorization failed. No token.")
-                return Result.failure(workDataOf("error_message" to "Auth failed (No token)"))
+                // Surface the blocker to the UI: silent auth only fails when the
+                // user must (re-)grant Drive consent, so retrying silently forever
+                // is not enough — the user needs to re-authorize from the app.
+                setProgress(workDataOf(KEY_AUTH_REQUIRED to true))
+                // Transient: token may be available on the next run (30-60 min
+                // lifetime). failure() would permanently kill periodic sync.
+                return Result.retry()
             }
+            setProgress(workDataOf(KEY_AUTH_REQUIRED to false))
             Log.d("SyncWorker", "Token obtained successfully")
 
             val database = JournalDatabase.getDatabase(applicationContext)
@@ -182,30 +191,39 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             val uploadId = driveHelper.uploadJournalData(Gson().toJson(finalEntriesForCloud))
             if (uploadId == null) {
                 Log.e("SyncWorker", "Cloud upload failed.")
-                return Result.failure(workDataOf("error_message" to "Cloud upload failed (Null ID)"))
+                // Transient network/API failure: keep periodic work alive.
+                return Result.retry()
             }
 
-            // 7. Clear local deleted tombstones after successful sync
-            if (deletedIds.isNotEmpty()) {
-                repository.clearDeletedEntries(deletedIds)
-            }
+            // 7. Purge expired tombstones. Young tombstones are kept so a stale
+            // cloud copy in a later sync cycle cannot resurrect a deleted entry.
+            repository.clearDeletedEntries()
 
             Log.d("SyncWorker", "Bidirectional sync completed successfully.")
             return Result.success()
         } catch (e: Throwable) {
             Log.e("SyncWorker", "Sync FATAL failure!", e)
             val errorMsg = "${e.javaClass.simpleName}: ${e.localizedMessage ?: "No message"}"
-            return Result.failure(workDataOf("error_message" to errorMsg))
+            // Transient errors (network, Drive API) must keep periodic work alive.
+            return if (e is IOException || e is GoogleJsonResponseException) {
+                Result.retry()
+            } else {
+                Result.failure(workDataOf("error_message" to errorMsg))
+            }
         }
     }
 
     companion object {
+        const val KEY_AUTH_REQUIRED = "auth_required"
         var authManagerProvider: (Context) -> GoogleAuthManager = { GoogleAuthManager(it) }
         var driveHelperProvider: (Context, Drive) -> DriveServiceHelper = { context, drive -> DriveServiceHelper(context, drive) }
     }
 }
 
 object SyncManager {
+    const val PERIODIC_WORK_NAME = "journal_sync_periodic"
+    const val MANUAL_WORK_NAME = "journal_sync_manual"
+
     fun enqueuePeriodicSync(context: Context) {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.UNMETERED)
@@ -216,7 +234,7 @@ object SyncManager {
             .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            "journal_sync_periodic",
+            PERIODIC_WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
             syncRequest
         )
@@ -232,7 +250,7 @@ object SyncManager {
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(
-            "journal_sync_manual",
+            MANUAL_WORK_NAME,
             ExistingWorkPolicy.REPLACE,
             syncRequest
         )

@@ -2,10 +2,6 @@ package com.example.healthjournal.ui.screens
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.test.core.app.ActivityScenario
-import android.content.Intent
-import androidx.test.platform.app.InstrumentationRegistry
-import com.example.healthjournal.MainActivity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.viewmodel.IJournalViewModel
@@ -19,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import org.junit.Rule
 import org.junit.Test
 import android.app.PendingIntent
-import android.content.Context
 
 @Feature("Archive")
 class ArchiveScreenTest {
@@ -30,63 +25,7 @@ class ArchiveScreenTest {
     @get:Rule
     val screenshotRule = ScreenshotRule(mode = ScreenshotRule.Mode.FAILURE)
 
-    @org.junit.Before
-    fun setup() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val intent = Intent(context, MainActivity::class.java).apply {
-            putExtra("TEST_MODE", true)
-        }
-        ActivityScenario.launch<MainActivity>(intent)
-    }
-
-    class MockJournalViewModel : IJournalViewModel {
-        override val allEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
-        override val archivedEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
-        override val reactiveArchivedEntries = MutableStateFlow<List<JournalEntry>>(emptyList())
-        override val isUserSignedIn = MutableStateFlow(false)
-        override val syncStatus = MutableStateFlow<String?>(null)
-        override val searchQuery = MutableStateFlow("")
-        override val archiveSearchQuery = MutableStateFlow("")
-        override val isAscending = MutableStateFlow(false)
-        
-        var restoredEntryId: String? = null
-        var deletedEntriesIds: List<String>? = null
-        var emptyArchiveCalled = false
-
-        override fun addEntry(
-            description: String, timestamp: Long, photoUrls: List<String>, attachments: List<AttachmentData>,
-            bpSystolic: Double?, bpDiastolic: Double?, heartRate: Int?, sleepHours: Float?
-        ) {}
-        override fun updateEntry(entry: JournalEntry) {}
-        override suspend fun getEntryById(entryId: String): JournalEntry? = null
-        
-        override fun signIn(activityContext: Context, onResolutionRequired: (PendingIntent) -> Unit) {}
-        override fun syncNow() {}
-        override fun signOut() {}
-        override fun setSearchQuery(query: String) {}
-        override fun setArchiveSearchQuery(query: String) {
-            archiveSearchQuery.value = query
-        }
-        override fun setSortOrder(isAsc: Boolean) {}
-
-        override val healthPermissions: Set<String> = emptySet()
-        override suspend fun hasHealthPermissions(): Boolean = false
-        override fun checkHealthAvailability(): Int = 1
-        override suspend fun syncHealthData(timestamp: Long): com.example.healthjournal.viewmodel.HealthSyncResult = 
-            com.example.healthjournal.viewmodel.HealthSyncResult()
-
-        override fun archiveEntry(entryId: String) {}
-        override fun restoreEntry(entryId: String) {
-            restoredEntryId = entryId
-        }
-        override fun deleteEntries(entryIds: List<String>) {
-            deletedEntriesIds = entryIds
-        }
-        override fun emptyArchive() {
-            emptyArchiveCalled = true
-        }
-        override suspend fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String? = null
-    }
+    class MockJournalViewModel : com.example.healthjournal.util.FakeJournalViewModel()
 
     private val viewModel = MockJournalViewModel()
 
@@ -114,8 +53,15 @@ class ArchiveScreenTest {
         }
 
         step("Long press entry 1 to enter selection mode") {
-            composeTestRule.onNodeWithTag("archive_entry_1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithTag("archive_entry_1").performTouchInput {
+                down(center)
+            }
+            composeTestRule.mainClock.advanceTimeBy(1000)
+            composeTestRule.onNodeWithTag("archive_entry_1").performTouchInput {
+                up()
+            }
             composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithText("1 Selected").assertExists()
         }
 
         step("Select entry 2") {

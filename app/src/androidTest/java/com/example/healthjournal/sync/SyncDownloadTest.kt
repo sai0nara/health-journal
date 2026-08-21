@@ -156,6 +156,41 @@ class SyncDownloadTest {
     }
 
     @Test
+    fun testSyncWorker_AuthFailureReturnsRetry() = runBlocking {
+        // Token retrieval fails -> transient condition, periodic work must survive
+        SyncWorker.authManagerProvider = {
+            val mock = mockk<GoogleAuthManager>()
+            coEvery { mock.getDriveAccessTokenSilent() } returns null
+            mock
+        }
+
+        val worker = TestListenableWorkerBuilder<SyncWorker>(context).build()
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.retry(), result)
+    }
+
+    @Test
+    fun testSyncWorker_CloudUploadFailureReturnsRetry() = runBlocking {
+        val cloudEntries = listOf(
+            JournalEntry(entry_id = "upload_fail_id", description = "Entry")
+        )
+        val cloudJson = Gson().toJson(cloudEntries)
+
+        SyncWorker.driveHelperProvider = { _, _ ->
+            val mock = mockk<DriveServiceHelper>()
+            coEvery { mock.downloadJournalData() } returns cloudJson
+            coEvery { mock.uploadJournalData(any()) } returns null
+            mock
+        }
+
+        val worker = TestListenableWorkerBuilder<SyncWorker>(context).build()
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.retry(), result)
+    }
+
+    @Test
     fun testSyncWorker_HandlesPermanentDeletions() = runBlocking {
         // 1. Prepare local "deleted" record
         val deletedId = "deleted_id"
@@ -184,7 +219,8 @@ class SyncDownloadTest {
         // 3. Verify that cloud JSON NO LONGER contains the deleted ID
         assertFalse(capturedUpload.captured.contains(deletedId))
 
-        // 4. Verify local tombstone is cleared
-        assertTrue(repository.getDeletedEntryIds().isEmpty())
+        // 4. Verify local tombstone is RETAINED (grace period) so a stale cloud
+        // copy in a later sync cycle cannot resurrect the deleted entry.
+        assertTrue(repository.getDeletedEntryIds().contains(deletedId))
     }
 }

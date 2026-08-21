@@ -238,21 +238,6 @@ fun ArchiveScreen(
                                 .fillMaxWidth()
                                 .clip(MaterialTheme.shapes.medium)
                                 .testTag("archive_entry_${entry.entry_id}")
-                                .combinedClickable(
-                                    onClick = { 
-                                        if (isSelectionMode) {
-                                            onToggleSelect(entry.entry_id)
-                                        } else {
-                                            onEntryClick(entry.entry_id)
-                                        }
-                                    },
-                                    onLongClick = {
-                                        if (!isSelectionMode) {
-                                            isSelectionMode = true
-                                            onToggleSelect(entry.entry_id)
-                                        }
-                                    }
-                                )
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (isSelectionMode) {
@@ -265,7 +250,13 @@ fun ArchiveScreen(
                                 JournalEntryItem(
                                     entry = entry,
                                     onClick = { if (isSelectionMode) onToggleSelect(entry.entry_id) else onEntryClick(entry.entry_id) },
-                                    onPhotoClick = { expandedImageUri = it }
+                                    onPhotoClick = { expandedImageUri = it },
+                                    onLongClick = {
+                                        if (!isSelectionMode) {
+                                            isSelectionMode = true
+                                            onToggleSelect(entry.entry_id)
+                                        }
+                                    }
                                 )
                             }
                             if (isSelected) {
