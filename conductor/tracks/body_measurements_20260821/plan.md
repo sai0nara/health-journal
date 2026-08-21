@@ -13,7 +13,7 @@
 - [x] Task: Database migration (TDD) [20e901e]
     - [ ] Failing instrumented `MigrationTest` case 9→10 preserving existing journal data (RED)
     - [ ] Implement `MIGRATION_9_10` creating `body_measurements` table; bump DB version; confirm GREEN
-- [~] Task: Instrumented DAO roundtrip test (insert/observe/delete-restore)
+- [x] Task: Instrumented DAO roundtrip test (insert/observe/delete-restore) [ed26c0a]
 - [ ] Task: Verify >80% coverage on new code (note tooling deviation if applicable)
 - [ ] Task: Commit Phase 1 changes and attach git note (Workflow steps 8–11)
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
