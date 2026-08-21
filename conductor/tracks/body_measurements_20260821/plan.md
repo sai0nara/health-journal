@@ -19,11 +19,11 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Capture Flow — ViewModel, Speed-Dial FAB & Bottom Sheet
-- [~] Task: Write failing unit tests for `BodyMeasurementViewModel` (TDD Red)
-    - [ ] Immutable `BodyMeasurementUiState` defaults (timestamp=now, empty fields, metric)
-    - [ ] `OnFieldChanged` updates value and clears that field's error; malformed input sets inline error WITHOUT clearing typed value
-    - [ ] Save enabled only when ≥ 1 valid value; `OnSaveClicked` persists via repository, emits save-success event, resets form
-- [ ] Task: Implement ViewModel to pass tests (TDD Green); refactor
+- [x] Task: Write failing unit tests for `BodyMeasurementViewModel` (TDD Red) [eb5267f]
+    - [x] Immutable `BodyMeasurementUiState` defaults (timestamp=now, empty fields, metric)
+    - [x] `OnFieldChanged` updates value and clears that field's error; malformed input sets inline error WITHOUT clearing typed value
+    - [x] Save enabled only when ≥ 1 valid value; `OnSaveClicked` persists via repository, emits save-success event, resets form
+- [x] Task: Implement ViewModel to pass tests (TDD Green); refactor [eb5267f]
 - [ ] Task: Write failing UI tests for capture flow (TDD Red)
     - [ ] Secondary tape-measure FAB stacked above primary FAB; opens `ModalBottomSheet`
     - [ ] Decimal keyboard hint + ImeAction.Next chaining present
