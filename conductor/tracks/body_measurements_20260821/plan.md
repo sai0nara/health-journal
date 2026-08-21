@@ -10,7 +10,7 @@
     - [ ] `ValidateMeasurements` domain component returning `Map<MeasurementField, String>` errors
     - [ ] `BodyMeasurementRepository` wrapping the DAO
     - [ ] Run tests and confirm GREEN; refactor for clarity
-- [~] Task: Database migration (TDD)
+- [x] Task: Database migration (TDD) [20e901e]
     - [ ] Failing instrumented `MigrationTest` case 9→10 preserving existing journal data (RED)
     - [ ] Implement `MIGRATION_9_10` creating `body_measurements` table; bump DB version; confirm GREEN
 - [ ] Task: Instrumented DAO roundtrip test (insert/observe/delete-restore)
