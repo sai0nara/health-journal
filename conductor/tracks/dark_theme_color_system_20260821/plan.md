@@ -19,7 +19,7 @@
 - [x] Task: Commit Phase 1 changes and attach git note (Workflow steps 8–11) 7fdcbcf
 - [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) 17d9cc9
 
-## Phase 2: Full Semantic Token Migration
+## Phase 2: Full Semantic Token Migration [checkpoint: df3b42b]
 - [x] Task: Audit and inventory hardcoded colors
     - [x] Grep `app/src/main` for `Color(0x`, `Color.Blue`, `Color.White`, etc.
     - [x] Record inventory of files requiring migration — 4 findings: HistoryScreen.kt:230 & ArchiveScreen.kt:284 & AddEntryScreen.kt:445 (Color.Black image-dialog scrims → colorScheme.scrim), RichTextToolbar.kt:133 (Color.Transparent → themed surface alpha-0)
@@ -33,7 +33,7 @@
 - [x] Task: Execute full UI test suite on emulator in BOTH light and dark modes (TDD Blue) — 48/48 green on physical device SM-F936B (Android 16), incl. ThemedRenderingTest light+dark
 - [x] Task: Verify >80% coverage on changed code — NOTE: no coverage tooling configured in project (same deviation as Phase 1); migration fully guarded by audit + behavioral tests
 - [x] Task: Commit Phase 2 changes and attach git note (Workflow steps 8–11) 677cd6c
-- [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) df3b42b
 
 ## Phase 3: Final Validation & Cleanup
 - [ ] Task: Run hardcoded-color audit — confirm zero absolute colors outside theme definition files
