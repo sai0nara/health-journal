@@ -40,4 +40,4 @@
 - [x] Task: Full regression — all unit tests, lint/static analysis, and UI tests pass — 71/71 unit, 48/48 instrumented (SM-F936B), lint 0 errors after fixing 2 pre-existing errors (MissingPrefix in manifest, NewApi ExifInterface(File))
 - [x] Task: Update documentation (tech-stack/design notes) if implementation deviated — no tech-stack changes; coverage-tooling gap and test-adaptation notes recorded in plan.md task entries
 - [x] Task: Commit final cleanup changes and attach git note d542324
-- [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
+- [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) — feedback round 1: wrong strikethrough icon → fixed with Icons.Default.FormatStrikethrough (2bb449b); re-verification in progress
