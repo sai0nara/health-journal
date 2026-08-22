@@ -18,7 +18,7 @@
 - [ ] Task: Commit Phase 1 changes and attach git note (Workflow steps 8–11)
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
-## Phase 2: Capture Flow — ViewModel, Speed-Dial FAB & Bottom Sheet
+## Phase 2: Capture Flow — ViewModel, Speed-Dial FAB & Bottom Sheet [checkpoint: 84f4a43]
 - [x] Task: Write failing unit tests for `BodyMeasurementViewModel` (TDD Red) [eb5267f]
     - [x] Immutable `BodyMeasurementUiState` defaults (timestamp=now, empty fields, metric)
     - [x] `OnFieldChanged` updates value and clears that field's error; malformed input sets inline error WITHOUT clearing typed value
@@ -32,7 +32,7 @@
 - [x] Task: Implement speed-dial FAB group on History screen + `MeasurementEntrySheet` with haptic success feedback (TDD Green) [9f5f24f]
 - [x] Task: Execute UI tests on device in BOTH light and dark modes (TDD Blue) [9f5f24f]
 - [x] Task: Commit Phase 2 changes and attach git note (Workflow steps 8–11) [9f5f24f]
-- [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) [84f4a43]
 
 ## Phase 3: Measurements Screen — List, Trend Chart & Undo Delete
 - [ ] Task: Write failing unit tests for screen logic (TDD Red)
