@@ -53,7 +53,16 @@ class MainActivity : ComponentActivity() {
                             onAddEntryClick = { navController.navigate("add_entry") },
                             onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") },
                             onArchiveClick = { navController.navigate("archive") },
-                            onExportClick = { navController.navigate("export") }
+                            onExportClick = { navController.navigate("export") },
+                            onMeasurementsClick = { navController.navigate("measurements") }
+                        )
+                    }
+                    composable("measurements") {
+                        val measurementViewModel: com.example.healthjournal.viewmodel.BodyMeasurementViewModel =
+                            viewModel(factory = measurementViewModelFactory)
+                        com.example.healthjournal.ui.screens.MeasurementsScreen(
+                            viewModel = measurementViewModel,
+                            onBack = { navController.popBackStack() }
                         )
                     }
                     composable("export") {

@@ -37,6 +37,37 @@ class BodyMeasurementViewModel(
     private val _uiState = MutableStateFlow(BodyMeasurementUiState())
     val uiState: StateFlow<BodyMeasurementUiState> = _uiState.asStateFlow()
 
+    /** Chronological feed (newest first) backing the Measurements screen. */
+    private val _entries = MutableStateFlow(emptyList<BodyMeasurementEntry>())
+    val entries: StateFlow<List<BodyMeasurementEntry>> = _entries.asStateFlow()
+
+    init {
+        viewModelScope.launch(ioDispatcher) {
+            repository.allEntries.collect { _entries.value = it }
+        }
+    }
+
+    /** Snapshots the record before removal so Undo can restore it verbatim. */
+    private var pendingUndoSnapshot: BodyMeasurementEntry? = null
+
+    fun deleteEntry(entryId: String) {
+        // Snapshot from the already-observed list: no extra DB read and no
+        // race if the row vanishes between UI tap and deletion.
+        pendingUndoSnapshot = _entries.value.firstOrNull { it.entry_id == entryId }
+        viewModelScope.launch(ioDispatcher) {
+            repository.deleteEntry(entryId)
+        }
+    }
+
+    /** Re-inserts the most recently deleted record (Undo snackbar action). */
+    fun undoDelete() {
+        val snapshot = pendingUndoSnapshot ?: return
+        viewModelScope.launch(ioDispatcher) {
+            repository.insert(snapshot)
+            pendingUndoSnapshot = null
+        }
+    }
+
     fun onFieldChanged(field: MeasurementField, text: String) {
         _uiState.update { current ->
             val rawValues = current.rawValues + (field to text)

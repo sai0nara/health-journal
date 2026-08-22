@@ -40,7 +40,7 @@
     - [x] Summary formatting "78.5 kg · Waist 85 cm" (non-null fields only)
     - [x] Weight trend series mapping (sorted, non-null weights only)
 - [x] Task: Implement screen state/formatting to pass tests (TDD Green) [ada8acb]
-- [ ] Task: Write failing UI tests (TDD Red)
+- [~] Task: Write failing UI tests (TDD Red)
     - [ ] Navigation entry from History top bar opens Measurements screen
     - [ ] Empty state shown when no records
     - [ ] Saved entries render as cards with summaries; newest first

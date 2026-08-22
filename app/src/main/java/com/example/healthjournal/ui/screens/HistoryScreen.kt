@@ -55,7 +55,8 @@ fun HistoryScreen(
     onAddEntryClick: () -> Unit,
     onEntryClick: (String) -> Unit,
     onArchiveClick: () -> Unit,
-    onExportClick: () -> Unit
+    onExportClick: () -> Unit,
+    onMeasurementsClick: () -> Unit = {}
 ) {
     val entries by viewModel.allEntries.collectAsState()
     val isAscending by viewModel.isAscending.collectAsState()
@@ -105,6 +106,9 @@ fun HistoryScreen(
             TopAppBar(
                 title = { Text("Health Journal") },
                 actions = {
+                    IconButton(onClick = onMeasurementsClick) {
+                        Icon(Icons.Default.MonitorWeight, contentDescription = "View Measurements")
+                    }
                     IconButton(onClick = onExportClick) {
                         Icon(Icons.Default.FileDownload, contentDescription = "Export Data")
                     }
