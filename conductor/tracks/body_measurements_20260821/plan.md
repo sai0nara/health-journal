@@ -35,11 +35,11 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) [84f4a43]
 
 ## Phase 3: Measurements Screen — List, Trend Chart & Undo Delete
-- [~] Task: Write failing unit tests for screen logic (TDD Red)
-    - [ ] Chronological ordering of observed entries
-    - [ ] Summary formatting "78.5 kg · Waist 85 cm" (non-null fields only)
-    - [ ] Weight trend series mapping (sorted, non-null weights only)
-- [ ] Task: Implement screen state/formatting to pass tests (TDD Green)
+- [x] Task: Write failing unit tests for screen logic (TDD Red) [ada8acb]
+    - [x] Chronological ordering of observed entries
+    - [x] Summary formatting "78.5 kg · Waist 85 cm" (non-null fields only)
+    - [x] Weight trend series mapping (sorted, non-null weights only)
+- [x] Task: Implement screen state/formatting to pass tests (TDD Green) [ada8acb]
 - [ ] Task: Write failing UI tests (TDD Red)
     - [ ] Navigation entry from History top bar opens Measurements screen
     - [ ] Empty state shown when no records
