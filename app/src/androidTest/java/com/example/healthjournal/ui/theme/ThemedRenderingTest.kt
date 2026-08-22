@@ -36,6 +36,7 @@ class ThemedRenderingTest {
             HealthJournalTheme(darkTheme = false) {
                 com.example.healthjournal.ui.screens.HistoryScreen(
                     viewModel = viewModel,
+                                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                     onAddEntryClick = {},
                     onEntryClick = {},
                     onArchiveClick = {},
@@ -53,6 +54,7 @@ class ThemedRenderingTest {
             HealthJournalTheme(darkTheme = true) {
                 com.example.healthjournal.ui.screens.HistoryScreen(
                     viewModel = viewModel,
+                                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                     onAddEntryClick = {},
                     onEntryClick = {},
                     onArchiveClick = {},

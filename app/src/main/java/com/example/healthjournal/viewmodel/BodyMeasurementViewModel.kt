@@ -1,6 +1,7 @@
 package com.example.healthjournal.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.healthjournal.data.BodyMeasurementRepository
 import com.example.healthjournal.data.local.BodyMeasurementEntry
@@ -91,4 +92,16 @@ class BodyMeasurementViewModel(
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
             ?.let { ValidateMeasurements.parseDecimal(it) }
+}
+
+class BodyMeasurementViewModelFactory(
+    private val repository: BodyMeasurementRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(BodyMeasurementViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return BodyMeasurementViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
 }
