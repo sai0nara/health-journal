@@ -24,14 +24,14 @@
     - [x] `OnFieldChanged` updates value and clears that field's error; malformed input sets inline error WITHOUT clearing typed value
     - [x] Save enabled only when ≥ 1 valid value; `OnSaveClicked` persists via repository, emits save-success event, resets form
 - [x] Task: Implement ViewModel to pass tests (TDD Green); refactor [eb5267f]
-- [ ] Task: Write failing UI tests for capture flow (TDD Red)
-    - [ ] Secondary tape-measure FAB stacked above primary FAB; opens `ModalBottomSheet`
-    - [ ] Decimal keyboard hint + ImeAction.Next chaining present
-    - [ ] Partial entry (waist only) saves end-to-end; invalid input shows inline warning and retains text
-    - [ ] Form state survives configuration change (rotation simulation)
-- [ ] Task: Implement speed-dial FAB group on History screen + `MeasurementEntrySheet` with haptic success feedback (TDD Green)
-- [ ] Task: Execute UI tests on device in BOTH light and dark modes (TDD Blue)
-- [ ] Task: Commit Phase 2 changes and attach git note (Workflow steps 8–11)
+- [x] Task: Write failing UI tests for capture flow (TDD Red) [9f5f24f]
+    - [x] Secondary tape-measure FAB stacked above primary FAB; opens `ModalBottomSheet`
+    - [x] Decimal keyboard hint + ImeAction.Next chaining present
+    - [x] Partial entry (waist only) saves end-to-end; invalid input shows inline warning and retains text
+    - [x] Form state survives configuration change (rotation simulation)
+- [x] Task: Implement speed-dial FAB group on History screen + `MeasurementEntrySheet` with haptic success feedback (TDD Green) [9f5f24f]
+- [x] Task: Execute UI tests on device in BOTH light and dark modes (TDD Blue) [9f5f24f]
+- [x] Task: Commit Phase 2 changes and attach git note (Workflow steps 8–11) [9f5f24f]
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
 ## Phase 3: Measurements Screen — List, Trend Chart & Undo Delete
