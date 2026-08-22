@@ -40,14 +40,14 @@
     - [x] Summary formatting "78.5 kg · Waist 85 cm" (non-null fields only)
     - [x] Weight trend series mapping (sorted, non-null weights only)
 - [x] Task: Implement screen state/formatting to pass tests (TDD Green) [ada8acb]
-- [~] Task: Write failing UI tests (TDD Red)
-    - [ ] Navigation entry from History top bar opens Measurements screen
-    - [ ] Empty state shown when no records
-    - [ ] Saved entries render as cards with summaries; newest first
-    - [ ] Delete triggers Undo snackbar; tapping Undo restores the record
-- [ ] Task: Implement `MeasurementsScreen`: list cards, empty state, `WeightTrendChart` line chart via Compose Canvas (no new dependency), delete-with-Undo (TDD Green)
-- [ ] Task: Execute UI tests on device in BOTH light and dark modes (TDD Blue)
-- [ ] Task: Commit Phase 3 changes and attach git note (Workflow steps 8–11)
+- [x] Task: Write failing UI tests (TDD Red) [1eeca5c]
+    - [x] Navigation entry from History top bar opens Measurements screen
+    - [x] Empty state shown when no records
+    - [x] Saved entries render as cards with summaries; newest first
+    - [x] Delete triggers Undo snackbar; tapping Undo restores the record
+- [x] Task: Implement `MeasurementsScreen`: list cards, empty state, `WeightTrendChart` line chart via Compose Canvas (no new dependency), delete-with-Undo (TDD Green) [1eeca5c]
+- [x] Task: Execute UI tests on device in BOTH light and dark modes (TDD Blue) [1eeca5c]
+- [x] Task: Commit Phase 3 changes and attach git note (Workflow steps 8–11) [1eeca5c]
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
 
 ## Phase 4: Drive Sync Integration & Final Validation
