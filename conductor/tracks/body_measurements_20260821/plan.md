@@ -51,7 +51,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) [${SHA[:7]}]
 
 ## Phase 4: Drive Sync Integration & Final Validation
-- [~] Task: Write failing unit tests for sync inclusion (TDD Red)
+- [x] Task: Write failing unit tests for sync inclusion (TDD Red) [bd79e24]
     - [x] Measurement records serialize into the existing sync payload format
     - [ ] `SyncMerge` merges remote measurement records and processes measurement tombstones
     - [ ] New records marked `PENDING_SYNC` are uploaded by `SyncWorker` flow
