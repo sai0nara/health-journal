@@ -34,7 +34,7 @@
 - [x] Task: Commit Phase 2 changes and attach git note (Workflow steps 8–11) [9f5f24f]
 - [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) [84f4a43]
 
-## Phase 3: Measurements Screen — List, Trend Chart & Undo Delete
+## Phase 3: Measurements Screen — List, Trend Chart & Undo Delete [checkpoint: 5826c4b] [checkpoint: ${SHA[:7]}]
 - [x] Task: Write failing unit tests for screen logic (TDD Red) [ada8acb]
     - [x] Chronological ordering of observed entries
     - [x] Summary formatting "78.5 kg · Waist 85 cm" (non-null fields only)
@@ -48,7 +48,7 @@
 - [x] Task: Implement `MeasurementsScreen`: list cards, empty state, `WeightTrendChart` line chart via Compose Canvas (no new dependency), delete-with-Undo (TDD Green) [1eeca5c]
 - [x] Task: Execute UI tests on device in BOTH light and dark modes (TDD Blue) [1eeca5c]
 - [x] Task: Commit Phase 3 changes and attach git note (Workflow steps 8–11) [1eeca5c]
-- [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) [${SHA[:7]}]
 
 ## Phase 4: Drive Sync Integration & Final Validation
 - [ ] Task: Write failing unit tests for sync inclusion (TDD Red)
