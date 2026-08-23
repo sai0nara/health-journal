@@ -4,11 +4,11 @@
 
 ## Phase 1: DatePicker UTC→Local Fix (Review Finding 1)
 
-- [ ] Task: Write failing unit tests for UTC→local conversion helper
-    - [ ] Add `UtcToLocalDateTest` under `app/src/test/java/com/example/healthjournal/domain/`
-    - [ ] Cover negative offsets (America/New_York, America/Los_Angeles): UTC-midnight millis maps to same local Y/M/D
-    - [ ] Cover positive offset (Europe/Berlin) and a DST-boundary date
-    - [ ] Run tests, confirm Red
+- [x] Task: Write failing unit tests for UTC→local conversion helper (ed7c4a2)
+    - [x] Add `UtcToLocalDateTest` under `app/src/test/java/com/example/healthjournal/domain/`
+    - [x] Cover negative offsets (America/New_York, America/Los_Angeles): UTC-midnight millis maps to same local Y/M/D
+    - [x] Cover positive offset (Europe/Berlin) and a DST-boundary date
+    - [x] Run tests, confirm Red
 - [ ] Task: Implement helper and wire into MeasurementEntrySheet
     - [ ] Add pure `UtcToLocalDate.toLocalMillis(utcMillis)` helper in `domain/` (java.util.Calendar, no Android deps)
     - [ ] In `MeasurementEntrySheet.kt` (~line 145), convert `selectedDateMillis` via helper before `viewModel.onTimestampChanged(...)`
