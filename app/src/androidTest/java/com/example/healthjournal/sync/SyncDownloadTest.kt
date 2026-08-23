@@ -84,6 +84,8 @@ class SyncDownloadTest {
             val mock = mockk<DriveServiceHelper>()
             coEvery { mock.downloadJournalData() } returns cloudJson
             coEvery { mock.uploadJournalData(any()) } returns "new_file_id"
+            coEvery { mock.downloadDataFile(any()) } returns null
+            coEvery { mock.uploadDataFile(any(), any()) } returns "measurements_file_id"
             coEvery { mock.findFileByName(any()) } returns "mock_cloud_id"
             coEvery { mock.downloadFile(any(), any()) } returns true
             mock
@@ -137,6 +139,8 @@ class SyncDownloadTest {
             val mock = mockk<DriveServiceHelper>()
             coEvery { mock.downloadJournalData() } returns cloudJson
             coEvery { mock.uploadJournalData(any()) } returns "new_file_id"
+            coEvery { mock.downloadDataFile(any()) } returns null
+            coEvery { mock.uploadDataFile(any(), any()) } returns "measurements_file_id"
             coEvery { mock.findFileByName(any()) } returns "mock_cloud_id"
             mock
         }
@@ -181,6 +185,8 @@ class SyncDownloadTest {
             val mock = mockk<DriveServiceHelper>()
             coEvery { mock.downloadJournalData() } returns cloudJson
             coEvery { mock.uploadJournalData(any()) } returns null
+            coEvery { mock.downloadDataFile(any()) } returns null
+            coEvery { mock.uploadDataFile(any(), any()) } returns "measurements_file_id"
             mock
         }
 
@@ -208,6 +214,8 @@ class SyncDownloadTest {
             val mock = mockk<DriveServiceHelper>()
             coEvery { mock.downloadJournalData() } returns cloudJson
             coEvery { mock.uploadJournalData(capture(capturedUpload)) } returns "new_file_id"
+            coEvery { mock.downloadDataFile(any()) } returns null
+            coEvery { mock.uploadDataFile(any(), any()) } returns "measurements_file_id"
             mock
         }
 
