@@ -199,6 +199,31 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             // cloud copy in a later sync cycle cannot resurrect a deleted entry.
             repository.clearDeletedEntries()
 
+            // ============ Body measurements sync ============
+            // Same pipeline, sibling cloud file: download -> filter local
+            // tombstones -> LWW merge -> persist -> upload.
+            Log.d("SyncWorker", "Syncing body measurements...")
+            val measurementDao = database.bodyMeasurementDao()
+            val cloudMeasurementsJson = driveHelper.downloadDataFile(DriveServiceHelper.MEASUREMENTS_DATA_FILE)
+            var cloudMeasurements = MeasurementSyncPayload.fromJson(cloudMeasurementsJson)
+            if (cloudMeasurements.isNotEmpty() && deletedIds.isNotEmpty()) {
+                cloudMeasurements = cloudMeasurements.filterNot { it.entry_id in deletedIds }
+            }
+
+            val localMeasurements = measurementDao.getAllEntriesList()
+            val mergedMeasurements = SyncMerge.mergeMeasurements(cloudMeasurements, localMeasurements)
+
+            measurementDao.importAll(mergedMeasurements)
+
+            val uploadedMeasurementId = driveHelper.uploadDataFile(
+                DriveServiceHelper.MEASUREMENTS_DATA_FILE,
+                MeasurementSyncPayload.toJson(mergedMeasurements)
+            )
+            if (uploadedMeasurementId == null) {
+                Log.e("SyncWorker", "Body measurements upload failed.")
+                return Result.retry()
+            }
+
             Log.d("SyncWorker", "Bidirectional sync completed successfully.")
             return Result.success()
         } catch (e: Throwable) {

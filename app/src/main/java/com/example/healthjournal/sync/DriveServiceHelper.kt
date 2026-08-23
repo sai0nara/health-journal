@@ -10,16 +10,23 @@ import java.util.Collections
 
 class DriveServiceHelper(private val context: Context, private val driveService: Drive) {
 
-    suspend fun uploadJournalData(content: String): String? = withContext(Dispatchers.IO) {
+    suspend fun uploadJournalData(content: String): String? =
+        uploadDataFile(JOURNAL_DATA_FILE, content)
+
+    /**
+     * Uploads (creates or updates) a JSON data file in the appDataFolder.
+     * Returns the Drive file id, or null when creation returned no id.
+     */
+    suspend fun uploadDataFile(fileName: String, content: String): String? = withContext(Dispatchers.IO) {
         val metadata = File()
-            .setName("health_journal_data.json")
+            .setName(fileName)
             .setMimeType("application/json")
             .setParents(Collections.singletonList("appDataFolder"))
 
         val contentStream = ByteArrayContent.fromString("application/json", content)
 
-        val existingFileId = findDataFile()
-        
+        val existingFileId = findFileByName(fileName)
+
         val file = if (existingFileId == null) {
             android.util.Log.d("DriveServiceHelper", "Creating new cloud file...")
             driveService.files().create(metadata, contentStream).execute()
@@ -27,13 +34,17 @@ class DriveServiceHelper(private val context: Context, private val driveService:
             android.util.Log.d("DriveServiceHelper", "Updating existing cloud file: $existingFileId")
             driveService.files().update(existingFileId, null, contentStream).execute()
         }
-        
+
         file.id
     }
 
-    suspend fun downloadJournalData(): String? = withContext(Dispatchers.IO) {
-        val fileId = findDataFile() ?: return@withContext null
-        
+    suspend fun downloadJournalData(): String? =
+        downloadDataFile(JOURNAL_DATA_FILE)
+
+    /** Downloads a JSON data file from the appDataFolder; null if absent. */
+    suspend fun downloadDataFile(fileName: String): String? = withContext(Dispatchers.IO) {
+        val fileId = findFileByName(fileName) ?: return@withContext null
+
         driveService.files().get(fileId).executeMediaAsInputStream().use { inputStream ->
             inputStream.bufferedReader().use { it.readText() }
         }
@@ -89,5 +100,9 @@ class DriveServiceHelper(private val context: Context, private val driveService:
         result.files.firstOrNull()?.id
     }
 
-    private suspend fun findDataFile(): String? = findFileByName("health_journal_data.json")
+
+    companion object {
+        const val JOURNAL_DATA_FILE = "health_journal_data.json"
+        const val MEASUREMENTS_DATA_FILE = "body_measurements.json"
+    }
 }

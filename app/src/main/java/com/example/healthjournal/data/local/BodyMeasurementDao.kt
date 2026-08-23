@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -12,11 +13,23 @@ interface BodyMeasurementDao {
     @Query("SELECT * FROM body_measurements ORDER BY timestamp DESC")
     fun getAllEntries(): Flow<List<BodyMeasurementEntry>>
 
+    /** One-shot snapshot for the sync worker (Flow is for live UI). */
+    @Query("SELECT * FROM body_measurements")
+    suspend fun getAllEntriesList(): List<BodyMeasurementEntry>
+
     @Query("SELECT * FROM body_measurements WHERE entry_id = :entryId")
     suspend fun getEntryById(entryId: String): BodyMeasurementEntry?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEntry(entry: BodyMeasurementEntry)
+
+    /** Upserts the merged sync result, marking records as synced. */
+    @Transaction
+    suspend fun importAll(entries: List<BodyMeasurementEntry>) {
+        entries.forEach { entry ->
+            insertEntry(entry.copy(isSynced = true, syncStatus = "SYNCED"))
+        }
+    }
 
     @Query("DELETE FROM body_measurements WHERE entry_id IN (:entryIds)")
     suspend fun deleteEntriesByIds(entryIds: List<String>)
