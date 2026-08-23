@@ -52,11 +52,23 @@
 
 ## Phase 4: Drive Sync Integration & Final Validation
 - [x] Task: Write failing unit tests for sync inclusion (TDD Red) [bd79e24]
-    - [x] Measurement records serialize into the existing sync payload format
-    - [ ] `SyncMerge` merges remote measurement records and processes measurement tombstones
-    - [ ] New records marked `PENDING_SYNC` are uploaded by `SyncWorker` flow
-- [ ] Task: Extend SyncWorker/SyncMerge/DriveServiceHelper pipeline for body measurements (TDD Green)
-- [ ] Task: Full regression — hardcoded-color audit, lint, all unit tests, all instrumented tests in both modes
-- [ ] Task: Update documentation (tech-stack/product notes) if implementation deviated
+    - [x] Measurement records serialize into the existing sync payload format [bd79e24]
+    - [x] `SyncMerge` merges remote measurement records and processes measurement tombstones [bd79e24]
+    - [x] New records marked `PENDING_SYNC` are uploaded by `SyncWorker` flow [7174771]
+- [x] Task: Extend SyncWorker/SyncMerge/DriveServiceHelper pipeline for body measurements (TDD Green) [7174771]
+- [x] Task: Full regression — hardcoded-color audit, lint, all unit tests, all instrumented tests in both modes [01efc57: 73/73 instrumented, lint clean, no hardcoded colors, units green]
+- [x] Task: Update documentation (tech-stack/product notes) if implementation deviated [deviation noted below]
 - [ ] Task: Commit Phase 4 changes and attach git note (Workflow steps 8–11)
 - [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
+
+### Phase 4 Deviation Note
+Measurements sync as a sibling Drive appDataFolder file (`body_measurements.json`,
+bare Gson list) instead of embedding into the legacy journal payload — zero
+breaking change for existing clouds. Tombstones reuse the shared
+`deleted_entries` table; purge stays via `repository.clearDeletedEntries()`.
+
+### Phase 4 Verification Report
+- Full unit suite: BUILD SUCCESSFUL
+- Full instrumented suite: 73/73 on SM-F936B (screen 7, capture sheet 6,
+  DAO/migration 9, sync download incl. new measurement stubs, all legacy)
+- Lint: BUILD SUCCESSFUL; hardcoded-color audit on new files: none
