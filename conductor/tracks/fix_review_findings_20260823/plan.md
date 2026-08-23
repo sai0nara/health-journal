@@ -9,10 +9,10 @@
     - [x] Cover negative offsets (America/New_York, America/Los_Angeles): UTC-midnight millis maps to same local Y/M/D
     - [x] Cover positive offset (Europe/Berlin) and a DST-boundary date
     - [x] Run tests, confirm Red
-- [ ] Task: Implement helper and wire into MeasurementEntrySheet
-    - [ ] Add pure `UtcToLocalDate.toLocalMillis(utcMillis)` helper in `domain/` (java.util.Calendar, no Android deps)
-    - [ ] In `MeasurementEntrySheet.kt` (~line 145), convert `selectedDateMillis` via helper before `viewModel.onTimestampChanged(...)`
-    - [ ] Run tests, confirm Green
+- [x] Task: Implement helper and wire into MeasurementEntrySheet (0560cb1)
+    - [x] Add pure `UtcToLocalDate.toLocalMillis(utcMillis)` helper in `domain/` (java.util.Calendar, no Android deps)
+    - [x] In `MeasurementEntrySheet.kt` (~line 145), convert `selectedDateMillis` via helper before `viewModel.onTimestampChanged(...)`
+    - [x] Run tests, confirm Green
 - [ ] Task: Add instrumented Compose UI test for DatePicker confirm flow
     - [ ] Extend `MeasurementEntrySheetTest.kt`: open picker, select date, tap OK, assert form timestamp renders selected local date (no off-by-one)
     - [ ] Execute on emulator until green
