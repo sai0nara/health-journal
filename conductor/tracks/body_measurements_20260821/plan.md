@@ -50,7 +50,7 @@
 - [x] Task: Commit Phase 3 changes and attach git note (Workflow steps 8–11) [1eeca5c]
 - [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) [${SHA[:7]}]
 
-## Phase 4: Drive Sync Integration & Final Validation
+## Phase 4: Drive Sync Integration & Final Validation [checkpoint: d68b6bc]
 - [x] Task: Write failing unit tests for sync inclusion (TDD Red) [bd79e24]
     - [x] Measurement records serialize into the existing sync payload format [bd79e24]
     - [x] `SyncMerge` merges remote measurement records and processes measurement tombstones [bd79e24]
@@ -58,8 +58,8 @@
 - [x] Task: Extend SyncWorker/SyncMerge/DriveServiceHelper pipeline for body measurements (TDD Green) [7174771]
 - [x] Task: Full regression — hardcoded-color audit, lint, all unit tests, all instrumented tests in both modes [01efc57: 73/73 instrumented, lint clean, no hardcoded colors, units green]
 - [x] Task: Update documentation (tech-stack/product notes) if implementation deviated [deviation noted below]
-- [ ] Task: Commit Phase 4 changes and attach git note (Workflow steps 8–11)
-- [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
+- [x] Task: Commit Phase 4 changes and attach git note (Workflow steps 8–11) [7174771, 01efc57]
+- [x] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md) [d68b6bc]
 
 ### Phase 4 Deviation Note
 Measurements sync as a sibling Drive appDataFolder file (`body_measurements.json`,
