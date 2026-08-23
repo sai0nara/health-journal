@@ -39,6 +39,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.domain.MeasurementField
+import com.example.healthjournal.domain.UtcToLocalDate
 import com.example.healthjournal.viewmodel.BodyMeasurementViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -142,7 +143,9 @@ fun MeasurementEntrySheet(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        datePickerState.selectedDateMillis?.let { viewModel.onTimestampChanged(it) }
+                        datePickerState.selectedDateMillis?.let { utcMillis ->
+                            viewModel.onTimestampChanged(UtcToLocalDate.toLocalMillis(utcMillis))
+                        }
                         showDatePicker = false
                     }
                 ) { Text("OK") }
