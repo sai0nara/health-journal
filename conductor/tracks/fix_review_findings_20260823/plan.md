@@ -13,9 +13,9 @@
     - [x] Add pure `UtcToLocalDate.toLocalMillis(utcMillis)` helper in `domain/` (java.util.Calendar, no Android deps)
     - [x] In `MeasurementEntrySheet.kt` (~line 145), convert `selectedDateMillis` via helper before `viewModel.onTimestampChanged(...)`
     - [x] Run tests, confirm Green
-- [ ] Task: Add instrumented Compose UI test for DatePicker confirm flow
-    - [ ] Extend `MeasurementEntrySheetTest.kt`: open picker, select date, tap OK, assert form timestamp renders selected local date (no off-by-one)
-    - [ ] Execute on emulator until green
+- [x] Task: Add instrumented Compose UI test for DatePicker confirm flow (05ffa53)
+    - [x] Extend `MeasurementEntrySheetTest.kt`: open picker, select date, tap OK, assert form timestamp renders selected local date (no off-by-one)
+    - [x] Execute on emulator until green
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Multi-Deletion Undo Map (Review Finding 2)
