@@ -280,4 +280,106 @@ class SyncDownloadTest {
         assertFalse(remaining.contains(expiredId))
         assertTrue(remaining.contains(freshId))
     }
+
+    @Test
+    fun testSyncWorker_RemoteMeasurementTombstoneRemovesLocalEntry() = runBlocking {
+        val measurementDao = database.bodyMeasurementDao()
+        val removedId = "remote_deleted_measurement"
+        measurementDao.insertEntry(
+            com.example.healthjournal.data.local.BodyMeasurementEntry(
+                entry_id = removedId,
+                timestamp = 1_000L,
+                lastModified = 1_000L,
+                waist_cm = 85.0
+            )
+        )
+
+        val ledgerJson = Gson().toJson(
+            listOf(com.example.healthjournal.data.local.DeletedEntry(removedId, 5_000L))
+        )
+        val uploadedFiles = mutableMapOf<String, String>()
+
+        SyncWorker.driveHelperProvider = { _, _ ->
+            val mock = mockk<DriveServiceHelper>()
+            coEvery { mock.downloadJournalData() } returns null
+            coEvery { mock.uploadJournalData(any()) } returns "journal_file_id"
+            coEvery { mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_DATA_FILE) } returns null
+            coEvery {
+                mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_TOMBSTONES_FILE)
+            } returns ledgerJson
+            coEvery { mock.uploadDataFile(any(), any()) } answers {
+                uploadedFiles[firstArg()] = secondArg()
+                "uploaded"
+            }
+            mock
+        }
+
+        val worker = TestListenableWorkerBuilder<SyncWorker>(context).build()
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.success(), result)
+
+        // The remotely deleted entry must be gone locally...
+        val localMeasurements = measurementDao.getAllEntriesList()
+        assertFalse(localMeasurements.any { it.entry_id == removedId })
+
+        // ...and must not be resurrected into the cloud measurements file.
+        val measurementsUpload = uploadedFiles[DriveServiceHelper.MEASUREMENTS_DATA_FILE]
+        assertNotNull(measurementsUpload)
+        assertFalse(measurementsUpload!!.contains(removedId))
+
+        // The deletion ledger must be uploaded for the next device.
+        assertNotNull(uploadedFiles.containsKey(DriveServiceHelper.MEASUREMENTS_TOMBSTONES_FILE))
+    }
+
+    @Test
+    fun testSyncWorker_NewerLocalEditBeatsRemoteTombstone() = runBlocking {
+        val measurementDao = database.bodyMeasurementDao()
+        val survivorId = "edited_after_remote_delete"
+        val editTime = System.currentTimeMillis()
+        measurementDao.insertEntry(
+            com.example.healthjournal.data.local.BodyMeasurementEntry(
+                entry_id = survivorId,
+                timestamp = editTime - 10_000L,
+                lastModified = editTime,
+                waist_cm = 90.0
+            )
+        )
+        val staleLedgerJson = Gson().toJson(
+            listOf(
+                com.example.healthjournal.data.local.DeletedEntry(
+                    survivorId,
+                    editTime - 60_000L
+                )
+            )
+        )
+        val uploadedFiles = mutableMapOf<String, String>()
+
+        SyncWorker.driveHelperProvider = { _, _ ->
+            val mock = mockk<DriveServiceHelper>()
+            coEvery { mock.downloadJournalData() } returns null
+            coEvery { mock.uploadJournalData(any()) } returns "journal_file_id"
+            coEvery { mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_DATA_FILE) } returns null
+            coEvery {
+                mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_TOMBSTONES_FILE)
+            } returns staleLedgerJson
+            coEvery { mock.uploadDataFile(any(), any()) } answers {
+                uploadedFiles[firstArg()] = secondArg()
+                "uploaded"
+            }
+            mock
+        }
+
+        val worker = TestListenableWorkerBuilder<SyncWorker>(context).build()
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.success(), result)
+
+        // A local edit newer than the remote deletion wins (LWW): the entry survives.
+        val localMeasurements = measurementDao.getAllEntriesList()
+        assertTrue(localMeasurements.any { it.entry_id == survivorId })
+        val measurementsUpload = uploadedFiles[DriveServiceHelper.MEASUREMENTS_DATA_FILE]
+        assertNotNull(measurementsUpload)
+        assertTrue(measurementsUpload!!.contains(survivorId))
+    }
 }

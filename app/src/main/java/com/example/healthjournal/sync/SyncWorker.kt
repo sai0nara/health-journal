@@ -200,13 +200,48 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             // tombstones -> LWW merge -> persist -> upload.
             Log.d("SyncWorker", "Syncing body measurements...")
             val measurementDao = database.bodyMeasurementDao()
+
+            // Sync the cross-device deletion ledger FIRST so deletions made on
+            // other devices are visible to this run's filtering. The ledger is
+            // shared by both entity types (one deleted_entries table).
+            val remoteLedger = MeasurementTombstonePayload.fromJson(
+                driveHelper.downloadDataFile(DriveServiceHelper.MEASUREMENTS_TOMBSTONES_FILE)
+            )
+            if (remoteLedger.isNotEmpty()) {
+                val localLedgerById = measurementDao.getAllDeletedEntries().associateBy { it.entry_id }
+                remoteLedger.forEach { remote ->
+                    val local = localLedgerById[remote.entry_id]
+                    if (local == null || remote.deletedAt > local.deletedAt) {
+                        measurementDao.insertDeletedEntry(remote)
+                    }
+                }
+            }
+            val ledgerById = measurementDao.getAllDeletedEntries().associateBy { it.entry_id }
+
             val cloudMeasurementsJson = driveHelper.downloadDataFile(DriveServiceHelper.MEASUREMENTS_DATA_FILE)
             var cloudMeasurements = MeasurementSyncPayload.fromJson(cloudMeasurementsJson)
-            if (cloudMeasurements.isNotEmpty() && deletedIds.isNotEmpty()) {
-                cloudMeasurements = cloudMeasurements.filterNot { it.entry_id in deletedIds }
+            if (cloudMeasurements.isNotEmpty() && ledgerById.isNotEmpty()) {
+                cloudMeasurements = cloudMeasurements.filterNot { it.entry_id in ledgerById }
             }
 
-            val localMeasurements = measurementDao.getAllEntriesList()
+            // Drop local rows that were deleted on another device, unless the
+            // local edit is newer than the deletion (LWW: the edit wins and is
+            // re-uploaded below). importAll only upserts, so removal is explicit.
+            val localMeasurementsAll = measurementDao.getAllEntriesList()
+            val remotelyDeletedLocalIds = localMeasurementsAll.mapNotNull { m ->
+                val tombstone = ledgerById[m.entry_id]
+                when {
+                    tombstone == null -> null
+                    tombstone.deletedAt >= m.lastModified -> m.entry_id
+                    else -> null
+                }
+            }
+            if (remotelyDeletedLocalIds.isNotEmpty()) {
+                measurementDao.deleteEntriesByIds(remotelyDeletedLocalIds)
+            }
+            val removedIds = remotelyDeletedLocalIds.toSet()
+            val localMeasurements = localMeasurementsAll.filterNot { it.entry_id in removedIds }
+
             val mergedMeasurements = SyncMerge.mergeMeasurements(cloudMeasurements, localMeasurements)
 
             measurementDao.importAll(mergedMeasurements)
@@ -217,6 +252,16 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             )
             if (uploadedMeasurementId == null) {
                 Log.e("SyncWorker", "Body measurements upload failed.")
+                return Result.retry()
+            }
+
+            // Publish the merged deletion ledger for other devices.
+            val uploadedLedgerId = driveHelper.uploadDataFile(
+                DriveServiceHelper.MEASUREMENTS_TOMBSTONES_FILE,
+                MeasurementTombstonePayload.toJson(measurementDao.getAllDeletedEntries())
+            )
+            if (uploadedLedgerId == null) {
+                Log.e("SyncWorker", "Deletion ledger upload failed.")
                 return Result.retry()
             }
 
