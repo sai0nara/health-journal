@@ -45,7 +45,23 @@
     - [x] Move `repository.clearDeletedEntries()` from step 7 (~line 200) to after successful measurements upload, immediately before `Result.success()`
     - [x] Preserve tombstone grace-period comment; wording updated to cover both pipelines
     - [x] Run tests, confirm Green (SyncDownloadTest 6/6)
-- [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) — first round surfaced cross-device deletion gap; resolved by expansion below, re-verification pending with Phase 4
+
+### Phase 3 Expansion: Cross-Device Deletion Propagation (user-reported, 2026-08-24)
+Manual verification revealed deletions never propagate between devices:
+tombstones stayed local and merges keep cloud-absent local rows. Journal
+pipeline shares the defect but stays OUT OF SCOPE (future track); the ledger
+is shared so journals benefit once a future track wires them in.
+
+- [x] Task: TDD Red — codec + worker propagation tests [15baab8]
+    - [x] `MeasurementTombstonePayloadTest`: null/garbage → empty, roundtrip (unit Red)
+    - [x] `SyncDownloadTest.testSyncWorker_RemoteMeasurementTombstoneRemovesLocalEntry` (Red on device)
+    - [x] `SyncDownloadTest.testSyncWorker_NewerLocalEditBeatsRemoteTombstone` (LWW guard)
+- [x] Task: Implement tombstone ledger sync [15baab8]
+    - [x] New sibling Drive file `body_measurements_tombstones.json` (`MEASUREMENTS_TOMBSTONES_FILE`) — existing payload contracts untouched (NFR1 preserved)
+    - [x] `MeasurementTombstonePayload` Gson codec (null/garbage-safe, mirrors MeasurementSyncPayload style)
+    - [x] SyncWorker: import remote ledger before filtering (newest deletedAt wins), LWW-guarded explicit removal of locally tombstoned rows (`importAll` is upsert-only), publish merged ledger after measurements upload; failure → `Result.retry()`
+    - [x] Green: unit suite BUILD SUCCESSFUL; SyncDownloadTest 8/8 on SM-F936B
 
 ## Phase 4: Full Regression & Coverage Verification
 

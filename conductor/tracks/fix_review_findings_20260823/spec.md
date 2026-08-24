@@ -22,6 +22,13 @@ Address the three findings from the code review (Approved with Recommendations) 
 - **FR3.1:** In `SyncWorker.doWork()`, `repository.clearDeletedEntries()` must run only **after** both the journal sync pipeline and the body measurements sync pipeline complete.
 - **FR3.2:** No tombstone within the 30-day grace window may be purged while either pipeline still needs it.
 
+### FR5 (Amendment, 2026-08-24): Cross-device deletion propagation for measurements
+- **FR5.1:** Deletions of body measurements must propagate between devices via a sibling Drive ledger file `body_measurements_tombstones.json`; existing payload files (`health_journal_data.json`, `body_measurements.json`) remain byte-format unchanged.
+- **FR5.2:** On download, remote ledger rows merge into local `deleted_entries` keeping the newest `deletedAt` per entry id, before any tombstone-based filtering in the same run.
+- **FR5.3:** A locally present measurement whose id appears in the merged ledger is removed unless its `lastModified` is newer than the tombstone's `deletedAt` (LWW: newer edit wins and is re-uploaded).
+- **FR5.4:** The merged full ledger is uploaded after the measurements upload; upload failure yields `Result.retry()` like other pipeline failures.
+- **FR5.5:** Out of scope (future track): journal-side propagation; the shared table means journal deletions already ride the same ledger once wired.
+
 ### FR4 — Testing (TDD workflow)
 - **FR4.1:** Failing unit tests first (Red), then implementation (Green), for:
   - UTC→local date conversion helper (including simulated negative-offset timezones)
