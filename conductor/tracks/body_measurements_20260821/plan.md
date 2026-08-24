@@ -1,0 +1,74 @@
+# Implementation Plan: Body Measurements Tracking
+
+## Phase 1: Data Foundation — Entity, Migration, Validation & Repository [checkpoint: f91acfc]
+- [x] Task: Write failing unit tests for data model and validation (TDD Red) [d1f97f9]
+    - [ ] `BodyMeasurementEntryTest`: defaults (`syncStatus=PENDING_SYNC`, `isLocalOnly=true`), all 7 measurement fields nullable
+    - [ ] `ValidateMeasurementsTest`: rejects malformed decimals, negatives, weight > 500 kg, girths > 300 cm with field-level errors; requires ≥ 1 value; accepts partial entries
+    - [ ] Run tests and confirm FAIL as expected
+- [x] Task: Implement entity, validator and repository to pass tests (TDD Green) [7005c45]
+    - [ ] `BodyMeasurementEntry` Room entity + `BodyMeasurementDao` (insert, observe chronological, getById, tombstone delete/restore)
+    - [ ] `ValidateMeasurements` domain component returning `Map<MeasurementField, String>` errors
+    - [ ] `BodyMeasurementRepository` wrapping the DAO
+    - [ ] Run tests and confirm GREEN; refactor for clarity
+- [x] Task: Database migration (TDD) [20e901e]
+    - [ ] Failing instrumented `MigrationTest` case 9→10 preserving existing journal data (RED)
+    - [ ] Implement `MIGRATION_9_10` creating `body_measurements` table; bump DB version; confirm GREEN
+- [x] Task: Instrumented DAO roundtrip test (insert/observe/delete-restore) [ed26c0a]
+- [x] Task: Verify >80% coverage on new code (note tooling deviation if applicable) [no tooling configured — accepted project-wide deviation; see git note]
+- [ ] Task: Commit Phase 1 changes and attach git note (Workflow steps 8–11)
+- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+
+## Phase 2: Capture Flow — ViewModel, Speed-Dial FAB & Bottom Sheet [checkpoint: 84f4a43]
+- [x] Task: Write failing unit tests for `BodyMeasurementViewModel` (TDD Red) [eb5267f]
+    - [x] Immutable `BodyMeasurementUiState` defaults (timestamp=now, empty fields, metric)
+    - [x] `OnFieldChanged` updates value and clears that field's error; malformed input sets inline error WITHOUT clearing typed value
+    - [x] Save enabled only when ≥ 1 valid value; `OnSaveClicked` persists via repository, emits save-success event, resets form
+- [x] Task: Implement ViewModel to pass tests (TDD Green); refactor [eb5267f]
+- [x] Task: Write failing UI tests for capture flow (TDD Red) [9f5f24f]
+    - [x] Secondary tape-measure FAB stacked above primary FAB; opens `ModalBottomSheet`
+    - [x] Decimal keyboard hint + ImeAction.Next chaining present
+    - [x] Partial entry (waist only) saves end-to-end; invalid input shows inline warning and retains text
+    - [x] Form state survives configuration change (rotation simulation)
+- [x] Task: Implement speed-dial FAB group on History screen + `MeasurementEntrySheet` with haptic success feedback (TDD Green) [9f5f24f]
+- [x] Task: Execute UI tests on device in BOTH light and dark modes (TDD Blue) [9f5f24f]
+- [x] Task: Commit Phase 2 changes and attach git note (Workflow steps 8–11) [9f5f24f]
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) [84f4a43]
+
+## Phase 3: Measurements Screen — List, Trend Chart & Undo Delete [checkpoint: 5826c4b] [checkpoint: ${SHA[:7]}]
+- [x] Task: Write failing unit tests for screen logic (TDD Red) [ada8acb]
+    - [x] Chronological ordering of observed entries
+    - [x] Summary formatting "78.5 kg · Waist 85 cm" (non-null fields only)
+    - [x] Weight trend series mapping (sorted, non-null weights only)
+- [x] Task: Implement screen state/formatting to pass tests (TDD Green) [ada8acb]
+- [x] Task: Write failing UI tests (TDD Red) [1eeca5c]
+    - [x] Navigation entry from History top bar opens Measurements screen
+    - [x] Empty state shown when no records
+    - [x] Saved entries render as cards with summaries; newest first
+    - [x] Delete triggers Undo snackbar; tapping Undo restores the record
+- [x] Task: Implement `MeasurementsScreen`: list cards, empty state, `WeightTrendChart` line chart via Compose Canvas (no new dependency), delete-with-Undo (TDD Green) [1eeca5c]
+- [x] Task: Execute UI tests on device in BOTH light and dark modes (TDD Blue) [1eeca5c]
+- [x] Task: Commit Phase 3 changes and attach git note (Workflow steps 8–11) [1eeca5c]
+- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) [${SHA[:7]}]
+
+## Phase 4: Drive Sync Integration & Final Validation [checkpoint: d68b6bc]
+- [x] Task: Write failing unit tests for sync inclusion (TDD Red) [bd79e24]
+    - [x] Measurement records serialize into the existing sync payload format [bd79e24]
+    - [x] `SyncMerge` merges remote measurement records and processes measurement tombstones [bd79e24]
+    - [x] New records marked `PENDING_SYNC` are uploaded by `SyncWorker` flow [7174771]
+- [x] Task: Extend SyncWorker/SyncMerge/DriveServiceHelper pipeline for body measurements (TDD Green) [7174771]
+- [x] Task: Full regression — hardcoded-color audit, lint, all unit tests, all instrumented tests in both modes [01efc57: 73/73 instrumented, lint clean, no hardcoded colors, units green]
+- [x] Task: Update documentation (tech-stack/product notes) if implementation deviated [deviation noted below]
+- [x] Task: Commit Phase 4 changes and attach git note (Workflow steps 8–11) [7174771, 01efc57]
+- [x] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md) [d68b6bc]
+
+### Phase 4 Deviation Note
+Measurements sync as a sibling Drive appDataFolder file (`body_measurements.json`,
+bare Gson list) instead of embedding into the legacy journal payload — zero
+breaking change for existing clouds. Tombstones reuse the shared
+`deleted_entries` table; purge stays via `repository.clearDeletedEntries()`.
+
+### Phase 4 Verification Report
+- Full unit suite: BUILD SUCCESSFUL
+- Full instrumented suite: 73/73 on SM-F936B (screen 7, capture sheet 6,
+  DAO/migration 9, sync download incl. new measurement stubs, all legacy)
+- Lint: BUILD SUCCESSFUL; hardcoded-color audit on new files: none

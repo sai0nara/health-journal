@@ -32,9 +32,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.ui.components.AboutAppDialog
+import com.example.healthjournal.ui.components.MeasurementEntrySheet
 import com.example.healthjournal.ui.components.JournalEntryItem
 import com.example.healthjournal.ui.components.SharedSearchBar
 import com.example.healthjournal.ui.components.TagSelectionRow
@@ -48,10 +51,12 @@ import java.util.*
 @Composable
 fun HistoryScreen(
     viewModel: IJournalViewModel,
+    measurementViewModelFactory: ViewModelProvider.Factory,
     onAddEntryClick: () -> Unit,
     onEntryClick: (String) -> Unit,
     onArchiveClick: () -> Unit,
-    onExportClick: () -> Unit
+    onExportClick: () -> Unit,
+    onMeasurementsClick: () -> Unit = {}
 ) {
     val entries by viewModel.allEntries.collectAsState()
     val isAscending by viewModel.isAscending.collectAsState()
@@ -87,6 +92,9 @@ fun HistoryScreen(
     val pullToRefreshState = rememberPullToRefreshState()
 
     var showAboutDialog by remember { mutableStateOf(false) }
+    val measurementViewModel: com.example.healthjournal.viewmodel.BodyMeasurementViewModel =
+        viewModel(factory = measurementViewModelFactory)
+    var showMeasurementSheet by remember { mutableStateOf(false) }
 
     if (showAboutDialog) {
         AboutAppDialog(onDismiss = { showAboutDialog = false })
@@ -98,6 +106,9 @@ fun HistoryScreen(
             TopAppBar(
                 title = { Text("Health Journal") },
                 actions = {
+                    IconButton(onClick = onMeasurementsClick) {
+                        Icon(Icons.Default.MonitorWeight, contentDescription = "View Measurements")
+                    }
                     IconButton(onClick = onExportClick) {
                         Icon(Icons.Default.FileDownload, contentDescription = "Export Data")
                     }
@@ -125,8 +136,18 @@ fun HistoryScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddEntryClick) {
-                Icon(Icons.Default.Add, contentDescription = "Add Entry")
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SmallFloatingActionButton(
+                    onClick = { showMeasurementSheet = true }
+                ) {
+                    Icon(Icons.Default.Straighten, contentDescription = "Add body measurements")
+                }
+                FloatingActionButton(onClick = onAddEntryClick) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Entry")
+                }
             }
         }
     ) { padding ->
@@ -217,6 +238,13 @@ fun HistoryScreen(
                 }
             }
         }
+    }
+
+    if (showMeasurementSheet) {
+        MeasurementEntrySheet(
+            viewModel = measurementViewModel,
+            onDismiss = { showMeasurementSheet = false }
+        )
     }
 
     if (expandedImageUri != null) {

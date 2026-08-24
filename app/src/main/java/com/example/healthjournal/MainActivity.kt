@@ -27,9 +27,15 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val database = JournalDatabase.getDatabase(this)
-        val repository = JournalRepository(database.journalDao())
-        val viewModelFactory = JournalViewModelFactory(application, repository)
-        val exportViewModel = ExportViewModel(application, repository)
+        val journalRepository = JournalRepository(database.journalDao())
+        val measurementRepository = com.example.healthjournal.data.BodyMeasurementRepository(
+            database.bodyMeasurementDao()
+        )
+        val viewModelFactory = JournalViewModelFactory(application, journalRepository)
+        val measurementViewModelFactory = com.example.healthjournal.viewmodel.BodyMeasurementViewModelFactory(
+            measurementRepository
+        )
+        val exportViewModel = ExportViewModel(application, journalRepository)
 
         // Trigger sync on start
         SyncManager.enqueuePeriodicSync(this)
@@ -43,10 +49,20 @@ class MainActivity : ComponentActivity() {
                     composable("history") {
                         HistoryScreen(
                             viewModel = viewModel,
+                            measurementViewModelFactory = measurementViewModelFactory,
                             onAddEntryClick = { navController.navigate("add_entry") },
                             onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") },
                             onArchiveClick = { navController.navigate("archive") },
-                            onExportClick = { navController.navigate("export") }
+                            onExportClick = { navController.navigate("export") },
+                            onMeasurementsClick = { navController.navigate("measurements") }
+                        )
+                    }
+                    composable("measurements") {
+                        val measurementViewModel: com.example.healthjournal.viewmodel.BodyMeasurementViewModel =
+                            viewModel(factory = measurementViewModelFactory)
+                        com.example.healthjournal.ui.screens.MeasurementsScreen(
+                            viewModel = measurementViewModel,
+                            onBack = { navController.popBackStack() }
                         )
                     }
                     composable("export") {

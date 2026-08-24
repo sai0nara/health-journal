@@ -1,5 +1,6 @@
 package com.example.healthjournal.sync
 
+import com.example.healthjournal.data.local.BodyMeasurementEntry
 import com.example.healthjournal.data.local.JournalEntry
 
 /**
@@ -34,6 +35,31 @@ object SyncMerge {
                 // preserve local tags instead of wiping them.
                 val tags = localTagsForEntry(local.entry_id)
                 result[local.entry_id] = cloud.withTags(tags)
+            }
+        }
+
+        return result.values.toList()
+    }
+
+    /**
+     * Pure merge for body measurements: Last-Write-Wins on lastModified,
+     * cloud wins ties (same convention as journal merge). Tombstones are
+     * filtered by SyncWorker before merging, mirroring journal flow.
+     */
+    fun mergeMeasurements(
+        cloudMeasurements: List<BodyMeasurementEntry>,
+        localMeasurements: List<BodyMeasurementEntry>
+    ): List<BodyMeasurementEntry> {
+        val result = mutableMapOf<String, BodyMeasurementEntry>()
+
+        cloudMeasurements.forEach { cloud ->
+            result[cloud.entry_id] = cloud
+        }
+
+        localMeasurements.forEach { local ->
+            val cloud = result[local.entry_id]
+            if (cloud == null || local.lastModified > cloud.lastModified) {
+                result[local.entry_id] = local
             }
         }
 
