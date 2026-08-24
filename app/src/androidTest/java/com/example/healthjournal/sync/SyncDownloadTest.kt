@@ -382,4 +382,60 @@ class SyncDownloadTest {
         assertNotNull(measurementsUpload)
         assertTrue(measurementsUpload!!.contains(survivorId))
     }
+
+    @Test
+    fun testSyncWorker_NewerCloudEditBeatsRemoteTombstone() = runBlocking {
+        val measurementDao = database.bodyMeasurementDao()
+        val survivorId = "cloud_edit_after_remote_delete"
+        val editTime = System.currentTimeMillis()
+        // Replays device A's cycle after device B won LWW and re-uploaded its
+        // newer edit: the CLOUD copy now carries an edit newer than the stale
+        // deletion tombstone. Filtering by tombstone presence alone would strip
+        // the row again, causing endless delete/re-upload flapping.
+        val cloudMeasurements = listOf(
+            com.example.healthjournal.data.local.BodyMeasurementEntry(
+                entry_id = survivorId,
+                timestamp = editTime - 10_000L,
+                lastModified = editTime,
+                waist_cm = 91.0
+            )
+        )
+        val cloudJson = MeasurementSyncPayload.toJson(cloudMeasurements)
+        val staleLedgerJson = Gson().toJson(
+            listOf(
+                com.example.healthjournal.data.local.DeletedEntry(
+                    survivorId,
+                    editTime - 60_000L
+                )
+            )
+        )
+        val uploadedFiles = mutableMapOf<String, String>()
+
+        SyncWorker.driveHelperProvider = { _, _ ->
+            val mock = mockk<DriveServiceHelper>()
+            coEvery { mock.downloadJournalData() } returns null
+            coEvery { mock.uploadJournalData(any()) } returns "journal_file_id"
+            coEvery { mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_DATA_FILE) } returns cloudJson
+            coEvery {
+                mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_TOMBSTONES_FILE)
+            } returns staleLedgerJson
+            coEvery { mock.uploadDataFile(any(), any()) } answers {
+                uploadedFiles[firstArg()] = secondArg()
+                "uploaded"
+            }
+            mock
+        }
+
+        val worker = TestListenableWorkerBuilder<SyncWorker>(context).build()
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.success(), result)
+
+        // The newer edit must survive this cycle and converge back to the cloud.
+        val localMeasurements = measurementDao.getAllEntriesList()
+        assertTrue(localMeasurements.any { it.entry_id == survivorId })
+        val measurementsUpload = uploadedFiles[DriveServiceHelper.MEASUREMENTS_DATA_FILE]
+        assertNotNull(measurementsUpload)
+        assertTrue(measurementsUpload!!.contains(survivorId))
+    }
 }
