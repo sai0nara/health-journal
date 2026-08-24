@@ -169,6 +169,24 @@ class MeasurementEntrySheetTest {
     }
 
     @Test
+    fun futureDate_showsAlertAndDisablesSave() {
+        measurementViewModel.onTimestampChanged(System.currentTimeMillis() + 60_000)
+        measurementViewModel.onFieldChanged(
+            com.example.healthjournal.domain.MeasurementField.WAIST,
+            "85"
+        )
+        openSheet()
+
+        step("Verify future-date alert renders and Save is disabled") {
+            composeTestRule.waitForIdle()
+            composeTestRule
+                .onNodeWithText(com.example.healthjournal.viewmodel.BodyMeasurementViewModel.ERROR_FUTURE_DATE)
+                .assertExists()
+            composeTestRule.onNodeWithTag("bm_save").assertIsNotEnabled()
+        }
+    }
+
+    @Test
     fun datePickerConfirm_preservesSelectedLocalDate() {
         openSheet()
 

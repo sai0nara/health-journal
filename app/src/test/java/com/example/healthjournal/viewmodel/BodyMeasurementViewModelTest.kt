@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -200,6 +201,28 @@ class BodyMeasurementViewModelTest {
 
         coVerify(exactly = 0) { repository.insert(any()) }
         assertFalse(currentState().justSaved)
+    }
+
+    @Test
+    fun futureTimestamp_setsAlertAndBlocksSave() {
+        set(MeasurementField.WAIST, "85")
+        viewModel.onTimestampChanged(System.currentTimeMillis() + 60_000)
+
+        val state = currentState()
+        assertEquals(
+            BodyMeasurementViewModel.ERROR_FUTURE_DATE,
+            state.timestampError
+        )
+        assertFalse(state.canSave)
+    }
+
+    @Test
+    fun currentTimestamp_clearsFutureAlert() {
+        viewModel.onTimestampChanged(System.currentTimeMillis() + 60_000)
+        viewModel.onTimestampChanged(System.currentTimeMillis())
+
+        val state = currentState()
+        assertNull(state.timestampError)
     }
 
     @Test

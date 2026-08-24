@@ -23,6 +23,8 @@ data class BodyMeasurementUiState(
     val rawValues: Map<MeasurementField, String> =
         MeasurementField.entries.associateWith { "" },
     val fieldErrors: Map<MeasurementField, String> = emptyMap(),
+    /** Inline alert shown under the date row when the form is future-dated. */
+    val timestampError: String? = null,
     val canSave: Boolean = false,
     val isSaving: Boolean = false,
     /** One-shot flag consumed by the UI (haptic + dismiss), reset via [BodyMeasurementViewModel.onSavedHandled]. */
@@ -36,6 +38,11 @@ class BodyMeasurementViewModel(
 
     private val _uiState = MutableStateFlow(BodyMeasurementUiState())
     val uiState: StateFlow<BodyMeasurementUiState> = _uiState.asStateFlow()
+
+    companion object {
+        /** Inline alert text for future-dated forms; Save stays disabled while set. */
+        const val ERROR_FUTURE_DATE = "Future dates cannot be saved"
+    }
 
     /** Chronological feed (newest first) backing the Measurements screen. */
     private val _entries = MutableStateFlow(emptyList<BodyMeasurementEntry>())
@@ -75,15 +82,28 @@ class BodyMeasurementViewModel(
             current.copy(
                 rawValues = rawValues,
                 fieldErrors = fieldErrors,
+                timestampError = futureDateError(current.timestamp),
                 canSave = fieldErrors.isEmpty() &&
-                    ValidateMeasurements.hasAtLeastOneMeasurement(rawValues)
+                    ValidateMeasurements.hasAtLeastOneMeasurement(rawValues) &&
+                    futureDateError(current.timestamp) == null
             )
         }
     }
 
     fun onTimestampChanged(timestampMillis: Long) {
-        _uiState.update { it.copy(timestamp = timestampMillis) }
+        _uiState.update {
+            it.copy(
+                timestamp = timestampMillis,
+                timestampError = futureDateError(timestampMillis),
+                canSave = it.fieldErrors.isEmpty() &&
+                    ValidateMeasurements.hasAtLeastOneMeasurement(it.rawValues) &&
+                    futureDateError(timestampMillis) == null
+            )
+        }
     }
+
+    private fun futureDateError(timestampMillis: Long): String? =
+        if (timestampMillis > System.currentTimeMillis()) ERROR_FUTURE_DATE else null
 
     fun onSaveClicked() {
         val state = _uiState.value
