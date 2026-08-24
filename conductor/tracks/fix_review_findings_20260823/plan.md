@@ -36,7 +36,7 @@
     - [x] Run tests, confirm Green (full unit suite BUILD SUCCESSFUL)
 - [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) [4329db0: report in git note, user confirmed YES]
 
-## Phase 3: Tombstone Purge Ordering (Review Finding 3)
+## Phase 3: Tombstone Purge Ordering (Review Finding 3) [checkpoint: 2ddb4a2]
 
 - [x] Task: Write failing SyncWorker purge-ordering test [01d090a]
     - [x] New instrumented test verifying `clearDeletedEntries()` is invoked strictly after both journal upload and body-measurements upload complete (observes tombstone state inside mocked Drive download/upload answers; expired + fresh tombstones seeded)
@@ -45,7 +45,7 @@
     - [x] Move `repository.clearDeletedEntries()` from step 7 (~line 200) to after successful measurements upload, immediately before `Result.success()`
     - [x] Preserve tombstone grace-period comment; wording updated to cover both pipelines
     - [x] Run tests, confirm Green (SyncDownloadTest 6/6)
-- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) — first round surfaced cross-device deletion gap; resolved by expansion below, re-verification pending with Phase 4
+- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) [2ddb4a2: report in git note, user confirmed YES; first round surfaced deletion-propagation gap → Phase 3 Expansion]
 
 ### Phase 3 Expansion: Cross-Device Deletion Propagation (user-reported, 2026-08-24)
 Manual verification revealed deletions never propagate between devices:
