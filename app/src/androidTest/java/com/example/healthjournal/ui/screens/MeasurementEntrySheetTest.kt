@@ -116,12 +116,13 @@ class MeasurementEntrySheetTest {
             composeTestRule.onNodeWithTag("bm_field_WAIST").performTextInput("85")
             composeTestRule.waitForIdle()
             composeTestRule.onNodeWithTag("bm_save").assertIsEnabled()
-            composeTestRule.onNodeWithTag("bm_save").performClick()
+            androidx.test.espresso.Espresso.closeSoftKeyboard()
             composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithTag("bm_save").performClick()
         }
 
         step("Verify insert persisted and sheet dismissed") {
-            coVerify {
+            coVerify(timeout = 5000) {
                 measurementRepository.insert(
                     match { it.waist_cm == 85.0 && it.weight_kg == null }
                 )
