@@ -38,13 +38,13 @@
 
 ## Phase 3: Tombstone Purge Ordering (Review Finding 3)
 
-- [ ] Task: Write failing SyncWorker purge-ordering test
-    - [ ] New unit test verifying `clearDeletedEntries()` is invoked strictly after both journal upload and body-measurements upload complete
-    - [ ] Run tests, confirm Red
-- [ ] Task: Relocate purge call in SyncWorker.doWork()
-    - [ ] Move `repository.clearDeletedEntries()` from step 7 (~line 200) to after successful measurements upload, immediately before `Result.success()`
-    - [ ] Preserve tombstone grace-period comment; update wording if needed
-    - [ ] Run tests, confirm Green
+- [x] Task: Write failing SyncWorker purge-ordering test [01d090a]
+    - [x] New instrumented test verifying `clearDeletedEntries()` is invoked strictly after both journal upload and body-measurements upload complete (observes tombstone state inside mocked Drive download/upload answers; expired + fresh tombstones seeded)
+    - [x] Run tests, confirm Red on device
+- [x] Task: Relocate purge call in SyncWorker.doWork() [01d090a]
+    - [x] Move `repository.clearDeletedEntries()` from step 7 (~line 200) to after successful measurements upload, immediately before `Result.success()`
+    - [x] Preserve tombstone grace-period comment; wording updated to cover both pipelines
+    - [x] Run tests, confirm Green (SyncDownloadTest 6/6)
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
 
 ## Phase 4: Full Regression & Coverage Verification
