@@ -231,4 +231,53 @@ class SyncDownloadTest {
         // copy in a later sync cycle cannot resurrect the deleted entry.
         assertTrue(repository.getDeletedEntryIds().contains(deletedId))
     }
+
+    @Test
+    fun testSyncWorker_PurgesExpiredTombstonesOnlyAfterBothPipelines() = runBlocking {
+        val repository = com.example.healthjournal.data.JournalRepository(database.journalDao())
+        val graceMs = com.example.healthjournal.data.JournalRepository.TOMBSTONE_GRACE_PERIOD_MS
+        val now = System.currentTimeMillis()
+        val expiredId = "expired_tombstone_id"
+        val freshId = "fresh_tombstone_id"
+        database.journalDao().insertDeletedEntry(
+            com.example.healthjournal.data.local.DeletedEntry(expiredId, now - graceMs - 1)
+        )
+        database.journalDao().insertDeletedEntry(com.example.healthjournal.data.local.DeletedEntry(freshId))
+
+        var tombstoneAtMeasurementsDownload: Boolean? = null
+        var tombstoneAtMeasurementsUpload: Boolean? = null
+
+        SyncWorker.driveHelperProvider = { _, _ ->
+            val mock = mockk<DriveServiceHelper>()
+            coEvery { mock.downloadJournalData() } returns null
+            coEvery { mock.uploadJournalData(any()) } returns "journal_file_id"
+            coEvery { mock.downloadDataFile(any()) } coAnswers {
+                tombstoneAtMeasurementsDownload =
+                    repository.getDeletedEntryIds().contains(expiredId)
+                null
+            }
+            coEvery { mock.uploadDataFile(any(), any()) } coAnswers {
+                tombstoneAtMeasurementsUpload =
+                    repository.getDeletedEntryIds().contains(expiredId)
+                "measurements_file_id"
+            }
+            mock
+        }
+
+        val worker = TestListenableWorkerBuilder<SyncWorker>(context).build()
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.success(), result)
+
+        // Purge must not have run before or during the measurements pipeline:
+        // the expired tombstone must still be present at both checkpoints.
+        assertTrue(tombstoneAtMeasurementsDownload!!)
+        assertTrue(tombstoneAtMeasurementsUpload!!)
+
+        // After both pipelines complete, the expired tombstone is purged and
+        // the fresh one is retained for its full grace period.
+        val remaining = repository.getDeletedEntryIds()
+        assertFalse(remaining.contains(expiredId))
+        assertTrue(remaining.contains(freshId))
+    }
 }

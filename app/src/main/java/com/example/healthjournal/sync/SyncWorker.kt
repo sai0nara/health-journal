@@ -186,7 +186,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 }
             }
 
-// 6. Upload merged JSON back to cloud
+            // 6. Upload merged JSON back to cloud
             val finalEntriesForCloud = mergedEntries.map { it.copy(isSynced = true).also { e -> e.tags = it.tags } }
             val uploadId = driveHelper.uploadJournalData(Gson().toJson(finalEntriesForCloud))
             if (uploadId == null) {
@@ -194,10 +194,6 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 // Transient network/API failure: keep periodic work alive.
                 return Result.retry()
             }
-
-            // 7. Purge expired tombstones. Young tombstones are kept so a stale
-            // cloud copy in a later sync cycle cannot resurrect a deleted entry.
-            repository.clearDeletedEntries()
 
             // ============ Body measurements sync ============
             // Same pipeline, sibling cloud file: download -> filter local
@@ -223,6 +219,12 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 Log.e("SyncWorker", "Body measurements upload failed.")
                 return Result.retry()
             }
+
+            // 7. Purge expired tombstones — only after BOTH sync pipelines are
+            // done, since both share the deleted_entries table. Young tombstones
+            // are kept so a stale cloud copy in a later sync cycle cannot
+            // resurrect a deleted entry.
+            repository.clearDeletedEntries()
 
             Log.d("SyncWorker", "Bidirectional sync completed successfully.")
             return Result.success()
