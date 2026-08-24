@@ -63,9 +63,14 @@ is shared so journals benefit once a future track wires them in.
     - [x] SyncWorker: import remote ledger before filtering (newest deletedAt wins), LWW-guarded explicit removal of locally tombstoned rows (`importAll` is upsert-only), publish merged ledger after measurements upload; failure → `Result.retry()`
     - [x] Green: unit suite BUILD SUCCESSFUL; SyncDownloadTest 8/8 on SM-F936B
 
-## Phase 4: Full Regression & Coverage Verification
+## Phase 4: Full Regression & Coverage Verification [checkpoint: 376a786]
 
-- [ ] Task: Run complete unit test suite (`CI=true ./gradlew testDebugUnitTest`) — zero failures
-- [ ] Task: Run complete instrumented suite on emulator (`./gradlew connectedDebugAndroidTest`) — zero failures
-- [ ] Task: Verify coverage >80% for changed code paths
-- [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
+- [x] Task: Run complete unit test suite (`CI=true ./gradlew testDebugUnitTest`) — zero failures [376a786]
+- [x] Task: Run complete instrumented suite on emulator (`./gradlew connectedDebugAndroidTest`) — zero failures: 78/78 on SM-F936B (one en-masse run failure traced to device dozing mid-suite; environmental, recovered) [376a786]
+- [x] Task: Verify coverage >80% for changed code paths [no tooling configured — accepted project-wide deviation; new logic covered by codec unit tests, ViewModel unit tests, and 8 sync instrumented tests]
+- [x] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md) [376a786: report in git note, user confirmed YES]
+
+### Phase 4 Verification Report
+- Full unit suite: BUILD SUCCESSFUL
+- Full instrumented suite: 78/78 green on SM-F936B - 16
+- Lint: BUILD SUCCESSFUL; hardcoded-color audit on changed UI files: none
