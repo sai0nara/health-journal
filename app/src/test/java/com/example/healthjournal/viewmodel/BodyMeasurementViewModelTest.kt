@@ -189,4 +189,27 @@ class BodyMeasurementViewModelTest {
 
         assertEquals(custom, currentState().timestamp)
     }
+
+    @Test
+    fun onSaveClicked_blockedForFutureTimestamp() = runTest {
+        set(MeasurementField.WAIST, "85")
+        viewModel.onTimestampChanged(System.currentTimeMillis() + 60_000)
+
+        viewModel.onSaveClicked()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.insert(any()) }
+        assertFalse(currentState().justSaved)
+    }
+
+    @Test
+    fun onSaveClicked_allowsCurrentTimestamp() = runTest {
+        set(MeasurementField.WAIST, "85")
+        viewModel.onTimestampChanged(System.currentTimeMillis())
+
+        viewModel.onSaveClicked()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.insert(any()) }
+    }
 }

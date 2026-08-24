@@ -88,6 +88,9 @@ class BodyMeasurementViewModel(
     fun onSaveClicked() {
         val state = _uiState.value
         if (!state.canSave || state.isSaving) return
+        // Parity with JournalViewModel.addEntry: future-dated records are
+        // rejected at save time instead of polluting the history feed.
+        if (state.timestamp > System.currentTimeMillis()) return
 
         _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch(ioDispatcher) {
