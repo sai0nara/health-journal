@@ -16,9 +16,10 @@
 - [x] Task: Add instrumented Compose UI test for DatePicker confirm flow (05ffa53)
     - [x] Extend `MeasurementEntrySheetTest.kt`: open picker, select date, tap OK, assert form timestamp renders selected local date (no off-by-one)
     - [x] Execute on emulator until green
-- [x] Task: Restrict future-dated measurement saves (manual-verification feedback) [9e9e9c6, 5c9fea4]
+- [x] Task: Restrict future-dated measurement saves (manual-verification feedback) [9e9e9c6, 5c9fea4, bd101f2]
     - [x] Stabilize flaky `partialEntry_savesAndDismissesSheet` instrumented test: IME occluded Save tap; close keyboard pre-click + polling `coVerify` [9e9e9c6]
     - [x] TDD Red→Green: reject `timestamp > now` at save in `BodyMeasurementViewModel.onSaveClicked()` (parity with JournalViewModel.addEntry); current time allowed [5c9fea4]
+    - [x] TDD Red→Green: inline alert "Future dates cannot be saved" under date row + Save disabled while future-dated (`timestampError` in UiState); unit + instrumented tests (75/75 green) [bd101f2]
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Multi-Deletion Undo Map (Review Finding 2)
