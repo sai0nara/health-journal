@@ -2,7 +2,7 @@
 
 **Spec:** [./spec.md](./spec.md)
 
-## Phase 1: DatePicker UTC→Local Fix (Review Finding 1)
+## Phase 1: DatePicker UTC→Local Fix (Review Finding 1) [checkpoint: 94253f5]
 
 - [x] Task: Write failing unit tests for UTC→local conversion helper (ed7c4a2)
     - [x] Add `UtcToLocalDateTest` under `app/src/test/java/com/example/healthjournal/domain/`
@@ -20,7 +20,7 @@
     - [x] Stabilize flaky `partialEntry_savesAndDismissesSheet` instrumented test: IME occluded Save tap; close keyboard pre-click + polling `coVerify` [9e9e9c6]
     - [x] TDD Red→Green: reject `timestamp > now` at save in `BodyMeasurementViewModel.onSaveClicked()` (parity with JournalViewModel.addEntry); current time allowed [5c9fea4]
     - [x] TDD Red→Green: inline alert "Future dates cannot be saved" under date row + Save disabled while future-dated (`timestampError` in UiState); unit + instrumented tests (75/75 green) [bd101f2]
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) [94253f5: report in git note, user confirmed YES]
 
 ## Phase 2: Multi-Deletion Undo Map (Review Finding 2)
 
