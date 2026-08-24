@@ -22,7 +22,7 @@
     - [x] TDD Red→Green: inline alert "Future dates cannot be saved" under date row + Save disabled while future-dated (`timestampError` in UiState); unit + instrumented tests (75/75 green) [bd101f2]
 - [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) [94253f5: report in git note, user confirmed YES]
 
-## Phase 2: Multi-Deletion Undo Map (Review Finding 2)
+## Phase 2: Multi-Deletion Undo Map (Review Finding 2) [checkpoint: 4329db0]
 
 - [x] Task: Write failing ViewModel tests for undo snapshot map [23b5003]
     - [x] Extend `BodyMeasurementViewModelTest.kt`: two rapid `deleteEntry()` calls keep both snapshots intact
@@ -34,7 +34,7 @@
     - [x] `deleteEntry()` stores per-ID snapshot; `undoDelete(entryId: String? = null)` removes + re-inserts correct snapshot (LIFO default)
     - [x] Confirm existing single-delete snackbar call sites compile unchanged (default param)
     - [x] Run tests, confirm Green (full unit suite BUILD SUCCESSFUL)
-- [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) [4329db0: report in git note, user confirmed YES]
 
 ## Phase 3: Tombstone Purge Ordering (Review Finding 3)
 
