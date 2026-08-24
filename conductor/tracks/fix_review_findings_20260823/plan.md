@@ -24,16 +24,16 @@
 
 ## Phase 2: Multi-Deletion Undo Map (Review Finding 2)
 
-- [ ] Task: Write failing ViewModel tests for undo snapshot map
-    - [ ] Extend `BodyMeasurementViewModelTest.kt`: two rapid `deleteEntry()` calls keep both snapshots intact
-    - [ ] Default `undoDelete()` restores most recently deleted entry (LIFO) exactly once
-    - [ ] `undoDelete(entryId)` restores that specific entry; unknown ID is a safe no-op
-    - [ ] Run tests, confirm Red
-- [ ] Task: Implement map-based undo snapshots
-    - [ ] Replace `pendingUndoSnapshot` with `pendingUndoSnapshots: MutableMap<String, BodyMeasurementEntry>`
-    - [ ] `deleteEntry()` stores per-ID snapshot; `undoDelete(entryId: String? = null)` removes + re-inserts correct snapshot
-    - [ ] Confirm existing single-delete snackbar call sites compile unchanged (default param)
-    - [ ] Run tests, confirm Green
+- [x] Task: Write failing ViewModel tests for undo snapshot map [23b5003]
+    - [x] Extend `BodyMeasurementViewModelTest.kt`: two rapid `deleteEntry()` calls keep both snapshots intact
+    - [x] Default `undoDelete()` restores most recently deleted entry (LIFO) exactly once
+    - [x] `undoDelete(entryId)` restores that specific entry; unknown ID is a safe no-op
+    - [x] Run tests, confirm Red (target API absent → compile Red; strict-mock deleteEntry stub added during Green)
+- [x] Task: Implement map-based undo snapshots [23b5003]
+    - [x] Replace `pendingUndoSnapshot` with `pendingUndoSnapshots: MutableMap<String, BodyMeasurementEntry>`
+    - [x] `deleteEntry()` stores per-ID snapshot; `undoDelete(entryId: String? = null)` removes + re-inserts correct snapshot (LIFO default)
+    - [x] Confirm existing single-delete snackbar call sites compile unchanged (default param)
+    - [x] Run tests, confirm Green (full unit suite BUILD SUCCESSFUL)
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
 ## Phase 3: Tombstone Purge Ordering (Review Finding 3)
