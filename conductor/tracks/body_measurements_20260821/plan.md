@@ -15,8 +15,8 @@
     - [ ] Implement `MIGRATION_9_10` creating `body_measurements` table; bump DB version; confirm GREEN
 - [x] Task: Instrumented DAO roundtrip test (insert/observe/delete-restore) [ed26c0a]
 - [x] Task: Verify >80% coverage on new code (note tooling deviation if applicable) [no tooling configured — accepted project-wide deviation; see git note]
-- [ ] Task: Commit Phase 1 changes and attach git note (Workflow steps 8–11)
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Commit Phase 1 changes and attach git note (Workflow steps 8–11) [f91acfc]
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) [f91acfc: report in git note, user confirmed YES]
 
 ## Phase 2: Capture Flow — ViewModel, Speed-Dial FAB & Bottom Sheet [checkpoint: 84f4a43]
 - [x] Task: Write failing unit tests for `BodyMeasurementViewModel` (TDD Red) [eb5267f]
@@ -34,7 +34,7 @@
 - [x] Task: Commit Phase 2 changes and attach git note (Workflow steps 8–11) [9f5f24f]
 - [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) [84f4a43]
 
-## Phase 3: Measurements Screen — List, Trend Chart & Undo Delete [checkpoint: 5826c4b] [checkpoint: ${SHA[:7]}]
+## Phase 3: Measurements Screen — List, Trend Chart & Undo Delete [checkpoint: 5826c4b]
 - [x] Task: Write failing unit tests for screen logic (TDD Red) [ada8acb]
     - [x] Chronological ordering of observed entries
     - [x] Summary formatting "78.5 kg · Waist 85 cm" (non-null fields only)
@@ -48,7 +48,7 @@
 - [x] Task: Implement `MeasurementsScreen`: list cards, empty state, `WeightTrendChart` line chart via Compose Canvas (no new dependency), delete-with-Undo (TDD Green) [1eeca5c]
 - [x] Task: Execute UI tests on device in BOTH light and dark modes (TDD Blue) [1eeca5c]
 - [x] Task: Commit Phase 3 changes and attach git note (Workflow steps 8–11) [1eeca5c]
-- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) [${SHA[:7]}]
+- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) [5826c4b]
 
 ## Phase 4: Drive Sync Integration & Final Validation [checkpoint: d68b6bc]
 - [x] Task: Write failing unit tests for sync inclusion (TDD Red) [bd79e24]
@@ -72,3 +72,8 @@ breaking change for existing clouds. Tombstones reuse the shared
 - Full instrumented suite: 73/73 on SM-F936B (screen 7, capture sheet 6,
   DAO/migration 9, sync download incl. new measurement stubs, all legacy)
 - Lint: BUILD SUCCESSFUL; hardcoded-color audit on new files: none
+
+### Final Track Verification (2026-08-24)
+- Re-run with JAVA_HOME pinned to OpenJDK 21 (system default JDK 25 breaks
+  Gradle 8.7/AGP): unit suite BUILD SUCCESSFUL
+- Instrumented suite: 74/74 on SM-F936B - 16 (incl. DatePicker UTC fix test)
