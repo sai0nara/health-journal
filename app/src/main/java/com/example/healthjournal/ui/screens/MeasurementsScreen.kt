@@ -141,34 +141,38 @@ fun MeasurementsScreen(
                 val pageSeries = remember(entries, field) { entries.toParamTrend(field) }
                 val goalTarget = analyticsState.goalTargets[field.name]
 
-                ChartHeader(field, goalTarget) { sheetField = field }
+                // Column wrapper: header and chart must stack, not overlap
+                // in the pager page's Box scope.
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    ChartHeader(field, goalTarget) { sheetField = field }
 
-                if (pageSeries.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(160.dp)
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No ${field.label} data yet",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.testTag("bm_param_empty_${field.name}")
+                    if (pageSeries.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No ${field.label} data yet",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.testTag("bm_param_empty_${field.name}")
+                            )
+                        }
+                    } else {
+                        ParamTrendChart(
+                            series = pageSeries,
+                            goalTarget = goalTarget,
+                            unitLabel = GoalValidator.unitLabel(field),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .testTag("bm_chart_${field.name}")
                         )
                     }
-                } else {
-                    ParamTrendChart(
-                        series = pageSeries,
-                        goalTarget = goalTarget,
-                        unitLabel = GoalValidator.unitLabel(field),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(160.dp)
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .testTag("bm_chart_${field.name}")
-                    )
                 }
             }
 

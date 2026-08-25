@@ -27,10 +27,8 @@ object GoalValidator {
         return when {
             value == null -> ValidateMeasurements.ERROR_INVALID_FORMAT
             value <= 0.0 -> ValidateMeasurements.ERROR_NEGATIVE
-            field == MeasurementField.WEIGHT && value > 500.0 ->
-                ValidateMeasurements.ERROR_WEIGHT_MAX
-            field != MeasurementField.WEIGHT && value > 300.0 ->
-                ValidateMeasurements.ERROR_GIRTH_MAX
+            value > ValidateMeasurements.maxFor(field) ->
+                ValidateMeasurements.maxExceededMessage(field)
             else -> null
         }
     }
