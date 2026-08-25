@@ -51,9 +51,10 @@
     - [x] Local goal absent from valid cloud snapshot is pruned (cleared goals propagate) [GoalSyncMergeTest: 7 tests]
     - [x] Goals snapshot uploaded as sibling file `body_measurements_goals.json` (`MEASUREMENTS_GOALS_FILE`); upload failure → `Result.retry()`
     - [x] Confirm Red on device [compile Red → Green]
-- [x] Task: Integrate goals pipeline into SyncWorker (Green) [7def8ba]
+- [x] Task: Integrate goals pipeline into SyncWorker (Green) [7def8ba, fix a0a7679]
     - [x] Import+merge+prune after measurements pipeline, before ledger publish/final success; failures → retry
     - [x] Existing payload contracts untouched (NFR2); all sync tests Green [full unit suite BUILD SUCCESSFUL]
+    - [x] First-sync bug fix: null cloudGoalsJson preserves local goals instead of pruning them [user feedback: goal disappeared on Device A]
 - [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
 
 ## Phase 5: Full Regression & Coverage Verification
