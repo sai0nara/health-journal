@@ -30,7 +30,7 @@
     - [x] Instrumented tests Green on device [11/11 MeasurementScreenTest]
 - [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) [user: YES]
 
-## Phase 3: Goal Setting Flow
+## Phase 3: Goal Setting Flow [checkpoint: 47482c5]
 
 - [x] Task: Write failing instrumented tests for goal dialog (Red) [3ff496c]
     - [x] "Set Goal" affordance opens bottom sheet pre-filled with current goal; Save persists via repository (mockk verify); Clear deletes; out-of-bounds input shows inline error and blocks save (FR5/FR6) [coVerify for suspend DAO; Red: 3 new tests fail, legacy 11 pass]
@@ -39,7 +39,7 @@
     - [x] Validation wiring reuses `GoalValidator`; inline error parity with measurement fields
     - [x] All instrumented tests Green; full unit suite green [14/14 MeasurementScreenTest; unit BUILD SUCCESSFUL]
     - [x] Revision from user feedback: per-field realistic caps (calf/bicep 75cm, thigh 120cm, torso 200cm) shared by capture+goal validation; pager page wrapped in Column — header/chart overlap was hiding the graph [0995a1b]
-- [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) [round 1 NO → caps/layout revision; round 2 user: YES]
 
 ## Phase 4: Goal Sync via Google Drive
 
