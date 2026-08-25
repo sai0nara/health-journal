@@ -61,6 +61,9 @@ class BodyMeasurementViewModel(
         // Snapshot from the already-observed list: no extra DB read and no
         // race if the row vanishes between UI tap and deletion.
         _entries.value.firstOrNull { it.entry_id == entryId }?.let { snapshot ->
+            // Remove-then-put keeps re-deleted entries at the end so the
+            // default LIFO undo always targets the most recent deletion.
+            pendingUndoSnapshots.remove(entryId)
             pendingUndoSnapshots[entryId] = snapshot
         }
         viewModelScope.launch(ioDispatcher) {
@@ -89,9 +92,7 @@ class BodyMeasurementViewModel(
                 rawValues = rawValues,
                 fieldErrors = fieldErrors,
                 timestampError = futureDateError(current.timestamp),
-                canSave = fieldErrors.isEmpty() &&
-                    ValidateMeasurements.hasAtLeastOneMeasurement(rawValues) &&
-                    futureDateError(current.timestamp) == null
+                canSave = deriveCanSave(fieldErrors, rawValues, current.timestamp)
             )
         }
     }
@@ -101,15 +102,22 @@ class BodyMeasurementViewModel(
             it.copy(
                 timestamp = timestampMillis,
                 timestampError = futureDateError(timestampMillis),
-                canSave = it.fieldErrors.isEmpty() &&
-                    ValidateMeasurements.hasAtLeastOneMeasurement(it.rawValues) &&
-                    futureDateError(timestampMillis) == null
+                canSave = deriveCanSave(it.fieldErrors, it.rawValues, timestampMillis)
             )
         }
     }
 
     private fun futureDateError(timestampMillis: Long): String? =
         if (timestampMillis > System.currentTimeMillis()) ERROR_FUTURE_DATE else null
+
+    private fun deriveCanSave(
+        fieldErrors: Map<MeasurementField, String>,
+        rawValues: Map<MeasurementField, String>,
+        timestampMillis: Long
+    ): Boolean =
+        fieldErrors.isEmpty() &&
+            ValidateMeasurements.hasAtLeastOneMeasurement(rawValues) &&
+            futureDateError(timestampMillis) == null
 
     fun onSaveClicked() {
         val state = _uiState.value

@@ -204,24 +204,32 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             // Sync the cross-device deletion ledger FIRST so deletions made on
             // other devices are visible to this run's filtering. The ledger is
             // shared by both entity types (one deleted_entries table).
-            val remoteLedger = MeasurementTombstonePayload.fromJson(
+            val ledgerById = measurementDao.getAllDeletedEntries().associateBy { it.entry_id }
+                .toMutableMap()
+            MeasurementTombstonePayload.fromJson(
                 driveHelper.downloadDataFile(DriveServiceHelper.MEASUREMENTS_TOMBSTONES_FILE)
-            )
-            if (remoteLedger.isNotEmpty()) {
-                val localLedgerById = measurementDao.getAllDeletedEntries().associateBy { it.entry_id }
-                remoteLedger.forEach { remote ->
-                    val local = localLedgerById[remote.entry_id]
-                    if (local == null || remote.deletedAt > local.deletedAt) {
-                        measurementDao.insertDeletedEntry(remote)
-                    }
+            ).forEach { remote ->
+                // Newest deletion wins when both sides tombstoned the same row.
+                val local = ledgerById[remote.entry_id]
+                if (local == null || remote.deletedAt > local.deletedAt) {
+                    measurementDao.insertDeletedEntry(remote)
+                    ledgerById[remote.entry_id] = remote
                 }
             }
-            val ledgerById = measurementDao.getAllDeletedEntries().associateBy { it.entry_id }
 
             val cloudMeasurementsJson = driveHelper.downloadDataFile(DriveServiceHelper.MEASUREMENTS_DATA_FILE)
             var cloudMeasurements = MeasurementSyncPayload.fromJson(cloudMeasurementsJson)
             if (cloudMeasurements.isNotEmpty() && ledgerById.isNotEmpty()) {
-                cloudMeasurements = cloudMeasurements.filterNot { it.entry_id in ledgerById }
+                // Same LWW rule as the local-row sweep below: a tombstone only
+                // removes a cloud copy when the deletion is at least as recent
+                // as the copy's last edit. Filtering by tombstone presence alone
+                // would re-delete edits that another device legitimately won
+                // back after its own LWW evaluation, causing endless
+                // delete/re-upload flapping between devices.
+                cloudMeasurements = cloudMeasurements.filterNot { m ->
+                    val tombstone = ledgerById[m.entry_id]
+                    tombstone != null && tombstone.deletedAt >= m.lastModified
+                }
             }
 
             // Drop local rows that were deleted on another device, unless the

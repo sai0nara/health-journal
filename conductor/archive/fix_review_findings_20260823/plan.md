@@ -74,3 +74,12 @@ is shared so journals benefit once a future track wires them in.
 - Full unit suite: BUILD SUCCESSFUL
 - Full instrumented suite: 78/78 green on SM-F936B - 16
 - Lint: BUILD SUCCESSFUL; hardcoded-color audit on changed UI files: none
+
+## Phase: Review Fixes
+
+- [x] Task: Apply review suggestions d8ea91d
+    - [High] SyncWorker tombstone cloud-filter now applies the LWW guard (parity with local-row sweep), fixing cross-device delete/edit flapping; convergence regression test `testSyncWorker_NewerCloudEditBeatsRemoteTombstone` added (Red→Green)
+    - [Low] Single ledger read with in-memory merge replaces back-to-back DAO queries
+    - [Low] Undo map remove-before-put keeps re-deleted entries at LIFO tail
+    - [Low] `deriveCanSave` helper de-duplicates canSave derivation
+    - Verification: unit suite green; instrumented suite 80/80 on SM-F936B - 16
