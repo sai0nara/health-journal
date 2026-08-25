@@ -17,17 +17,17 @@
 
 ## Phase 2: Tabbed Analytics Section & Extended Chart
 
-- [ ] Task: Write failing instrumented tests for the analytics section (Red)
-    - [ ] Extend `MeasurementScreenTest`: seven parameter tabs render; tapping a tab swaps the plotted series; chart exposes per-param test tag; empty-param page shows friendly empty message
-    - [ ] Run on device, confirm Red
-- [ ] Task: Extract and extend the Canvas chart into `ParamTrendChart` component
-    - [ ] Generalize existing weight chart plotting (ascending series, min/max scaling) for any parameter column
-    - [ ] Dashed horizontal goal line + value/unit label when goal present (FR3)
-    - [ ] Translucent delta area fill between polyline and goal line using semantic tokens (FR4)
-- [ ] Task: Replace chart section with `ScrollableTabRow` + `HorizontalPager`
-    - [ ] Two-way sync of tab selection and pager page (FR1)
-    - [ ] `BodyAnalyticsViewModel`: per-param point derivation (ascending re-sort), selected-tab state, goals flow injection (FR9); unit tests Red→Green
-    - [ ] Instrumented tests Green on device
+- [x] Task: Write failing instrumented tests for the analytics section (Red) [66f62bf]
+    - [x] Extend `MeasurementScreenTest`: seven parameter tabs render; tapping a tab swaps the plotted series; chart exposes per-param test tag; empty-param page shows friendly empty message
+    - [x] Run on device, confirm Red [compile Red: Unresolved BodyAnalyticsViewModel; two test-side bugs fixed via semantics dump — pager waitUntil polling, off-screen tab scroll, CALF vs 'Calves' tag]
+- [x] Task: Extract and extend the Canvas chart into `ParamTrendChart` component [66f62bf]
+    - [x] Generalize existing weight chart plotting (ascending series, min/max scaling) for any parameter column [toParamTrend(field); scaling includes goal so line always visible]
+    - [x] Dashed horizontal goal line + value/unit label when goal present (FR3)
+    - [x] Translucent delta area fill between polyline and goal line using semantic tokens (FR4)
+- [x] Task: Replace chart section with `ScrollableTabRow` + `HorizontalPager` [c523fa5]
+    - [x] Two-way sync of tab selection and pager page (FR1)
+    - [x] `BodyAnalyticsViewModel`: per-param point derivation (ascending re-sort), selected-tab state, goals flow injection (FR9); unit tests Red→Green [5 tests; setMain/resetMain for viewModelScope]
+    - [x] Instrumented tests Green on device [11/11 MeasurementScreenTest]
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
 ## Phase 3: Goal Setting Flow
