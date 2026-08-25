@@ -43,17 +43,17 @@
 
 ## Phase 4: Goal Sync via Google Drive
 
-- [ ] Task: Write failing unit tests for `GoalSyncPayload` codec (Red)
-    - [ ] null/garbage → empty list; JSON array roundtrip mirrors `MeasurementSyncPayload` style
-    - [ ] Confirm Red, then implement to Green
-- [ ] Task: Write failing SyncWorker goal-sync instrumented tests (Red)
-    - [ ] Remote goal with newer lastModified upserts local row
-    - [ ] Local goal absent from valid cloud snapshot is pruned (cleared goals propagate)
-    - [ ] Goals snapshot uploaded as sibling file `body_measurements_goals.json` (`MEASUREMENTS_GOALS_FILE`); upload failure → `Result.retry()`
-    - [ ] Confirm Red on device
-- [ ] Task: Integrate goals pipeline into SyncWorker (Green)
-    - [ ] Import+merge+prune after measurements pipeline, before ledger publish/final success; failures → retry
-    - [ ] Existing payload contracts untouched (NFR2); all sync tests Green
+- [x] Task: Write failing unit tests for `GoalSyncPayload` codec (Red) [d264dfe]
+    - [x] null/garbage → empty list; JSON array roundtrip mirrors `MeasurementSyncPayload` style [GoalSyncPayloadTest: 4 tests]
+    - [x] Confirm Red, then implement to Green
+- [x] Task: Write failing SyncWorker goal-sync instrumented tests (Red) [d264dfe, 3b85690]
+    - [x] Remote goal with newer lastModified upserts local row
+    - [x] Local goal absent from valid cloud snapshot is pruned (cleared goals propagate) [GoalSyncMergeTest: 7 tests]
+    - [x] Goals snapshot uploaded as sibling file `body_measurements_goals.json` (`MEASUREMENTS_GOALS_FILE`); upload failure → `Result.retry()`
+    - [x] Confirm Red on device [compile Red → Green]
+- [x] Task: Integrate goals pipeline into SyncWorker (Green) [7def8ba]
+    - [x] Import+merge+prune after measurements pipeline, before ledger publish/final success; failures → retry
+    - [x] Existing payload contracts untouched (NFR2); all sync tests Green [full unit suite BUILD SUCCESSFUL]
 - [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
 
 ## Phase 5: Full Regression & Coverage Verification
