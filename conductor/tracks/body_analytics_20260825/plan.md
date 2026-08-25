@@ -4,9 +4,9 @@
 
 ## Phase 1: Goal Persistence Layer
 
-- [ ] Task: Write failing unit tests for goal validation rules (Red)
-    - [ ] `GoalValidatorTest`: positive-value rule; upper sanity caps (Weight ≤ 400 kg, girths ≤ 300 cm); metric unit label mapping per parameter (kg/cm)
-    - [ ] Run tests, confirm Red
+- [x] Task: Write failing unit tests for goal validation rules (Red) [ad2ad41]
+    - [x] `GoalValidatorTest`: positive-value rule; upper sanity caps (Weight ≤ 400 kg, girths ≤ 300 cm); metric unit label mapping per parameter (kg/cm) [caps set to 500/300 for parity with ValidateMeasurements]
+    - [x] Run tests, confirm Red [compile Red: Unresolved reference GoalValidator]
 - [ ] Task: Add Room `goals` table with schema migration (Green)
     - [ ] `GoalEntity(parameter_id PK, target REAL, lastModified INTEGER)` + `GoalDao` (upsert, getAll, clear, deleteById)
     - [ ] Bump `JournalDatabase` version with written Migration (no destructive fallback)
