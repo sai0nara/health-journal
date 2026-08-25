@@ -278,11 +278,17 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             Log.d("SyncWorker", "Syncing body measurement goals...")
             val goalDao = database.goalDao()
 
-            val cloudGoals = GoalSyncPayload.fromJson(
-                driveHelper.downloadDataFile(DriveServiceHelper.MEASUREMENTS_GOALS_FILE)
-            )
+            val cloudGoalsJson = driveHelper.downloadDataFile(DriveServiceHelper.MEASUREMENTS_GOALS_FILE)
             val localGoals = goalDao.getAll()
-            val mergedGoals = SyncMerge.mergeGoals(cloudGoals, localGoals)
+
+            // When the cloud file doesn't exist yet (first sync on this
+            // device), preserve local goals and push them up rather than
+            // pruning them into an empty cloud snapshot.
+            val mergedGoals = if (cloudGoalsJson == null) {
+                localGoals
+            } else {
+                SyncMerge.mergeGoals(GoalSyncPayload.fromJson(cloudGoalsJson), localGoals)
+            }
 
             goalDao.importAll(mergedGoals)
 
