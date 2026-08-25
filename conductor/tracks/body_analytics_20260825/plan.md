@@ -15,7 +15,7 @@
     - [x] Unit tests with strict-mock DAO (save/clear/getAll/observe) Red→Green
 - [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) [34e5125: report in git note, user confirmed YES]
 
-## Phase 2: Tabbed Analytics Section & Extended Chart
+## Phase 2: Tabbed Analytics Section & Extended Chart [checkpoint: a01fbb5]
 
 - [x] Task: Write failing instrumented tests for the analytics section (Red) [66f62bf]
     - [x] Extend `MeasurementScreenTest`: seven parameter tabs render; tapping a tab swaps the plotted series; chart exposes per-param test tag; empty-param page shows friendly empty message
@@ -28,7 +28,7 @@
     - [x] Two-way sync of tab selection and pager page (FR1)
     - [x] `BodyAnalyticsViewModel`: per-param point derivation (ascending re-sort), selected-tab state, goals flow injection (FR9); unit tests Red→Green [5 tests; setMain/resetMain for viewModelScope]
     - [x] Instrumented tests Green on device [11/11 MeasurementScreenTest]
-- [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) [user: YES]
 
 ## Phase 3: Goal Setting Flow
 
