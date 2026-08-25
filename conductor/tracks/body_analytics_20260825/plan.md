@@ -11,8 +11,8 @@
     - [x] `GoalEntity(parameter_id PK, target REAL, lastModified INTEGER)` + `GoalDao` (upsert, getAll, clear, deleteById) [+ observeAll Flow]
     - [x] Bump `JournalDatabase` version with written Migration (no destructive fallback) [v10→v11, MIGRATION_10_11]
     - [x] Implement `GoalValidator` to Green; full unit suite green
-- [ ] Task: Implement `GoalsRepository` following existing repository conventions
-    - [ ] Unit tests with strict-mock DAO (save/clear/getAll/observe) Red→Green
+- [x] Task: Implement `GoalsRepository` following existing repository conventions [112e73c]
+    - [x] Unit tests with strict-mock DAO (save/clear/getAll/observe) Red→Green
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Tabbed Analytics Section & Extended Chart
