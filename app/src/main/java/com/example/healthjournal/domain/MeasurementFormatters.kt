@@ -33,11 +33,30 @@ fun BodyMeasurementEntry.toSummary(): String {
  * entries without a recorded weight are excluded.
  */
 fun List<BodyMeasurementEntry>.toWeightTrend(): List<Pair<Long, Double>> =
+    toParamTrend(MeasurementField.WEIGHT)
+
+/**
+ * Chronological series for any measurement parameter: ascending by timestamp,
+ * entries without that parameter recorded are excluded. Backs the per-tab
+ * Body Analytics charts.
+ */
+fun List<BodyMeasurementEntry>.toParamTrend(field: MeasurementField): List<Pair<Long, Double>> =
     asSequence()
-        .filter { it.weight_kg != null }
+        .filter { it.valueFor(field) != null }
         .sortedBy { it.timestamp }
-        .map { it.timestamp to it.weight_kg!! }
+        .map { it.timestamp to it.valueFor(field)!! }
         .toList()
+
+/** Column accessor for a parameter, keeping chart code reflection-free. */
+private fun BodyMeasurementEntry.valueFor(field: MeasurementField): Double? = when (field) {
+    MeasurementField.WEIGHT -> weight_kg
+    MeasurementField.CHEST -> chest_cm
+    MeasurementField.WAIST -> waist_cm
+    MeasurementField.GLUTE -> glute_cm
+    MeasurementField.THIGH -> thigh_cm
+    MeasurementField.CALF -> calf_cm
+    MeasurementField.BICEP -> bicep_cm
+}
 
 private fun Double.formatMeasurement(): String =
     BigDecimal(toString()).stripTrailingZeros().toPlainString()
