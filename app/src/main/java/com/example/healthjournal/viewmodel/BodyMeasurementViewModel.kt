@@ -23,6 +23,8 @@ data class BodyMeasurementUiState(
     val rawValues: Map<MeasurementField, String> =
         MeasurementField.entries.associateWith { "" },
     val fieldErrors: Map<MeasurementField, String> = emptyMap(),
+    /** Inline alert shown under the date row when the form is future-dated. */
+    val timestampError: String? = null,
     val canSave: Boolean = false,
     val isSaving: Boolean = false,
     /** One-shot flag consumed by the UI (haptic + dismiss), reset via [BodyMeasurementViewModel.onSavedHandled]. */
@@ -37,6 +39,11 @@ class BodyMeasurementViewModel(
     private val _uiState = MutableStateFlow(BodyMeasurementUiState())
     val uiState: StateFlow<BodyMeasurementUiState> = _uiState.asStateFlow()
 
+    companion object {
+        /** Inline alert text for future-dated forms; Save stays disabled while set. */
+        const val ERROR_FUTURE_DATE = "Future dates cannot be saved"
+    }
+
     /** Chronological feed (newest first) backing the Measurements screen. */
     private val _entries = MutableStateFlow(emptyList<BodyMeasurementEntry>())
     val entries: StateFlow<List<BodyMeasurementEntry>> = _entries.asStateFlow()
@@ -47,24 +54,30 @@ class BodyMeasurementViewModel(
         }
     }
 
-    /** Snapshots the record before removal so Undo can restore it verbatim. */
-    private var pendingUndoSnapshot: BodyMeasurementEntry? = null
+    /** Snapshots records before removal so Undo can restore them verbatim. */
+    private val pendingUndoSnapshots = mutableMapOf<String, BodyMeasurementEntry>()
 
     fun deleteEntry(entryId: String) {
         // Snapshot from the already-observed list: no extra DB read and no
         // race if the row vanishes between UI tap and deletion.
-        pendingUndoSnapshot = _entries.value.firstOrNull { it.entry_id == entryId }
+        _entries.value.firstOrNull { it.entry_id == entryId }?.let { snapshot ->
+            pendingUndoSnapshots[entryId] = snapshot
+        }
         viewModelScope.launch(ioDispatcher) {
             repository.deleteEntry(entryId)
         }
     }
 
-    /** Re-inserts the most recently deleted record (Undo snackbar action). */
-    fun undoDelete() {
-        val snapshot = pendingUndoSnapshot ?: return
+    /**
+     * Re-inserts a deleted record (Undo snackbar action). Without an explicit
+     * [entryId] the most recently deleted record is restored (LIFO), so rapid
+     * successive deletions each remain individually restorable.
+     */
+    fun undoDelete(entryId: String? = null) {
+        val targetId = entryId ?: pendingUndoSnapshots.keys.lastOrNull() ?: return
+        val snapshot = pendingUndoSnapshots.remove(targetId) ?: return
         viewModelScope.launch(ioDispatcher) {
             repository.insert(snapshot)
-            pendingUndoSnapshot = null
         }
     }
 
@@ -75,19 +88,35 @@ class BodyMeasurementViewModel(
             current.copy(
                 rawValues = rawValues,
                 fieldErrors = fieldErrors,
+                timestampError = futureDateError(current.timestamp),
                 canSave = fieldErrors.isEmpty() &&
-                    ValidateMeasurements.hasAtLeastOneMeasurement(rawValues)
+                    ValidateMeasurements.hasAtLeastOneMeasurement(rawValues) &&
+                    futureDateError(current.timestamp) == null
             )
         }
     }
 
     fun onTimestampChanged(timestampMillis: Long) {
-        _uiState.update { it.copy(timestamp = timestampMillis) }
+        _uiState.update {
+            it.copy(
+                timestamp = timestampMillis,
+                timestampError = futureDateError(timestampMillis),
+                canSave = it.fieldErrors.isEmpty() &&
+                    ValidateMeasurements.hasAtLeastOneMeasurement(it.rawValues) &&
+                    futureDateError(timestampMillis) == null
+            )
+        }
     }
+
+    private fun futureDateError(timestampMillis: Long): String? =
+        if (timestampMillis > System.currentTimeMillis()) ERROR_FUTURE_DATE else null
 
     fun onSaveClicked() {
         val state = _uiState.value
         if (!state.canSave || state.isSaving) return
+        // Parity with JournalViewModel.addEntry: future-dated records are
+        // rejected at save time instead of polluting the history feed.
+        if (state.timestamp > System.currentTimeMillis()) return
 
         _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch(ioDispatcher) {

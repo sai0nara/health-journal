@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -188,5 +189,127 @@ class BodyMeasurementViewModelTest {
         viewModel.onTimestampChanged(custom)
 
         assertEquals(custom, currentState().timestamp)
+    }
+
+    @Test
+    fun onSaveClicked_blockedForFutureTimestamp() = runTest {
+        set(MeasurementField.WAIST, "85")
+        viewModel.onTimestampChanged(System.currentTimeMillis() + 60_000)
+
+        viewModel.onSaveClicked()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.insert(any()) }
+        assertFalse(currentState().justSaved)
+    }
+
+    @Test
+    fun futureTimestamp_setsAlertAndBlocksSave() {
+        set(MeasurementField.WAIST, "85")
+        viewModel.onTimestampChanged(System.currentTimeMillis() + 60_000)
+
+        val state = currentState()
+        assertEquals(
+            BodyMeasurementViewModel.ERROR_FUTURE_DATE,
+            state.timestampError
+        )
+        assertFalse(state.canSave)
+    }
+
+    @Test
+    fun currentTimestamp_clearsFutureAlert() {
+        viewModel.onTimestampChanged(System.currentTimeMillis() + 60_000)
+        viewModel.onTimestampChanged(System.currentTimeMillis())
+
+        val state = currentState()
+        assertNull(state.timestampError)
+    }
+
+    @Test
+    fun onSaveClicked_allowsCurrentTimestamp() = runTest {
+        set(MeasurementField.WAIST, "85")
+        viewModel.onTimestampChanged(System.currentTimeMillis())
+
+        viewModel.onSaveClicked()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.insert(any()) }
+    }
+
+    private fun mkEntry(id: String, waist: Double = 80.0) = BodyMeasurementEntry(
+        entry_id = id,
+        timestamp = System.currentTimeMillis(),
+        lastModified = System.currentTimeMillis(),
+        waist_cm = waist,
+        isSynced = false,
+        syncStatus = "PENDING_SYNC"
+    )
+
+    private fun seedEntries(vararg entries: BodyMeasurementEntry) {
+        coEvery { repository.allEntries } returns kotlinx.coroutines.flow.flowOf(entries.toList())
+        coEvery { repository.deleteEntry(any()) } returns Unit
+        viewModel = BodyMeasurementViewModel(repository, testDispatcher)
+        testDispatcher.scheduler.advanceUntilIdle()
+    }
+
+    @Test
+    fun undoDelete_defaultRestoresMostRecentlyDeletedLifo() = runTest {
+        seedEntries(mkEntry("a", 70.0), mkEntry("b", 90.0))
+
+        viewModel.deleteEntry("a")
+        viewModel.deleteEntry("b")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.undoDelete()
+        testDispatcher.scheduler.advanceUntilIdle()
+        coVerify(exactly = 1) { repository.insert(match { it.entry_id == "b" }) }
+
+        viewModel.undoDelete()
+        testDispatcher.scheduler.advanceUntilIdle()
+        coVerify(exactly = 1) { repository.insert(match { it.entry_id == "a" }) }
+    }
+
+    @Test
+    fun undoDelete_byIdRestoresThatSpecificEntry() = runTest {
+        seedEntries(mkEntry("a", 70.0), mkEntry("b", 90.0))
+
+        viewModel.deleteEntry("a")
+        viewModel.deleteEntry("b")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.undoDelete("a")
+        testDispatcher.scheduler.advanceUntilIdle()
+        coVerify(exactly = 1) { repository.insert(match { it.entry_id == "a" }) }
+        coVerify(exactly = 0) { repository.insert(match { it.entry_id == "b" }) }
+    }
+
+    @Test
+    fun deleteEntry_rapidSuccessiveDeletions_bothRemainRestorable() = runTest {
+        seedEntries(mkEntry("a", 70.0), mkEntry("b", 90.0))
+
+        viewModel.deleteEntry("a")
+        viewModel.deleteEntry("b")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.undoDelete("b")
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.undoDelete("a")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.insert(match { it.entry_id == "a" }) }
+        coVerify(exactly = 1) { repository.insert(match { it.entry_id == "b" }) }
+    }
+
+    @Test
+    fun undoDelete_unknownId_isSafeNoOp() = runTest {
+        seedEntries(mkEntry("a"))
+
+        viewModel.deleteEntry("a")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.undoDelete("does-not-exist")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.insert(any()) }
     }
 }

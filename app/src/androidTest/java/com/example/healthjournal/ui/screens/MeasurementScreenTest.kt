@@ -154,4 +154,26 @@ class MeasurementScreenTest {
             composeTestRule.onNodeWithText("78.5 kg").assertExists()
         }
     }
+
+    @Test
+    fun entries_showCloudSyncIconMatchingSyncState() {
+        step("Open with one local-only and one cloud-synced record") {
+            setScreen(
+                listOf(
+                    BodyMeasurementEntry(entry_id = "local", timestamp = 1_000L, weight_kg = 80.0),
+                    BodyMeasurementEntry(
+                        entry_id = "cloud",
+                        timestamp = 2_000L,
+                        weight_kg = 79.0,
+                        isSynced = true
+                    )
+                )
+            )
+        }
+
+        step("Verify per-card sync icons mirror the journal pattern") {
+            composeTestRule.onNodeWithContentDescription("Local Only").assertExists()
+            composeTestRule.onNodeWithContentDescription("Cloud Synced").assertExists()
+        }
+    }
 }

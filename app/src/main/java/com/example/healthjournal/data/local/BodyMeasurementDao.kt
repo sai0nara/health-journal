@@ -37,6 +37,10 @@ interface BodyMeasurementDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDeletedEntry(deletedEntry: DeletedEntry)
 
+    /** Full deletion ledger snapshot for merge with the remote ledger. */
+    @Query("SELECT * FROM deleted_entries")
+    suspend fun getAllDeletedEntries(): List<DeletedEntry>
+
     @Query("DELETE FROM deleted_entries WHERE deletedAt < :cutoffTimestamp")
     suspend fun removeDeletedEntriesBefore(cutoffTimestamp: Long)
 

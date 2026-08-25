@@ -21,6 +21,9 @@ import io.qameta.allure.kotlin.Feature
 import io.qameta.allure.kotlin.Step
 import org.junit.Rule
 import org.junit.Test
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 @Feature("Body Measurements Capture")
 class MeasurementEntrySheetTest {
@@ -113,12 +116,13 @@ class MeasurementEntrySheetTest {
             composeTestRule.onNodeWithTag("bm_field_WAIST").performTextInput("85")
             composeTestRule.waitForIdle()
             composeTestRule.onNodeWithTag("bm_save").assertIsEnabled()
-            composeTestRule.onNodeWithTag("bm_save").performClick()
+            androidx.test.espresso.Espresso.closeSoftKeyboard()
             composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithTag("bm_save").performClick()
         }
 
         step("Verify insert persisted and sheet dismissed") {
-            coVerify {
+            coVerify(timeout = 5000) {
                 measurementRepository.insert(
                     match { it.waist_cm == 85.0 && it.weight_kg == null }
                 )
@@ -161,6 +165,54 @@ class MeasurementEntrySheetTest {
                 .performClick()
             composeTestRule.waitForIdle()
             composeTestRule.onNodeWithText("86.5").assertExists()
+        }
+    }
+
+    @Test
+    fun futureDate_showsAlertAndDisablesSave() {
+        measurementViewModel.onTimestampChanged(System.currentTimeMillis() + 60_000)
+        measurementViewModel.onFieldChanged(
+            com.example.healthjournal.domain.MeasurementField.WAIST,
+            "85"
+        )
+        openSheet()
+
+        step("Verify future-date alert renders and Save is disabled") {
+            composeTestRule.waitForIdle()
+            composeTestRule
+                .onNodeWithText(com.example.healthjournal.viewmodel.BodyMeasurementViewModel.ERROR_FUTURE_DATE)
+                .assertExists()
+            composeTestRule.onNodeWithTag("bm_save").assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun datePickerConfirm_preservesSelectedLocalDate() {
+        openSheet()
+
+        val expectedDate = Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_MONTH, 15)
+        }.time
+        val dayCellLabel = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
+            .format(expectedDate)
+        val expectedSheetLabel = SimpleDateFormat("EEE, d MMM yyyy", Locale.getDefault())
+            .format(expectedDate)
+
+        step("Open the date picker") {
+            composeTestRule
+                .onNodeWithContentDescription("Pick measurement date")
+                .performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Select the 15th of the displayed month and confirm") {
+            composeTestRule.onNodeWithText(dayCellLabel).performClick()
+            composeTestRule.onNodeWithText("OK").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify the sheet shows the selected calendar date without off-by-one shift") {
+            composeTestRule.onNodeWithText(expectedSheetLabel).assertExists()
         }
     }
 }

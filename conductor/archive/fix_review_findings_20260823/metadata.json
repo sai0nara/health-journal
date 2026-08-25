@@ -1,0 +1,8 @@
+{
+  "track_id": "fix_review_findings_20260823",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-08-23T11:40:44Z",
+  "updated_at": "2026-08-23T11:40:44Z",
+  "description": "Implement review findings from Docs/Review.md for Body Measurements Tracking (UTC DatePicker shift, multi-deletion undo loss, tombstone purge ordering)"
+}

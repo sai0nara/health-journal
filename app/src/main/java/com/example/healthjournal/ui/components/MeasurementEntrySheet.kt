@@ -17,6 +17,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.domain.MeasurementField
+import com.example.healthjournal.domain.UtcToLocalDate
 import com.example.healthjournal.viewmodel.BodyMeasurementViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -103,6 +105,14 @@ fun MeasurementEntrySheet(
                 }
             }
 
+            state.timestampError?.let { alert ->
+                Text(
+                    text = alert,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
             MeasurementField.entries.forEach { field ->
                 OutlinedTextField(
                     value = state.rawValues[field].orEmpty(),
@@ -142,7 +152,9 @@ fun MeasurementEntrySheet(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        datePickerState.selectedDateMillis?.let { viewModel.onTimestampChanged(it) }
+                        datePickerState.selectedDateMillis?.let { utcMillis ->
+                            viewModel.onTimestampChanged(UtcToLocalDate.toLocalMillis(utcMillis))
+                        }
                         showDatePicker = false
                     }
                 ) { Text("OK") }

@@ -15,6 +15,7 @@ Solving **Data Fragmentation** by bringing together:
 
 ## Key Features
 - **Unified Logging:** A seamless interface for recording health events with support for multiple photos and document attachments (PDF, DOCX). Now includes a sophisticated rich text formatting toolbar for expressive logging.
+- **Body Measurements Tracking:** Quick capture of weight and body circumferences (chest, waist, glute, thighs, calves, biceps) with partial-entry support, inline validation, and future-date rejection; a dedicated chronological history screen with a weight trend chart, undo-protected deletion, and deletions that propagate across your synced devices via Google Drive.
 - **Archive & Multi-Delete:** A two-stage deletion process to keep the main history clean, supporting bulk restoration or permanent removal.
 - **Advanced List Management:** Efficiently manage logs with keyword search and customizable date sorting. Long journal entries are truncated to 3 lines with a "Show More" interaction point for improved feed readability.
 - **Automated Data Integration:** Effortless importing of health data from wearables and other apps using Health Connect.
