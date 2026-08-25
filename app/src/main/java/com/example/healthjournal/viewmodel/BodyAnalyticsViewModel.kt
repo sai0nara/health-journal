@@ -31,7 +31,7 @@ data class BodyAnalyticsUiState(
  */
 class BodyAnalyticsViewModel(
     repository: BodyMeasurementRepository,
-    goalsRepository: GoalsRepository,
+    private val goalsRepository: GoalsRepository,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
 
@@ -57,5 +57,19 @@ class BodyAnalyticsViewModel(
 
     fun onTabSelected(field: MeasurementField) {
         _uiState.update { it.copy(selectedTab = field) }
+    }
+
+    /** Persists a validated goal target immediately (FR5). */
+    fun saveGoal(field: MeasurementField, target: Double) {
+        viewModelScope.launch(ioDispatcher) {
+            goalsRepository.setGoal(field, target)
+        }
+    }
+
+    /** Deletes the parameter's goal; chart falls back to trend-only (FR5). */
+    fun clearGoal(field: MeasurementField) {
+        viewModelScope.launch(ioDispatcher) {
+            goalsRepository.clearGoal(field.name)
+        }
     }
 }

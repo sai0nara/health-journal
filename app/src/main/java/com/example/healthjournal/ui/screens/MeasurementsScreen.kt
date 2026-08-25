@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -38,8 +39,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +57,7 @@ import com.example.healthjournal.domain.GoalValidator
 import com.example.healthjournal.domain.MeasurementField
 import com.example.healthjournal.domain.toParamTrend
 import com.example.healthjournal.domain.toSummary
+import com.example.healthjournal.ui.components.GoalSheet
 import com.example.healthjournal.ui.components.ParamTrendChart
 import com.example.healthjournal.viewmodel.BodyAnalyticsViewModel
 import com.example.healthjournal.viewmodel.BodyMeasurementViewModel
@@ -88,6 +92,23 @@ fun MeasurementsScreen(
         }
     }
 
+    var sheetField by remember { mutableStateOf<MeasurementField?>(null) }
+    sheetField?.let { field ->
+        GoalSheet(
+            field = field,
+            initialTarget = analyticsState.goalTargets[field.name],
+            onSave = { target ->
+                analyticsViewModel.saveGoal(field, target)
+                sheetField = null
+            },
+            onClear = {
+                analyticsViewModel.clearGoal(field)
+                sheetField = null
+            },
+            onDismiss = { sheetField = null }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -119,6 +140,8 @@ fun MeasurementsScreen(
                 val field = MeasurementField.entries[page]
                 val pageSeries = remember(entries, field) { entries.toParamTrend(field) }
                 val goalTarget = analyticsState.goalTargets[field.name]
+
+                ChartHeader(field, goalTarget) { sheetField = field }
 
                 if (pageSeries.isEmpty()) {
                     Box(
@@ -195,6 +218,43 @@ fun MeasurementsScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/** Chart section header: parameter name plus the Set Goal affordance (FR5). */
+@Composable
+private fun ChartHeader(
+    field: MeasurementField,
+    goalTarget: Double?,
+    onSetGoal: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = if (goalTarget != null) {
+                "${field.label} · Goal ${goalTarget} ${GoalValidator.unitLabel(field)}"
+            } else {
+                field.label
+            },
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold
+        )
+        IconButton(onClick = onSetGoal, modifier = Modifier.testTag("bm_set_goal")) {
+            Icon(
+                Icons.Outlined.Flag,
+                contentDescription = "Set ${field.label} goal",
+                tint = if (goalTarget != null) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
         }
     }
 }
