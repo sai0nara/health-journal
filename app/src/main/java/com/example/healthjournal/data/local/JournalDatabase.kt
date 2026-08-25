@@ -7,12 +7,14 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class], version = 10, exportSchema = true)
+@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class], version = 11, exportSchema = true)
 @androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
 
     abstract fun bodyMeasurementDao(): BodyMeasurementDao
+
+    abstract fun goalDao(): GoalDao
 
     companion object {
         @Volatile
@@ -120,6 +122,17 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        // v10 -> v11: add goals table for Body Analytics per-parameter targets
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `goals` (" +
+                        "`parameterId` TEXT NOT NULL, `target` REAL NOT NULL, " +
+                        "`lastModified` INTEGER NOT NULL, PRIMARY KEY(`parameterId`))"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -128,7 +141,8 @@ abstract class JournalDatabase : RoomDatabase() {
                     "journal_database"
                 ).addMigrations(
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
-                    MIGRATION_4_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10
+                    MIGRATION_4_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10,
+                    MIGRATION_10_11
                 ).build()
                 INSTANCE = instance
                 instance
