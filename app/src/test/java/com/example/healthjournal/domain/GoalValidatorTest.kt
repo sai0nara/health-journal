@@ -25,8 +25,11 @@ class GoalValidatorTest {
         MeasurementField.entries
             .filter { it != MeasurementField.WEIGHT }
             .forEach { field ->
-                assertNull("Expected $field to accept 85", GoalValidator.validate(field, "85"))
-                assertNull("Expected $field to accept 300", GoalValidator.validate(field, "300"))
+                assertNull("Expected $field to accept 50", GoalValidator.validate(field, "50"))
+                assertNull(
+                    "Expected $field to accept its cap",
+                    GoalValidator.validate(field, "${ValidateMeasurements.maxFor(field).toLong()}")
+                )
             }
     }
 
@@ -65,17 +68,35 @@ class GoalValidatorTest {
     @Test
     fun overBoundWeight_returnsWeightMaxError() {
         assertEquals(
-            ValidateMeasurements.ERROR_WEIGHT_MAX,
+            ValidateMeasurements.maxExceededMessage(MeasurementField.WEIGHT),
             GoalValidator.validate(MeasurementField.WEIGHT, "500.1")
         )
     }
 
     @Test
-    fun overBoundGirth_returnsGirthMaxError() {
+    fun overBoundGirth_returnsPerFieldMaxError() {
+        // Torso girths share a generous cap...
         assertEquals(
-            ValidateMeasurements.ERROR_GIRTH_MAX,
-            GoalValidator.validate(MeasurementField.WAIST, "300.1")
+            ValidateMeasurements.maxExceededMessage(MeasurementField.WAIST),
+            GoalValidator.validate(MeasurementField.WAIST, "200.1")
         )
+        // ...while small limbs are capped realistically (user feedback:
+        // a 99 cm calf goal must be rejected).
+        assertEquals(
+            ValidateMeasurements.maxExceededMessage(MeasurementField.CALF),
+            GoalValidator.validate(MeasurementField.CALF, "99")
+        )
+    }
+
+    @Test
+    fun perFieldCaps_areRealistic() {
+        assertEquals(500.0, ValidateMeasurements.maxFor(MeasurementField.WEIGHT), 0.0)
+        assertEquals(200.0, ValidateMeasurements.maxFor(MeasurementField.CHEST), 0.0)
+        assertEquals(200.0, ValidateMeasurements.maxFor(MeasurementField.WAIST), 0.0)
+        assertEquals(200.0, ValidateMeasurements.maxFor(MeasurementField.GLUTE), 0.0)
+        assertEquals(120.0, ValidateMeasurements.maxFor(MeasurementField.THIGH), 0.0)
+        assertEquals(75.0, ValidateMeasurements.maxFor(MeasurementField.CALF), 0.0)
+        assertEquals(75.0, ValidateMeasurements.maxFor(MeasurementField.BICEP), 0.0)
     }
 
     @Test
