@@ -3,7 +3,9 @@ package com.example.healthjournal.ui.screens
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.example.healthjournal.data.BodyMeasurementRepository
+import com.example.healthjournal.data.GoalsRepository
 import com.example.healthjournal.data.local.BodyMeasurementEntry
+import com.example.healthjournal.viewmodel.BodyAnalyticsViewModel
 import com.example.healthjournal.viewmodel.BodyMeasurementViewModel
 import io.mockk.*
 import io.qameta.allure.android.rules.ScreenshotRule
@@ -31,9 +33,18 @@ class MeasurementScreenTest {
     private fun setScreen(entries: List<BodyMeasurementEntry>, darkTheme: Boolean = false) {
         every { repository.allEntries } returns MutableStateFlow(entries)
         val viewModel = BodyMeasurementViewModel(repository, testDispatcher)
+        val analyticsViewModel = BodyAnalyticsViewModel(
+            repository,
+            GoalsRepository(mockk(relaxed = true)),
+            testDispatcher
+        )
         composeTestRule.setContent {
             com.example.healthjournal.ui.theme.HealthJournalTheme(darkTheme = darkTheme) {
-                MeasurementsScreen(viewModel = viewModel, onBack = {})
+                MeasurementsScreen(
+                    viewModel = viewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    onBack = {}
+                )
             }
         }
         composeTestRule.waitForIdle()
@@ -84,8 +95,8 @@ class MeasurementScreenTest {
             )
         }
 
-        step("Verify chart visible") {
-            composeTestRule.onNodeWithTag("bm_trend_chart").assertExists()
+        step("Verify default Weight chart visible") {
+            composeTestRule.onNodeWithTag("bm_chart_WEIGHT").assertExists()
         }
     }
 
@@ -95,8 +106,9 @@ class MeasurementScreenTest {
             setScreen(listOf(BodyMeasurementEntry(waist_cm = 85.0)))
         }
 
-        step("Verify chart absent") {
-            composeTestRule.onNodeWithTag("bm_trend_chart").assertDoesNotExist()
+        step("Verify Weight page shows empty state instead of a chart") {
+            composeTestRule.onNodeWithTag("bm_chart_WEIGHT").assertDoesNotExist()
+            composeTestRule.onNodeWithTag("bm_param_empty_WEIGHT").assertExists()
         }
     }
 
@@ -174,6 +186,72 @@ class MeasurementScreenTest {
         step("Verify per-card sync icons mirror the journal pattern") {
             composeTestRule.onNodeWithContentDescription("Local Only").assertExists()
             composeTestRule.onNodeWithContentDescription("Cloud Synced").assertExists()
+        }
+    }
+
+    @Test
+    fun analytics_sevenParameterTabsRender() {
+        step("Open with one weighted record") {
+            setScreen(listOf(BodyMeasurementEntry(entry_id = "e1", timestamp = 1_000L, weight_kg = 80.0)))
+        }
+
+        step("Verify all seven parameter tabs exist") {
+            listOf("Weight", "Chest", "Waist", "Glute", "Thighs", "Calves", "Biceps")
+                .forEach { label ->
+                    composeTestRule.onNodeWithText(label).assertExists()
+                }
+        }
+    }
+
+    @Test
+    fun analytics_tappingTabSwapsPlottedSeries() {
+        step("Open with weight and waist records") {
+            setScreen(
+                listOf(
+                    BodyMeasurementEntry(entry_id = "e1", timestamp = 4_000L, weight_kg = 80.0),
+                    BodyMeasurementEntry(entry_id = "w1", timestamp = 5_000L, waist_cm = 85.0)
+                )
+            )
+        }
+
+        step("Verify default page is Weight and Waist chart not composed") {
+            composeTestRule.onNodeWithTag("bm_chart_WEIGHT").assertExists()
+            composeTestRule.onNodeWithTag("bm_chart_WAIST").assertDoesNotExist()
+        }
+
+        step("Tap the Waist tab") {
+            composeTestRule.onNodeWithText("Waist").performClick()
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithTag("bm_chart_WAIST")
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+        }
+
+        step("Verify Waist chart composed and Weight page disposed") {
+            composeTestRule.onNodeWithTag("bm_chart_WAIST").assertExists()
+            composeTestRule.onNodeWithTag("bm_chart_WEIGHT").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun analytics_emptyParameterPageShowsFriendlyMessage() {
+        step("Open with a weight-only record and switch to Calves") {
+            setScreen(listOf(BodyMeasurementEntry(entry_id = "e1", timestamp = 1_000L, weight_kg = 80.0)))
+            // Seven tabs overflow narrow displays: scroll the row first.
+            // The scroll action lives on the row's internal viewport container.
+            composeTestRule.onNode(
+                hasScrollAction() and hasAnyDescendant(hasText("Calves"))
+            ).performScrollToNode(hasText("Calves"))
+            composeTestRule.onNodeWithText("Calves").performClick()
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithTag("bm_param_empty_CALF")
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+        }
+
+        step("Verify empty message for Calves") {
+            composeTestRule.onNodeWithTag("bm_param_empty_CALF").assertExists()
+            composeTestRule.onNodeWithText("No Calves data yet").assertExists()
         }
     }
 }
