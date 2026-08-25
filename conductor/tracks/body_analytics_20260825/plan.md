@@ -7,10 +7,10 @@
 - [x] Task: Write failing unit tests for goal validation rules (Red) [ad2ad41]
     - [x] `GoalValidatorTest`: positive-value rule; upper sanity caps (Weight ≤ 400 kg, girths ≤ 300 cm); metric unit label mapping per parameter (kg/cm) [caps set to 500/300 for parity with ValidateMeasurements]
     - [x] Run tests, confirm Red [compile Red: Unresolved reference GoalValidator]
-- [ ] Task: Add Room `goals` table with schema migration (Green)
-    - [ ] `GoalEntity(parameter_id PK, target REAL, lastModified INTEGER)` + `GoalDao` (upsert, getAll, clear, deleteById)
-    - [ ] Bump `JournalDatabase` version with written Migration (no destructive fallback)
-    - [ ] Implement `GoalValidator` to Green; full unit suite green
+- [x] Task: Add Room `goals` table with schema migration (Green) [9fc7275]
+    - [x] `GoalEntity(parameter_id PK, target REAL, lastModified INTEGER)` + `GoalDao` (upsert, getAll, clear, deleteById) [+ observeAll Flow]
+    - [x] Bump `JournalDatabase` version with written Migration (no destructive fallback) [v10→v11, MIGRATION_10_11]
+    - [x] Implement `GoalValidator` to Green; full unit suite green
 - [ ] Task: Implement `GoalsRepository` following existing repository conventions
     - [ ] Unit tests with strict-mock DAO (save/clear/getAll/observe) Red→Green
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
