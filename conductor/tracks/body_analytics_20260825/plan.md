@@ -2,7 +2,7 @@
 
 **Spec:** [./spec.md](./spec.md)
 
-## Phase 1: Goal Persistence Layer
+## Phase 1: Goal Persistence Layer [checkpoint: 34e5125]
 
 - [x] Task: Write failing unit tests for goal validation rules (Red) [ad2ad41]
     - [x] `GoalValidatorTest`: positive-value rule; upper sanity caps (Weight ≤ 400 kg, girths ≤ 300 cm); metric unit label mapping per parameter (kg/cm) [caps set to 500/300 for parity with ValidateMeasurements]
@@ -13,7 +13,7 @@
     - [x] Implement `GoalValidator` to Green; full unit suite green
 - [x] Task: Implement `GoalsRepository` following existing repository conventions [112e73c]
     - [x] Unit tests with strict-mock DAO (save/clear/getAll/observe) Red→Green
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) [34e5125: report in git note, user confirmed YES]
 
 ## Phase 2: Tabbed Analytics Section & Extended Chart
 
