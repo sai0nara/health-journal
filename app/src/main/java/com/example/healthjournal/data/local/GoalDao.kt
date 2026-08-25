@@ -26,4 +26,11 @@ interface GoalDao {
     /** Full-table wipe used by the sync snapshot prune step. */
     @Query("DELETE FROM goals")
     suspend fun clear()
+
+    /** Replace the entire goals table with a merged snapshot. */
+    @androidx.room.Transaction
+    suspend fun importAll(goals: List<GoalEntity>) {
+        clear()
+        goals.forEach { upsertGoal(it) }
+    }
 }

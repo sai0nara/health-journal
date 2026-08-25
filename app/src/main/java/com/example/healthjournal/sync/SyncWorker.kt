@@ -273,7 +273,29 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 return Result.retry()
             }
 
-            // 7. Purge expired tombstones — only after BOTH sync pipelines are
+            // ============ Body measurement goals sync ============
+            // Sibling cloud file; full-snapshot merge, no tombstones needed.
+            Log.d("SyncWorker", "Syncing body measurement goals...")
+            val goalDao = database.goalDao()
+
+            val cloudGoals = GoalSyncPayload.fromJson(
+                driveHelper.downloadDataFile(DriveServiceHelper.MEASUREMENTS_GOALS_FILE)
+            )
+            val localGoals = goalDao.getAll()
+            val mergedGoals = SyncMerge.mergeGoals(cloudGoals, localGoals)
+
+            goalDao.importAll(mergedGoals)
+
+            val uploadedGoalsId = driveHelper.uploadDataFile(
+                DriveServiceHelper.MEASUREMENTS_GOALS_FILE,
+                GoalSyncPayload.toJson(mergedGoals)
+            )
+            if (uploadedGoalsId == null) {
+                Log.e("SyncWorker", "Goals upload failed.")
+                return Result.retry()
+            }
+
+            // 7. Purge expired tombstones — only after ALL sync pipelines are
             // done, since both share the deleted_entries table. Young tombstones
             // are kept so a stale cloud copy in a later sync cycle cannot
             // resurrect a deleted entry.
