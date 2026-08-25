@@ -104,6 +104,7 @@ class DriveServiceHelper(private val context: Context, private val driveService:
     companion object {
         const val JOURNAL_DATA_FILE = "health_journal_data.json"
         const val MEASUREMENTS_DATA_FILE = "body_measurements.json"
+        const val MEASUREMENTS_GOALS_FILE = "body_measurements_goals.json"
 
         /**
          * Cross-device deletion ledger for the shared deleted_entries table.
