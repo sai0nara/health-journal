@@ -32,12 +32,12 @@
 
 ## Phase 3: Goal Setting Flow
 
-- [ ] Task: Write failing instrumented tests for goal dialog (Red)
-    - [ ] "Set Goal" affordance opens bottom sheet pre-filled with current goal; Save persists via repository (mockk verify); Clear deletes; out-of-bounds input shows inline error and blocks save (FR5/FR6)
-    - [ ] Run on device, confirm Red
-- [ ] Task: Implement goal bottom-sheet dialog + view-model intents (Green)
-    - [ ] Validation wiring reuses `GoalValidator`; inline error parity with measurement fields
-    - [ ] All instrumented tests Green; full unit suite green
+- [x] Task: Write failing instrumented tests for goal dialog (Red) [3ff496c]
+    - [x] "Set Goal" affordance opens bottom sheet pre-filled with current goal; Save persists via repository (mockk verify); Clear deletes; out-of-bounds input shows inline error and blocks save (FR5/FR6) [coVerify for suspend DAO; Red: 3 new tests fail, legacy 11 pass]
+    - [x] Run on device, confirm Red
+- [x] Task: Implement goal bottom-sheet dialog + view-model intents (Green) [695ed5a]
+    - [x] Validation wiring reuses `GoalValidator`; inline error parity with measurement fields
+    - [x] All instrumented tests Green; full unit suite green [14/14 MeasurementScreenTest; unit BUILD SUCCESSFUL]
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
 
 ## Phase 4: Goal Sync via Google Drive
