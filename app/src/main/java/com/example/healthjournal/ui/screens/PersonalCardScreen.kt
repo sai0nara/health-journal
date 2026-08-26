@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.healthjournal.data.local.BloodType
 import com.example.healthjournal.data.local.Demographics
 import com.example.healthjournal.data.local.EmergencyContact
 import com.example.healthjournal.data.local.EmergencyContacts
@@ -211,8 +212,8 @@ private fun DemographicsCard(demographics: Demographics) {
                 InfoRow(label = "Name", value = demographics.fullName)
                 InfoRow(label = "Date of Birth", value = demographics.dateOfBirth)
                 InfoRow(label = "Sex", value = demographics.sex)
-                InfoRow(label = "Height", value = demographics.heightCm?.let { "$it cm" } ?: "")
-                InfoRow(label = "Weight", value = demographics.weightKg?.let { "$it kg" } ?: "")
+                InfoRow(label = "Height", value = demographics.heightCm?.let { "${PersonalCardViewModel.formatDouble(it)} cm" } ?: "")
+                InfoRow(label = "Weight", value = demographics.weightKg?.let { "${PersonalCardViewModel.formatDouble(it)} kg" } ?: "")
                 InfoRow(label = "Race/Ethnicity", value = demographics.raceEthnicity)
             }
         }
@@ -240,14 +241,14 @@ private fun MedicalProfileCard(medicalProfile: MedicalProfile) {
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            if (medicalProfile.bloodType.isEmpty() && medicalProfile.allergies.isEmpty() && medicalProfile.medications.isEmpty()) {
+            if (medicalProfile.bloodType == null && medicalProfile.allergies.isEmpty() && medicalProfile.medications.isEmpty()) {
                 Text(
                     text = "No medical profile information added yet.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                InfoRow(label = "Blood Type", value = medicalProfile.bloodType)
+                InfoRow(label = "Blood Type", value = medicalProfile.bloodType?.displayName ?: "")
 
                 if (medicalProfile.allergies.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -517,13 +518,13 @@ private fun DemographicsEditCard(
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
-                value = demographics.heightCm?.toString() ?: "",
+                value = PersonalCardViewModel.formatDouble(demographics.heightCm),
                 onValueChange = onHeightChanged,
                 label = { Text("Height (cm)") },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
-                value = demographics.weightKg?.toString() ?: "",
+                value = PersonalCardViewModel.formatDouble(demographics.weightKg),
                 onValueChange = onWeightChanged,
                 label = { Text("Weight (kg)") },
                 modifier = Modifier.fillMaxWidth()
@@ -538,10 +539,11 @@ private fun DemographicsEditCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MedicalProfileEditCard(
     medicalProfile: MedicalProfile,
-    onBloodTypeChanged: (String) -> Unit,
+    onBloodTypeChanged: (BloodType?) -> Unit,
     onAddAllergy: (String) -> Unit,
     onRemoveAllergy: (Int) -> Unit,
     onAddMedication: (MedicationEntry) -> Unit,
@@ -552,6 +554,7 @@ private fun MedicalProfileEditCard(
     var showAddAllergyDialog by remember { mutableStateOf(false) }
     var showAddMedicationDialog by remember { mutableStateOf(false) }
     var showAddReactionDialog by remember { mutableStateOf(false) }
+    var bloodTypeExpanded by remember { mutableStateOf(false) }
 
     OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -571,12 +574,42 @@ private fun MedicalProfileEditCard(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = medicalProfile.bloodType,
-                onValueChange = onBloodTypeChanged,
-                label = { Text("Blood Type") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            ExposedDropdownMenuBox(
+                expanded = bloodTypeExpanded,
+                onExpandedChange = { bloodTypeExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value = medicalProfile.bloodType?.displayName ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Blood Type") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = bloodTypeExpanded) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                )
+                ExposedDropdownMenu(
+                    expanded = bloodTypeExpanded,
+                    onDismissRequest = { bloodTypeExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("None") },
+                        onClick = {
+                            onBloodTypeChanged(null)
+                            bloodTypeExpanded = false
+                        }
+                    )
+                    BloodType.entries.forEach { bloodType ->
+                        DropdownMenuItem(
+                            text = { Text(bloodType.displayName) },
+                            onClick = {
+                                onBloodTypeChanged(bloodType)
+                                bloodTypeExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
             // Allergies
             Spacer(modifier = Modifier.height(8.dp))

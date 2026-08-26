@@ -1,6 +1,8 @@
 package com.example.healthjournal.viewmodel
 
+import com.example.healthjournal.data.BodyMeasurementRepository
 import com.example.healthjournal.data.PersonalCardRepository
+import com.example.healthjournal.data.local.BloodType
 import com.example.healthjournal.data.local.Demographics
 import com.example.healthjournal.data.local.EmergencyContact
 import com.example.healthjournal.data.local.EmergencyContacts
@@ -30,6 +32,7 @@ class PersonalCardViewModelTest {
 
     private lateinit var viewModel: PersonalCardViewModel
     private val repository: PersonalCardRepository = mockk()
+    private val bodyMeasurementRepository: BodyMeasurementRepository = mockk()
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -38,7 +41,8 @@ class PersonalCardViewModelTest {
         coEvery { repository.getPersonalCard() } returns flowOf(null)
         coEvery { repository.insertOrUpdate(any()) } returns Unit
         coEvery { repository.markEntryDirty() } returns Unit
-        viewModel = PersonalCardViewModel(repository, testDispatcher)
+        coEvery { bodyMeasurementRepository.getLatestWeight() } returns null
+        viewModel = PersonalCardViewModel(repository, bodyMeasurementRepository, testDispatcher)
     }
 
     @After
@@ -64,7 +68,7 @@ class PersonalCardViewModelTest {
         seedCard(
             PersonalCard(
                 demographics = Demographics(fullName = "John Doe"),
-                medicalProfile = MedicalProfile(bloodType = "O+")
+                medicalProfile = MedicalProfile(bloodType = BloodType.O_POSITIVE)
             )
         )
 
@@ -74,7 +78,7 @@ class PersonalCardViewModelTest {
         val state = currentState()
         assertTrue(state.isEditing)
         assertEquals("John Doe", state.draftDemographics.fullName)
-        assertEquals("O+", state.draftMedicalProfile.bloodType)
+        assertEquals(BloodType.O_POSITIVE, state.draftMedicalProfile.bloodType)
     }
 
     @Test
@@ -102,14 +106,14 @@ class PersonalCardViewModelTest {
 
         viewModel.startEditing()
         viewModel.onFullNameChanged("John Doe")
-        viewModel.onBloodTypeChanged("A+")
+        viewModel.onBloodTypeChanged(BloodType.A_POSITIVE)
         viewModel.saveChanges()
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = currentState()
         assertFalse(state.isEditing)
         assertEquals("John Doe", state.demographics.fullName)
-        assertEquals("A+", state.medicalProfile.bloodType)
+        assertEquals(BloodType.A_POSITIVE, state.medicalProfile.bloodType)
         coVerify { repository.insertOrUpdate(any()) }
         coVerify { repository.markEntryDirty() }
     }
@@ -125,9 +129,9 @@ class PersonalCardViewModelTest {
     @Test
     fun onBloodTypeChanged_updatesDraftMedicalProfile() {
         viewModel.startEditing()
-        viewModel.onBloodTypeChanged("B-")
+        viewModel.onBloodTypeChanged(BloodType.B_NEGATIVE)
 
-        assertEquals("B-", currentState().draftMedicalProfile.bloodType)
+        assertEquals(BloodType.B_NEGATIVE, currentState().draftMedicalProfile.bloodType)
     }
 
     @Test
@@ -245,13 +249,21 @@ class PersonalCardViewModelTest {
         assertNull(currentState().draftDemographics.heightCm)
     }
 
+    @Test
+    fun formatDouble_removesTrailingZero() {
+        assertEquals("178", PersonalCardViewModel.formatDouble(178.0))
+        assertEquals("178.5", PersonalCardViewModel.formatDouble(178.5))
+        assertEquals("", PersonalCardViewModel.formatDouble(null))
+        assertEquals("0", PersonalCardViewModel.formatDouble(0.0))
+    }
+
     private fun assertNull(value: Any?) {
         org.junit.Assert.assertNull(value)
     }
 
     private fun seedCard(card: PersonalCard) {
         coEvery { repository.getPersonalCard() } returns flowOf(card)
-        viewModel = PersonalCardViewModel(repository, testDispatcher)
+        viewModel = PersonalCardViewModel(repository, bodyMeasurementRepository, testDispatcher)
         testDispatcher.scheduler.advanceUntilIdle()
     }
 }

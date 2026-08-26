@@ -4,6 +4,23 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.UUID
 
+enum class BloodType(val displayName: String) {
+    A_POSITIVE("A+"),
+    A_NEGATIVE("A-"),
+    B_POSITIVE("B+"),
+    B_NEGATIVE("B-"),
+    AB_POSITIVE("AB+"),
+    AB_NEGATIVE("AB-"),
+    O_POSITIVE("O+"),
+    O_NEGATIVE("O-");
+
+    companion object {
+        fun fromDisplayName(displayName: String): BloodType? {
+            return entries.find { it.displayName == displayName }
+        }
+    }
+}
+
 data class MedicationEntry(
     val name: String = "",
     val dosage: String = "",
@@ -27,7 +44,7 @@ data class Demographics(
 )
 
 data class MedicalProfile(
-    val bloodType: String = "",
+    val bloodType: BloodType? = null,
     val allergies: List<String> = emptyList(),
     val medications: List<MedicationEntry> = emptyList(),
     val adverseReactions: List<String> = emptyList()
