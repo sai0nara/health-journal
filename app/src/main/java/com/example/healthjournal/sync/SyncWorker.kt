@@ -297,6 +297,35 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 return Result.retry()
             }
 
+            // ============ Personal card sync ============
+            // Simple LWW merge, singleton entity, no tombstones needed.
+            Log.d("SyncWorker", "Syncing personal card...")
+            val personalCardDao = database.personalCardDao()
+
+            val cloudCardJson = driveHelper.downloadDataFile(DriveServiceHelper.PERSONAL_CARD_FILE)
+            val localCard = personalCardDao.getPersonalCardSnapshot("personal_card")
+            val localCards = listOfNotNull(localCard)
+
+            val mergedCards = when {
+                cloudCardJson == null -> localCards
+                PersonalCardSyncPayload.fromJson(cloudCardJson).isEmpty() && localCards.isNotEmpty() -> localCards
+                else -> SyncMerge.mergePersonalCard(
+                    PersonalCardSyncPayload.fromJson(cloudCardJson),
+                    localCards
+                )
+            }
+
+            mergedCards.forEach { personalCardDao.insertOrUpdate(it) }
+
+            val uploadedCardId = driveHelper.uploadDataFile(
+                DriveServiceHelper.PERSONAL_CARD_FILE,
+                PersonalCardSyncPayload.toJson(mergedCards)
+            )
+            if (uploadedCardId == null) {
+                Log.e("SyncWorker", "Personal card upload failed.")
+                return Result.retry()
+            }
+
             // 7. Purge expired tombstones — only after ALL sync pipelines are
             // done, since both share the deleted_entries table. Young tombstones
             // are kept so a stale cloud copy in a later sync cycle cannot

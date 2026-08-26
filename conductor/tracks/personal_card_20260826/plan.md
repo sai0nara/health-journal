@@ -10,11 +10,11 @@
 - [x] Task: Conductor - User Manual Verification 'Data Layer' (Protocol in workflow.md)
 
 ## Phase 2: ViewModel & Business Logic
-- [ ] Task: Create PersonalCardViewModel with view/edit state management
-- [ ] Task: Implement add/remove operations for list fields
-- [ ] Task: Implement save/cancel with validation
-- [ ] Task: Integrate with Google Drive sync via SyncWorker
-- [ ] Task: Write unit tests for PersonalCardViewModel
+- [x] Task: Create PersonalCardViewModel with view/edit state management
+- [x] Task: Implement add/remove operations for list fields
+- [x] Task: Implement save/cancel with validation
+- [x] Task: Integrate with Google Drive sync via SyncWorker
+- [x] Task: Write unit tests for PersonalCardViewModel
 - [ ] Task: Conductor - User Manual Verification 'ViewModel' (Protocol in workflow.md)
 
 ## Phase 3: UI - View Mode
