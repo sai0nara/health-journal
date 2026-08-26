@@ -27,14 +27,14 @@
 - [x] Task: Write UI tests for PersonalCardScreen
 - [x] Task: Conductor - User Manual Verification 'UI View Mode' (Protocol in workflow.md)
 
-## Phase 4: UI - Edit Mode
-- [ ] Task: Implement edit mode toggle with save/cancel buttons
-- [ ] Task: Create list management components (add/remove items)
-- [ ] Task: Implement DemographicsCard (edit mode)
-- [ ] Task: Implement MedicalProfileCard (edit mode)
-- [ ] Task: Implement MedicalHistoryCard (edit mode)
-- [ ] Task: Implement EmergencyContactsCard (edit mode)
-- [ ] Task: Write UI tests for edit mode interactions
+## Phase 4: UI - Edit Mode [checkpoint: pending]
+- [x] Task: Implement edit mode toggle with save/cancel buttons
+- [x] Task: Create list management components (add/remove items)
+- [x] Task: Implement DemographicsCard (edit mode)
+- [x] Task: Implement MedicalProfileCard (edit mode)
+- [x] Task: Implement MedicalHistoryCard (edit mode)
+- [x] Task: Implement EmergencyContactsCard (edit mode)
+- [x] Task: Write UI tests for edit mode interactions
 - [ ] Task: Conductor - User Manual Verification 'UI Edit Mode' (Protocol in workflow.md)
 
 ## Phase 5: Integration & Polish

@@ -156,6 +156,125 @@ class PersonalCardScreenTest {
         }
     }
 
+    @Test
+    fun editMode_enterEditMode_showsInputFields() {
+        step("Open Personal Card") {
+            setScreen(PersonalCard())
+        }
+
+        step("Enter edit mode") {
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+        }
+
+        step("Verify input fields are shown") {
+            composeTestRule.onNodeWithText("Full Name").assertExists()
+            composeTestRule.onNodeWithText("Date of Birth (YYYY-MM-DD)").assertExists()
+            composeTestRule.onNodeWithText("Sex").assertExists()
+            composeTestRule.onNodeWithText("Height (cm)").assertExists()
+            composeTestRule.onNodeWithText("Weight (kg)").assertExists()
+            composeTestRule.onNodeWithText("Blood Type").assertExists()
+        }
+    }
+
+    @Test
+    fun editMode_cancelEditing_returnsToViewMode() {
+        step("Open Personal Card and enter edit mode") {
+            setScreen(PersonalCard())
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+        }
+
+        step("Click Cancel") {
+            composeTestRule.onNodeWithText("Cancel").performClick()
+        }
+
+        step("Verify returned to view mode") {
+            composeTestRule.onNodeWithContentDescription("Edit personal card").assertExists()
+            composeTestRule.onNodeWithText("Save").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun editMode_addAllergy_dialogAppears() {
+        step("Open Personal Card and enter edit mode") {
+            setScreen(PersonalCard())
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+        }
+
+        step("Click add allergy button") {
+            composeTestRule.onNodeWithContentDescription("Add allergy").performClick()
+        }
+
+        step("Verify allergy dialog appears") {
+            composeTestRule.onNodeWithText("Add Allergy").assertExists()
+            composeTestRule.onNodeWithText("Allergy").assertExists()
+        }
+    }
+
+    @Test
+    fun editMode_addMedication_dialogAppears() {
+        step("Open Personal Card and enter edit mode") {
+            setScreen(PersonalCard())
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+        }
+
+        step("Click add medication button") {
+            composeTestRule.onNodeWithContentDescription("Add medication").performClick()
+        }
+
+        step("Verify medication dialog appears") {
+            composeTestRule.onNodeWithText("Add Medication").assertExists()
+            composeTestRule.onNodeWithText("Drug Name").assertExists()
+            composeTestRule.onNodeWithText("Dosage (e.g., 500mg)").assertExists()
+        }
+    }
+
+    @Test
+    fun editMode_addContact_dialogAppears() {
+        step("Open Personal Card and enter edit mode") {
+            setScreen(PersonalCard())
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+        }
+
+        step("Click add emergency contact button") {
+            composeTestRule.onNodeWithContentDescription("Add emergency contact").performClick()
+        }
+
+        step("Verify contact dialog appears") {
+            composeTestRule.onNodeWithText("Add Emergency Contact").assertExists()
+            composeTestRule.onNodeWithText("Name").assertExists()
+            composeTestRule.onNodeWithText("Relationship").assertExists()
+            composeTestRule.onNodeWithText("Phone Number").assertExists()
+        }
+    }
+
+    @Test
+    fun editMode_withExistingData_populatesFields() {
+        step("Open Personal Card with existing data") {
+            setScreen(
+                PersonalCard(
+                    demographics = Demographics(
+                        fullName = "John Doe",
+                        dateOfBirth = "1990-01-15",
+                        sex = "Male"
+                    ),
+                    medicalProfile = MedicalProfile(
+                        bloodType = "O+",
+                        allergies = listOf("Peanuts")
+                    )
+                )
+            )
+        }
+
+        step("Enter edit mode") {
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+        }
+
+        step("Verify existing data is shown in fields") {
+            composeTestRule.onNodeWithText("O+").assertExists()
+            composeTestRule.onNodeWithText("Peanuts").assertExists()
+        }
+    }
+
     private fun step(description: String, block: () -> Unit) {
         io.qameta.allure.kotlin.Allure.step(description) { block() }
     }
