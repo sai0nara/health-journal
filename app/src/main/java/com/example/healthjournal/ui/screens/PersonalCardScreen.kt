@@ -52,7 +52,12 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import com.example.healthjournal.data.local.BloodType
 import com.example.healthjournal.data.local.Demographics
 import com.example.healthjournal.data.local.EmergencyContact
@@ -564,7 +569,9 @@ private fun DemographicsEditCard(
                 value = demographics.fullName,
                 onValueChange = onFullNameChanged,
                 label = { Text("Full Name") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "Full Name: ${demographics.fullName}" }
             )
 
             // Date of Birth with Date Picker
@@ -589,7 +596,9 @@ private fun DemographicsEditCard(
                 value = demographics.sex,
                 onValueChange = onSexChanged,
                 label = { Text("Sex") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "Sex: ${demographics.sex}" }
             )
 
             // Height with unit conversion
@@ -602,7 +611,9 @@ private fun DemographicsEditCard(
                 supportingText = if (validation.height is ValidationResult.Invalid) {
                     { Text(stringResource(validation.height.errorResId)) }
                 } else null,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "Height ($heightUnit): ${UnitConverter.formatForDisplay(demographics.heightCm, unitSystem, isHeight = true)}" },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
                     imeAction = ImeAction.Next
@@ -619,7 +630,9 @@ private fun DemographicsEditCard(
                 supportingText = if (validation.weight is ValidationResult.Invalid) {
                     { Text(stringResource(validation.weight.errorResId)) }
                 } else null,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "Weight ($weightUnit): ${UnitConverter.formatForDisplay(demographics.weightKg, unitSystem, isHeight = false)}" },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
                     imeAction = ImeAction.Done
@@ -630,7 +643,9 @@ private fun DemographicsEditCard(
                 value = demographics.raceEthnicity,
                 onValueChange = onRaceEthnicityChanged,
                 label = { Text("Race/Ethnicity") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "Race/Ethnicity: ${demographics.raceEthnicity}" }
             )
         }
     }
@@ -643,10 +658,10 @@ private fun DemographicsEditCard(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
-                        val date = java.time.Instant.ofEpochMilli(millis)
-                            .atZone(java.time.ZoneId.systemDefault())
+                        val date = Instant.ofEpochMilli(millis)
+                            .atZone(ZoneId.systemDefault())
                             .toLocalDate()
-                        onDateOfBirthChanged(date.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                        onDateOfBirthChanged(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                     }
                     showDatePicker = false
                 }) {
