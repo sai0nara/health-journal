@@ -14,19 +14,29 @@ object ValidateMeasurements {
 
     const val ERROR_INVALID_FORMAT = "Invalid decimal format"
     const val ERROR_NEGATIVE = "Cannot be negative"
-    const val ERROR_WEIGHT_MAX = "Too large (max 500 kg)"
-    const val ERROR_GIRTH_MAX = "Too large (max 300 cm)"
 
-    private const val MAX_WEIGHT_KG = 500.0
-    private const val MAX_GIRTH_CM = 300.0
-    private val GIRTH_FIELDS = setOf(
-        MeasurementField.CHEST,
-        MeasurementField.WAIST,
-        MeasurementField.GLUTE,
-        MeasurementField.THIGH,
-        MeasurementField.CALF,
-        MeasurementField.BICEP
+    /** Realistic per-parameter sanity caps (user-reviewed 2026-08): a calf
+     *  cannot approach 100 cm, while torso girths get headroom. */
+    private val MAX_BOUNDS = mapOf(
+        MeasurementField.WEIGHT to 500.0,
+        MeasurementField.CHEST to 200.0,
+        MeasurementField.WAIST to 200.0,
+        MeasurementField.GLUTE to 200.0,
+        MeasurementField.THIGH to 120.0,
+        MeasurementField.CALF to 75.0,
+        MeasurementField.BICEP to 75.0
     )
+
+    /** Sanity bound for [field], shared by capture and goal validation. */
+    fun maxFor(field: MeasurementField): Double = MAX_BOUNDS.getValue(field)
+
+    /** Inline error copy for values above the field's cap. */
+    fun maxExceededMessage(field: MeasurementField): String =
+        if (field == MeasurementField.WEIGHT) {
+            "Too large (max ${maxFor(field).toLong()} kg)"
+        } else {
+            "Too large (max ${maxFor(field).toLong()} cm)"
+        }
 
     /**
      * Validates raw text-field input per measurement field. Blank fields are
@@ -44,10 +54,8 @@ object ValidateMeasurements {
             when {
                 value == null -> errors[field] = ERROR_INVALID_FORMAT
                 value < 0.0 -> errors[field] = ERROR_NEGATIVE
-                field == MeasurementField.WEIGHT && value > MAX_WEIGHT_KG ->
-                    errors[field] = ERROR_WEIGHT_MAX
-                field in GIRTH_FIELDS && value > MAX_GIRTH_CM ->
-                    errors[field] = ERROR_GIRTH_MAX
+                value > maxFor(field) ->
+                    errors[field] = maxExceededMessage(field)
             }
         }
         return errors

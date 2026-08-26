@@ -35,6 +35,11 @@ class MainActivity : ComponentActivity() {
         val measurementViewModelFactory = com.example.healthjournal.viewmodel.BodyMeasurementViewModelFactory(
             measurementRepository
         )
+        val goalsRepository = com.example.healthjournal.data.GoalsRepository(database.goalDao())
+        val analyticsViewModel = com.example.healthjournal.viewmodel.BodyAnalyticsViewModel(
+            measurementRepository,
+            goalsRepository
+        )
         val exportViewModel = ExportViewModel(application, journalRepository)
 
         // Trigger sync on start
@@ -62,6 +67,7 @@ class MainActivity : ComponentActivity() {
                             viewModel(factory = measurementViewModelFactory)
                         com.example.healthjournal.ui.screens.MeasurementsScreen(
                             viewModel = measurementViewModel,
+                            analyticsViewModel = analyticsViewModel,
                             onBack = { navController.popBackStack() }
                         )
                     }

@@ -3,7 +3,9 @@ package com.example.healthjournal.ui.screens
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.example.healthjournal.data.BodyMeasurementRepository
+import com.example.healthjournal.data.GoalsRepository
 import com.example.healthjournal.data.local.BodyMeasurementEntry
+import com.example.healthjournal.viewmodel.BodyAnalyticsViewModel
 import com.example.healthjournal.viewmodel.BodyMeasurementViewModel
 import io.mockk.*
 import io.qameta.allure.android.rules.ScreenshotRule
@@ -28,15 +30,40 @@ class MeasurementScreenTest {
     // verification never races with worker-thread coroutines.
     private val testDispatcher = kotlinx.coroutines.test.UnconfinedTestDispatcher()
 
-    private fun setScreen(entries: List<BodyMeasurementEntry>, darkTheme: Boolean = false) {
+    /** Test context exposing seams for goal-flow seeding and DAO verification. */
+    private class ScreenContext(
+        val goalsRepository: GoalsRepository,
+        val goalsDao: com.example.healthjournal.data.local.GoalDao,
+        val goalsFlow: MutableStateFlow<List<com.example.healthjournal.data.local.GoalEntity>>
+    )
+
+    private fun setScreen(
+        entries: List<BodyMeasurementEntry>,
+        darkTheme: Boolean = false
+    ): ScreenContext {
         every { repository.allEntries } returns MutableStateFlow(entries)
+        val goalsFlow =
+            MutableStateFlow(emptyList<com.example.healthjournal.data.local.GoalEntity>())
+        val goalsDao = mockk<com.example.healthjournal.data.local.GoalDao>(relaxed = true)
+        every { goalsDao.observeAll() } returns goalsFlow
+        val goalsRepository = GoalsRepository(goalsDao)
         val viewModel = BodyMeasurementViewModel(repository, testDispatcher)
+        val analyticsViewModel = BodyAnalyticsViewModel(
+            repository,
+            goalsRepository,
+            testDispatcher
+        )
         composeTestRule.setContent {
             com.example.healthjournal.ui.theme.HealthJournalTheme(darkTheme = darkTheme) {
-                MeasurementsScreen(viewModel = viewModel, onBack = {})
+                MeasurementsScreen(
+                    viewModel = viewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    onBack = {}
+                )
             }
         }
         composeTestRule.waitForIdle()
+        return ScreenContext(goalsRepository, goalsDao, goalsFlow)
     }
 
     @Test
@@ -84,8 +111,8 @@ class MeasurementScreenTest {
             )
         }
 
-        step("Verify chart visible") {
-            composeTestRule.onNodeWithTag("bm_trend_chart").assertExists()
+        step("Verify default Weight chart visible") {
+            composeTestRule.onNodeWithTag("bm_chart_WEIGHT").assertExists()
         }
     }
 
@@ -95,8 +122,9 @@ class MeasurementScreenTest {
             setScreen(listOf(BodyMeasurementEntry(waist_cm = 85.0)))
         }
 
-        step("Verify chart absent") {
-            composeTestRule.onNodeWithTag("bm_trend_chart").assertDoesNotExist()
+        step("Verify Weight page shows empty state instead of a chart") {
+            composeTestRule.onNodeWithTag("bm_chart_WEIGHT").assertDoesNotExist()
+            composeTestRule.onNodeWithTag("bm_param_empty_WEIGHT").assertExists()
         }
     }
 
@@ -174,6 +202,159 @@ class MeasurementScreenTest {
         step("Verify per-card sync icons mirror the journal pattern") {
             composeTestRule.onNodeWithContentDescription("Local Only").assertExists()
             composeTestRule.onNodeWithContentDescription("Cloud Synced").assertExists()
+        }
+    }
+
+    @Test
+    fun analytics_sevenParameterTabsRender() {
+        step("Open with one weighted record") {
+            setScreen(listOf(BodyMeasurementEntry(entry_id = "e1", timestamp = 1_000L, weight_kg = 80.0)))
+        }
+
+        step("Verify all seven parameter tabs exist") {
+            // Scoped to the tab row: chart headers repeat the parameter name.
+            listOf("Weight", "Chest", "Waist", "Glute", "Thighs", "Calves", "Biceps")
+                .forEach { label ->
+                    composeTestRule.onNode(
+                        hasAnyAncestor(hasTestTag("bm_tabs")) and hasText(label)
+                    ).assertExists()
+                }
+        }
+    }
+
+    @Test
+    fun analytics_tappingTabSwapsPlottedSeries() {
+        step("Open with weight and waist records") {
+            setScreen(
+                listOf(
+                    BodyMeasurementEntry(entry_id = "e1", timestamp = 4_000L, weight_kg = 80.0),
+                    BodyMeasurementEntry(entry_id = "w1", timestamp = 5_000L, waist_cm = 85.0)
+                )
+            )
+        }
+
+        step("Verify default page is Weight and Waist chart not composed") {
+            composeTestRule.onNodeWithTag("bm_chart_WEIGHT").assertExists()
+            composeTestRule.onNodeWithTag("bm_chart_WAIST").assertDoesNotExist()
+        }
+
+        step("Tap the Waist tab") {
+            composeTestRule.onNodeWithText("Waist").performClick()
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithTag("bm_chart_WAIST")
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+        }
+
+        step("Verify Waist chart composed and Weight page disposed") {
+            composeTestRule.onNodeWithTag("bm_chart_WAIST").assertExists()
+            composeTestRule.onNodeWithTag("bm_chart_WEIGHT").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun analytics_emptyParameterPageShowsFriendlyMessage() {
+        step("Open with a weight-only record and switch to Calves") {
+            setScreen(listOf(BodyMeasurementEntry(entry_id = "e1", timestamp = 1_000L, weight_kg = 80.0)))
+            // Seven tabs overflow narrow displays: scroll the row first.
+            // The scroll action lives on the row's internal viewport container.
+            composeTestRule.onNode(
+                hasScrollAction() and hasAnyDescendant(hasText("Calves"))
+            ).performScrollToNode(hasText("Calves"))
+            composeTestRule.onNodeWithText("Calves").performClick()
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithTag("bm_param_empty_CALF")
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+        }
+
+        step("Verify empty message for Calves") {
+            composeTestRule.onNodeWithTag("bm_param_empty_CALF").assertExists()
+            composeTestRule.onNodeWithText("No Calves data yet").assertExists()
+        }
+    }
+
+    @Test
+    fun goalSheet_opensPrefilledAndSavesViaRepository() {
+        val ctx = setScreen(
+            listOf(BodyMeasurementEntry(entry_id = "e1", timestamp = 1_000L, weight_kg = 80.0))
+        )
+        ctx.goalsFlow.value = listOf(
+            com.example.healthjournal.data.local.GoalEntity("WEIGHT", 75.0, 1L)
+        )
+
+        step("Open the Set Goal sheet for Weight") {
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithTag("bm_set_goal")
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithTag("bm_set_goal").performClick()
+        }
+
+        step("Sheet is pre-filled with the current goal") {
+            composeTestRule.onNodeWithTag("bm_goal_input")
+                .assertTextContains("75", substring = true)
+        }
+
+        step("Saving persists the new target via repository") {
+            composeTestRule.onNodeWithTag("bm_goal_input").performTextClearance()
+            composeTestRule.onNodeWithTag("bm_goal_input").performTextInput("70.5")
+            composeTestRule.onNodeWithTag("bm_goal_save").performClick()
+            io.mockk.coVerify {
+                ctx.goalsDao.upsertGoal(
+                    match {
+                        it.parameterId == "WEIGHT" &&
+                            kotlin.math.abs(it.target - 70.5) < 0.001
+                    }
+                )
+            }
+        }
+    }
+
+    @Test
+    fun goalSheet_clearDeletesGoalViaRepository() {
+        val ctx = setScreen(
+            listOf(BodyMeasurementEntry(entry_id = "e1", timestamp = 1_000L, weight_kg = 80.0))
+        )
+        ctx.goalsFlow.value = listOf(
+            com.example.healthjournal.data.local.GoalEntity("WEIGHT", 75.0, 1L)
+        )
+
+        step("Open the Set Goal sheet and clear") {
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithTag("bm_set_goal")
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithTag("bm_set_goal").performClick()
+            composeTestRule.onNodeWithTag("bm_goal_clear").performClick()
+        }
+
+        step("Clear deletes via repository") {
+            io.mockk.coVerify { ctx.goalsDao.deleteById("WEIGHT") }
+        }
+    }
+
+    @Test
+    fun goalSheet_invalidInputShowsErrorAndBlocksSave() {
+        val ctx = setScreen(
+            listOf(BodyMeasurementEntry(entry_id = "e1", timestamp = 1_000L, weight_kg = 80.0))
+        )
+
+        step("Open the Set Goal sheet and enter an out-of-bounds value") {
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithTag("bm_set_goal")
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithTag("bm_set_goal").performClick()
+            composeTestRule.onNodeWithTag("bm_goal_input").performTextInput("9999")
+            composeTestRule.onNodeWithTag("bm_goal_save").performClick()
+        }
+
+        step("Inline error appears and save is blocked") {
+            composeTestRule.onNodeWithTag("bm_goal_error", useUnmergedTree = true)
+                .assertExists()
+                .assertTextEquals("Too large (max 500 kg)")
+            io.mockk.coVerify(exactly = 0) { ctx.goalsDao.upsertGoal(any()) }
         }
     }
 }

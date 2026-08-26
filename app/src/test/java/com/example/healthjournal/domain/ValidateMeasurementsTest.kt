@@ -67,22 +67,36 @@ class ValidateMeasurementsTest {
     fun weightAbove500kg_reportsWeightMaxError() {
         val errors = ValidateMeasurements.validate(raw(MeasurementField.WEIGHT to "501"))
 
-        assertEquals(ValidateMeasurements.ERROR_WEIGHT_MAX, errors[MeasurementField.WEIGHT])
+        assertEquals(
+            ValidateMeasurements.maxExceededMessage(MeasurementField.WEIGHT),
+            errors[MeasurementField.WEIGHT]
+        )
     }
 
     @Test
-    fun girthAbove300cm_reportsGirthMaxError() {
-        val errors = ValidateMeasurements.validate(raw(MeasurementField.CHEST to "301"))
+    fun girthAbovePerFieldCap_reportsGirthMaxError() {
+        // Chest caps at 200 cm; small limbs cap tighter (realistic bounds).
+        val errors = ValidateMeasurements.validate(
+            raw(MeasurementField.CHEST to "201", MeasurementField.CALF to "76")
+        )
 
-        assertEquals(ValidateMeasurements.ERROR_GIRTH_MAX, errors[MeasurementField.CHEST])
+        assertEquals(
+            ValidateMeasurements.maxExceededMessage(MeasurementField.CHEST),
+            errors[MeasurementField.CHEST]
+        )
+        assertEquals(
+            ValidateMeasurements.maxExceededMessage(MeasurementField.CALF),
+            errors[MeasurementField.CALF]
+        )
     }
 
     @Test
-    fun boundaryValues_500kgAnd300cm_areAccepted() {
+    fun boundaryValues_atPerFieldCaps_areAccepted() {
         val errors = ValidateMeasurements.validate(
             raw(
                 MeasurementField.WEIGHT to "500",
-                MeasurementField.WAIST to "300"
+                MeasurementField.WAIST to "200",
+                MeasurementField.CALF to "75"
             )
         )
 

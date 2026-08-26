@@ -1,6 +1,7 @@
 package com.example.healthjournal.sync
 
 import com.example.healthjournal.data.local.BodyMeasurementEntry
+import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 
 /**
@@ -60,6 +61,34 @@ object SyncMerge {
             val cloud = result[local.entry_id]
             if (cloud == null || local.lastModified > cloud.lastModified) {
                 result[local.entry_id] = local
+            }
+        }
+
+        return result.values.toList()
+    }
+
+    /**
+     * Full-snapshot merge for goals: newest [GoalEntity.lastModified] wins
+     * per parameter id (cloud wins ties). Local goals absent from the cloud
+     * snapshot are pruned — propagating goal clears across devices without
+     * needing a tombstone ledger.
+     */
+    fun mergeGoals(
+        cloudGoals: List<GoalEntity>,
+        localGoals: List<GoalEntity>
+    ): List<GoalEntity> {
+        val result = mutableMapOf<String, GoalEntity>()
+
+        cloudGoals.forEach { cloud ->
+            result[cloud.parameterId] = cloud
+        }
+
+        // Keep local copy only when cloud has the same parameter AND
+        // the local edit is strictly newer (cloud wins ties).
+        localGoals.forEach { local ->
+            val cloud = result[local.parameterId]
+            if (cloud != null && local.lastModified > cloud.lastModified) {
+                result[local.parameterId] = local
             }
         }
 

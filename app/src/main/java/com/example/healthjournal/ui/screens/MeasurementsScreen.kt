@@ -1,6 +1,5 @@
 package com.example.healthjournal.ui.screens
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,11 +12,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -25,22 +27,25 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.testTag
@@ -48,8 +53,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.data.local.BodyMeasurementEntry
+import com.example.healthjournal.domain.GoalValidator
+import com.example.healthjournal.domain.MeasurementField
+import com.example.healthjournal.domain.toParamTrend
 import com.example.healthjournal.domain.toSummary
-import com.example.healthjournal.domain.toWeightTrend
+import com.example.healthjournal.ui.components.GoalSheet
+import com.example.healthjournal.ui.components.ParamTrendChart
+import com.example.healthjournal.viewmodel.BodyAnalyticsViewModel
 import com.example.healthjournal.viewmodel.BodyMeasurementViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -64,13 +74,40 @@ import kotlinx.coroutines.launch
 @Composable
 fun MeasurementsScreen(
     viewModel: BodyMeasurementViewModel,
+    analyticsViewModel: BodyAnalyticsViewModel,
     onBack: () -> Unit
 ) {
     val entries by viewModel.entries.collectAsState()
+    val analyticsState by analyticsViewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
     val dateFormat = remember { SimpleDateFormat("d MMM yyyy", Locale.getDefault()) }
+    val pagerState = rememberPagerState(initialPage = 0) { MeasurementField.entries.size }
+
+    // Two-way sync: swiping updates the ViewModel tab, tapping a tab animates the pager.
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            analyticsViewModel.onTabSelected(MeasurementField.entries[page])
+        }
+    }
+
+    var sheetField by remember { mutableStateOf<MeasurementField?>(null) }
+    sheetField?.let { field ->
+        GoalSheet(
+            field = field,
+            initialTarget = analyticsState.goalTargets[field.name],
+            onSave = { target ->
+                analyticsViewModel.saveGoal(field, target)
+                sheetField = null
+            },
+            onClear = {
+                analyticsViewModel.clearGoal(field)
+                sheetField = null
+            },
+            onDismiss = { sheetField = null }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -86,16 +123,57 @@ fun MeasurementsScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            val trend = entries.toWeightTrend()
-            if (trend.isNotEmpty()) {
-                WeightTrendChart(
-                    trend = trend,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(160.dp)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .testTag("bm_trend_chart")
-                )
+            ScrollableTabRow(
+                modifier = Modifier.testTag("bm_tabs"),
+                selectedTabIndex = MeasurementField.entries.indexOf(analyticsState.selectedTab)
+            ) {
+                MeasurementField.entries.forEachIndexed { index, field ->
+                    Tab(
+                        selected = analyticsState.selectedTab == field,
+                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                        text = { Text(field.label) }
+                    )
+                }
+            }
+
+            HorizontalPager(state = pagerState) { page ->
+                val field = MeasurementField.entries[page]
+                val pageSeries = remember(entries, field) { entries.toParamTrend(field) }
+                val goalTarget = analyticsState.goalTargets[field.name]
+
+                // Column wrapper: header and chart must stack, not overlap
+                // in the pager page's Box scope.
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    ChartHeader(field, goalTarget) { sheetField = field }
+
+                    if (pageSeries.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No ${field.label} data yet",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.testTag("bm_param_empty_${field.name}")
+                            )
+                        }
+                    } else {
+                        ParamTrendChart(
+                            series = pageSeries,
+                            goalTarget = goalTarget,
+                            unitLabel = GoalValidator.unitLabel(field),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .testTag("bm_chart_${field.name}")
+                        )
+                    }
+                }
             }
 
             if (entries.isEmpty()) {
@@ -144,6 +222,43 @@ fun MeasurementsScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/** Chart section header: parameter name plus the Set Goal affordance (FR5). */
+@Composable
+private fun ChartHeader(
+    field: MeasurementField,
+    goalTarget: Double?,
+    onSetGoal: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = if (goalTarget != null) {
+                "${field.label} · Goal ${goalTarget} ${GoalValidator.unitLabel(field)}"
+            } else {
+                field.label
+            },
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold
+        )
+        IconButton(onClick = onSetGoal, modifier = Modifier.testTag("bm_set_goal")) {
+            Icon(
+                Icons.Outlined.Flag,
+                contentDescription = "Set ${field.label} goal",
+                tint = if (goalTarget != null) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
         }
     }
 }
@@ -207,52 +322,3 @@ private fun MeasurementCard(
     }
 }
 
-/**
- * Minimal dependency-free line chart (Compose Canvas): plots the weight
- * series left-to-right with automatic min/max scaling.
- */
-@Composable
-fun WeightTrendChart(
-    trend: List<Pair<Long, Double>>,
-    modifier: Modifier = Modifier
-) {
-    if (trend.isEmpty()) return
-
-    val lineColor = MaterialTheme.colorScheme.primary
-    val pointColor = MaterialTheme.colorScheme.secondary
-
-    Canvas(modifier = modifier) {
-        if (size.width <= 0f || size.height <= 0f) return@Canvas
-
-        val times = trend.map { it.first }
-        val values = trend.map { it.second }
-        val minTime = times.min()
-        val maxTime = times.max()
-        val minValue = values.min()
-        val maxValue = values.max()
-
-        val horizontalPadding = 24f
-        val verticalPadding = 24f
-        val drawableWidth = size.width - horizontalPadding * 2
-        val drawableHeight = size.height - verticalPadding * 2
-        val timeSpan = (maxTime - minTime).coerceAtLeast(1L)
-        // Flat series still renders a mid-height line instead of dividing by zero.
-        val valueSpan = (maxValue - minValue).takeIf { it > 0.0 } ?: 1.0
-
-        val points = trend.map { (time, value) ->
-            Offset(
-                x = horizontalPadding + drawableWidth *
-                    ((time - minTime).toFloat() / timeSpan),
-                y = verticalPadding + drawableHeight *
-                    (1f - ((value - minValue).toFloat() / valueSpan.toFloat()))
-            )
-        }
-
-        val path = Path().apply {
-            moveTo(points.first().x, points.first().y)
-            points.drop(1).forEach { lineTo(it.x, it.y) }
-        }
-        drawPath(path, color = lineColor, style = Stroke(width = 6f))
-        points.forEach { drawCircle(color = pointColor, radius = 8f, center = it) }
-    }
-}

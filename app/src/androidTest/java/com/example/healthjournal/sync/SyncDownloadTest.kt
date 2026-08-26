@@ -307,6 +307,9 @@ class SyncDownloadTest {
             coEvery {
                 mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_TOMBSTONES_FILE)
             } returns ledgerJson
+            coEvery {
+                mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_GOALS_FILE)
+            } returns null
             coEvery { mock.uploadDataFile(any(), any()) } answers {
                 uploadedFiles[firstArg()] = secondArg()
                 "uploaded"
@@ -363,6 +366,9 @@ class SyncDownloadTest {
             coEvery {
                 mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_TOMBSTONES_FILE)
             } returns staleLedgerJson
+            coEvery {
+                mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_GOALS_FILE)
+            } returns null
             coEvery { mock.uploadDataFile(any(), any()) } answers {
                 uploadedFiles[firstArg()] = secondArg()
                 "uploaded"
@@ -419,6 +425,9 @@ class SyncDownloadTest {
             coEvery {
                 mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_TOMBSTONES_FILE)
             } returns staleLedgerJson
+            coEvery {
+                mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_GOALS_FILE)
+            } returns null
             coEvery { mock.uploadDataFile(any(), any()) } answers {
                 uploadedFiles[firstArg()] = secondArg()
                 "uploaded"

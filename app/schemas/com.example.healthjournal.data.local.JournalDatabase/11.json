@@ -1,0 +1,283 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 11,
+    "identityHash": "e24c1a06ba25199e00fa9cd8303c2d42",
+    "entities": [
+      {
+        "tableName": "journal_entries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entry_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `lastModified` INTEGER NOT NULL, `description` TEXT NOT NULL, `photo_urls` TEXT, `attachments` TEXT, `bp_systolic` REAL, `bp_diastolic` REAL, `heart_rate_avg` INTEGER, `sleep_hours` REAL, `ai_advice` TEXT, `isArchived` INTEGER, `isSynced` INTEGER, `syncStatus` TEXT, PRIMARY KEY(`entry_id`))",
+        "fields": [
+          {
+            "fieldPath": "entry_id",
+            "columnName": "entry_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "lastModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photo_urls",
+            "columnName": "photo_urls",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "attachments",
+            "columnName": "attachments",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "bp_systolic",
+            "columnName": "bp_systolic",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "bp_diastolic",
+            "columnName": "bp_diastolic",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "heart_rate_avg",
+            "columnName": "heart_rate_avg",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "sleep_hours",
+            "columnName": "sleep_hours",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ai_advice",
+            "columnName": "ai_advice",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isArchived",
+            "columnName": "isArchived",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "entry_id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "deleted_entries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entry_id` TEXT NOT NULL, `deletedAt` INTEGER NOT NULL, PRIMARY KEY(`entry_id`))",
+        "fields": [
+          {
+            "fieldPath": "entry_id",
+            "columnName": "entry_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAt",
+            "columnName": "deletedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "entry_id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "EntryTagCrossRef",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entryId` TEXT NOT NULL, `tag` TEXT NOT NULL, PRIMARY KEY(`entryId`, `tag`))",
+        "fields": [
+          {
+            "fieldPath": "entryId",
+            "columnName": "entryId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tag",
+            "columnName": "tag",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "entryId",
+            "tag"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "body_measurements",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entry_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `lastModified` INTEGER NOT NULL, `weight_kg` REAL, `chest_cm` REAL, `waist_cm` REAL, `glute_cm` REAL, `thigh_cm` REAL, `calf_cm` REAL, `bicep_cm` REAL, `isSynced` INTEGER, `syncStatus` TEXT, PRIMARY KEY(`entry_id`))",
+        "fields": [
+          {
+            "fieldPath": "entry_id",
+            "columnName": "entry_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "lastModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "weight_kg",
+            "columnName": "weight_kg",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "chest_cm",
+            "columnName": "chest_cm",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "waist_cm",
+            "columnName": "waist_cm",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "glute_cm",
+            "columnName": "glute_cm",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "thigh_cm",
+            "columnName": "thigh_cm",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "calf_cm",
+            "columnName": "calf_cm",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "bicep_cm",
+            "columnName": "bicep_cm",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "entry_id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "goals",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`parameterId` TEXT NOT NULL, `target` REAL NOT NULL, `lastModified` INTEGER NOT NULL, PRIMARY KEY(`parameterId`))",
+        "fields": [
+          {
+            "fieldPath": "parameterId",
+            "columnName": "parameterId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "target",
+            "columnName": "target",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "lastModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "parameterId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e24c1a06ba25199e00fa9cd8303c2d42')"
+    ]
+  }
+}
