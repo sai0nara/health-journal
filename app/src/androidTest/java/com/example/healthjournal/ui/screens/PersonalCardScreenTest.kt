@@ -275,6 +275,51 @@ class PersonalCardScreenTest {
         }
     }
 
+    @Test
+    fun editMode_showsUnitSystemToggle() {
+        step("Open Personal Card screen with empty card") {
+            setScreen(PersonalCard())
+        }
+
+        step("Enter edit mode") {
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+        }
+
+        step("Verify Unit System toggle is shown") {
+            composeTestRule.onNodeWithText("Unit System").assertExists()
+        }
+    }
+
+    @Test
+    fun editMode_showsDatePickerButton() {
+        step("Open Personal Card screen with empty card") {
+            setScreen(PersonalCard())
+        }
+
+        step("Enter edit mode") {
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+        }
+
+        step("Verify Date Picker button is shown") {
+            composeTestRule.onNodeWithContentDescription("Select date").assertExists()
+        }
+    }
+
+    @Test
+    fun editMode_disablesSaveWhenInvalid() {
+        step("Open Personal Card screen with empty card") {
+            setScreen(PersonalCard())
+        }
+
+        step("Enter edit mode") {
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+        }
+
+        step("Verify Save button is disabled") {
+            composeTestRule.onNodeWithText("Save").assertIsNotEnabled()
+        }
+    }
+
     private fun step(description: String, block: () -> Unit) {
         io.qameta.allure.kotlin.Allure.step(description) { block() }
     }

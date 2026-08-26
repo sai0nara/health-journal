@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -43,7 +44,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.data.local.BloodType
 import com.example.healthjournal.data.local.Demographics
@@ -52,7 +60,11 @@ import com.example.healthjournal.data.local.EmergencyContacts
 import com.example.healthjournal.data.local.MedicalHistory
 import com.example.healthjournal.data.local.MedicalProfile
 import com.example.healthjournal.data.local.MedicationEntry
+import com.example.healthjournal.data.local.UnitSystem
+import com.example.healthjournal.domain.validation.DemographicsValidationResult
+import com.example.healthjournal.domain.validation.ValidationResult
 import com.example.healthjournal.viewmodel.PersonalCardViewModel
+import com.example.healthjournal.viewmodel.UnitConverter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,7 +94,10 @@ fun PersonalCardScreen(
                         TextButton(onClick = { viewModel.cancelEditing() }) {
                             Text("Cancel")
                         }
-                        TextButton(onClick = { viewModel.saveChanges() }) {
+                        TextButton(
+                            onClick = { viewModel.saveChanges() },
+                            enabled = uiState.validation.isValid
+                        ) {
                             Text("Save")
                         }
                     } else {
@@ -121,12 +136,15 @@ fun PersonalCardScreen(
                     if (uiState.isEditing) {
                         DemographicsEditCard(
                             demographics = uiState.draftDemographics,
+                            validation = uiState.validation,
+                            unitSystem = uiState.unitSystem,
                             onFullNameChanged = viewModel::onFullNameChanged,
                             onDateOfBirthChanged = viewModel::onDateOfBirthChanged,
                             onSexChanged = viewModel::onSexChanged,
                             onHeightChanged = viewModel::onHeightChanged,
                             onWeightChanged = viewModel::onWeightChanged,
-                            onRaceEthnicityChanged = viewModel::onRaceEthnicityChanged
+                            onRaceEthnicityChanged = viewModel::onRaceEthnicityChanged,
+                            onUnitSystemChanged = viewModel::onUnitSystemChanged
                         )
                     } else {
                         DemographicsCard(demographics = uiState.demographics)
@@ -471,16 +489,23 @@ private fun InfoRow(label: String, value: String) {
 
 // ==================== EDIT MODE CARDS ====================
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DemographicsEditCard(
     demographics: Demographics,
+    validation: DemographicsValidationResult,
+    unitSystem: UnitSystem,
     onFullNameChanged: (String) -> Unit,
     onDateOfBirthChanged: (String) -> Unit,
     onSexChanged: (String) -> Unit,
     onHeightChanged: (String) -> Unit,
     onWeightChanged: (String) -> Unit,
-    onRaceEthnicityChanged: (String) -> Unit
+    onRaceEthnicityChanged: (String) -> Unit,
+    onUnitSystemChanged: (UnitSystem) -> Unit
 ) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    var unitSystemExpanded by remember { mutableStateOf(false) }
+
     OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.outlinedCardColors(
@@ -499,42 +524,142 @@ private fun DemographicsEditCard(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Unit System Toggle
+            ExposedDropdownMenuBox(
+                expanded = unitSystemExpanded,
+                onExpandedChange = { unitSystemExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value = unitSystem.name.lowercase().replaceFirstChar { it.uppercase() },
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Unit System") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitSystemExpanded) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                )
+                ExposedDropdownMenu(
+                    expanded = unitSystemExpanded,
+                    onDismissRequest = { unitSystemExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Metric (kg/cm)") },
+                        onClick = {
+                            onUnitSystemChanged(UnitSystem.METRIC)
+                            unitSystemExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Imperial (lbs/in)") },
+                        onClick = {
+                            onUnitSystemChanged(UnitSystem.IMPERIAL)
+                            unitSystemExpanded = false
+                        }
+                    )
+                }
+            }
+
             OutlinedTextField(
                 value = demographics.fullName,
                 onValueChange = onFullNameChanged,
                 label = { Text("Full Name") },
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // Date of Birth with Date Picker
             OutlinedTextField(
                 value = demographics.dateOfBirth,
                 onValueChange = onDateOfBirthChanged,
                 label = { Text("Date of Birth (YYYY-MM-DD)") },
-                modifier = Modifier.fillMaxWidth()
+                isError = validation.dateOfBirth is ValidationResult.Invalid,
+                supportingText = if (validation.dateOfBirth is ValidationResult.Invalid) {
+                    { Text(stringResource(validation.dateOfBirth.errorResId)) }
+                } else null,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                trailingIcon = {
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(Icons.Default.DateRange, contentDescription = "Select date")
+                    }
+                }
             )
+
             OutlinedTextField(
                 value = demographics.sex,
                 onValueChange = onSexChanged,
                 label = { Text("Sex") },
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // Height with unit conversion
+            val heightUnit = if (unitSystem == UnitSystem.METRIC) "cm" else "in"
             OutlinedTextField(
-                value = PersonalCardViewModel.formatDouble(demographics.heightCm),
+                value = UnitConverter.formatForDisplay(demographics.heightCm, unitSystem, isHeight = true),
                 onValueChange = onHeightChanged,
-                label = { Text("Height (cm)") },
-                modifier = Modifier.fillMaxWidth()
+                label = { Text("Height ($heightUnit)") },
+                isError = validation.height is ValidationResult.Invalid,
+                supportingText = if (validation.height is ValidationResult.Invalid) {
+                    { Text(stringResource(validation.height.errorResId)) }
+                } else null,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Next
+                )
             )
+
+            // Weight with unit conversion
+            val weightUnit = if (unitSystem == UnitSystem.METRIC) "kg" else "lbs"
             OutlinedTextField(
-                value = PersonalCardViewModel.formatDouble(demographics.weightKg),
+                value = UnitConverter.formatForDisplay(demographics.weightKg, unitSystem, isHeight = false),
                 onValueChange = onWeightChanged,
-                label = { Text("Weight (kg)") },
-                modifier = Modifier.fillMaxWidth()
+                label = { Text("Weight ($weightUnit)") },
+                isError = validation.weight is ValidationResult.Invalid,
+                supportingText = if (validation.weight is ValidationResult.Invalid) {
+                    { Text(stringResource(validation.weight.errorResId)) }
+                } else null,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Done
+                )
             )
+
             OutlinedTextField(
                 value = demographics.raceEthnicity,
                 onValueChange = onRaceEthnicityChanged,
                 label = { Text("Race/Ethnicity") },
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+    }
+
+    // Date Picker Dialog
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val date = java.time.Instant.ofEpochMilli(millis)
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toLocalDate()
+                        onDateOfBirthChanged(date.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 }
