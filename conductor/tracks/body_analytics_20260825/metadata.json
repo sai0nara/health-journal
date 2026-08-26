@@ -1,8 +1,8 @@
 {
   "track_id": "body_analytics_20260825",
   "type": "feature",
-  "status": "new",
+  "status": "done",
   "created_at": "2026-08-25T08:24:28Z",
-  "updated_at": "2026-08-25T08:24:28Z",
+  "updated_at": "2026-08-26T11:30:00Z",
   "description": "Body Analytics — Per-Parameter Trends & Goal Lines: tabbed per-parameter trend graphs with dashed goal lines and delta area fill replacing the Measurements screen chart section; Room-backed per-parameter goals synced across devices via a new sibling Drive payload file."
 }
