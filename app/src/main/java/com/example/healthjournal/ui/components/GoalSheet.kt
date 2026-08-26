@@ -23,6 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -53,6 +55,7 @@ fun GoalSheet(
     }
     var rawText by remember(field, initialTarget) { mutableStateOf(prefill) }
     var error by remember(field) { mutableStateOf<String?>(null) }
+    val haptic = LocalHapticFeedback.current
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -109,7 +112,10 @@ fun GoalSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 TextButton(
-                    onClick = onClear,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onClear()
+                    },
                     modifier = Modifier.testTag("bm_goal_clear")
                 ) {
                     Text("Clear")
@@ -119,6 +125,7 @@ fun GoalSheet(
                     onClick = {
                         val validationError = GoalValidator.validate(field, rawText)
                         if (validationError == null) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onSave(rawText.trim().toDouble())
                         } else {
                             error = validationError

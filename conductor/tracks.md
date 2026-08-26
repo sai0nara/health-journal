@@ -38,6 +38,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Body Analytics — Per-Parameter Trends & Goal Lines**
+- [x] **Track: Body Analytics — Per-Parameter Trends & Goal Lines**
   *Link: [./tracks/body_analytics_20260825/](./tracks/body_analytics_20260825/)*
 

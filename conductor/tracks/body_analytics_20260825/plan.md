@@ -62,5 +62,5 @@
 - [x] Task: Run complete unit test suite (`CI=true ./gradlew testDebugUnitTest`) — zero failures
 - [x] Task: Run complete instrumented suite on device (`CI=true ./gradlew connectedDebugAndroidTest`) — zero failures [90/90]
 - [x] Task: Verify coverage >80% for changed code paths [note tooling status]
-- [ ] Task: Lint gate (`CI=true ./gradlew :app:lintDebug`) + hardcoded-color audit on new UI files
+- [x] Task: Lint gate (`CI=true ./gradlew :app:lintDebug`) + hardcoded-color audit on new UI files
 - [ ] Task: Conductor - User Manual Verification 'Phase 5' (Protocol in workflow.md)
