@@ -13,6 +13,9 @@ import com.example.healthjournal.data.local.MedicalHistory
 import com.example.healthjournal.data.local.MedicalProfile
 import com.example.healthjournal.data.local.MedicationEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.UnitSystem
+import com.example.healthjournal.domain.validation.DemographicsValidationResult
+import com.example.healthjournal.domain.validation.DemographicsValidator
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +28,7 @@ data class PersonalCardUiState(
     val isEditing: Boolean = false,
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
+    val unitSystem: UnitSystem = UnitSystem.METRIC,
     val demographics: Demographics = Demographics(),
     val medicalProfile: MedicalProfile = MedicalProfile(),
     val medicalHistory: MedicalHistory = MedicalHistory(),
@@ -32,7 +36,8 @@ data class PersonalCardUiState(
     val draftDemographics: Demographics = Demographics(),
     val draftMedicalProfile: MedicalProfile = MedicalProfile(),
     val draftMedicalHistory: MedicalHistory = MedicalHistory(),
-    val draftEmergencyContacts: EmergencyContacts = EmergencyContacts()
+    val draftEmergencyContacts: EmergencyContacts = EmergencyContacts(),
+    val validation: DemographicsValidationResult = DemographicsValidationResult()
 )
 
 class PersonalCardViewModel(
@@ -43,6 +48,8 @@ class PersonalCardViewModel(
 
     private val _uiState = MutableStateFlow(PersonalCardUiState())
     val uiState: StateFlow<PersonalCardUiState> = _uiState.asStateFlow()
+
+    private val demographicsValidator = DemographicsValidator()
 
     init {
         viewModelScope.launch(ioDispatcher) {
@@ -140,6 +147,7 @@ class PersonalCardViewModel(
             else -> "${digits.substring(0, 4)}-${digits.substring(4, 6)}-${digits.substring(6)}"
         }
         _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(dateOfBirth = formatted)) }
+        validateDraft()
     }
 
     fun onSexChanged(value: String) {
@@ -147,31 +155,32 @@ class PersonalCardViewModel(
     }
 
     fun onHeightChanged(value: String) {
-        val height = parseMeasurement(value, maxHeight = 300.0)
-        _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(heightCm = height)) }
+        val state = _uiState.value
+        val heightCm = UnitConverter.parseInput(value, state.unitSystem, isHeight = true)
+        _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(heightCm = heightCm)) }
+        validateDraft()
     }
 
     fun onWeightChanged(value: String) {
-        val weight = parseMeasurement(value, maxHeight = 500.0)
-        _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(weightKg = weight)) }
-    }
-
-    private fun parseMeasurement(value: String, maxHeight: Double): Double? {
-        if (value.isEmpty()) return null
-        val limited = value.take(7)
-        val parts = limited.split(".")
-        return when {
-            parts.size > 2 -> null
-            parts.size == 2 && parts[1].length > 2 -> null
-            else -> {
-                val num = limited.toDoubleOrNull()
-                if (num != null && num in 0.0..maxHeight) num else null
-            }
-        }
+        val state = _uiState.value
+        val weightKg = UnitConverter.parseInput(value, state.unitSystem, isHeight = false)
+        _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(weightKg = weightKg)) }
+        validateDraft()
     }
 
     fun onRaceEthnicityChanged(value: String) {
         _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(raceEthnicity = value)) }
+    }
+
+    fun onUnitSystemChanged(unitSystem: UnitSystem) {
+        _uiState.update { it.copy(unitSystem = unitSystem) }
+        validateDraft()
+    }
+
+    private fun validateDraft() {
+        val state = _uiState.value
+        val validation = demographicsValidator(state.draftDemographics, state.unitSystem)
+        _uiState.update { it.copy(validation = validation) }
     }
 
     companion object {

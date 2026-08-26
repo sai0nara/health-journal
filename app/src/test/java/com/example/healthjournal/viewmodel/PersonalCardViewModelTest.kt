@@ -10,6 +10,9 @@ import com.example.healthjournal.data.local.MedicalHistory
 import com.example.healthjournal.data.local.MedicalProfile
 import com.example.healthjournal.data.local.MedicationEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.UnitSystem
+import com.example.healthjournal.domain.validation.ValidationResult
+import com.example.healthjournal.domain.validation.DemographicsValidationResult
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -250,33 +253,45 @@ class PersonalCardViewModelTest {
     }
 
     @Test
-    fun onHeightChanged_validatesMaxTwoDecimals() {
+    fun onHeightChanged_updatesDraftDemographics() {
         viewModel.startEditing()
-        viewModel.onHeightChanged("178.25")
-        assertEquals(178.25, currentState().draftDemographics.heightCm!!, 0.001)
+        viewModel.onHeightChanged("180.5")
 
-        viewModel.onHeightChanged("178.345")
-        assertNull(currentState().draftDemographics.heightCm)
+        assertEquals(180.5, currentState().draftDemographics.heightCm!!, 0.001)
     }
 
     @Test
-    fun onHeightChanged_validatesMaxValue() {
+    fun onHeightChanged_validatesOutOfRange() {
         viewModel.startEditing()
         viewModel.onHeightChanged("350")
-        assertNull(currentState().draftDemographics.heightCm)
 
-        viewModel.onHeightChanged("250")
-        assertEquals(250.0, currentState().draftDemographics.heightCm!!, 0.001)
+        assertTrue(currentState().validation.height is ValidationResult.Invalid)
     }
 
     @Test
-    fun onWeightChanged_validatesMaxTwoDecimals() {
+    fun onHeightChanged_acceptsValidHeight() {
+        viewModel.startEditing()
+        viewModel.onHeightChanged("178.25")
+
+        assertEquals(178.25, currentState().draftDemographics.heightCm!!, 0.001)
+        assertTrue(currentState().validation.height is ValidationResult.Valid)
+    }
+
+    @Test
+    fun onWeightChanged_validatesOutOfRange() {
+        viewModel.startEditing()
+        viewModel.onWeightChanged("700")
+
+        assertTrue(currentState().validation.weight is ValidationResult.Invalid)
+    }
+
+    @Test
+    fun onWeightChanged_acceptsValidWeight() {
         viewModel.startEditing()
         viewModel.onWeightChanged("75.55")
-        assertEquals(75.55, currentState().draftDemographics.weightKg!!, 0.001)
 
-        viewModel.onWeightChanged("75.345")
-        assertNull(currentState().draftDemographics.weightKg)
+        assertEquals(75.55, currentState().draftDemographics.weightKg!!, 0.001)
+        assertTrue(currentState().validation.weight is ValidationResult.Valid)
     }
 
     @Test
@@ -299,6 +314,50 @@ class PersonalCardViewModelTest {
         assertEquals("178.5", PersonalCardViewModel.formatDouble(178.5))
         assertEquals("", PersonalCardViewModel.formatDouble(null))
         assertEquals("0", PersonalCardViewModel.formatDouble(0.0))
+    }
+
+    @Test
+    fun validation_failsWithInvalidDate() {
+        viewModel.startEditing()
+        viewModel.onDateOfBirthChanged("20300101")
+
+        val state = currentState()
+        assertFalse(state.validation.isValid)
+        assertTrue(state.validation.dateOfBirth is ValidationResult.Invalid)
+    }
+
+    @Test
+    fun validation_failsWithOutOfRangeHeight() {
+        viewModel.startEditing()
+        viewModel.onHeightChanged("300")
+
+        val state = currentState()
+        assertFalse(state.validation.isValid)
+        assertTrue(state.validation.height is ValidationResult.Invalid)
+    }
+
+    @Test
+    fun unitSystemChange_triggersRevalidation() {
+        viewModel.startEditing()
+        viewModel.onHeightChanged("70")
+        viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
+
+        val state = currentState()
+        assertEquals(UnitSystem.IMPERIAL, state.unitSystem)
+    }
+
+    @Test
+    fun initialState_hasValidValidation() {
+        val state = currentState()
+        assertTrue(state.validation.isValid)
+    }
+
+    @Test
+    fun onUnitSystemChanged_updatesUnitSystem() {
+        viewModel.startEditing()
+        viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
+
+        assertEquals(UnitSystem.IMPERIAL, currentState().unitSystem)
     }
 
     private fun assertNull(value: Any?) {
