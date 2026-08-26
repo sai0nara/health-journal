@@ -38,6 +38,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Personal Card - Medical Profile & Emergency Contacts**
+- [~] **Track: Personal Card - Medical Profile & Emergency Contacts**
   *Link: [./tracks/personal_card_20260826/](./tracks/personal_card_20260826/)*
 
