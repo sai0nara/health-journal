@@ -9,13 +9,13 @@
 - [x] Task: Write unit tests for PersonalCardDao
 - [x] Task: Conductor - User Manual Verification 'Data Layer' (Protocol in workflow.md)
 
-## Phase 2: ViewModel & Business Logic
+## Phase 2: ViewModel & Business Logic [checkpoint: d4487df]
 - [x] Task: Create PersonalCardViewModel with view/edit state management
 - [x] Task: Implement add/remove operations for list fields
 - [x] Task: Implement save/cancel with validation
 - [x] Task: Integrate with Google Drive sync via SyncWorker
 - [x] Task: Write unit tests for PersonalCardViewModel
-- [ ] Task: Conductor - User Manual Verification 'ViewModel' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'ViewModel' (Protocol in workflow.md)
 
 ## Phase 3: UI - View Mode
 - [ ] Task: Create PersonalCardScreen with card-based grid layout
