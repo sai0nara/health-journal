@@ -18,13 +18,13 @@
 - [x] Task: Conductor - User Manual Verification 'ViewModel' (Protocol in workflow.md)
 
 ## Phase 3: UI - View Mode
-- [ ] Task: Create PersonalCardScreen with card-based grid layout
-- [ ] Task: Implement DemographicsCard (view mode)
-- [ ] Task: Implement MedicalProfileCard (view mode)
-- [ ] Task: Implement MedicalHistoryCard (view mode)
-- [ ] Task: Implement EmergencyContactsCard (view mode)
-- [ ] Task: Add top app bar icon in HistoryScreen
-- [ ] Task: Write UI tests for PersonalCardScreen
+- [x] Task: Create PersonalCardScreen with card-based grid layout
+- [x] Task: Implement DemographicsCard (view mode)
+- [x] Task: Implement MedicalProfileCard (view mode)
+- [x] Task: Implement MedicalHistoryCard (view mode)
+- [x] Task: Implement EmergencyContactsCard (view mode)
+- [x] Task: Add top app bar icon in HistoryScreen
+- [x] Task: Write UI tests for PersonalCardScreen
 - [ ] Task: Conductor - User Manual Verification 'UI View Mode' (Protocol in workflow.md)
 
 ## Phase 4: UI - Edit Mode

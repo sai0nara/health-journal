@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity() {
             goalsRepository
         )
         val exportViewModel = ExportViewModel(application, journalRepository)
+        val personalCardRepository = com.example.healthjournal.data.PersonalCardRepository(database.personalCardDao())
+        val personalCardViewModelFactory = com.example.healthjournal.viewmodel.PersonalCardViewModelFactory(personalCardRepository)
 
         // Trigger sync on start
         SyncManager.enqueuePeriodicSync(this)
@@ -59,7 +61,8 @@ class MainActivity : ComponentActivity() {
                             onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") },
                             onArchiveClick = { navController.navigate("archive") },
                             onExportClick = { navController.navigate("export") },
-                            onMeasurementsClick = { navController.navigate("measurements") }
+                            onMeasurementsClick = { navController.navigate("measurements") },
+                            onPersonalCardClick = { navController.navigate("personal_card") }
                         )
                     }
                     composable("measurements") {
@@ -103,6 +106,14 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("component_preview") {
                         ComponentPreviewScreen(
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("personal_card") {
+                        val personalCardViewModel: com.example.healthjournal.viewmodel.PersonalCardViewModel =
+                            viewModel(factory = personalCardViewModelFactory)
+                        com.example.healthjournal.ui.screens.PersonalCardScreen(
+                            viewModel = personalCardViewModel,
                             onBack = { navController.popBackStack() }
                         )
                     }
