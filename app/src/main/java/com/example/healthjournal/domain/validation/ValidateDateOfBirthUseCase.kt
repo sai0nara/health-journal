@@ -2,6 +2,7 @@ package com.example.healthjournal.domain.validation
 
 import com.example.healthjournal.R
 import java.time.LocalDate
+import java.time.Period
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
@@ -25,7 +26,7 @@ class ValidateDateOfBirthUseCase {
             return ValidationResult.Invalid(R.string.error_date_in_future)
         }
 
-        val age = java.time.Period.between(date, today).years
+        val age = Period.between(date, today).years
         if (age > 130) {
             return ValidationResult.Invalid(R.string.error_age_too_high)
         }
