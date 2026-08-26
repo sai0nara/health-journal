@@ -41,7 +41,7 @@
     - [x] Revision from user feedback: per-field realistic caps (calf/bicep 75cm, thigh 120cm, torso 200cm) shared by capture+goal validation; pager page wrapped in Column — header/chart overlap was hiding the graph [0995a1b]
 - [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) [round 1 NO → caps/layout revision; round 2 user: YES]
 
-## Phase 4: Goal Sync via Google Drive
+## Phase 4: Goal Sync via Google Drive [checkpoint: 32c1193]
 
 - [x] Task: Write failing unit tests for `GoalSyncPayload` codec (Red) [d264dfe]
     - [x] null/garbage → empty list; JSON array roundtrip mirrors `MeasurementSyncPayload` style [GoalSyncPayloadTest: 4 tests]
@@ -55,7 +55,7 @@
     - [x] Import+merge+prune after measurements pipeline, before ledger publish/final success; failures → retry
     - [x] Existing payload contracts untouched (NFR2); all sync tests Green [full unit suite BUILD SUCCESSFUL]
     - [x] First-sync bug fix: null cloudGoalsJson preserves local goals instead of pruning them [user feedback: goal disappeared on Device A]
-- [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md) [round 1 NO (null-check); round 2 NO (stale empty file); round 3 user: YES]
 
 ## Phase 5: Full Regression & Coverage Verification
 
