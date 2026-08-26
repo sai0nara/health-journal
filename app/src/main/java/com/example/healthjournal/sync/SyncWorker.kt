@@ -280,15 +280,26 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
 
             val cloudGoalsJson = driveHelper.downloadDataFile(DriveServiceHelper.MEASUREMENTS_GOALS_FILE)
             val localGoals = goalDao.getAll()
+            Log.d("SyncWorker", "Goals: cloud=${cloudGoalsJson?.take(80) ?: "null"}, local=${localGoals.size} rows")
 
-            // When the cloud file doesn't exist yet (first sync on this
-            // device), preserve local goals and push them up rather than
-            // pruning them into an empty cloud snapshot.
-            val mergedGoals = if (cloudGoalsJson == null) {
-                localGoals
-            } else {
-                SyncMerge.mergeGoals(GoalSyncPayload.fromJson(cloudGoalsJson), localGoals)
+            val mergedGoals = when {
+                // Cloud file doesn't exist yet (first sync): preserve local.
+                cloudGoalsJson == null -> localGoals
+
+                // Cloud file exists but is empty while local has goals.
+                // This happens when a stale empty file was uploaded by a
+                // prior buggy sync, or when cross-device clear propagation
+                // hasn't reached this device yet. Preserve local and re-upload;
+                // the conflict self-resolves on the next sync cycle.
+                GoalSyncPayload.fromJson(cloudGoalsJson).isEmpty() && localGoals.isNotEmpty() -> {
+                    Log.d("SyncWorker", "Goals: empty cloud with local goals — preserving local")
+                    localGoals
+                }
+
+                // Normal case: full-snapshot merge (newest wins, prune absent).
+                else -> SyncMerge.mergeGoals(GoalSyncPayload.fromJson(cloudGoalsJson), localGoals)
             }
+            Log.d("SyncWorker", "Goals merged: ${mergedGoals.size} rows (parameterIds=${mergedGoals.map { it.parameterId }})")
 
             goalDao.importAll(mergedGoals)
 
