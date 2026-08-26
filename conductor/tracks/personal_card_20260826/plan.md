@@ -17,7 +17,7 @@
 - [x] Task: Write unit tests for PersonalCardViewModel
 - [x] Task: Conductor - User Manual Verification 'ViewModel' (Protocol in workflow.md)
 
-## Phase 3: UI - View Mode
+## Phase 3: UI - View Mode [checkpoint: 69d5e56]
 - [x] Task: Create PersonalCardScreen with card-based grid layout
 - [x] Task: Implement DemographicsCard (view mode)
 - [x] Task: Implement MedicalProfileCard (view mode)
@@ -25,7 +25,7 @@
 - [x] Task: Implement EmergencyContactsCard (view mode)
 - [x] Task: Add top app bar icon in HistoryScreen
 - [x] Task: Write UI tests for PersonalCardScreen
-- [ ] Task: Conductor - User Manual Verification 'UI View Mode' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'UI View Mode' (Protocol in workflow.md)
 
 ## Phase 4: UI - Edit Mode
 - [ ] Task: Implement edit mode toggle with save/cancel buttons
