@@ -133,7 +133,13 @@ class PersonalCardViewModel(
     }
 
     fun onDateOfBirthChanged(value: String) {
-        _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(dateOfBirth = value)) }
+        val digits = value.filter { it.isDigit() }.take(8)
+        val formatted = when {
+            digits.length <= 4 -> digits
+            digits.length <= 6 -> "${digits.substring(0, 4)}-${digits.substring(4)}"
+            else -> "${digits.substring(0, 4)}-${digits.substring(4, 6)}-${digits.substring(6)}"
+        }
+        _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(dateOfBirth = formatted)) }
     }
 
     fun onSexChanged(value: String) {
@@ -141,13 +147,27 @@ class PersonalCardViewModel(
     }
 
     fun onHeightChanged(value: String) {
-        val height = value.toDoubleOrNull()
+        val height = parseMeasurement(value, maxHeight = 300.0)
         _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(heightCm = height)) }
     }
 
     fun onWeightChanged(value: String) {
-        val weight = value.toDoubleOrNull()
+        val weight = parseMeasurement(value, maxHeight = 500.0)
         _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(weightKg = weight)) }
+    }
+
+    private fun parseMeasurement(value: String, maxHeight: Double): Double? {
+        if (value.isEmpty()) return null
+        val limited = value.take(7)
+        val parts = limited.split(".")
+        return when {
+            parts.size > 2 -> null
+            parts.size == 2 && parts[1].length > 2 -> null
+            else -> {
+                val num = limited.toDoubleOrNull()
+                if (num != null && num in 0.0..maxHeight) num else null
+            }
+        }
     }
 
     fun onRaceEthnicityChanged(value: String) {

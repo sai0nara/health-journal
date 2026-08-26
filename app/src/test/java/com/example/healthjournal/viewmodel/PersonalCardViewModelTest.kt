@@ -250,6 +250,50 @@ class PersonalCardViewModelTest {
     }
 
     @Test
+    fun onHeightChanged_validatesMaxTwoDecimals() {
+        viewModel.startEditing()
+        viewModel.onHeightChanged("178.25")
+        assertEquals(178.25, currentState().draftDemographics.heightCm!!, 0.001)
+
+        viewModel.onHeightChanged("178.345")
+        assertNull(currentState().draftDemographics.heightCm)
+    }
+
+    @Test
+    fun onHeightChanged_validatesMaxValue() {
+        viewModel.startEditing()
+        viewModel.onHeightChanged("350")
+        assertNull(currentState().draftDemographics.heightCm)
+
+        viewModel.onHeightChanged("250")
+        assertEquals(250.0, currentState().draftDemographics.heightCm!!, 0.001)
+    }
+
+    @Test
+    fun onWeightChanged_validatesMaxTwoDecimals() {
+        viewModel.startEditing()
+        viewModel.onWeightChanged("75.55")
+        assertEquals(75.55, currentState().draftDemographics.weightKg!!, 0.001)
+
+        viewModel.onWeightChanged("75.345")
+        assertNull(currentState().draftDemographics.weightKg)
+    }
+
+    @Test
+    fun onDateOfBirthChanged_formatsWithDashes() {
+        viewModel.startEditing()
+        viewModel.onDateOfBirthChanged("19900115")
+        assertEquals("1990-01-15", currentState().draftDemographics.dateOfBirth)
+    }
+
+    @Test
+    fun onDateOfBirthChanged_rejectsNonDigits() {
+        viewModel.startEditing()
+        viewModel.onDateOfBirthChanged("1990-01-15abc")
+        assertEquals("1990-01-15", currentState().draftDemographics.dateOfBirth)
+    }
+
+    @Test
     fun formatDouble_removesTrailingZero() {
         assertEquals("178", PersonalCardViewModel.formatDouble(178.0))
         assertEquals("178.5", PersonalCardViewModel.formatDouble(178.5))
