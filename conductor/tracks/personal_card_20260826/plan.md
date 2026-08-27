@@ -67,3 +67,6 @@ Reviewed range `8ab46f1~1..HEAD` (`feat/body-measurements`, 23 commits). Finding
 - **DOB day digit:** cursor still jumped one position before the day digit (`1986-01-|0`) — the second dash exists once 7 digits are typed (`1986-01-0`), but the caret math only counted it at 8 digits. Dash-before-cursor now triggers at `digits.length >= 7`.
 - **Height/weight precision:** `formatDouble` and metric `parseInput` now cap to 2 decimal places (HALF_UP) and strip trailing zeros, so over-precise values display as `178.35`, not `178.35745332432423`.
 - **Height/weight input cap:** the live edit fields still accepted arbitrarily long decimals (`178.5555555`) because they bind raw text; `onHeightChanged`/`onWeightChanged` now sanitize input via `UnitConverter.sanitizeDecimalInput` (digits + single `.`, ≤2 decimal places), so the field itself refuses more than 2 decimals while typing.
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions d2e7de8
