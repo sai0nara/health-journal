@@ -3,6 +3,7 @@ package com.example.healthjournal.ui.screens
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.example.healthjournal.data.PersonalCardRepository
+import com.example.healthjournal.data.local.BloodType
 import com.example.healthjournal.data.local.Demographics
 import com.example.healthjournal.data.local.EmergencyContact
 import com.example.healthjournal.data.local.EmergencyContacts
@@ -44,7 +45,7 @@ class PersonalCardScreenTest {
         every { repository.getPersonalCard() } returns MutableStateFlow(card)
         coEvery { repository.insertOrUpdate(any()) } returns Unit
         coEvery { repository.markEntryDirty() } returns Unit
-        val viewModel = PersonalCardViewModel(repository, testDispatcher)
+        val viewModel = PersonalCardViewModel(repository, ioDispatcher = testDispatcher)
         composeTestRule.setContent {
             com.example.healthjournal.ui.theme.HealthJournalTheme {
                 PersonalCardScreen(
@@ -101,7 +102,7 @@ class PersonalCardScreenTest {
             setScreen(
                 PersonalCard(
                     medicalProfile = MedicalProfile(
-                        bloodType = "O+",
+                        bloodType = BloodType.O_POSITIVE,
                         allergies = listOf("Penicillin", "Peanuts"),
                         medications = listOf(
                             MedicationEntry(name = "Aspirin", dosage = "81mg", schedule = "Daily")
@@ -258,7 +259,7 @@ class PersonalCardScreenTest {
                         sex = "Male"
                     ),
                     medicalProfile = MedicalProfile(
-                        bloodType = "O+",
+                        bloodType = BloodType.O_POSITIVE,
                         allergies = listOf("Peanuts")
                     )
                 )

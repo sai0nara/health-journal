@@ -27,7 +27,7 @@
 - [x] Task: Write UI tests for PersonalCardScreen
 - [x] Task: Conductor - User Manual Verification 'UI View Mode' (Protocol in workflow.md)
 
-## Phase 4: UI - Edit Mode [checkpoint: pending]
+## Phase 4: UI - Edit Mode [checkpoint: 3dfb727]
 - [x] Task: Implement edit mode toggle with save/cancel buttons
 - [x] Task: Create list management components (add/remove items)
 - [x] Task: Implement DemographicsCard (edit mode)

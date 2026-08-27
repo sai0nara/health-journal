@@ -13,6 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import com.example.healthjournal.data.local.BloodType
 import java.io.IOException
 
 @RunWith(AndroidJUnit4::class)
@@ -141,7 +142,7 @@ class PersonalCardDaoTest {
         val card = PersonalCard(
             id = "personal_card",
             medicalProfile = MedicalProfile(
-                bloodType = "O+",
+                bloodType = BloodType.O_POSITIVE,
                 allergies = listOf("Penicillin", "Peanuts"),
                 medications = listOf(
                     MedicationEntry(name = "Aspirin", dosage = "81mg", schedule = "Daily")
@@ -152,7 +153,7 @@ class PersonalCardDaoTest {
 
         val loaded = personalCardDao.getPersonalCardSnapshot("personal_card")
 
-        assertEquals("O+", loaded?.medicalProfile?.bloodType)
+        assertEquals(BloodType.O_POSITIVE, loaded?.medicalProfile?.bloodType)
         assertEquals(2, loaded?.medicalProfile?.allergies?.size)
         assertEquals("Aspirin", loaded?.medicalProfile?.medications?.first()?.name)
     }
