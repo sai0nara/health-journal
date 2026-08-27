@@ -208,10 +208,11 @@ class PersonalCardViewModel(
 
     fun onHeightChanged(value: String) {
         val state = _uiState.value
-        val heightCm = UnitConverter.parseInput(value, state.unitSystem, isHeight = true)
+        val sanitized = UnitConverter.sanitizeDecimalInput(value)
+        val heightCm = UnitConverter.parseInput(sanitized, state.unitSystem, isHeight = true)
         _uiState.update {
             it.copy(
-                draftHeightText = value,
+                draftHeightText = sanitized,
                 draftDemographics = it.draftDemographics.copy(heightCm = heightCm)
             )
         }
@@ -220,10 +221,11 @@ class PersonalCardViewModel(
 
     fun onWeightChanged(value: String) {
         val state = _uiState.value
-        val weightKg = UnitConverter.parseInput(value, state.unitSystem, isHeight = false)
+        val sanitized = UnitConverter.sanitizeDecimalInput(value)
+        val weightKg = UnitConverter.parseInput(sanitized, state.unitSystem, isHeight = false)
         _uiState.update {
             it.copy(
-                draftWeightText = value,
+                draftWeightText = sanitized,
                 draftDemographics = it.draftDemographics.copy(weightKg = weightKg)
             )
         }

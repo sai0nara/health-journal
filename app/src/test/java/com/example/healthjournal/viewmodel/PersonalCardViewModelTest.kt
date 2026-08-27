@@ -347,6 +347,30 @@ class PersonalCardViewModelTest {
     }
 
     @Test
+    fun onHeightChanged_limitsDecimalsToTwoWhileTyping() {
+        viewModel.startEditing()
+        viewModel.onHeightChanged("178.5555555")
+
+        assertEquals("178.55", currentState().draftHeightText)
+        assertEquals(178.55, currentState().draftDemographics.heightCm!!, 0.001)
+
+        viewModel.onHeightChanged("178.5")
+        assertEquals("178.5", currentState().draftHeightText)
+    }
+
+    @Test
+    fun onWeightChanged_limitsDecimalsToTwoWhileTyping() {
+        viewModel.startEditing()
+        viewModel.onWeightChanged("85.5555555")
+
+        assertEquals("85.55", currentState().draftWeightText)
+        assertEquals(85.55, currentState().draftDemographics.weightKg!!, 0.001)
+
+        viewModel.onWeightChanged("85.5")
+        assertEquals("85.5", currentState().draftWeightText)
+    }
+
+    @Test
     fun onHeightChanged_preservesPartialDecimalTextDuringTyping() {
         viewModel.startEditing()
         viewModel.onHeightChanged("185.")

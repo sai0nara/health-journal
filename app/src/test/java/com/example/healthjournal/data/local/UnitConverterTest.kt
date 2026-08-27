@@ -66,6 +66,15 @@ class UnitConverterTest {
     }
 
     @Test
+    fun `sanitizeDecimalInput trims to two decimals`() {
+        assertEquals("178.55", UnitConverter.sanitizeDecimalInput("178.5555555"))
+        assertEquals("85.5", UnitConverter.sanitizeDecimalInput("85.5"))
+        assertEquals("85.", UnitConverter.sanitizeDecimalInput("85."))
+        assertEquals("1.23", UnitConverter.sanitizeDecimalInput("1.2.3"))
+        assertEquals("", UnitConverter.sanitizeDecimalInput("abc"))
+    }
+
+    @Test
     fun `parseInput imperial converts to cm`() {
         val result = UnitConverter.parseInput("70", UnitSystem.IMPERIAL, isHeight = true)
         assertEquals(177.8, result!!, 0.1)

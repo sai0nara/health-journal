@@ -57,4 +57,27 @@ object UnitConverter {
             .stripTrailingZeros()
             .toPlainString()
     }
+
+    fun sanitizeDecimalInput(input: String): String {
+        val cleaned = buildString {
+            var decimalPointSeen = false
+            for (ch in input) {
+                when {
+                    ch.isDigit() -> append(ch)
+                    ch == '.' && !decimalPointSeen -> {
+                        append('.')
+                        decimalPointSeen = true
+                    }
+                }
+            }
+        }
+        val dotIndex = cleaned.indexOf('.')
+        if (dotIndex < 0) return cleaned
+        val fraction = cleaned.substring(dotIndex + 1).take(2)
+        return if (fraction.isEmpty()) {
+            cleaned.substring(0, dotIndex + 1)
+        } else {
+            cleaned.substring(0, dotIndex + 1) + fraction
+        }
+    }
 }
