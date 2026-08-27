@@ -181,7 +181,7 @@ class PersonalCardViewModel(
         }
         val dashesBeforeCursor =
             (if (digits.length >= 5 && typedDigits > 4) 1 else 0) +
-                (if (digits.length >= 8 && typedDigits > 6) 1 else 0)
+                (if (digits.length >= 7 && typedDigits > 6) 1 else 0)
         val cursorPosition = (typedDigits + dashesBeforeCursor).coerceIn(0, formatted.length)
         _uiState.update {
             it.copy(

@@ -321,6 +321,22 @@ class PersonalCardViewModelTest {
     }
 
     @Test
+    fun onDateOfBirthChanged_preservesCursorWhenTypingDayDigit() {
+        viewModel.startEditing()
+        viewModel.onDateOfBirthChanged(TextFieldValue("198601", TextRange(6)))
+        assertEquals("1986-01", currentState().draftDemographics.dateOfBirth)
+        assertEquals(7, currentState().draftDateOfBirthValue.selection.end)
+
+        viewModel.onDateOfBirthChanged(TextFieldValue("1986010", TextRange(7)))
+        assertEquals("1986-01-0", currentState().draftDemographics.dateOfBirth)
+        assertEquals(9, currentState().draftDateOfBirthValue.selection.end)
+
+        viewModel.onDateOfBirthChanged(TextFieldValue("19860101", TextRange(8)))
+        assertEquals("1986-01-01", currentState().draftDemographics.dateOfBirth)
+        assertEquals(10, currentState().draftDateOfBirthValue.selection.end)
+    }
+
+    @Test
     fun validation_failsWithInvalidDate() {
         viewModel.startEditing()
         viewModel.onDateOfBirthChanged(TextFieldValue("20300101"))

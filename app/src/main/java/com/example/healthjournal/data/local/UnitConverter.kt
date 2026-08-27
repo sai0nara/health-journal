@@ -47,15 +47,14 @@ object UnitConverter {
         return if (unitSystem == UnitSystem.IMPERIAL) {
             if (isHeight) inchesToCm(value) else lbsToKg(value)
         } else {
-            value
+            BigDecimal(value).setScale(2, RoundingMode.HALF_UP).toDouble()
         }
     }
 
     fun formatDouble(value: Double): String {
-        return if (value % 1.0 == 0.0) {
-            value.toLong().toString()
-        } else {
-            value.toString()
-        }
+        return BigDecimal(value)
+            .setScale(2, RoundingMode.HALF_UP)
+            .stripTrailingZeros()
+            .toPlainString()
     }
 }
