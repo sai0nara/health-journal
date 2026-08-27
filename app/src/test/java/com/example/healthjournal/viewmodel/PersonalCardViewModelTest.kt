@@ -1,6 +1,5 @@
 package com.example.healthjournal.viewmodel
 
-import com.example.healthjournal.data.BodyMeasurementRepository
 import com.example.healthjournal.data.PersonalCardRepository
 import com.example.healthjournal.data.local.BloodType
 import com.example.healthjournal.data.local.Demographics
@@ -35,7 +34,6 @@ class PersonalCardViewModelTest {
 
     private lateinit var viewModel: PersonalCardViewModel
     private val repository: PersonalCardRepository = mockk()
-    private val bodyMeasurementRepository: BodyMeasurementRepository = mockk()
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -44,8 +42,7 @@ class PersonalCardViewModelTest {
         coEvery { repository.getPersonalCard() } returns flowOf(null)
         coEvery { repository.insertOrUpdate(any()) } returns Unit
         coEvery { repository.markEntryDirty() } returns Unit
-        coEvery { bodyMeasurementRepository.getLatestWeight() } returns null
-        viewModel = PersonalCardViewModel(repository, bodyMeasurementRepository, testDispatcher)
+        viewModel = PersonalCardViewModel(repository, testDispatcher)
     }
 
     @After
@@ -309,14 +306,6 @@ class PersonalCardViewModelTest {
     }
 
     @Test
-    fun formatDouble_removesTrailingZero() {
-        assertEquals("178", PersonalCardViewModel.formatDouble(178.0))
-        assertEquals("178.5", PersonalCardViewModel.formatDouble(178.5))
-        assertEquals("", PersonalCardViewModel.formatDouble(null))
-        assertEquals("0", PersonalCardViewModel.formatDouble(0.0))
-    }
-
-    @Test
     fun validation_failsWithInvalidDate() {
         viewModel.startEditing()
         viewModel.onDateOfBirthChanged("20300101")
@@ -368,7 +357,7 @@ class PersonalCardViewModelTest {
 
     private fun seedCard(card: PersonalCard) {
         coEvery { repository.getPersonalCard() } returns flowOf(card)
-        viewModel = PersonalCardViewModel(repository, bodyMeasurementRepository, testDispatcher)
+        viewModel = PersonalCardViewModel(repository, testDispatcher)
         testDispatcher.scheduler.advanceUntilIdle()
     }
 }

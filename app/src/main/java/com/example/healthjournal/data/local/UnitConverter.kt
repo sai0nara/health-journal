@@ -1,6 +1,5 @@
-package com.example.healthjournal.viewmodel
+package com.example.healthjournal.data.local
 
-import com.example.healthjournal.data.local.UnitSystem
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -52,7 +51,7 @@ object UnitConverter {
         }
     }
 
-    private fun formatDouble(value: Double): String {
+    fun formatDouble(value: Double): String {
         return if (value % 1.0 == 0.0) {
             value.toLong().toString()
         } else {

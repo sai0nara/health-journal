@@ -3,7 +3,6 @@ package com.example.healthjournal.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.healthjournal.data.BodyMeasurementRepository
 import com.example.healthjournal.data.PersonalCardRepository
 import com.example.healthjournal.data.local.BloodType
 import com.example.healthjournal.data.local.Demographics
@@ -13,6 +12,7 @@ import com.example.healthjournal.data.local.MedicalHistory
 import com.example.healthjournal.data.local.MedicalProfile
 import com.example.healthjournal.data.local.MedicationEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.UnitConverter
 import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.validation.DemographicsValidationResult
 import com.example.healthjournal.domain.validation.DemographicsValidator
@@ -42,7 +42,6 @@ data class PersonalCardUiState(
 
 class PersonalCardViewModel(
     private val repository: PersonalCardRepository,
-    private val bodyMeasurementRepository: BodyMeasurementRepository? = null,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
 
@@ -55,19 +54,13 @@ class PersonalCardViewModel(
         viewModelScope.launch(ioDispatcher) {
             repository.getPersonalCard().collect { card ->
                 if (card != null) {
-                    val latestWeight = bodyMeasurementRepository?.getLatestWeight()
-                    val updatedDemographics = if (latestWeight != null) {
-                        card.demographics.copy(weightKg = latestWeight)
-                    } else {
-                        card.demographics
-                    }
                     _uiState.update {
                         it.copy(
-                            demographics = updatedDemographics,
+                            demographics = card.demographics,
                             medicalProfile = card.medicalProfile,
                             medicalHistory = card.medicalHistory,
                             emergencyContacts = card.emergencyContacts,
-                            draftDemographics = updatedDemographics,
+                            draftDemographics = card.demographics,
                             draftMedicalProfile = card.medicalProfile,
                             draftMedicalHistory = card.medicalHistory,
                             draftEmergencyContacts = card.emergencyContacts,
@@ -91,6 +84,7 @@ class PersonalCardViewModel(
                 draftEmergencyContacts = it.emergencyContacts
             )
         }
+        validateDraft()
     }
 
     fun cancelEditing() {
@@ -181,17 +175,6 @@ class PersonalCardViewModel(
         val state = _uiState.value
         val validation = demographicsValidator(state.draftDemographics, state.unitSystem)
         _uiState.update { it.copy(validation = validation) }
-    }
-
-    companion object {
-        fun formatDouble(value: Double?): String {
-            if (value == null) return ""
-            return if (value % 1.0 == 0.0) {
-                value.toLong().toString()
-            } else {
-                value.toString()
-            }
-        }
     }
 
     // Medical Profile updates
@@ -322,13 +305,12 @@ class PersonalCardViewModel(
 }
 
 class PersonalCardViewModelFactory(
-    private val repository: PersonalCardRepository,
-    private val bodyMeasurementRepository: BodyMeasurementRepository? = null
+    private val repository: PersonalCardRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PersonalCardViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return PersonalCardViewModel(repository, bodyMeasurementRepository) as T
+            return PersonalCardViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

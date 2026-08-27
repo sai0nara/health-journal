@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -58,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.example.healthjournal.R
 import com.example.healthjournal.data.local.BloodType
 import com.example.healthjournal.data.local.Demographics
 import com.example.healthjournal.data.local.EmergencyContact
@@ -65,11 +65,11 @@ import com.example.healthjournal.data.local.EmergencyContacts
 import com.example.healthjournal.data.local.MedicalHistory
 import com.example.healthjournal.data.local.MedicalProfile
 import com.example.healthjournal.data.local.MedicationEntry
+import com.example.healthjournal.data.local.UnitConverter
 import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.validation.DemographicsValidationResult
 import com.example.healthjournal.domain.validation.ValidationResult
 import com.example.healthjournal.viewmodel.PersonalCardViewModel
-import com.example.healthjournal.viewmodel.UnitConverter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,7 +82,7 @@ fun PersonalCardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Personal Card") },
+                title = { Text(stringResource(R.string.personal_card_title)) },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (uiState.isEditing) {
@@ -91,23 +91,23 @@ fun PersonalCardScreen(
                             onBack()
                         }
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 actions = {
                     if (uiState.isEditing) {
                         TextButton(onClick = { viewModel.cancelEditing() }) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.action_cancel))
                         }
                         TextButton(
                             onClick = { viewModel.saveChanges() },
                             enabled = uiState.validation.isValid
                         ) {
-                            Text("Save")
+                            Text(stringResource(R.string.action_save))
                         }
                     } else {
                         IconButton(onClick = { viewModel.startEditing() }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit personal card")
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.action_edit))
                         }
                     }
                 }
@@ -123,7 +123,7 @@ fun PersonalCardScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Loading...",
+                    text = stringResource(R.string.loading),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -218,7 +218,7 @@ private fun DemographicsCard(demographics: Demographics) {
                 .padding(16.dp)
         ) {
             Text(
-                text = "Demographics",
+                text = stringResource(R.string.demographics_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.testTag("demographics_title")
@@ -227,17 +227,17 @@ private fun DemographicsCard(demographics: Demographics) {
 
             if (demographics.fullName.isEmpty() && demographics.dateOfBirth.isEmpty() && demographics.sex.isEmpty()) {
                 Text(
-                    text = "No demographics information added yet.",
+                    text = stringResource(R.string.empty_demographics),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                InfoRow(label = "Name", value = demographics.fullName)
-                InfoRow(label = "Date of Birth", value = demographics.dateOfBirth)
-                InfoRow(label = "Sex", value = demographics.sex)
-                InfoRow(label = "Height", value = demographics.heightCm?.let { "${PersonalCardViewModel.formatDouble(it)} cm" } ?: "")
-                InfoRow(label = "Weight", value = demographics.weightKg?.let { "${PersonalCardViewModel.formatDouble(it)} kg" } ?: "")
-                InfoRow(label = "Race/Ethnicity", value = demographics.raceEthnicity)
+                InfoRow(label = stringResource(R.string.label_name), value = demographics.fullName)
+                InfoRow(label = stringResource(R.string.label_date_of_birth), value = demographics.dateOfBirth)
+                InfoRow(label = stringResource(R.string.label_sex), value = demographics.sex)
+                InfoRow(label = stringResource(R.string.label_height), value = demographics.heightCm?.let { stringResource(R.string.format_cm_value, UnitConverter.formatDouble(it)) } ?: "")
+                InfoRow(label = stringResource(R.string.label_weight), value = demographics.weightKg?.let { stringResource(R.string.format_kg_value, UnitConverter.formatDouble(it)) } ?: "")
+                InfoRow(label = stringResource(R.string.label_race_ethnicity), value = demographics.raceEthnicity)
             }
         }
     }
@@ -257,7 +257,7 @@ private fun MedicalProfileCard(medicalProfile: MedicalProfile) {
                 .padding(16.dp)
         ) {
             Text(
-                text = "Medical Profile",
+                text = stringResource(R.string.medical_profile_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.testTag("medical_profile_title")
@@ -266,17 +266,17 @@ private fun MedicalProfileCard(medicalProfile: MedicalProfile) {
 
             if (medicalProfile.bloodType == null && medicalProfile.allergies.isEmpty() && medicalProfile.medications.isEmpty()) {
                 Text(
-                    text = "No medical profile information added yet.",
+                    text = stringResource(R.string.empty_medical_profile),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                InfoRow(label = "Blood Type", value = medicalProfile.bloodType?.displayName ?: "")
+                InfoRow(label = stringResource(R.string.label_blood_type), value = medicalProfile.bloodType?.displayName ?: "")
 
                 if (medicalProfile.allergies.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Allergies",
+                        text = stringResource(R.string.label_allergies),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -292,13 +292,13 @@ private fun MedicalProfileCard(medicalProfile: MedicalProfile) {
                 if (medicalProfile.medications.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Medications",
+                        text = stringResource(R.string.label_medications),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium
                     )
                     medicalProfile.medications.forEach { medication ->
                         Text(
-                            text = "• ${medication.name} ${medication.dosage} - ${medication.schedule}",
+                            text = stringResource(R.string.medication_item, medication.name, medication.dosage, medication.schedule),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(start = 8.dp)
                         )
@@ -308,7 +308,7 @@ private fun MedicalProfileCard(medicalProfile: MedicalProfile) {
                 if (medicalProfile.adverseReactions.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Adverse Reactions",
+                        text = stringResource(R.string.label_adverse_reactions),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -339,7 +339,7 @@ private fun MedicalHistoryCard(medicalHistory: MedicalHistory) {
                 .padding(16.dp)
         ) {
             Text(
-                text = "Medical History",
+                text = stringResource(R.string.medical_history_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.testTag("medical_history_title")
@@ -348,14 +348,14 @@ private fun MedicalHistoryCard(medicalHistory: MedicalHistory) {
 
             if (medicalHistory.hereditaryDiseases.isEmpty() && medicalHistory.chronicConditions.isEmpty() && medicalHistory.surgicalHistory.isEmpty()) {
                 Text(
-                    text = "No medical history information added yet.",
+                    text = stringResource(R.string.empty_medical_history),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 if (medicalHistory.hereditaryDiseases.isNotEmpty()) {
                     Text(
-                        text = "Hereditary Diseases",
+                        text = stringResource(R.string.label_hereditary_diseases),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -371,7 +371,7 @@ private fun MedicalHistoryCard(medicalHistory: MedicalHistory) {
 
                 if (medicalHistory.chronicConditions.isNotEmpty()) {
                     Text(
-                        text = "Chronic Conditions",
+                        text = stringResource(R.string.label_chronic_conditions),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -387,7 +387,7 @@ private fun MedicalHistoryCard(medicalHistory: MedicalHistory) {
 
                 if (medicalHistory.surgicalHistory.isNotEmpty()) {
                     Text(
-                        text = "Surgical History",
+                        text = stringResource(R.string.label_surgical_history),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -418,7 +418,7 @@ private fun EmergencyContactsCard(emergencyContacts: EmergencyContacts) {
                 .padding(16.dp)
         ) {
             Text(
-                text = "Emergency Contacts",
+                text = stringResource(R.string.emergency_contacts_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.testTag("emergency_contacts_title")
@@ -427,7 +427,7 @@ private fun EmergencyContactsCard(emergencyContacts: EmergencyContacts) {
 
             if (emergencyContacts.contacts.isEmpty()) {
                 Text(
-                    text = "No emergency contacts added yet.",
+                    text = stringResource(R.string.empty_emergency_contacts),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -523,7 +523,7 @@ private fun DemographicsEditCard(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Demographics",
+                text = stringResource(R.string.demographics_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -535,10 +535,10 @@ private fun DemographicsEditCard(
                 onExpandedChange = { unitSystemExpanded = it }
             ) {
                 OutlinedTextField(
-                    value = unitSystem.name.lowercase().replaceFirstChar { it.uppercase() },
+                    value = stringResource(if (unitSystem == UnitSystem.METRIC) R.string.unit_system_metric else R.string.unit_system_imperial),
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Unit System") },
+                    label = { Text(stringResource(R.string.label_unit_system)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitSystemExpanded) },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -549,14 +549,14 @@ private fun DemographicsEditCard(
                     onDismissRequest = { unitSystemExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Metric (kg/cm)") },
+                        text = { Text(stringResource(R.string.unit_system_metric)) },
                         onClick = {
                             onUnitSystemChanged(UnitSystem.METRIC)
                             unitSystemExpanded = false
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Imperial (lbs/in)") },
+                        text = { Text(stringResource(R.string.unit_system_imperial)) },
                         onClick = {
                             onUnitSystemChanged(UnitSystem.IMPERIAL)
                             unitSystemExpanded = false
@@ -565,20 +565,21 @@ private fun DemographicsEditCard(
                 }
             }
 
+            val fullNameContentDescription = stringResource(R.string.cd_full_name, demographics.fullName)
             OutlinedTextField(
                 value = demographics.fullName,
                 onValueChange = onFullNameChanged,
-                label = { Text("Full Name") },
+                label = { Text(stringResource(R.string.label_full_name)) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .semantics { contentDescription = "Full Name: ${demographics.fullName}" }
+                    .semantics { contentDescription = fullNameContentDescription }
             )
 
             // Date of Birth with Date Picker
             OutlinedTextField(
                 value = demographics.dateOfBirth,
                 onValueChange = onDateOfBirthChanged,
-                label = { Text("Date of Birth (YYYY-MM-DD)") },
+                label = { Text(stringResource(R.string.label_dob_edit)) },
                 isError = validation.dateOfBirth is ValidationResult.Invalid,
                 supportingText = if (validation.dateOfBirth is ValidationResult.Invalid) {
                     { Text(stringResource(validation.dateOfBirth.errorResId)) }
@@ -587,33 +588,35 @@ private fun DemographicsEditCard(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.DateRange, contentDescription = "Select date")
+                        Icon(Icons.Default.DateRange, contentDescription = stringResource(R.string.select_date))
                     }
                 }
             )
 
+            val sexContentDescription = stringResource(R.string.cd_sex, demographics.sex)
             OutlinedTextField(
                 value = demographics.sex,
                 onValueChange = onSexChanged,
-                label = { Text("Sex") },
+                label = { Text(stringResource(R.string.label_sex)) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .semantics { contentDescription = "Sex: ${demographics.sex}" }
+                    .semantics { contentDescription = sexContentDescription }
             )
 
             // Height with unit conversion
-            val heightUnit = if (unitSystem == UnitSystem.METRIC) "cm" else "in"
+            val heightUnit = stringResource(if (unitSystem == UnitSystem.METRIC) R.string.height_unit_cm else R.string.height_unit_in)
+            val heightContentDescription = stringResource(R.string.cd_height, heightUnit, UnitConverter.formatForDisplay(demographics.heightCm, unitSystem, isHeight = true))
             OutlinedTextField(
                 value = UnitConverter.formatForDisplay(demographics.heightCm, unitSystem, isHeight = true),
                 onValueChange = onHeightChanged,
-                label = { Text("Height ($heightUnit)") },
+                label = { Text(stringResource(R.string.label_height_with_unit, heightUnit)) },
                 isError = validation.height is ValidationResult.Invalid,
                 supportingText = if (validation.height is ValidationResult.Invalid) {
-                    { Text(stringResource(validation.height.errorResId)) }
+                    { Text(stringResource(validation.height.errorResId, *validation.height.formatArgs.toTypedArray())) }
                 } else null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .semantics { contentDescription = "Height ($heightUnit): ${UnitConverter.formatForDisplay(demographics.heightCm, unitSystem, isHeight = true)}" },
+                    .semantics { contentDescription = heightContentDescription },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
                     imeAction = ImeAction.Next
@@ -621,31 +624,33 @@ private fun DemographicsEditCard(
             )
 
             // Weight with unit conversion
-            val weightUnit = if (unitSystem == UnitSystem.METRIC) "kg" else "lbs"
+            val weightUnit = stringResource(if (unitSystem == UnitSystem.METRIC) R.string.weight_unit_kg else R.string.weight_unit_lbs)
+            val weightContentDescription = stringResource(R.string.cd_weight, weightUnit, UnitConverter.formatForDisplay(demographics.weightKg, unitSystem, isHeight = false))
             OutlinedTextField(
                 value = UnitConverter.formatForDisplay(demographics.weightKg, unitSystem, isHeight = false),
                 onValueChange = onWeightChanged,
-                label = { Text("Weight ($weightUnit)") },
+                label = { Text(stringResource(R.string.label_weight_with_unit, weightUnit)) },
                 isError = validation.weight is ValidationResult.Invalid,
                 supportingText = if (validation.weight is ValidationResult.Invalid) {
-                    { Text(stringResource(validation.weight.errorResId)) }
+                    { Text(stringResource(validation.weight.errorResId, *validation.weight.formatArgs.toTypedArray())) }
                 } else null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .semantics { contentDescription = "Weight ($weightUnit): ${UnitConverter.formatForDisplay(demographics.weightKg, unitSystem, isHeight = false)}" },
+                    .semantics { contentDescription = weightContentDescription },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
                     imeAction = ImeAction.Done
                 )
             )
 
+            val raceEthnicityContentDescription = stringResource(R.string.cd_race_ethnicity, demographics.raceEthnicity)
             OutlinedTextField(
                 value = demographics.raceEthnicity,
                 onValueChange = onRaceEthnicityChanged,
-                label = { Text("Race/Ethnicity") },
+                label = { Text(stringResource(R.string.label_race_ethnicity)) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .semantics { contentDescription = "Race/Ethnicity: ${demographics.raceEthnicity}" }
+                    .semantics { contentDescription = raceEthnicityContentDescription }
             )
         }
     }
@@ -665,12 +670,12 @@ private fun DemographicsEditCard(
                     }
                     showDatePicker = false
                 }) {
-                    Text("OK")
+                    Text(stringResource(R.string.action_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         ) {
@@ -708,7 +713,7 @@ private fun MedicalProfileEditCard(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Medical Profile",
+                text = stringResource(R.string.medical_profile_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -722,7 +727,7 @@ private fun MedicalProfileEditCard(
                     value = medicalProfile.bloodType?.displayName ?: "",
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Blood Type") },
+                    label = { Text(stringResource(R.string.label_blood_type)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = bloodTypeExpanded) },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -733,7 +738,7 @@ private fun MedicalProfileEditCard(
                     onDismissRequest = { bloodTypeExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("None") },
+                        text = { Text(stringResource(R.string.blood_type_none)) },
                         onClick = {
                             onBloodTypeChanged(null)
                             bloodTypeExpanded = false
@@ -759,12 +764,12 @@ private fun MedicalProfileEditCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Allergies",
+                    text = stringResource(R.string.label_allergies),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium
                 )
                 IconButton(onClick = { showAddAllergyDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add allergy")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_allergy))
                 }
             }
             medicalProfile.allergies.forEachIndexed { index, allergy ->
@@ -779,7 +784,7 @@ private fun MedicalProfileEditCard(
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { onRemoveAllergy(index) }) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove allergy")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.remove_allergy))
                     }
                 }
             }
@@ -792,12 +797,12 @@ private fun MedicalProfileEditCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Medications",
+                    text = stringResource(R.string.label_medications),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium
                 )
                 IconButton(onClick = { showAddMedicationDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add medication")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_medication))
                 }
             }
             medicalProfile.medications.forEachIndexed { index, medication ->
@@ -807,12 +812,12 @@ private fun MedicalProfileEditCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "• ${medication.name} ${medication.dosage} - ${medication.schedule}",
+                        text = stringResource(R.string.medication_item, medication.name, medication.dosage, medication.schedule),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { onRemoveMedication(index) }) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove medication")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.remove_medication))
                     }
                 }
             }
@@ -825,12 +830,12 @@ private fun MedicalProfileEditCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Adverse Reactions",
+                    text = stringResource(R.string.label_adverse_reactions),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium
                 )
                 IconButton(onClick = { showAddReactionDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add adverse reaction")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_adverse_reaction))
                 }
             }
             medicalProfile.adverseReactions.forEachIndexed { index, reaction ->
@@ -845,7 +850,7 @@ private fun MedicalProfileEditCard(
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { onRemoveAdverseReaction(index) }) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove adverse reaction")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.remove_adverse_reaction))
                     }
                 }
             }
@@ -855,8 +860,8 @@ private fun MedicalProfileEditCard(
     // Dialogs
     if (showAddAllergyDialog) {
         AddStringDialog(
-            title = "Add Allergy",
-            label = "Allergy",
+            title = stringResource(R.string.dialog_add_allergy),
+            label = stringResource(R.string.label_allergy),
             onConfirm = { onAddAllergy(it); showAddAllergyDialog = false },
             onDismiss = { showAddAllergyDialog = false }
         )
@@ -871,8 +876,8 @@ private fun MedicalProfileEditCard(
 
     if (showAddReactionDialog) {
         AddStringDialog(
-            title = "Add Adverse Reaction",
-            label = "Reaction",
+            title = stringResource(R.string.dialog_add_adverse_reaction),
+            label = stringResource(R.string.label_reaction),
             onConfirm = { onAddAdverseReaction(it); showAddReactionDialog = false },
             onDismiss = { showAddReactionDialog = false }
         )
@@ -905,7 +910,7 @@ private fun MedicalHistoryEditCard(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Medical History",
+                text = stringResource(R.string.medical_history_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -918,12 +923,12 @@ private fun MedicalHistoryEditCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Hereditary Diseases",
+                    text = stringResource(R.string.label_hereditary_diseases),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium
                 )
                 IconButton(onClick = { showAddDiseaseDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add hereditary disease")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_hereditary_disease))
                 }
             }
             medicalHistory.hereditaryDiseases.forEachIndexed { index, disease ->
@@ -938,7 +943,7 @@ private fun MedicalHistoryEditCard(
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { onRemoveHereditaryDisease(index) }) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove hereditary disease")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.remove_hereditary_disease))
                     }
                 }
             }
@@ -951,12 +956,12 @@ private fun MedicalHistoryEditCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Chronic Conditions",
+                    text = stringResource(R.string.label_chronic_conditions),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium
                 )
                 IconButton(onClick = { showAddConditionDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add chronic condition")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_chronic_condition))
                 }
             }
             medicalHistory.chronicConditions.forEachIndexed { index, condition ->
@@ -971,7 +976,7 @@ private fun MedicalHistoryEditCard(
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { onRemoveChronicCondition(index) }) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove chronic condition")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.remove_chronic_condition))
                     }
                 }
             }
@@ -984,12 +989,12 @@ private fun MedicalHistoryEditCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Surgical History",
+                    text = stringResource(R.string.label_surgical_history),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium
                 )
                 IconButton(onClick = { showAddProcedureDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add surgical procedure")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_surgical_procedure))
                 }
             }
             medicalHistory.surgicalHistory.forEachIndexed { index, procedure ->
@@ -1004,7 +1009,7 @@ private fun MedicalHistoryEditCard(
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { onRemoveSurgicalHistory(index) }) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove surgical procedure")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.remove_surgical_procedure))
                     }
                 }
             }
@@ -1014,8 +1019,8 @@ private fun MedicalHistoryEditCard(
     // Dialogs
     if (showAddDiseaseDialog) {
         AddStringDialog(
-            title = "Add Hereditary Disease",
-            label = "Disease",
+            title = stringResource(R.string.dialog_add_hereditary_disease),
+            label = stringResource(R.string.label_disease),
             onConfirm = { onAddHereditaryDisease(it); showAddDiseaseDialog = false },
             onDismiss = { showAddDiseaseDialog = false }
         )
@@ -1023,8 +1028,8 @@ private fun MedicalHistoryEditCard(
 
     if (showAddConditionDialog) {
         AddStringDialog(
-            title = "Add Chronic Condition",
-            label = "Condition",
+            title = stringResource(R.string.dialog_add_chronic_condition),
+            label = stringResource(R.string.label_condition),
             onConfirm = { onAddChronicCondition(it); showAddConditionDialog = false },
             onDismiss = { showAddConditionDialog = false }
         )
@@ -1032,8 +1037,8 @@ private fun MedicalHistoryEditCard(
 
     if (showAddProcedureDialog) {
         AddStringDialog(
-            title = "Add Surgical Procedure",
-            label = "Procedure (with date if known)",
+            title = stringResource(R.string.dialog_add_surgical_procedure),
+            label = stringResource(R.string.label_procedure),
             onConfirm = { onAddSurgicalHistory(it); showAddProcedureDialog = false },
             onDismiss = { showAddProcedureDialog = false }
         )
@@ -1065,19 +1070,19 @@ private fun EmergencyContactsEditCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Emergency Contacts",
+                    text = stringResource(R.string.emergency_contacts_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 IconButton(onClick = { showAddContactDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add emergency contact")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_emergency_contact))
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
 
             if (emergencyContacts.contacts.isEmpty()) {
                 Text(
-                    text = "No emergency contacts added yet.",
+                    text = stringResource(R.string.empty_emergency_contacts),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1115,7 +1120,7 @@ private fun EmergencyContactsEditCard(
                                 )
                             }
                             IconButton(onClick = { onRemoveContact(index) }) {
-                                Icon(Icons.Default.Close, contentDescription = "Remove contact")
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.remove_contact))
                             }
                         }
                     }
@@ -1159,7 +1164,7 @@ private fun AddStringDialog(
                 onClick = { onConfirm(text) },
                 enabled = text.isNotBlank()
             ) {
-                Text("Add")
+                Text(stringResource(R.string.action_add))
             }
         },
         dismissButton = {
@@ -1182,31 +1187,31 @@ private fun AddMedicationDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Medication") },
+        title = { Text(stringResource(R.string.dialog_add_medication)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Drug Name") },
+                    label = { Text(stringResource(R.string.label_drug_name)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = dosage,
                     onValueChange = { dosage = it },
-                    label = { Text("Dosage (e.g., 500mg)") },
+                    label = { Text(stringResource(R.string.label_dosage)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = schedule,
                     onValueChange = { schedule = it },
-                    label = { Text("Schedule (e.g., Twice daily)") },
+                    label = { Text(stringResource(R.string.label_schedule)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = purpose,
                     onValueChange = { purpose = it },
-                    label = { Text("Purpose (optional)") },
+                    label = { Text(stringResource(R.string.label_purpose)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -1223,7 +1228,7 @@ private fun AddMedicationDialog(
                 },
                 enabled = name.isNotBlank() && dosage.isNotBlank() && schedule.isNotBlank()
             ) {
-                Text("Add")
+                Text(stringResource(R.string.action_add))
             }
         },
         dismissButton = {
@@ -1245,25 +1250,25 @@ private fun AddContactDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Emergency Contact") },
+        title = { Text(stringResource(R.string.dialog_add_emergency_contact)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.label_name)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = relationship,
                     onValueChange = { relationship = it },
-                    label = { Text("Relationship") },
+                    label = { Text(stringResource(R.string.label_relationship)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = phoneNumber,
                     onValueChange = { phoneNumber = it },
-                    label = { Text("Phone Number") },
+                    label = { Text(stringResource(R.string.label_phone_number)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -1279,7 +1284,7 @@ private fun AddContactDialog(
                 },
                 enabled = name.isNotBlank() && phoneNumber.isNotBlank()
             ) {
-                Text("Add")
+                Text(stringResource(R.string.action_add))
             }
         },
         dismissButton = {

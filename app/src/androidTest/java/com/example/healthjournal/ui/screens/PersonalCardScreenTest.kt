@@ -91,8 +91,8 @@ class PersonalCardScreenTest {
             composeTestRule.onNodeWithText("John Doe").assertExists()
             composeTestRule.onNodeWithText("1990-01-15").assertExists()
             composeTestRule.onNodeWithText("Male").assertExists()
-            composeTestRule.onNodeWithText("180.0 cm").assertExists()
-            composeTestRule.onNodeWithText("75.0 kg").assertExists()
+            composeTestRule.onNodeWithText("180 cm").assertExists()
+            composeTestRule.onNodeWithText("75 kg").assertExists()
         }
     }
 
@@ -308,8 +308,12 @@ class PersonalCardScreenTest {
 
     @Test
     fun editMode_disablesSaveWhenInvalid() {
-        step("Open Personal Card screen with empty card") {
-            setScreen(PersonalCard())
+        step("Open Personal Card with invalid date of birth") {
+            setScreen(
+                PersonalCard(
+                    demographics = Demographics(dateOfBirth = "2030-01-01")
+                )
+            )
         }
 
         step("Enter edit mode") {

@@ -1,6 +1,5 @@
-package com.example.healthjournal.viewmodel
+package com.example.healthjournal.data.local
 
-import com.example.healthjournal.data.local.UnitSystem
 import org.junit.Assert.*
 import org.junit.Test
 

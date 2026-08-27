@@ -38,9 +38,23 @@
 - [ ] Task: Conductor - User Manual Verification 'UI Edit Mode' (Protocol in workflow.md)
 
 ## Phase 5: Integration & Polish
-- [ ] Task: Wire navigation route in MainActivity
+- [x] Task: Wire navigation route in MainActivity
 - [ ] Task: Add haptic feedback for destructive actions
 - [ ] Task: Test light/dark theme rendering
 - [ ] Task: Test cloud sync flow end-to-end
 - [ ] Task: Write integration tests
 - [ ] Task: Conductor - User Manual Verification 'Integration' (Protocol in workflow.md)
+
+## Review Log
+
+### 2026-08-27 — Code Review (Conductor protocol)
+Reviewed range `8ab46f1~1..HEAD` (`feat/body-measurements`, 23 commits). Findings resolved in follow-up commit:
+
+- **High:** `PersonalCardScreenTest.cardWithDemographics_displaysCorrectly` asserted `180.0 cm`/`75.0 kg` but UI renders truncated `180 cm`/`75 kg` (formatDouble strips `.0`) — assertion corrected.
+- **High:** `editMode_disablesSaveWhenInvalid` asserted Save disabled on an empty card (empty demographics are valid, so Save was enabled) — test now seeds a future DOB and relies on validation-on-enter-edit.
+- **Medium:** Out-of-range error strings used `%1$s`/`%2$s` placeholders but were rendered without format args (literal placeholders shown to user) — `ValidationResult.Invalid` now carries `formatArgs`.
+- **Medium:** Removed dead "latest weight override" feature (`bodyMeasurementRepository` in ViewModel/Factory, `getLatestWeight()` in DAO/repository) — not spec'd and never wired in MainActivity.
+- **Medium:** Fixed domain → viewmodel layering violation by moving `UnitConverter` to `data.local`.
+- **Medium:** De-duplicated `formatDouble` (moved to `UnitConverter`); removed unused `error_invalid_number`.
+- **Medium:** `validateDraft()` now runs on `startEditing()` so previously-stored invalid values disable Save.
+- **Low:** Moved all PersonalCard UI literals into `strings.xml`; singleton `id` default; trailing newlines; `Features.md` section reformatted.

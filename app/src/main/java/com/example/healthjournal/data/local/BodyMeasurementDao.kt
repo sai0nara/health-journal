@@ -47,9 +47,6 @@ interface BodyMeasurementDao {
     @Query("SELECT * FROM body_measurements WHERE syncStatus = 'PENDING_SYNC'")
     suspend fun getPendingSyncEntries(): List<BodyMeasurementEntry>
 
-    @Query("SELECT weight_kg FROM body_measurements ORDER BY timestamp DESC LIMIT 1")
-    suspend fun getLatestWeight(): Double?
-
     @Query("UPDATE body_measurements SET syncStatus = :syncStatus WHERE entry_id = :entryId")
     suspend fun updateSyncStatus(entryId: String, syncStatus: String)
 

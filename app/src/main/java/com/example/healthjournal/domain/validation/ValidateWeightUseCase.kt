@@ -1,8 +1,8 @@
 package com.example.healthjournal.domain.validation
 
 import com.example.healthjournal.R
+import com.example.healthjournal.data.local.UnitConverter
 import com.example.healthjournal.data.local.UnitSystem
-import com.example.healthjournal.viewmodel.UnitConverter
 
 class ValidateWeightUseCase {
     companion object {
@@ -30,7 +30,10 @@ class ValidateWeightUseCase {
         return if (displayValue in minValue..maxValue) {
             ValidationResult.Valid
         } else {
-            ValidationResult.Invalid(R.string.error_weight_out_of_range)
+            ValidationResult.Invalid(
+                R.string.error_weight_out_of_range,
+                listOf(UnitConverter.formatDouble(minValue), UnitConverter.formatDouble(maxValue))
+            )
         }
     }
 }
