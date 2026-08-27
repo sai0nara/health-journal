@@ -58,3 +58,7 @@ Reviewed range `8ab46f1~1..HEAD` (`feat/body-measurements`, 23 commits). Finding
 - **Medium:** De-duplicated `formatDouble` (moved to `UnitConverter`); removed unused `error_invalid_number`.
 - **Medium:** `validateDraft()` now runs on `startEditing()` so previously-stored invalid values disable Save.
 - **Low:** Moved all PersonalCard UI literals into `strings.xml`; singleton `id` default; trailing newlines; `Features.md` section reformatted.
+
+### 2026-08-27 — Edit-mode UX defect fixes (user-reported, cleanup decision)
+- **Defect 1:** DOB field auto-inserted `-` moved the cursor before the last typed digit (`1986-|0`) — the field was bound to a `String`, so the reformatted text lost the cursor. Now bound to `TextFieldValue` with explicit selection computed from the digits typed before the cursor (`onDateOfBirthChanged(TextFieldValue)`); DatePicker path uses `onDateOfBirthSelected`.
+- **Defect 2/3:** Height/weight fields regenerated their value from the parsed canonical `Double` on every keystroke, so trailing input like `185.`/`85.` was reformatted away and decimals could never be entered. Edit fields now bind to raw draft text (`draftHeightText`/`draftWeightText`); the parsed value is stored in `draftDemographics` for validation/save; raw text is re-baselined on load/start/cancel/unit-system change.

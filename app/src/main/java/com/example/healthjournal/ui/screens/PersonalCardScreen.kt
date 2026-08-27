@@ -51,6 +51,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -141,10 +142,14 @@ fun PersonalCardScreen(
                     if (uiState.isEditing) {
                         DemographicsEditCard(
                             demographics = uiState.draftDemographics,
+                            dateOfBirthValue = uiState.draftDateOfBirthValue,
+                            heightText = uiState.draftHeightText,
+                            weightText = uiState.draftWeightText,
                             validation = uiState.validation,
                             unitSystem = uiState.unitSystem,
                             onFullNameChanged = viewModel::onFullNameChanged,
                             onDateOfBirthChanged = viewModel::onDateOfBirthChanged,
+                            onDateOfBirthSelected = viewModel::onDateOfBirthSelected,
                             onSexChanged = viewModel::onSexChanged,
                             onHeightChanged = viewModel::onHeightChanged,
                             onWeightChanged = viewModel::onWeightChanged,
@@ -498,10 +503,14 @@ private fun InfoRow(label: String, value: String) {
 @Composable
 private fun DemographicsEditCard(
     demographics: Demographics,
+    dateOfBirthValue: TextFieldValue,
+    heightText: String,
+    weightText: String,
     validation: DemographicsValidationResult,
     unitSystem: UnitSystem,
     onFullNameChanged: (String) -> Unit,
-    onDateOfBirthChanged: (String) -> Unit,
+    onDateOfBirthChanged: (TextFieldValue) -> Unit,
+    onDateOfBirthSelected: (String) -> Unit,
     onSexChanged: (String) -> Unit,
     onHeightChanged: (String) -> Unit,
     onWeightChanged: (String) -> Unit,
@@ -577,7 +586,7 @@ private fun DemographicsEditCard(
 
             // Date of Birth with Date Picker
             OutlinedTextField(
-                value = demographics.dateOfBirth,
+                value = dateOfBirthValue,
                 onValueChange = onDateOfBirthChanged,
                 label = { Text(stringResource(R.string.label_dob_edit)) },
                 isError = validation.dateOfBirth is ValidationResult.Invalid,
@@ -605,9 +614,9 @@ private fun DemographicsEditCard(
 
             // Height with unit conversion
             val heightUnit = stringResource(if (unitSystem == UnitSystem.METRIC) R.string.height_unit_cm else R.string.height_unit_in)
-            val heightContentDescription = stringResource(R.string.cd_height, heightUnit, UnitConverter.formatForDisplay(demographics.heightCm, unitSystem, isHeight = true))
+            val heightContentDescription = stringResource(R.string.cd_height, heightUnit, heightText)
             OutlinedTextField(
-                value = UnitConverter.formatForDisplay(demographics.heightCm, unitSystem, isHeight = true),
+                value = heightText,
                 onValueChange = onHeightChanged,
                 label = { Text(stringResource(R.string.label_height_with_unit, heightUnit)) },
                 isError = validation.height is ValidationResult.Invalid,
@@ -625,9 +634,9 @@ private fun DemographicsEditCard(
 
             // Weight with unit conversion
             val weightUnit = stringResource(if (unitSystem == UnitSystem.METRIC) R.string.weight_unit_kg else R.string.weight_unit_lbs)
-            val weightContentDescription = stringResource(R.string.cd_weight, weightUnit, UnitConverter.formatForDisplay(demographics.weightKg, unitSystem, isHeight = false))
+            val weightContentDescription = stringResource(R.string.cd_weight, weightUnit, weightText)
             OutlinedTextField(
-                value = UnitConverter.formatForDisplay(demographics.weightKg, unitSystem, isHeight = false),
+                value = weightText,
                 onValueChange = onWeightChanged,
                 label = { Text(stringResource(R.string.label_weight_with_unit, weightUnit)) },
                 isError = validation.weight is ValidationResult.Invalid,
@@ -666,7 +675,7 @@ private fun DemographicsEditCard(
                         val date = Instant.ofEpochMilli(millis)
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate()
-                        onDateOfBirthChanged(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                        onDateOfBirthSelected(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                     }
                     showDatePicker = false
                 }) {

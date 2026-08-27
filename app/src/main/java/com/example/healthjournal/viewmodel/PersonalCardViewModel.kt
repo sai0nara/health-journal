@@ -1,5 +1,7 @@
 package com.example.healthjournal.viewmodel
 
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -37,6 +39,9 @@ data class PersonalCardUiState(
     val draftMedicalProfile: MedicalProfile = MedicalProfile(),
     val draftMedicalHistory: MedicalHistory = MedicalHistory(),
     val draftEmergencyContacts: EmergencyContacts = EmergencyContacts(),
+    val draftDateOfBirthValue: TextFieldValue = TextFieldValue(""),
+    val draftHeightText: String = "",
+    val draftWeightText: String = "",
     val validation: DemographicsValidationResult = DemographicsValidationResult()
 )
 
@@ -64,6 +69,16 @@ class PersonalCardViewModel(
                             draftMedicalProfile = card.medicalProfile,
                             draftMedicalHistory = card.medicalHistory,
                             draftEmergencyContacts = card.emergencyContacts,
+                            draftDateOfBirthValue = TextFieldValue(
+                                card.demographics.dateOfBirth,
+                                TextRange(card.demographics.dateOfBirth.length)
+                            ),
+                            draftHeightText = UnitConverter.formatForDisplay(
+                                card.demographics.heightCm, UnitSystem.METRIC, isHeight = true
+                            ),
+                            draftWeightText = UnitConverter.formatForDisplay(
+                                card.demographics.weightKg, UnitSystem.METRIC, isHeight = false
+                            ),
                             isLoading = false
                         )
                     }
@@ -75,26 +90,46 @@ class PersonalCardViewModel(
     }
 
     fun startEditing() {
-        _uiState.update {
-            it.copy(
+        _uiState.update { state ->
+            state.copy(
                 isEditing = true,
-                draftDemographics = it.demographics,
-                draftMedicalProfile = it.medicalProfile,
-                draftMedicalHistory = it.medicalHistory,
-                draftEmergencyContacts = it.emergencyContacts
+                draftDemographics = state.demographics,
+                draftMedicalProfile = state.medicalProfile,
+                draftMedicalHistory = state.medicalHistory,
+                draftEmergencyContacts = state.emergencyContacts,
+                draftDateOfBirthValue = TextFieldValue(
+                    state.demographics.dateOfBirth,
+                    TextRange(state.demographics.dateOfBirth.length)
+                ),
+                draftHeightText = UnitConverter.formatForDisplay(
+                    state.demographics.heightCm, state.unitSystem, isHeight = true
+                ),
+                draftWeightText = UnitConverter.formatForDisplay(
+                    state.demographics.weightKg, state.unitSystem, isHeight = false
+                )
             )
         }
         validateDraft()
     }
 
     fun cancelEditing() {
-        _uiState.update {
-            it.copy(
+        _uiState.update { state ->
+            state.copy(
                 isEditing = false,
-                draftDemographics = it.demographics,
-                draftMedicalProfile = it.medicalProfile,
-                draftMedicalHistory = it.medicalHistory,
-                draftEmergencyContacts = it.emergencyContacts
+                draftDemographics = state.demographics,
+                draftMedicalProfile = state.medicalProfile,
+                draftMedicalHistory = state.medicalHistory,
+                draftEmergencyContacts = state.emergencyContacts,
+                draftDateOfBirthValue = TextFieldValue(
+                    state.demographics.dateOfBirth,
+                    TextRange(state.demographics.dateOfBirth.length)
+                ),
+                draftHeightText = UnitConverter.formatForDisplay(
+                    state.demographics.heightCm, state.unitSystem, isHeight = true
+                ),
+                draftWeightText = UnitConverter.formatForDisplay(
+                    state.demographics.weightKg, state.unitSystem, isHeight = false
+                )
             )
         }
     }
@@ -133,14 +168,37 @@ class PersonalCardViewModel(
         _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(fullName = value)) }
     }
 
-    fun onDateOfBirthChanged(value: String) {
-        val digits = value.filter { it.isDigit() }.take(8)
+    fun onDateOfBirthChanged(value: TextFieldValue) {
+        val digits = value.text.filter { it.isDigit() }.take(8)
+        val typedDigits = value.text
+            .take(value.selection.end.coerceIn(0, value.text.length))
+            .count { it.isDigit() }
+            .coerceIn(0, digits.length)
         val formatted = when {
             digits.length <= 4 -> digits
             digits.length <= 6 -> "${digits.substring(0, 4)}-${digits.substring(4)}"
             else -> "${digits.substring(0, 4)}-${digits.substring(4, 6)}-${digits.substring(6)}"
         }
-        _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(dateOfBirth = formatted)) }
+        val dashesBeforeCursor =
+            (if (digits.length >= 5 && typedDigits > 4) 1 else 0) +
+                (if (digits.length >= 8 && typedDigits > 6) 1 else 0)
+        val cursorPosition = (typedDigits + dashesBeforeCursor).coerceIn(0, formatted.length)
+        _uiState.update {
+            it.copy(
+                draftDateOfBirthValue = TextFieldValue(formatted, TextRange(cursorPosition)),
+                draftDemographics = it.draftDemographics.copy(dateOfBirth = formatted)
+            )
+        }
+        validateDraft()
+    }
+
+    fun onDateOfBirthSelected(dateString: String) {
+        _uiState.update {
+            it.copy(
+                draftDateOfBirthValue = TextFieldValue(dateString, TextRange(dateString.length)),
+                draftDemographics = it.draftDemographics.copy(dateOfBirth = dateString)
+            )
+        }
         validateDraft()
     }
 
@@ -151,14 +209,24 @@ class PersonalCardViewModel(
     fun onHeightChanged(value: String) {
         val state = _uiState.value
         val heightCm = UnitConverter.parseInput(value, state.unitSystem, isHeight = true)
-        _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(heightCm = heightCm)) }
+        _uiState.update {
+            it.copy(
+                draftHeightText = value,
+                draftDemographics = it.draftDemographics.copy(heightCm = heightCm)
+            )
+        }
         validateDraft()
     }
 
     fun onWeightChanged(value: String) {
         val state = _uiState.value
         val weightKg = UnitConverter.parseInput(value, state.unitSystem, isHeight = false)
-        _uiState.update { it.copy(draftDemographics = it.draftDemographics.copy(weightKg = weightKg)) }
+        _uiState.update {
+            it.copy(
+                draftWeightText = value,
+                draftDemographics = it.draftDemographics.copy(weightKg = weightKg)
+            )
+        }
         validateDraft()
     }
 
@@ -167,7 +235,17 @@ class PersonalCardViewModel(
     }
 
     fun onUnitSystemChanged(unitSystem: UnitSystem) {
-        _uiState.update { it.copy(unitSystem = unitSystem) }
+        _uiState.update {
+            it.copy(
+                unitSystem = unitSystem,
+                draftHeightText = UnitConverter.formatForDisplay(
+                    it.draftDemographics.heightCm, unitSystem, isHeight = true
+                ),
+                draftWeightText = UnitConverter.formatForDisplay(
+                    it.draftDemographics.weightKg, unitSystem, isHeight = false
+                )
+            )
+        }
         validateDraft()
     }
 
