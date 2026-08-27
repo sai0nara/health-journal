@@ -337,13 +337,14 @@ class PersonalCardViewModelTest {
     }
 
     @Test
-    fun unitSystemChange_triggersRevalidation() {
+    fun unitSystemChange_revalidatesHeightInNewUnits() {
         viewModel.startEditing()
-        viewModel.onHeightChanged("70")
-        viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
+        viewModel.onHeightChanged("20")
+        assertTrue(currentState().validation.height is ValidationResult.Valid)
 
-        val state = currentState()
-        assertEquals(UnitSystem.IMPERIAL, state.unitSystem)
+        viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
+        assertEquals(UnitSystem.IMPERIAL, currentState().unitSystem)
+        assertTrue(currentState().validation.height is ValidationResult.Invalid)
     }
 
     @Test
@@ -358,6 +359,7 @@ class PersonalCardViewModelTest {
         viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
 
         assertEquals(UnitSystem.IMPERIAL, currentState().unitSystem)
+        assertTrue(currentState().validation.height is ValidationResult.Valid)
     }
 
     private fun assertNull(value: Any?) {
