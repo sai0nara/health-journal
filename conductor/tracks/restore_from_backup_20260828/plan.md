@@ -22,13 +22,13 @@
 - [x] Task: Conductor - User Manual Verification 'Restore Domain' (Protocol in workflow.md)
 
 ## Phase 3: Worker & Atomic Database Swap
-- [ ] Task: Write failing tests for database swap / connection-close-reopen logic
-- [ ] Task: Implement safe Room DB replacement (close, swap .db/-shm/-wal, reopen, version-aware)
-- [ ] Task: Write failing tests for RestoreWorker
-- [ ] Task: Implement RestoreWorker (CoroutineWorker) orchestrating extract -> swap -> media import -> success/failure
-- [ ] Task: Implement failure rollback + cleanup of staging directory
-- [ ] Task: Implement post-restore WorkManager sync enqueue
-- [ ] Task: Write unit tests covering worker success, corruption, and rollback
+- [x] Task: Write failing tests for database swap / connection-close-reopen logic
+- [x] Task: Implement safe Room DB replacement (close, swap .db/-shm/-wal, reopen, version-aware)
+- [x] Task: Write failing tests for RestoreCoordinator (JVM-testable oracle behind RestoreWorker: decrypt inner -> validate -> safe-extract -> load BackupData -> atomic restore -> post-restore sync)
+- [x] Task: Implement RestoreCoordinator + thin RestoreWorker (CoroutineWorker) orchestrating extract -> atomic swap -> media import -> success/failure
+- [x] Task: Implement failure rollback + cleanup of staging directory
+- [x] Task: Implement post-restore WorkManager sync enqueue (SyncManager.triggerManualSync)
+- [x] Task: Write unit tests covering worker/core success, corruption, wrong passphrase, version mismatch, and rollback
 - [ ] Task: Conductor - User Manual Verification 'Restore Worker' (Protocol in workflow.md)
 
 ## Phase 4: MVI UI (ExportScreen Restore tab)
