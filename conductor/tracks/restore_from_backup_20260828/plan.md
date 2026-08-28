@@ -21,7 +21,7 @@
 - [x] Task: Write unit tests for RestoreRepository incl. rollback path
 - [x] Task: Conductor - User Manual Verification 'Restore Domain' (Protocol in workflow.md)
 
-## Phase 3: Worker & Atomic Database Swap
+## Phase 3: Worker & Atomic Database Swap [checkpoint: a153790]
 - [x] Task: Write failing tests for database swap / connection-close-reopen logic
 - [x] Task: Implement safe Room DB replacement (close, swap .db/-shm/-wal, reopen, version-aware)
 - [x] Task: Write failing tests for RestoreCoordinator (JVM-testable oracle behind RestoreWorker: decrypt inner -> validate -> safe-extract -> load BackupData -> atomic restore -> post-restore sync)
@@ -29,7 +29,7 @@
 - [x] Task: Implement failure rollback + cleanup of staging directory
 - [x] Task: Implement post-restore WorkManager sync enqueue (SyncManager.triggerManualSync)
 - [x] Task: Write unit tests covering worker/core success, corruption, wrong passphrase, version mismatch, and rollback
-- [ ] Task: Conductor - User Manual Verification 'Restore Worker' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Restore Worker' (Protocol in workflow.md)
 
 ## Phase 4: MVI UI (ExportScreen Restore tab)
 - [ ] Task: Write failing UI/viewmodel tests for RestoreUiState transitions
