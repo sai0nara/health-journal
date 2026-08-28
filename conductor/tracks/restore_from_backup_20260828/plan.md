@@ -34,13 +34,13 @@
 ## Phase 4: MVI UI (ExportScreen Restore tab)
 - [x] Task: Write failing UI/viewmodel tests for RestoreUiState transitions
 - [x] Task: Create RestoreViewModel with sealed RestoreUiState (Idle, Validating, ConfirmationRequired, Processing, Success, Error)
-- [ ] Task: Add file selection (OpenDocument) + validation flow
-- [ ] Task: Add confirmation dialog showing backup metadata
-- [ ] Task: Add passphrase entry dialog (encrypted backups)
-- [ ] Task: Add progress indicator + success snackbar + error states with recovery steps
-- [ ] Task: Integrate Restore tab into ExportScreen
-- [ ] Task: Write Compose UI tests for restore flow
-- [ ] Task: Conductor - User Manual Verification 'Restore UI' (Protocol in workflow.md)
+- [x] Task: Add file selection (OpenDocument) + validation flow
+- [x] Task: Add confirmation dialog showing backup metadata
+- [x] Task: Add passphrase entry dialog (encrypted backups)
+- [x] Task: Add progress indicator + success snackbar + error states with recovery steps
+- [x] Task: Integrate Restore tab into ExportScreen
+- [x] Task: Write Compose UI tests for restore flow
+- [x] Task: Conductor - User Manual Verification 'Restore UI' (Protocol in workflow.md)
 
 ## Phase 5: Integration & Polish
 - [ ] Task: Wire/verify navigation & DI wiring in MainActivity/factories
