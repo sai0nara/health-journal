@@ -8,7 +8,7 @@
 - [x] Task: Verify Export still produces valid shareable archives
 - [x] Task: Conductor - User Manual Verification 'Backup Format' (Protocol in workflow.md)
 
-## Phase 2: Restore Domain & Data Layer
+## Phase 2: Restore Domain & Data Layer [checkpoint: b03a725]
 - [x] Task: Write failing tests for backup manifest reader/parser
 - [x] Task: Create backup reader + manifest validation (schema version, checksum)
 - [x] Task: Write failing tests for validation use cases (version mismatch, corrupt, checksum)
@@ -19,7 +19,7 @@
 - [x] Task: Implement storage/expansion-limit guard
 - [x] Task: Create RestoreRepository (staging, atomic swap, rollback, media re-import)
 - [x] Task: Write unit tests for RestoreRepository incl. rollback path
-- [ ] Task: Conductor - User Manual Verification 'Restore Domain' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Restore Domain' (Protocol in workflow.md)
 
 ## Phase 3: Worker & Atomic Database Swap
 - [ ] Task: Write failing tests for database swap / connection-close-reopen logic
