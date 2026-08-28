@@ -1,8 +1,7 @@
 package com.example.healthjournal.ui.screens
 
-import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.example.healthjournal.export.RestoreError
@@ -25,7 +24,7 @@ import org.junit.runner.RunWith
 class RestoreScreenTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+    val composeTestRule = createComposeRule()
 
     private fun createHarness(initial: RestoreUiState): RestoreViewModel {
         val flow = MutableStateFlow(initial)
