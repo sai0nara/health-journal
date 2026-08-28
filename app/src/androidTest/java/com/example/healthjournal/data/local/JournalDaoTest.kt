@@ -233,4 +233,21 @@ class JournalDaoTest {
         tags = journalDao.getTagsForEntry(entry.entry_id)
         assertTrue(tags.isEmpty())
     }
+
+    @Test
+    fun getAllTags_returnsAllTagCrossRefs() = runBlocking {
+        val entry1 = JournalEntry(description = "A")
+        val entry2 = JournalEntry(description = "B")
+        journalDao.insertEntry(entry1)
+        journalDao.insertEntry(entry2)
+        journalDao.insertTag(EntryTagCrossRef(entry1.entry_id, "RUN"))
+        journalDao.insertTag(EntryTagCrossRef(entry1.entry_id, "GYM"))
+        journalDao.insertTag(EntryTagCrossRef(entry2.entry_id, "SWIM"))
+
+        val all = journalDao.getAllTags()
+        assertEquals(3, all.size)
+        assertTrue(all.any { it.entryId == entry1.entry_id && it.tag == "RUN" })
+        assertTrue(all.any { it.entryId == entry1.entry_id && it.tag == "GYM" })
+        assertTrue(all.any { it.entryId == entry2.entry_id && it.tag == "SWIM" })
+    }
 }
