@@ -2,4 +2,10 @@
 <resources>
     <string name="app_name">Health Journal v1.0</string>
     <string name="google_web_client_id">711442225372-va6du3n65splt5cf8pmng4b9h8flob5l.apps.googleusercontent.com</string>
+    <string name="error_invalid_date_format">Invalid date format</string>
+    <string name="error_date_in_future">Date cannot be in the future</string>
+    <string name="error_age_too_high">Age cannot exceed 130 years</string>
+    <string name="error_height_out_of_range">Height must be between %1$s and %2$s</string>
+    <string name="error_weight_out_of_range">Weight must be between %1$s and %2$s</string>
+    <string name="error_invalid_number">Invalid number format</string>
 </resources>

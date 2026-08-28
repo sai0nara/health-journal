@@ -112,5 +112,7 @@ class DriveServiceHelper(private val context: Context, private val driveService:
          * [MEASUREMENTS_DATA_FILE] continue to parse their payload unchanged.
          */
         const val MEASUREMENTS_TOMBSTONES_FILE = "body_measurements_tombstones.json"
+
+        const val PERSONAL_CARD_FILE = "personal_card.json"
     }
 }

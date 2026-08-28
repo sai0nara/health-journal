@@ -1,0 +1,36 @@
+package com.example.healthjournal.domain.validation
+
+import com.example.healthjournal.R
+import com.example.healthjournal.data.local.UnitSystem
+import com.example.healthjournal.viewmodel.UnitConverter
+
+class ValidateWeightUseCase {
+    companion object {
+        const val MIN_WEIGHT_KG = 0.5
+        const val MAX_WEIGHT_KG = 650.0
+        const val MIN_WEIGHT_LBS = 1.1
+        const val MAX_WEIGHT_LBS = 1430.0
+    }
+
+    operator fun invoke(weightKg: Double?, unitSystem: UnitSystem): ValidationResult {
+        if (weightKg == null) {
+            return ValidationResult.Valid
+        }
+
+        val (minValue, maxValue) = when (unitSystem) {
+            UnitSystem.METRIC -> MIN_WEIGHT_KG to MAX_WEIGHT_KG
+            UnitSystem.IMPERIAL -> MIN_WEIGHT_LBS to MAX_WEIGHT_LBS
+        }
+
+        val displayValue = when (unitSystem) {
+            UnitSystem.METRIC -> weightKg
+            UnitSystem.IMPERIAL -> UnitConverter.kgToLbs(weightKg)
+        }
+
+        return if (displayValue in minValue..maxValue) {
+            ValidationResult.Valid
+        } else {
+            ValidationResult.Invalid(R.string.error_weight_out_of_range)
+        }
+    }
+}

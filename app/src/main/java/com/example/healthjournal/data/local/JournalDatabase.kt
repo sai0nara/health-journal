@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class], version = 11, exportSchema = true)
+@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class], version = 12, exportSchema = true)
 @androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
@@ -15,6 +15,8 @@ abstract class JournalDatabase : RoomDatabase() {
     abstract fun bodyMeasurementDao(): BodyMeasurementDao
 
     abstract fun goalDao(): GoalDao
+
+    abstract fun personalCardDao(): PersonalCardDao
 
     companion object {
         @Volatile
@@ -133,6 +135,20 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        // v11 -> v12: add personal_card table for medical profile
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `personal_card` (" +
+                        "`id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, " +
+                        "`lastModified` INTEGER NOT NULL, `isSynced` INTEGER, " +
+                        "`syncStatus` TEXT, `demographics` TEXT NOT NULL, " +
+                        "`medicalProfile` TEXT NOT NULL, `medicalHistory` TEXT NOT NULL, " +
+                        "`emergencyContacts` TEXT NOT NULL, PRIMARY KEY(`id`))"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -142,7 +158,7 @@ abstract class JournalDatabase : RoomDatabase() {
                 ).addMigrations(
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
                     MIGRATION_4_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10,
-                    MIGRATION_10_11
+                    MIGRATION_10_11, MIGRATION_11_12
                 ).build()
                 INSTANCE = instance
                 instance

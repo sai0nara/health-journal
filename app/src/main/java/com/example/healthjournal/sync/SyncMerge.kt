@@ -3,6 +3,7 @@ package com.example.healthjournal.sync
 import com.example.healthjournal.data.local.BodyMeasurementEntry
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.PersonalCard
 
 /**
  * Pure merge logic for bidirectional journal sync.
@@ -89,6 +90,31 @@ object SyncMerge {
             val cloud = result[local.parameterId]
             if (cloud != null && local.lastModified > cloud.lastModified) {
                 result[local.parameterId] = local
+            }
+        }
+
+        return result.values.toList()
+    }
+
+    /**
+     * Merge for personal card: Last-Write-Wins on lastModified, cloud wins ties.
+     * Since PersonalCard is a singleton (one row per user), this is a simple
+     * LWW merge similar to goals.
+     */
+    fun mergePersonalCard(
+        cloudCards: List<PersonalCard>,
+        localCards: List<PersonalCard>
+    ): List<PersonalCard> {
+        val result = mutableMapOf<String, PersonalCard>()
+
+        cloudCards.forEach { cloud ->
+            result[cloud.id] = cloud
+        }
+
+        localCards.forEach { local ->
+            val cloud = result[local.id]
+            if (cloud == null || local.lastModified > cloud.lastModified) {
+                result[local.id] = local
             }
         }
 
