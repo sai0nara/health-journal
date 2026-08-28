@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.export.ExportState
 import com.example.healthjournal.export.ExportViewModel
+import com.example.healthjournal.export.RestoreViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -20,10 +21,13 @@ import java.util.*
 @Composable
 fun ExportScreen(
     viewModel: ExportViewModel,
+    restoreViewModel: RestoreViewModel,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val exportState by viewModel.exportState.collectAsState()
+
+    var selectedTab by remember { mutableStateOf(0) }
     
     var startDate by remember { mutableLongStateOf(System.currentTimeMillis() - 30 * 24 * 60 * 60 * 1000L) } // 30 days ago
     var endDate by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -59,17 +63,30 @@ fun ExportScreen(
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            Text(
-                text = "Choose the date range and format for your export.",
-                style = MaterialTheme.typography.bodyLarge
-            )
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            TabRow(selectedTabIndex = selectedTab) {
+                Tab(
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
+                    text = { Text("Export") }
+                )
+                Tab(
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
+                    text = { Text("Restore") }
+                )
+            }
+            if (selectedTab == 0) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    Text(
+                        text = "Choose the date range and format for your export.",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
 
             // Date Selection
             Card(modifier = Modifier.fillMaxWidth()) {
@@ -150,6 +167,10 @@ fun ExportScreen(
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )
+                }
+                }
+            } else {
+                RestoreScreen(restoreViewModel)
             }
         }
     }

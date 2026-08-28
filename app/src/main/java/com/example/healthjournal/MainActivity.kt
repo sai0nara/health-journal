@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
             goalsRepository
         )
         val exportViewModel = ExportViewModel(application, journalRepository)
+        val restoreViewModel = com.example.healthjournal.export.RestoreViewModel(application)
         val personalCardRepository = com.example.healthjournal.data.PersonalCardRepository(database.personalCardDao())
         val personalCardViewModelFactory = com.example.healthjournal.viewmodel.PersonalCardViewModelFactory(personalCardRepository)
 
@@ -77,6 +78,7 @@ class MainActivity : ComponentActivity() {
                     composable("export") {
                         ExportScreen(
                             viewModel = exportViewModel,
+                            restoreViewModel = restoreViewModel,
                             onBack = { navController.popBackStack() }
                         )
                     }

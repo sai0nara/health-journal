@@ -38,7 +38,7 @@ class RestoreViewModel(
     private val _uiState = MutableStateFlow<RestoreUiState>(RestoreUiState.Idle)
     val uiState: StateFlow<RestoreUiState> = _uiState
 
-    private data class PendingSelection(val filePath: String, val passphrase: String?)
+    private data class PendingSelection(val fileUri: String, val passphrase: String?)
 
     private var pending: PendingSelection? = null
 
@@ -49,9 +49,10 @@ class RestoreViewModel(
             try {
                 val file = resolveUriToFile(uri)
                 val manifest = backupReader.readManifest(file, null)
-                pending = PendingSelection(file.absolutePath, null)
+                val fileUri = "file://${file.absolutePath}"
+                pending = PendingSelection(fileUri, null)
                 _uiState.value = RestoreUiState.ConfirmationRequired(
-                    fileUri = file.absolutePath,
+                    fileUri = fileUri,
                     isEncrypted = false,
                     schemaVersion = manifest.schemaVersion,
                     backupTimestamp = manifest.backupTimestamp
@@ -76,9 +77,10 @@ class RestoreViewModel(
             try {
                 val file = resolveUriToFile(current.fileUri)
                 val manifest = backupReader.readManifest(file, passphrase)
-                pending = PendingSelection(file.absolutePath, passphrase)
+                val fileUri = "file://${file.absolutePath}"
+                pending = PendingSelection(fileUri, passphrase)
                 _uiState.value = RestoreUiState.ConfirmationRequired(
-                    fileUri = file.absolutePath,
+                    fileUri = fileUri,
                     isEncrypted = true,
                     schemaVersion = manifest.schemaVersion,
                     backupTimestamp = manifest.backupTimestamp
@@ -101,7 +103,7 @@ class RestoreViewModel(
         viewModelScope.launch(dispatcher) {
             _uiState.value = RestoreUiState.Processing
             try {
-                val result = restoreToCompletion(getApplication(), selection.filePath, selection.passphrase)
+                val result = restoreToCompletion(getApplication(), selection.fileUri, selection.passphrase)
                 _uiState.value = RestoreUiState.Success(result)
             } catch (e: RestoreError.WrongPassphrase) {
                 _uiState.value = RestoreUiState.Error(e, requestPassphrase = true)
