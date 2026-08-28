@@ -9,16 +9,16 @@
 - [x] Task: Conductor - User Manual Verification 'Backup Format' (Protocol in workflow.md)
 
 ## Phase 2: Restore Domain & Data Layer
-- [ ] Task: Write failing tests for backup manifest reader/parser
-- [ ] Task: Create backup reader + manifest validation (schema version, checksum)
-- [ ] Task: Write failing tests for validation use cases (version mismatch, corrupt, checksum)
-- [ ] Task: Implement validation use cases (VersionMismatch, CorruptedFile, WrongPassphrase)
-- [ ] Task: Write failing tests for Zip-Slip / path-traversal prevention
-- [ ] Task: Implement safe-extraction with canonical path guard
-- [ ] Task: Write failing tests for ZIP-bomb / expansion-ratio guard
-- [ ] Task: Implement storage/expansion-limit guard
-- [ ] Task: Create RestoreRepository (staging, atomic swap, rollback, media re-import)
-- [ ] Task: Write unit tests for RestoreRepository incl. rollback path
+- [x] Task: Write failing tests for backup manifest reader/parser
+- [x] Task: Create backup reader + manifest validation (schema version, checksum)
+- [x] Task: Write failing tests for validation use cases (version mismatch, corrupt, checksum)
+- [x] Task: Implement validation use cases (VersionMismatch, CorruptedFile, WrongPassphrase)
+- [x] Task: Write failing tests for Zip-Slip / path-traversal prevention
+- [x] Task: Implement safe-extraction with canonical path guard
+- [x] Task: Write failing tests for ZIP-bomb / expansion-ratio guard
+- [x] Task: Implement storage/expansion-limit guard
+- [x] Task: Create RestoreRepository (staging, atomic swap, rollback, media re-import)
+- [x] Task: Write unit tests for RestoreRepository incl. rollback path
 - [ ] Task: Conductor - User Manual Verification 'Restore Domain' (Protocol in workflow.md)
 
 ## Phase 3: Worker & Atomic Database Swap

@@ -34,6 +34,14 @@ interface BodyMeasurementDao {
     @Query("DELETE FROM body_measurements WHERE entry_id IN (:entryIds)")
     suspend fun deleteEntriesByIds(entryIds: List<String>)
 
+    @Query("DELETE FROM body_measurements")
+    suspend fun clearAll()
+
+    /** Plain replace-insert that preserves each record's original sync fields
+     *  (used by restore so restored data is re-synced, unlike [importAll]). */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun replaceAll(entries: List<BodyMeasurementEntry>)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDeletedEntry(deletedEntry: DeletedEntry)
 

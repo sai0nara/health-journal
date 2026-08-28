@@ -111,6 +111,9 @@ interface JournalDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDeletedEntry(deletedEntry: DeletedEntry)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllDeletedEntries(entries: List<DeletedEntry>)
+
     @Query("SELECT * FROM deleted_entries")
     suspend fun getAllDeletedEntries(): List<DeletedEntry>
 
@@ -149,4 +152,16 @@ interface JournalDao {
 
     @Query("SELECT * FROM EntryTagCrossRef")
     suspend fun getAllTags(): List<EntryTagCrossRef>
+
+    @Query("DELETE FROM journal_entries")
+    suspend fun clearAllEntries()
+
+    @Query("DELETE FROM deleted_entries")
+    suspend fun clearAllDeletedEntries()
+
+    @Query("DELETE FROM EntryTagCrossRef")
+    suspend fun clearAllTags()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllTags(tags: List<EntryTagCrossRef>)
 }
