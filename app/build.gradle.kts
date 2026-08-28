@@ -191,6 +191,9 @@ dependencies {
     // PDF Generation
     implementation("com.itextpdf:itext7-core:7.2.5")
 
+    // Zip AES-256 encryption for full backups
+    implementation("net.lingala.zip4j:zip4j:2.11.5")
+
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.9")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")

@@ -146,4 +146,7 @@ interface JournalDao {
 
     @Query("SELECT tag FROM EntryTagCrossRef WHERE entryId = :entryId")
     suspend fun getTagsForEntry(entryId: String): List<String>
+
+    @Query("SELECT * FROM EntryTagCrossRef")
+    suspend fun getAllTags(): List<EntryTagCrossRef>
 }
