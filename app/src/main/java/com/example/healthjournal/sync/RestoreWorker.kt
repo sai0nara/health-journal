@@ -12,6 +12,7 @@ import com.example.healthjournal.export.ManifestValidator
 import com.example.healthjournal.export.RestoreCoordinator
 import com.example.healthjournal.export.RestoreError
 import com.example.healthjournal.export.RestoreRepository
+import com.example.healthjournal.export.RestoreResult
 import com.example.healthjournal.export.SafeBackupExtractor
 import com.google.gson.Gson
 import java.io.File
@@ -40,10 +41,20 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
 
         val coordinator = coordinatorProvider(applicationContext)
         return when (val outcome = coordinator.run(backupFile, passphrase)) {
-            is RestoreCoordinator.Outcome.Success -> Result.success()
+            is RestoreCoordinator.Outcome.Success -> Result.success(successOutput(outcome.result))
             is RestoreCoordinator.Outcome.Failure -> workerFailure(outcome.error)
         }
     }
+
+    private fun successOutput(result: RestoreResult): Data =
+        Data.Builder()
+            .putInt(KEY_RESULT_JOURNAL, result.journalEntryCount)
+            .putInt(KEY_RESULT_BODY, result.bodyMeasurementCount)
+            .putInt(KEY_RESULT_GOALS, result.goalCount)
+            .putInt(KEY_RESULT_DELETED, result.deletedEntryCount)
+            .putInt(KEY_RESULT_TAGS, result.tagCount)
+            .putInt(KEY_RESULT_MEDIA, result.mediaFileCount)
+            .build()
 
     /** Resolves a content:// or file:// URI into a local [File] (content URIs are copied to cache). */
     private fun resolveBackupFile(uri: String): File {
@@ -79,6 +90,13 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
         const val KEY_PASSPHRASE = "key_passphrase"
         const val KEY_ERROR_TYPE = "key_error_type"
         const val KEY_ERROR_MESSAGE = "key_error_message"
+
+        const val KEY_RESULT_JOURNAL = "key_result_journal"
+        const val KEY_RESULT_BODY = "key_result_body"
+        const val KEY_RESULT_GOALS = "key_result_goals"
+        const val KEY_RESULT_DELETED = "key_result_deleted"
+        const val KEY_RESULT_TAGS = "key_result_tags"
+        const val KEY_RESULT_MEDIA = "key_result_media"
 
         const val ERROR_TYPE_WRONG_PASSPHRASE = "wrong_passphrase"
         const val ERROR_TYPE_VERSION_MISMATCH = "version_mismatch"

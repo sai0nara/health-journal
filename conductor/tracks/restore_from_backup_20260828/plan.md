@@ -32,8 +32,8 @@
 - [x] Task: Conductor - User Manual Verification 'Restore Worker' (Protocol in workflow.md)
 
 ## Phase 4: MVI UI (ExportScreen Restore tab)
-- [ ] Task: Write failing UI/viewmodel tests for RestoreUiState transitions
-- [ ] Task: Create RestoreViewModel with sealed RestoreUiState (Idle, Validating, ConfirmationRequired, Processing, Success, Error)
+- [x] Task: Write failing UI/viewmodel tests for RestoreUiState transitions
+- [x] Task: Create RestoreViewModel with sealed RestoreUiState (Idle, Validating, ConfirmationRequired, Processing, Success, Error)
 - [ ] Task: Add file selection (OpenDocument) + validation flow
 - [ ] Task: Add confirmation dialog showing backup metadata
 - [ ] Task: Add passphrase entry dialog (encrypted backups)
