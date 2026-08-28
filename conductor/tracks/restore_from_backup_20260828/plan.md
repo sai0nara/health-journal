@@ -31,7 +31,7 @@
 - [x] Task: Write unit tests covering worker/core success, corruption, wrong passphrase, version mismatch, and rollback
 - [x] Task: Conductor - User Manual Verification 'Restore Worker' (Protocol in workflow.md)
 
-## Phase 4: MVI UI (ExportScreen Restore tab)
+## Phase 4: MVI UI (ExportScreen Restore tab) [checkpoint: c560aef]
 - [x] Task: Write failing UI/viewmodel tests for RestoreUiState transitions
 - [x] Task: Create RestoreViewModel with sealed RestoreUiState (Idle, Validating, ConfirmationRequired, Processing, Success, Error)
 - [x] Task: Add file selection (OpenDocument) + validation flow
