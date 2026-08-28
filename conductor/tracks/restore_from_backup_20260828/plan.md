@@ -43,9 +43,9 @@
 - [x] Task: Conductor - User Manual Verification 'Restore UI' (Protocol in workflow.md)
 
 ## Phase 5: Integration & Polish
-- [ ] Task: Wire/verify navigation & DI wiring in MainActivity/factories
+- [x] Task: Wire/verify navigation & DI wiring in MainActivity/factories
 - [ ] Task: End-to-end test: export -> encrypt -> full wipe app -> restore -> verify
-- [ ] Task: Write integration tests (export/restore round-trip, sync enqueue)
-- [ ] Task: Test light/dark theme rendering of restore UI
-- [ ] Task: Manual risk pass: ZIP-bomb, Zip-Slip, wrong passphrase, version mismatch, low disk
+- [x] Task: Write integration tests (export/restore round-trip, sync enqueue)
+- [x] Task: Test light/dark theme rendering of restore UI
+- [x] Task: Manual risk pass: ZIP-bomb, Zip-Slip, wrong passphrase, version mismatch, low disk
 - [ ] Task: Conductor - User Manual Verification 'Integration' (Protocol in workflow.md)
