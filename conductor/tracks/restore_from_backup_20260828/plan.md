@@ -1,11 +1,11 @@
 # Restore from Backup - Implementation Plan
 
-## Phase 1: Backup Format Extension (Export)
-- [ ] Task: Write failing unit tests for full-backup ZIP writer (manifest, schema version, all entities, media)
-- [ ] Task: Extend ZipExportUseCase to serialize all Room entities + schema version + backup.json manifest
-- [ ] Task: Add optional AES-256 passphrase encryption (Zip4j) to backup writer
-- [ ] Task: Write tests for encrypted & unencrypted backup creation
-- [ ] Task: Verify Export still produces valid shareable archives
+## Phase 1: Backup Format Extension (Export) [checkpoint: c5022c1]
+- [x] Task: Write failing unit tests for full-backup ZIP writer (manifest, schema version, all entities, media)
+- [x] Task: Extend ZipExportUseCase to serialize all Room entities + schema version + backup.json manifest
+- [x] Task: Add optional AES-256 passphrase encryption (Zip4j) to backup writer
+- [x] Task: Write tests for encrypted & unencrypted backup creation
+- [x] Task: Verify Export still produces valid shareable archives
 - [ ] Task: Conductor - User Manual Verification 'Backup Format' (Protocol in workflow.md)
 
 ## Phase 2: Restore Domain & Data Layer
