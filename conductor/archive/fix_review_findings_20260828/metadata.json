@@ -1,0 +1,8 @@
+{
+  "track_id": "fix_review_findings_20260828",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-08-28T08:35:58Z",
+  "updated_at": "2026-08-28T08:35:58Z",
+  "description": "Fix review findings for Personal Card - hardcoded cancels and compiler warnings"
+}

@@ -104,36 +104,4 @@ class JournalTypeConverters {
             EmergencyContacts()
         }
     }
-
-    @TypeConverter
-    fun fromMedicationEntryList(value: List<MedicationEntry>): String {
-        return gson.toJson(value)
-    }
-
-    @TypeConverter
-    fun toMedicationEntryList(value: String?): List<MedicationEntry> {
-        if (value == null) return emptyList()
-        return try {
-            val listType = object : TypeToken<List<MedicationEntry>>() {}.type
-            gson.fromJson(value, listType) ?: emptyList()
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    @TypeConverter
-    fun fromEmergencyContactList(value: List<EmergencyContact>): String {
-        return gson.toJson(value)
-    }
-
-    @TypeConverter
-    fun toEmergencyContactList(value: String?): List<EmergencyContact> {
-        if (value == null) return emptyList()
-        return try {
-            val listType = object : TypeToken<List<EmergencyContact>>() {}.type
-            gson.fromJson(value, listType) ?: emptyList()
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
 }

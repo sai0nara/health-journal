@@ -1,6 +1,5 @@
-package com.example.healthjournal.viewmodel
+package com.example.healthjournal.data.local
 
-import com.example.healthjournal.data.local.UnitSystem
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -48,15 +47,37 @@ object UnitConverter {
         return if (unitSystem == UnitSystem.IMPERIAL) {
             if (isHeight) inchesToCm(value) else lbsToKg(value)
         } else {
-            value
+            BigDecimal(value).setScale(2, RoundingMode.HALF_UP).toDouble()
         }
     }
 
-    private fun formatDouble(value: Double): String {
-        return if (value % 1.0 == 0.0) {
-            value.toLong().toString()
+    fun formatDouble(value: Double): String {
+        return BigDecimal(value)
+            .setScale(2, RoundingMode.HALF_UP)
+            .stripTrailingZeros()
+            .toPlainString()
+    }
+
+    fun sanitizeDecimalInput(input: String): String {
+        val cleaned = buildString {
+            var decimalPointSeen = false
+            for (ch in input) {
+                when {
+                    ch.isDigit() -> append(ch)
+                    ch == '.' && !decimalPointSeen -> {
+                        append('.')
+                        decimalPointSeen = true
+                    }
+                }
+            }
+        }
+        val dotIndex = cleaned.indexOf('.')
+        if (dotIndex < 0) return cleaned
+        val fraction = cleaned.substring(dotIndex + 1).take(2)
+        return if (fraction.isEmpty()) {
+            cleaned.substring(0, dotIndex + 1)
         } else {
-            value.toString()
+            cleaned.substring(0, dotIndex + 1) + fraction
         }
     }
 }

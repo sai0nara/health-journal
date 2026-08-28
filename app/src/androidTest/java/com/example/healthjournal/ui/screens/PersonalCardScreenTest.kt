@@ -91,8 +91,8 @@ class PersonalCardScreenTest {
             composeTestRule.onNodeWithText("John Doe").assertExists()
             composeTestRule.onNodeWithText("1990-01-15").assertExists()
             composeTestRule.onNodeWithText("Male").assertExists()
-            composeTestRule.onNodeWithText("180.0 cm").assertExists()
-            composeTestRule.onNodeWithText("75.0 kg").assertExists()
+            composeTestRule.onNodeWithText("180 cm").assertExists()
+            composeTestRule.onNodeWithText("75 kg").assertExists()
         }
     }
 
@@ -308,8 +308,12 @@ class PersonalCardScreenTest {
 
     @Test
     fun editMode_disablesSaveWhenInvalid() {
-        step("Open Personal Card screen with empty card") {
-            setScreen(PersonalCard())
+        step("Open Personal Card with invalid date of birth") {
+            setScreen(
+                PersonalCard(
+                    demographics = Demographics(dateOfBirth = "2030-01-01")
+                )
+            )
         }
 
         step("Enter edit mode") {
@@ -318,6 +322,34 @@ class PersonalCardScreenTest {
 
         step("Verify Save button is disabled") {
             composeTestRule.onNodeWithText("Save").assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun dialogs_useLocalizedCancelResource() {
+        step("Open Personal Card and enter edit mode") {
+            setScreen(PersonalCard())
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+        }
+
+        step("Verify Add Allergy dialog has localized cancel button") {
+            composeTestRule.onNodeWithContentDescription("Add allergy").performClick()
+            composeTestRule.onNodeWithText("Add Allergy").assertExists()
+            composeTestRule.onNodeWithText("Cancel").assertExists()
+            composeTestRule.onNodeWithText("Cancel").performClick()
+        }
+
+        step("Verify Add Medication dialog has localized cancel button") {
+            composeTestRule.onNodeWithContentDescription("Add medication").performClick()
+            composeTestRule.onNodeWithText("Add Medication").assertExists()
+            composeTestRule.onNodeWithText("Cancel").assertExists()
+            composeTestRule.onNodeWithText("Cancel").performClick()
+        }
+
+        step("Verify Add Emergency Contact dialog has localized cancel button") {
+            composeTestRule.onNodeWithContentDescription("Add emergency contact").performClick()
+            composeTestRule.onNodeWithText("Add Emergency Contact").assertExists()
+            composeTestRule.onNodeWithText("Cancel").assertExists()
         }
     }
 

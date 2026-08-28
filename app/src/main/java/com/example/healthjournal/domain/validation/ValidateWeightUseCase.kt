@@ -1,15 +1,16 @@
 package com.example.healthjournal.domain.validation
 
 import com.example.healthjournal.R
+import com.example.healthjournal.data.local.UnitConverter
 import com.example.healthjournal.data.local.UnitSystem
-import com.example.healthjournal.viewmodel.UnitConverter
 
 class ValidateWeightUseCase {
     companion object {
         const val MIN_WEIGHT_KG = 0.5
         const val MAX_WEIGHT_KG = 650.0
-        const val MIN_WEIGHT_LBS = 1.1
-        const val MAX_WEIGHT_LBS = 1430.0
+
+        val MIN_WEIGHT_LBS: Double = UnitConverter.kgToLbs(MIN_WEIGHT_KG)
+        val MAX_WEIGHT_LBS: Double = UnitConverter.kgToLbs(MAX_WEIGHT_KG)
     }
 
     operator fun invoke(weightKg: Double?, unitSystem: UnitSystem): ValidationResult {
@@ -30,7 +31,10 @@ class ValidateWeightUseCase {
         return if (displayValue in minValue..maxValue) {
             ValidationResult.Valid
         } else {
-            ValidationResult.Invalid(R.string.error_weight_out_of_range)
+            ValidationResult.Invalid(
+                R.string.error_weight_out_of_range,
+                listOf(UnitConverter.formatDouble(minValue), UnitConverter.formatDouble(maxValue))
+            )
         }
     }
 }

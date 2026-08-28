@@ -2,7 +2,6 @@ package com.example.healthjournal.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.util.UUID
 
 enum class BloodType(val displayName: String) {
     A_POSITIVE("A+"),
@@ -63,7 +62,7 @@ data class EmergencyContacts(
 @Entity(tableName = "personal_card")
 data class PersonalCard(
     @PrimaryKey
-    val id: String = UUID.randomUUID().toString(),
+    val id: String = "personal_card",
     val timestamp: Long = System.currentTimeMillis(),
     val lastModified: Long = System.currentTimeMillis(),
     val isSynced: Boolean? = false,

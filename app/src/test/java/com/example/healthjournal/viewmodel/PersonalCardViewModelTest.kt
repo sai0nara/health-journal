@@ -1,6 +1,7 @@
 package com.example.healthjournal.viewmodel
 
-import com.example.healthjournal.data.BodyMeasurementRepository
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import com.example.healthjournal.data.PersonalCardRepository
 import com.example.healthjournal.data.local.BloodType
 import com.example.healthjournal.data.local.Demographics
@@ -35,7 +36,6 @@ class PersonalCardViewModelTest {
 
     private lateinit var viewModel: PersonalCardViewModel
     private val repository: PersonalCardRepository = mockk()
-    private val bodyMeasurementRepository: BodyMeasurementRepository = mockk()
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -44,8 +44,7 @@ class PersonalCardViewModelTest {
         coEvery { repository.getPersonalCard() } returns flowOf(null)
         coEvery { repository.insertOrUpdate(any()) } returns Unit
         coEvery { repository.markEntryDirty() } returns Unit
-        coEvery { bodyMeasurementRepository.getLatestWeight() } returns null
-        viewModel = PersonalCardViewModel(repository, bodyMeasurementRepository, testDispatcher)
+        viewModel = PersonalCardViewModel(repository, testDispatcher)
     }
 
     @After
@@ -297,33 +296,155 @@ class PersonalCardViewModelTest {
     @Test
     fun onDateOfBirthChanged_formatsWithDashes() {
         viewModel.startEditing()
-        viewModel.onDateOfBirthChanged("19900115")
+        viewModel.onDateOfBirthChanged(TextFieldValue("19900115", TextRange(8)))
         assertEquals("1990-01-15", currentState().draftDemographics.dateOfBirth)
+        assertEquals(10, currentState().draftDateOfBirthValue.selection.end)
     }
 
     @Test
     fun onDateOfBirthChanged_rejectsNonDigits() {
         viewModel.startEditing()
-        viewModel.onDateOfBirthChanged("1990-01-15abc")
+        viewModel.onDateOfBirthChanged(TextFieldValue("1990-01-15abc", TextRange(12)))
         assertEquals("1990-01-15", currentState().draftDemographics.dateOfBirth)
     }
 
     @Test
-    fun formatDouble_removesTrailingZero() {
-        assertEquals("178", PersonalCardViewModel.formatDouble(178.0))
-        assertEquals("178.5", PersonalCardViewModel.formatDouble(178.5))
-        assertEquals("", PersonalCardViewModel.formatDouble(null))
-        assertEquals("0", PersonalCardViewModel.formatDouble(0.0))
+    fun onDateOfBirthChanged_preservesCursorAfterAutoInsertedDash() {
+        viewModel.startEditing()
+        viewModel.onDateOfBirthChanged(TextFieldValue("1986", TextRange(4)))
+        assertEquals("1986", currentState().draftDemographics.dateOfBirth)
+        assertEquals(4, currentState().draftDateOfBirthValue.selection.end)
+
+        viewModel.onDateOfBirthChanged(TextFieldValue("19860", TextRange(5)))
+        assertEquals("1986-0", currentState().draftDemographics.dateOfBirth)
+        assertEquals(6, currentState().draftDateOfBirthValue.selection.end)
+    }
+
+    @Test
+    fun onDateOfBirthChanged_preservesCursorWhenTypingDayDigit() {
+        viewModel.startEditing()
+        viewModel.onDateOfBirthChanged(TextFieldValue("198601", TextRange(6)))
+        assertEquals("1986-01", currentState().draftDemographics.dateOfBirth)
+        assertEquals(7, currentState().draftDateOfBirthValue.selection.end)
+
+        viewModel.onDateOfBirthChanged(TextFieldValue("1986010", TextRange(7)))
+        assertEquals("1986-01-0", currentState().draftDemographics.dateOfBirth)
+        assertEquals(9, currentState().draftDateOfBirthValue.selection.end)
+
+        viewModel.onDateOfBirthChanged(TextFieldValue("19860101", TextRange(8)))
+        assertEquals("1986-01-01", currentState().draftDemographics.dateOfBirth)
+        assertEquals(10, currentState().draftDateOfBirthValue.selection.end)
     }
 
     @Test
     fun validation_failsWithInvalidDate() {
         viewModel.startEditing()
-        viewModel.onDateOfBirthChanged("20300101")
+        viewModel.onDateOfBirthChanged(TextFieldValue("20300101"))
 
         val state = currentState()
         assertFalse(state.validation.isValid)
         assertTrue(state.validation.dateOfBirth is ValidationResult.Invalid)
+    }
+
+    @Test
+    fun onHeightChanged_limitsDecimalsToTwoWhileTyping() {
+        viewModel.startEditing()
+        viewModel.onHeightChanged("178.5555555")
+
+        assertEquals("178.55", currentState().draftHeightText)
+        assertEquals(178.55, currentState().draftDemographics.heightCm!!, 0.001)
+
+        viewModel.onHeightChanged("178.5")
+        assertEquals("178.5", currentState().draftHeightText)
+    }
+
+    @Test
+    fun onWeightChanged_limitsDecimalsToTwoWhileTyping() {
+        viewModel.startEditing()
+        viewModel.onWeightChanged("85.5555555")
+
+        assertEquals("85.55", currentState().draftWeightText)
+        assertEquals(85.55, currentState().draftDemographics.weightKg!!, 0.001)
+
+        viewModel.onWeightChanged("85.5")
+        assertEquals("85.5", currentState().draftWeightText)
+    }
+
+    @Test
+    fun onHeightChanged_preservesPartialDecimalTextDuringTyping() {
+        viewModel.startEditing()
+        viewModel.onHeightChanged("185.")
+
+        assertEquals("185.", currentState().draftHeightText)
+        assertEquals(185.0, currentState().draftDemographics.heightCm!!, 0.001)
+
+        viewModel.onHeightChanged("185.5")
+        assertEquals("185.5", currentState().draftHeightText)
+        assertEquals(185.5, currentState().draftDemographics.heightCm!!, 0.001)
+    }
+
+    @Test
+    fun onWeightChanged_preservesPartialDecimalTextDuringTyping() {
+        viewModel.startEditing()
+        viewModel.onWeightChanged("85.")
+
+        assertEquals("85.", currentState().draftWeightText)
+        assertEquals(85.0, currentState().draftDemographics.weightKg!!, 0.001)
+
+        viewModel.onWeightChanged("85.5")
+        assertEquals("85.5", currentState().draftWeightText)
+        assertEquals(85.5, currentState().draftDemographics.weightKg!!, 0.001)
+    }
+
+    @Test
+    fun startEditing_baselinesDraftTextsFromSavedValues() = runTest {
+        seedCard(
+            PersonalCard(
+                demographics = Demographics(heightCm = 180.0, weightKg = 75.5, dateOfBirth = "1990-01-15")
+            )
+        )
+
+        viewModel.startEditing()
+
+        val state = currentState()
+        assertEquals("180", state.draftHeightText)
+        assertEquals("75.5", state.draftWeightText)
+        assertEquals(TextFieldValue("1990-01-15", TextRange(10)), state.draftDateOfBirthValue)
+    }
+
+    @Test
+    fun unitSystemChange_rebaselinesDraftTextsToNewUnits() = runTest {
+        seedCard(
+            PersonalCard(
+                demographics = Demographics(heightCm = 177.8, weightKg = 75.0)
+            )
+        )
+
+        viewModel.startEditing()
+        assertEquals("177.8", currentState().draftHeightText)
+
+        viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
+
+        assertEquals("70", currentState().draftHeightText)
+        assertEquals("165.3", currentState().draftWeightText)
+    }
+
+    @Test
+    fun cancelEditing_restoresDraftTextsToOriginal() = runTest {
+        seedCard(
+            PersonalCard(
+                demographics = Demographics(heightCm = 180.0, weightKg = 75.5)
+            )
+        )
+
+        viewModel.startEditing()
+        viewModel.onHeightChanged("190")
+        viewModel.cancelEditing()
+
+        val state = currentState()
+        assertEquals("180", state.draftHeightText)
+        assertEquals("75.5", state.draftWeightText)
+        assertEquals(TextFieldValue("", TextRange(0)), state.draftDateOfBirthValue)
     }
 
     @Test
@@ -344,7 +465,7 @@ class PersonalCardViewModelTest {
 
         viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
         assertEquals(UnitSystem.IMPERIAL, currentState().unitSystem)
-        assertTrue(currentState().validation.height is ValidationResult.Invalid)
+        assertTrue(currentState().validation.height is ValidationResult.Valid)
     }
 
     @Test
@@ -368,7 +489,7 @@ class PersonalCardViewModelTest {
 
     private fun seedCard(card: PersonalCard) {
         coEvery { repository.getPersonalCard() } returns flowOf(card)
-        viewModel = PersonalCardViewModel(repository, bodyMeasurementRepository, testDispatcher)
+        viewModel = PersonalCardViewModel(repository, testDispatcher)
         testDispatcher.scheduler.advanceUntilIdle()
     }
 }

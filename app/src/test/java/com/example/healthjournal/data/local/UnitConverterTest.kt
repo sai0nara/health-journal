@@ -1,6 +1,5 @@
-package com.example.healthjournal.viewmodel
+package com.example.healthjournal.data.local
 
-import com.example.healthjournal.data.local.UnitSystem
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -45,6 +44,34 @@ class UnitConverterTest {
     fun `parseInput metric returns value directly`() {
         val result = UnitConverter.parseInput("175", UnitSystem.METRIC, isHeight = true)
         assertEquals(175.0, result!!, 0.001)
+    }
+
+    @Test
+    fun `parseInput metric rounds to two decimals`() {
+        val result = UnitConverter.parseInput("178.35745332432423", UnitSystem.METRIC, isHeight = true)
+        assertEquals(178.36, result!!, 0.001)
+    }
+
+    @Test
+    fun `formatDouble caps at two decimals`() {
+        assertEquals("178.36", UnitConverter.formatDouble(178.35745332432423))
+        assertEquals("3.14", UnitConverter.formatDouble(3.14159265358979))
+    }
+
+    @Test
+    fun `formatDouble strips trailing zeros`() {
+        assertEquals("178", UnitConverter.formatDouble(178.0))
+        assertEquals("178.3", UnitConverter.formatDouble(178.30))
+        assertEquals("178.35", UnitConverter.formatDouble(178.35))
+    }
+
+    @Test
+    fun `sanitizeDecimalInput trims to two decimals`() {
+        assertEquals("178.55", UnitConverter.sanitizeDecimalInput("178.5555555"))
+        assertEquals("85.5", UnitConverter.sanitizeDecimalInput("85.5"))
+        assertEquals("85.", UnitConverter.sanitizeDecimalInput("85."))
+        assertEquals("1.23", UnitConverter.sanitizeDecimalInput("1.2.3"))
+        assertEquals("", UnitConverter.sanitizeDecimalInput("abc"))
     }
 
     @Test

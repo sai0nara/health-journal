@@ -7,5 +7,95 @@
     <string name="error_age_too_high">Age cannot exceed 130 years</string>
     <string name="error_height_out_of_range">Height must be between %1$s and %2$s</string>
     <string name="error_weight_out_of_range">Weight must be between %1$s and %2$s</string>
-    <string name="error_invalid_number">Invalid number format</string>
+
+    <string name="personal_card_title">Personal Card</string>
+    <string name="cd_open_personal_card">Open Personal Card</string>
+    <string name="action_back">Navigate back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_edit">Edit personal card</string>
+    <string name="action_ok">OK</string>
+    <string name="action_add">Add</string>
+    <string name="loading">Loading...</string>
+
+    <string name="demographics_title">Demographics</string>
+    <string name="medical_profile_title">Medical Profile</string>
+    <string name="medical_history_title">Medical History</string>
+    <string name="emergency_contacts_title">Emergency Contacts</string>
+
+    <string name="empty_demographics">No demographics information added yet.</string>
+    <string name="empty_medical_profile">No medical profile information added yet.</string>
+    <string name="empty_medical_history">No medical history information added yet.</string>
+    <string name="empty_emergency_contacts">No emergency contacts added yet.</string>
+
+    <string name="label_name">Name</string>
+    <string name="label_date_of_birth">Date of Birth</string>
+    <string name="label_sex">Sex</string>
+    <string name="label_height">Height</string>
+    <string name="label_weight">Weight</string>
+    <string name="label_race_ethnicity">Race/Ethnicity</string>
+    <string name="label_blood_type">Blood Type</string>
+    <string name="blood_type_none">None</string>
+    <string name="label_allergies">Allergies</string>
+    <string name="label_medications">Medications</string>
+    <string name="label_adverse_reactions">Adverse Reactions</string>
+    <string name="label_hereditary_diseases">Hereditary Diseases</string>
+    <string name="label_chronic_conditions">Chronic Conditions</string>
+    <string name="label_surgical_history">Surgical History</string>
+    <string name="label_relationship">Relationship</string>
+    <string name="label_phone_number">Phone Number</string>
+    <string name="format_cm_value">%1$s cm</string>
+    <string name="format_kg_value">%1$s kg</string>
+
+    <string name="label_full_name">Full Name</string>
+    <string name="label_dob_edit">Date of Birth (YYYY-MM-DD)</string>
+    <string name="label_unit_system">Unit System</string>
+    <string name="unit_system_metric">Metric (kg/cm)</string>
+    <string name="unit_system_imperial">Imperial (lbs/in)</string>
+    <string name="label_height_with_unit">Height (%1$s)</string>
+    <string name="label_weight_with_unit">Weight (%1$s)</string>
+    <string name="height_unit_cm">cm</string>
+    <string name="height_unit_in">in</string>
+    <string name="weight_unit_kg">kg</string>
+    <string name="weight_unit_lbs">lbs</string>
+    <string name="select_date">Select date</string>
+
+    <string name="add_allergy">Add allergy</string>
+    <string name="remove_allergy">Remove allergy</string>
+    <string name="add_medication">Add medication</string>
+    <string name="remove_medication">Remove medication</string>
+    <string name="add_adverse_reaction">Add adverse reaction</string>
+    <string name="remove_adverse_reaction">Remove adverse reaction</string>
+    <string name="add_hereditary_disease">Add hereditary disease</string>
+    <string name="remove_hereditary_disease">Remove hereditary disease</string>
+    <string name="add_chronic_condition">Add chronic condition</string>
+    <string name="remove_chronic_condition">Remove chronic condition</string>
+    <string name="add_surgical_procedure">Add surgical procedure</string>
+    <string name="remove_surgical_procedure">Remove surgical procedure</string>
+    <string name="add_emergency_contact">Add emergency contact</string>
+    <string name="remove_contact">Remove contact</string>
+    <string name="medication_item">%1$s %2$s - %3$s</string>
+
+    <string name="dialog_add_allergy">Add Allergy</string>
+    <string name="dialog_add_medication">Add Medication</string>
+    <string name="dialog_add_adverse_reaction">Add Adverse Reaction</string>
+    <string name="dialog_add_hereditary_disease">Add Hereditary Disease</string>
+    <string name="dialog_add_chronic_condition">Add Chronic Condition</string>
+    <string name="dialog_add_surgical_procedure">Add Surgical Procedure</string>
+    <string name="dialog_add_emergency_contact">Add Emergency Contact</string>
+    <string name="label_allergy">Allergy</string>
+    <string name="label_reaction">Reaction</string>
+    <string name="label_disease">Disease</string>
+    <string name="label_condition">Condition</string>
+    <string name="label_procedure">Procedure (with date if known)</string>
+    <string name="label_drug_name">Drug Name</string>
+    <string name="label_dosage">Dosage (e.g., 500mg)</string>
+    <string name="label_schedule">Schedule (e.g., Twice daily)</string>
+    <string name="label_purpose">Purpose (optional)</string>
+
+    <string name="cd_full_name">Full Name: %1$s</string>
+    <string name="cd_sex">Sex: %1$s</string>
+    <string name="cd_race_ethnicity">Race/Ethnicity: %1$s</string>
+    <string name="cd_height">Height (%1$s): %2$s</string>
+    <string name="cd_weight">Weight (%1$s): %2$s</string>
 </resources>

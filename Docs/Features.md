@@ -1,22 +1,3 @@
-
-[//]: # (10. User should be able to add more than one attachment: common formats. )
-[//]: # (And more than one photo. User should be able to save attachments synchronized from the cloud.)
-[//]: # (2. add photos)
-[//]: # (4. search)
-[//]: # (7. allure report with screenshots)
-[//]: # (8. add versions to app-debug.apk name and on screen &#40;about app&#41;)
-<!-- * Ability to move entry to archive. From archive user can delete any entry, couple or all of them  -->
-<!-- * Add different categories/tags: illness, checkup, doctor, exercises. Search by these categories/tags -->
-* calendar with events from one day or period 
-* graph, trends for every part
-* Restore data from backup
-
-<!-- * Body parts measurements  -->
-<!-- * change color scheme to more common for medical apps. App should have an ability to get theme settings from the System. Add dark theme. UI defect: user can't see status bar since it is white -->
-<!-- * For a text larger than 3 strings should be displayed only first 3 strings. Basic formatting tools, like bold, italic, headers -->
-<!-- * User should be able to save attachments in any directory he choise -->
-<!-- * Defect: pull the feed down triggers syncronization but the update icon newer dissaper   -->
-
 ### 1. Feature Breakdown & Product UX
 
 * **User Value Proposition:** Prevents API key theft, unauthorized usage quota exhaustion, and billing fraud while maintaining uninterrupted access to AI-powered capabilities (e.g., natural language logging, trend analysis, smart recommendations).
@@ -105,4 +86,31 @@ sealed interface AiFeatureUiState {
 
 
 ==== Personal card
-A complete personal medical card consolidates basic demographics, clinical baseline, medical history, active treatments, and emergency contacts into a single standardized profile.Personal Demographics & IdentificationFull Name:Date of Birth / Age:Sex / Gender:Height:Weight: (Essential alongside height for medication dosing)Race / Ethnicity:Baseline Medical ProfileBlood Type: (e.g., O+, A-, etc.)Allergies: (Medications, food, latex, insect stings — with specific reaction details like anaphylaxis or hives)Active Medications: (Exact drug name, dosage, schedule, and purpose for prescription, OTC, and supplements)Adverse Drug Reactions: (Severe non-allergic side effects such as extreme nausea, cough, or muscle pain)Medical & Family HistoryHereditary & Family Diseases: (Heart disease, diabetes, cancer, or genetic risks in parents/siblings)Chronic Conditions & Diagnoses: (Ongoing diagnoses such as hypertension, asthma, thyroid disease)Surgical & Hospitalization History: (Past procedures, major traumas, dates, and surgical complications)Preventive Health & Baseline DataImmunization Record: (Recent vaccines and boosters, especially Tetanus/Tdap, Hepatitis, Influenza)Typical Baseline Vitals: (Usual resting blood pressure, resting heart rate, $SpO_2$)Lifestyle & Occupational Exposures: (Smoking/vaping status, alcohol frequency, workplace chemical or noise exposures)Emergency & Administrative ContextEmergency Contacts: (Name, relationship, primary phone number)Care Team: (Primary Care Physician, main specialists, preferred hospital network)Insurance & Identification Details: (Health insurance provider, policy/group ID numbers)Advance Directives: (Healthcare proxy name, living will status, organ donor preferences)
+
+A complete personal medical card consolidates basic demographics, clinical baseline, medical history, active treatments, and emergency contacts into a single standardized profile.
+
+* **Personal Demographics & Identification:**
+  * Full Name
+  * Date of Birth / Age
+  * Sex / Gender
+  * Height
+  * Weight (essential alongside height for medication dosing)
+  * Race / Ethnicity
+* **Baseline Medical Profile:**
+  * Blood Type (e.g., O+, A-, etc.)
+  * Allergies (medications, food, latex, insect stings — with specific reaction details like anaphylaxis or hives)
+  * Active Medications (exact drug name, dosage, schedule, and purpose for prescription, OTC, and supplements)
+  * Adverse Drug Reactions (severe non-allergic side effects such as extreme nausea, cough, or muscle pain)
+* **Medical & Family History:**
+  * Hereditary & Family Diseases (heart disease, diabetes, cancer, or genetic risks in parents/siblings)
+  * Chronic Conditions & Diagnoses (ongoing diagnoses such as hypertension, asthma, thyroid disease)
+  * Surgical & Hospitalization History (past procedures, major traumas, dates, and surgical complications)
+* **Preventive Health & Baseline Data:**
+  * Immunization Record (recent vaccines and boosters, especially Tetanus/Tdap, Hepatitis, Influenza)
+  * Typical Baseline Vitals (usual resting blood pressure, resting heart rate, $SpO_2$)
+  * Lifestyle & Occupational Exposures (smoking/vaping status, alcohol frequency, workplace chemical or noise exposures)
+* **Emergency & Administrative Context:**
+  * Emergency Contacts (name, relationship, primary phone number)
+  * Care Team (Primary Care Physician, main specialists, preferred hospital network)
+  * Insurance & Identification Details (health insurance provider, policy/group ID numbers)
+  * Advance Directives (healthcare proxy name, living will status, organ donor preferences)

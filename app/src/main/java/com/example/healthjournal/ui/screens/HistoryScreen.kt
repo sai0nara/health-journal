@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.ViewModelProvider
@@ -37,6 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.ui.components.AboutAppDialog
+import com.example.healthjournal.R
 import com.example.healthjournal.ui.components.MeasurementEntrySheet
 import com.example.healthjournal.ui.components.JournalEntryItem
 import com.example.healthjournal.ui.components.SharedSearchBar
@@ -108,7 +110,7 @@ fun HistoryScreen(
                 title = { Text("Health Journal") },
                 actions = {
                     IconButton(onClick = onPersonalCardClick) {
-                        Icon(Icons.Default.Person, contentDescription = "Personal Card")
+                        Icon(Icons.Default.Person, contentDescription = stringResource(R.string.cd_open_personal_card))
                     }
                     IconButton(onClick = onMeasurementsClick) {
                         Icon(Icons.Default.MonitorWeight, contentDescription = "View Measurements")

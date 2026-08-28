@@ -31,10 +31,6 @@ class BodyMeasurementRepository(private val dao: BodyMeasurementDao) {
         return dao.getPendingSyncEntries()
     }
 
-    suspend fun getLatestWeight(): Double? {
-        return dao.getLatestWeight()
-    }
-
     suspend fun updateSyncStatus(entryId: String, syncStatus: String) {
         dao.updateSyncStatus(entryId, syncStatus)
     }
