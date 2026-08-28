@@ -41,3 +41,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [~] **Track: Personal Card - Medical Profile & Emergency Contacts**
   *Link: [./tracks/personal_card_20260826/](./tracks/personal_card_20260826/)*
 
+---
+
+- [ ] **Track: Fix review findings for Personal Card - hardcoded cancels and compiler warnings**
+  *Link: [./tracks/fix_review_findings_20260828/](./tracks/fix_review_findings_20260828/)*
+
