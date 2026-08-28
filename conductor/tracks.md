@@ -38,6 +38,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Restore from Backup**
+- [~] **Track: Restore from Backup**
   *Link: [./tracks/restore_from_backup_20260828/](./tracks/restore_from_backup_20260828/)*
 
