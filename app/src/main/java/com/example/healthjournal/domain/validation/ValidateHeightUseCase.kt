@@ -8,8 +8,9 @@ class ValidateHeightUseCase {
     companion object {
         const val MIN_HEIGHT_CM = 20.0
         const val MAX_HEIGHT_CM = 275.0
-        const val MIN_HEIGHT_INCHES = 8.0
-        const val MAX_HEIGHT_INCHES = 108.0
+
+        val MIN_HEIGHT_INCHES: Double = UnitConverter.cmToInches(MIN_HEIGHT_CM)
+        val MAX_HEIGHT_INCHES: Double = UnitConverter.cmToInches(MAX_HEIGHT_CM)
     }
 
     operator fun invoke(heightCm: Double?, unitSystem: UnitSystem): ValidationResult {

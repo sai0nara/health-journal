@@ -8,8 +8,9 @@ class ValidateWeightUseCase {
     companion object {
         const val MIN_WEIGHT_KG = 0.5
         const val MAX_WEIGHT_KG = 650.0
-        const val MIN_WEIGHT_LBS = 1.1
-        const val MAX_WEIGHT_LBS = 1430.0
+
+        val MIN_WEIGHT_LBS: Double = UnitConverter.kgToLbs(MIN_WEIGHT_KG)
+        val MAX_WEIGHT_LBS: Double = UnitConverter.kgToLbs(MAX_WEIGHT_KG)
     }
 
     operator fun invoke(weightKg: Double?, unitSystem: UnitSystem): ValidationResult {

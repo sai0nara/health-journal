@@ -465,7 +465,7 @@ class PersonalCardViewModelTest {
 
         viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
         assertEquals(UnitSystem.IMPERIAL, currentState().unitSystem)
-        assertTrue(currentState().validation.height is ValidationResult.Invalid)
+        assertTrue(currentState().validation.height is ValidationResult.Valid)
     }
 
     @Test
