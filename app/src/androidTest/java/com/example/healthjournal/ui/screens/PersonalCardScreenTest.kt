@@ -325,6 +325,34 @@ class PersonalCardScreenTest {
         }
     }
 
+    @Test
+    fun dialogs_useLocalizedCancelResource() {
+        step("Open Personal Card and enter edit mode") {
+            setScreen(PersonalCard())
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+        }
+
+        step("Verify Add Allergy dialog has localized cancel button") {
+            composeTestRule.onNodeWithContentDescription("Add allergy").performClick()
+            composeTestRule.onNodeWithText("Add Allergy").assertExists()
+            composeTestRule.onNodeWithText("Cancel").assertExists()
+            composeTestRule.onNodeWithText("Cancel").performClick()
+        }
+
+        step("Verify Add Medication dialog has localized cancel button") {
+            composeTestRule.onNodeWithContentDescription("Add medication").performClick()
+            composeTestRule.onNodeWithText("Add Medication").assertExists()
+            composeTestRule.onNodeWithText("Cancel").assertExists()
+            composeTestRule.onNodeWithText("Cancel").performClick()
+        }
+
+        step("Verify Add Emergency Contact dialog has localized cancel button") {
+            composeTestRule.onNodeWithContentDescription("Add emergency contact").performClick()
+            composeTestRule.onNodeWithText("Add Emergency Contact").assertExists()
+            composeTestRule.onNodeWithText("Cancel").assertExists()
+        }
+    }
+
     private fun step(description: String, block: () -> Unit) {
         io.qameta.allure.kotlin.Allure.step(description) { block() }
     }
