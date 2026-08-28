@@ -47,6 +47,13 @@
 
 ## Review Log
 
+### 2026-08-28 — Final Code Review (Conductor protocol)
+Reviewed range `8ab46f1~1..c562f1b` (Personal Card track, 41 files) — full review, prior-track findings excluded (`fix_review_findings_20260828` archived). **Decision: APPROVED** — no critical/high findings. Tests: 258 unit tests pass; instrumented `PersonalCardScreenTest` compiles but runtime is blocked by pre-existing MockK (`NoClassDefFoundError`) / Compose (`ComposeNotIdleException`) infra issues on the connected device. 3 LOW-severity suggestions applied in commit `b16b1fa`:
+
+- **Low:** Removed dead Room TypeConverters (`to/fromMedicationEntryList`, `to/fromEmergencyContactList`) — never invoked since those lists are nested inside objects persisted whole-JSON.
+- **Low:** Derived imperial height/weight validation min/max from metric constants via `UnitConverter` (was hardcoded, causing cross-unit boundary inconsistency, e.g. MIN_HEIGHT 20cm↔7.87" vs hardcoded 8.0"). Updated `unitSystemChange_revalidatesHeightInNewUnits` which had asserted the old inconsistent behavior.
+- **Low:** HistoryScreen Personal Card icon `contentDescription` moved to string resource `cd_open_personal_card`.
+
 ### 2026-08-27 — Code Review (Conductor protocol)
 Reviewed range `8ab46f1~1..HEAD` (`feat/body-measurements`, 23 commits). Findings resolved in follow-up commit:
 
