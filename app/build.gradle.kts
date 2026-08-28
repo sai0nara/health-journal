@@ -41,7 +41,11 @@ android {
         buildConfigField("String", "BUILD_TIMESTAMP", "\"$buildTimestamp\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        testInstrumentationRunnerArguments["listener"] = "io.qameta.allure.kotlin.junit4.AllureJunit4"
+        // The Allure listener breaks Compose UI tests ("No compose hierarchies found").
+        // Run Compose instrumented tests with: -PcomposeRunner=true
+        if ((project.findProperty("composeRunner") as? String) != "true") {
+            testInstrumentationRunnerArguments["listener"] = "io.qameta.allure.kotlin.junit4.AllureJunit4"
+        }
         vectorDrawables {
             useSupportLibrary = true
         }
