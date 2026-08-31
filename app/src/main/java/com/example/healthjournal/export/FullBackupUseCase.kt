@@ -92,7 +92,7 @@ class FullBackupUseCase(
         for (entry in entries) {
             entry.attachments?.forEach { attachment ->
                 val file = resolveFile(attachment.uri)
-                val name = MEDIA_PREFIX + (attachment.name ?: attachment.uri.substringAfterLast("/"))
+                val name = MEDIA_PREFIX + (attachment.name.ifBlank { attachment.uri.substringAfterLast("/") })
                 if (file != null && seen.add(name)) result.add(name to file)
             }
             entry.photo_urls?.forEach { photoUrl ->

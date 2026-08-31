@@ -23,9 +23,9 @@
 
 ## Phase 3: Worker & Atomic Database Swap [checkpoint: a153790]
 - [x] Task: Write failing tests for database swap / connection-close-reopen logic
-- [x] Task: Implement safe Room DB replacement (close, swap .db/-shm/-wal, reopen, version-aware)
+- [x] Task: Implement safe room DB replacement as a single transactional wipe + re-insert via RestoreRepository (atomic, version-aware), rather than file-level -shm/-wal swap
 - [x] Task: Write failing tests for RestoreCoordinator (JVM-testable oracle behind RestoreWorker: decrypt inner -> validate -> safe-extract -> load BackupData -> atomic restore -> post-restore sync)
-- [x] Task: Implement RestoreCoordinator + thin RestoreWorker (CoroutineWorker) orchestrating extract -> atomic swap -> media import -> success/failure
+- [x] Task: Implement RestoreCoordinator + thin RestoreWorker (CoroutineWorker) orchestrating extract -> transactional data replace -> media import -> success/failure
 - [x] Task: Implement failure rollback + cleanup of staging directory
 - [x] Task: Implement post-restore WorkManager sync enqueue (SyncManager.triggerManualSync)
 - [x] Task: Write unit tests covering worker/core success, corruption, wrong passphrase, version mismatch, and rollback

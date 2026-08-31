@@ -49,11 +49,6 @@ class SafeBackupExtractor(
                         continue
                     }
 
-                    totalUncompressed += entry.size
-                    if (totalUncompressed > maxUncompressedBytes) {
-                        throw RestoreError.InsufficientStorage()
-                    }
-
                     resolved.parentFile?.mkdirs()
                     zf.getInputStream(entry).use { input ->
                         resolved.outputStream().use { out ->
@@ -62,6 +57,10 @@ class SafeBackupExtractor(
                                 val read = input.read(buffer)
                                 if (read == -1) break
                                 out.write(buffer, 0, read)
+                                totalUncompressed += read
+                                if (totalUncompressed > maxUncompressedBytes) {
+                                    throw RestoreError.InsufficientStorage()
+                                }
                             }
                         }
                     }

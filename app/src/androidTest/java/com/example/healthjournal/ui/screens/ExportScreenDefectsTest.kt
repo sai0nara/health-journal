@@ -94,4 +94,16 @@ class ExportScreenDefectsTest {
         composeTestRule.onNodeWithText("PDF (Medical Report)").assertIsDisplayed()
         composeTestRule.onNodeWithText("ZIP (Raw Data & Media)").assertIsDisplayed()
     }
+
+    @Test
+    fun dateCard_onlyShownForPdfFormat() {
+        createHarness()
+        composeTestRule.onNodeWithText("Start Date").assertIsDisplayed()
+
+        composeTestRule.onNodeWithTag("format_zip").performClick()
+        composeTestRule.onNodeWithText("Start Date").assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag("format_pdf").performClick()
+        composeTestRule.onNodeWithText("Start Date").assertIsDisplayed()
+    }
 }

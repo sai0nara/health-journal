@@ -44,28 +44,33 @@ class RestoreRepository(
      * @throws RestoreError if validation/import fails (database is left untouched).
      */
     suspend fun restore(data: BackupData, mediaStagingDir: File?): RestoreResult {
-        val (remappedEntries, mediaCount) = reimportMedia(data.journalEntries, mediaStagingDir)
+        val (remappedEntries, mediaCount, copiedFiles) = reimportMedia(data.journalEntries, mediaStagingDir)
         val dataToWrite = data.copy(journalEntries = remappedEntries)
 
-        runInTransaction {
-            val journalDao = db.journalDao()
-            val bodyDao = db.bodyMeasurementDao()
-            val goalDao = db.goalDao()
-            val personalCardDao = db.personalCardDao()
+        try {
+            runInTransaction {
+                val journalDao = db.journalDao()
+                val bodyDao = db.bodyMeasurementDao()
+                val goalDao = db.goalDao()
+                val personalCardDao = db.personalCardDao()
 
-            journalDao.clearAllEntries()
-            journalDao.clearAllDeletedEntries()
-            journalDao.clearAllTags()
-            bodyDao.clearAll()
-            goalDao.clear()
-            personalCardDao.clearAll()
+                journalDao.clearAllEntries()
+                journalDao.clearAllDeletedEntries()
+                journalDao.clearAllTags()
+                bodyDao.clearAll()
+                goalDao.clear()
+                personalCardDao.clearAll()
 
-            journalDao.insertAll(dataToWrite.journalEntries)
-            journalDao.insertAllDeletedEntries(dataToWrite.deletedEntries)
-            journalDao.insertAllTags(dataToWrite.entryTags)
-            bodyDao.replaceAll(dataToWrite.bodyMeasurements)
-            goalDao.importAll(dataToWrite.goals)
-            dataToWrite.personalCards.forEach { personalCardDao.insertOrUpdate(it) }
+                journalDao.insertAll(dataToWrite.journalEntries)
+                journalDao.insertAllDeletedEntries(dataToWrite.deletedEntries)
+                journalDao.insertAllTags(dataToWrite.entryTags)
+                bodyDao.replaceAll(dataToWrite.bodyMeasurements)
+                goalDao.importAll(dataToWrite.goals)
+                dataToWrite.personalCards.forEach { personalCardDao.insertOrUpdate(it) }
+            }
+        } catch (e: Exception) {
+            copiedFiles.forEach { it.delete() }
+            throw e
         }
 
         return RestoreResult(
@@ -85,30 +90,39 @@ class RestoreRepository(
     private fun reimportMedia(
         entries: List<JournalEntry>,
         stagingDir: File?
-    ): Pair<List<JournalEntry>, Int> {
-        if (stagingDir == null) return entries to 0
+    ): Triple<List<JournalEntry>, Int, List<File>> {
+        if (stagingDir == null) return Triple(entries, 0, emptyList())
         val photosDir = File(filesDir, "photos").apply { mkdirs() }
         val attachmentsDir = File(filesDir, "attachments").apply { mkdirs() }
         var mediaCount = 0
+        val copiedFiles = mutableListOf<File>()
 
         val remapped = entries.map { entry ->
             val newPhotos = entry.photo_urls?.map { url ->
                 val filename = url.substringAfterLast('/')
-                val copied = copyFromStaging(stagingDir, filename, File(photosDir, filename))
-                if (copied) mediaCount++
-                "file://" + File(photosDir, filename).absolutePath
+                val dest = File(photosDir, filename)
+                val copied = copyFromStaging(stagingDir, filename, dest)
+                if (copied) {
+                    mediaCount++
+                    copiedFiles.add(dest)
+                }
+                "file://" + dest.absolutePath
             } ?: emptyList()
 
             val newAttachments = entry.attachments?.map { att ->
                 val filename = att.uri.substringAfterLast('/')
-                val copied = copyFromStaging(stagingDir, filename, File(attachmentsDir, filename))
-                if (copied) mediaCount++
-                att.copy(uri = "file://" + File(attachmentsDir, filename).absolutePath)
+                val dest = File(attachmentsDir, filename)
+                val copied = copyFromStaging(stagingDir, filename, dest)
+                if (copied) {
+                    mediaCount++
+                    copiedFiles.add(dest)
+                }
+                att.copy(uri = "file://" + dest.absolutePath)
             } ?: emptyList()
 
             entry.copy(photo_urls = newPhotos, attachments = newAttachments)
         }
-        return remapped to mediaCount
+        return Triple(remapped, mediaCount, copiedFiles)
     }
 
     private fun copyFromStaging(stagingDir: File, filename: String, dest: File): Boolean {

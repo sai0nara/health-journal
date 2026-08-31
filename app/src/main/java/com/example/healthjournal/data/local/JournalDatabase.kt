@@ -167,18 +167,5 @@ abstract class JournalDatabase : RoomDatabase() {
                 instance
             }
         }
-
-        /** Closes the singleton (if open) and resets it, allowing a fresh reopen.
-         *  Used by restore's file-swap path and tests. Safe to call repeatedly. */
-        fun closeInstance() {
-            synchronized(this) {
-                try {
-                    INSTANCE?.close()
-                } catch (_: Exception) {
-                    // ignore close errors; we still want to reset the reference
-                }
-                INSTANCE = null
-            }
-        }
     }
 }

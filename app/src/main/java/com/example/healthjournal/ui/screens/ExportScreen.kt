@@ -93,34 +93,36 @@ fun ExportScreen(
                         style = MaterialTheme.typography.bodyLarge
                     )
 
-            // Date Selection
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("Start Date", style = MaterialTheme.typography.labelMedium)
-                            Text(sdf.format(Date(startDate)), style = MaterialTheme.typography.bodyLarge)
+            // Date Selection (only PDF is date-scoped; ZIP is always a full backup)
+            if (selectedFormat == "PDF") {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Start Date", style = MaterialTheme.typography.labelMedium)
+                                Text(sdf.format(Date(startDate)), style = MaterialTheme.typography.bodyLarge)
+                            }
+                            IconButton(onClick = { showStartDatePicker = true }) {
+                                Icon(Icons.Default.CalendarToday, contentDescription = "Select Start Date")
+                            }
                         }
-                        IconButton(onClick = { showStartDatePicker = true }) {
-                            Icon(Icons.Default.CalendarToday, contentDescription = "Select Start Date")
-                        }
-                    }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("End Date", style = MaterialTheme.typography.labelMedium)
-                            Text(sdf.format(Date(endDate)), style = MaterialTheme.typography.bodyLarge)
-                        }
-                        IconButton(onClick = { showEndDatePicker = true }) {
-                            Icon(Icons.Default.CalendarToday, contentDescription = "Select End Date")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("End Date", style = MaterialTheme.typography.labelMedium)
+                                Text(sdf.format(Date(endDate)), style = MaterialTheme.typography.bodyLarge)
+                            }
+                            IconButton(onClick = { showEndDatePicker = true }) {
+                                Icon(Icons.Default.CalendarToday, contentDescription = "Select End Date")
+                            }
                         }
                     }
                 }
