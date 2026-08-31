@@ -36,13 +36,22 @@ class MainActivity : ComponentActivity() {
             measurementRepository
         )
         val goalsRepository = com.example.healthjournal.data.GoalsRepository(database.goalDao())
+        val personalCardRepository = com.example.healthjournal.data.PersonalCardRepository(database.personalCardDao())
         val analyticsViewModel = com.example.healthjournal.viewmodel.BodyAnalyticsViewModel(
             measurementRepository,
             goalsRepository
         )
-        val exportViewModel = ExportViewModel(application, journalRepository)
+        val fullBackupUseCase = com.example.healthjournal.export.FullBackupUseCase(
+            database = database,
+            journalRepository = journalRepository,
+            bodyMeasurementRepository = measurementRepository,
+            goalsRepository = goalsRepository,
+            personalCardRepository = personalCardRepository,
+            filesDir = application.filesDir,
+            exportsDir = java.io.File(application.cacheDir, "exports")
+        )
+        val exportViewModel = ExportViewModel(application, journalRepository, fullBackupUseCase)
         val restoreViewModel = com.example.healthjournal.export.RestoreViewModel(application)
-        val personalCardRepository = com.example.healthjournal.data.PersonalCardRepository(database.personalCardDao())
         val personalCardViewModelFactory = com.example.healthjournal.viewmodel.PersonalCardViewModelFactory(personalCardRepository)
 
         // Trigger sync on start
