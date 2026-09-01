@@ -2,6 +2,10 @@
 .gemini/
 .googlecodeassist
 
+# Python (wiki linting)
+__pycache__/
+*.pyc
+
 # IDE
 .vscode/
 .idea/
