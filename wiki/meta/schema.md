@@ -2,7 +2,7 @@
 
 > How to author, name, file, and maintain a page in this vault. Cites the contract; it does not restate it.
 
-Last updated: 2026-09-01
+Last updated: 2026-09-02
 
 The rules that govern the vault live in `wiki/meta/spec.md`. This page is the *how*;
 the contract is the *why*. Where this page and the spec disagree, the
@@ -93,14 +93,35 @@ Consequences:
 
 Run `wiki/lint.sh` from the repo root. It must exit 0 before the turn ends.
 
-- If it names `STALE`, `UNTRACKED`, `BROKEN`, or `DUPLICATE` findings, those are
-  failures: each is a pointer that resolves to nothing for the reader. Fix them.
+- If it names `STALE`, `UNTRACKED`, `BROKEN`, `DUPLICATE`, `STAMP`, or `MISSING`
+  findings, those are failures: each is either a pointer that resolves to nothing
+  for the reader or an incomplete deliverable. Fix them.
 - `REVIEW`, `ORPHAN`, `INDEX`, and `FOOTER` are advisory.
 - The lint never edits content. It detects; the agent repairs in the same commit.
 
-The lint's own tests run with `wiki/lint-test.sh` (see the header of `wiki/lint.sh`
-for the exact command). It requires only the standard library and `git`; no test
-framework is installed.
+The lint's own tests run with `python3 wiki/test_lint.py` (see the header of
+`wiki/lint.sh` for the lint; the self-tests import `lint.py` directly). It
+requires only the standard library and `git`; no test framework is installed.
+
+## Product docs (`Docs/`)
+
+The feature documents live outside the vault tree, under `Docs/prd`,
+`Docs/psd`, and `Docs/tests`, because three files per feature share a basename
+and that collides with the vault's wikilink-by-basename rule. They follow the
+same citation and freshness rules as vault pages, minus the navigation:
+
+- One feature slug (lower-kebab-case) per document: `Docs/prd/<slug>.md`,
+  `Docs/psd/<slug>.md`, `Docs/tests/<slug>.md`.
+- Cross-references between the three use **backticked paths**
+  (`Docs/psd/<slug>.md`), not `[[wikilinks]]` — a wikilink would resolve by
+  basename and be ambiguous.
+- `Docs/index.md` is the feature catalog and its own source of truth for
+  completness: list all three paths for a feature there. The lint's `MISSING`
+  finding fails if a claimed feature lacks any of its three documents, so
+  onboarding a feature is authoritative at index time.
+- No footer, and no ORPHAN/BROKEN/FOOTER checks apply to `Docs/`; `STAMP`
+  (missing `Last updated:`), `STALE`, `UNTRACKED`, and `REVIEW` all still apply.
+- Templates for each type live in `Docs/_templates/`.
 
 ## When code changes
 
@@ -112,3 +133,7 @@ actually edited, and stage the wiki edits alongside the code in the same commit.
 
 - `wiki/meta/spec.md` — the contract this schema implements.
 - `wiki/lint.sh` — the deterministic checker that enforces these conventions.
+- `Docs/_templates/prd.md` — the PRD template.
+- `Docs/_templates/psd.md` — the PSD template.
+- `Docs/_templates/tests.md` — the tests-doc template.
+- `Docs/index.md` — the feature catalog that drives the docs completeness check.
