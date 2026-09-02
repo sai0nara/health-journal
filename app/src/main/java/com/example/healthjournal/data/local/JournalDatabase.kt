@@ -22,6 +22,9 @@ abstract class JournalDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: JournalDatabase? = null
 
+        /** Current Room database schema version; single-sourced for restore validation. */
+        const val CURRENT_SCHEMA_VERSION: Int = 12
+
         // v1 -> v2: add isSynced
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(database: SupportSQLiteDatabase) {

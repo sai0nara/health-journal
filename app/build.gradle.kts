@@ -41,7 +41,11 @@ android {
         buildConfigField("String", "BUILD_TIMESTAMP", "\"$buildTimestamp\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        testInstrumentationRunnerArguments["listener"] = "io.qameta.allure.kotlin.junit4.AllureJunit4"
+        // The Allure listener breaks Compose UI tests ("No compose hierarchies found").
+        // Run Compose instrumented tests with: -PcomposeRunner=true
+        if ((project.findProperty("composeRunner") as? String) != "true") {
+            testInstrumentationRunnerArguments["listener"] = "io.qameta.allure.kotlin.junit4.AllureJunit4"
+        }
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -190,6 +194,9 @@ dependencies {
 
     // PDF Generation
     implementation("com.itextpdf:itext7-core:7.2.5")
+
+    // Zip AES-256 encryption for full backups
+    implementation("net.lingala.zip4j:zip4j:2.11.5")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.9")

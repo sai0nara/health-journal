@@ -6,7 +6,6 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.healthjournal.data.JournalRepository
-import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -21,7 +20,8 @@ sealed class ExportState {
 
 class ExportViewModel(
     application: Application,
-    private val repository: JournalRepository
+    private val repository: JournalRepository,
+    fullBackupUseCase: FullBackupUseCase
 ) : AndroidViewModel(application) {
 
     private val _exportState = MutableStateFlow<ExportState>(ExportState.Idle)
@@ -30,7 +30,7 @@ class ExportViewModel(
     private val exportsDir = File(application.cacheDir, "exports")
     private val imageResizer = ImageResizer(application)
     private val pdfExportUseCase = PdfExportUseCase(application, repository, exportsDir, imageResizer)
-    private val zipExportUseCase = ZipExportUseCase(repository, exportsDir, Gson())
+    private val fullBackupUseCase = fullBackupUseCase
     private val exportService = ExportServiceImpl(application.cacheDir)
 
     fun exportData(startDate: Long, endDate: Long, format: String) {
@@ -41,7 +41,7 @@ class ExportViewModel(
             try {
                 val file = when (format.uppercase()) {
                     "PDF" -> pdfExportUseCase.execute(startDate, endDate)
-                    "ZIP" -> zipExportUseCase.execute(startDate, endDate)
+                    "ZIP" -> fullBackupUseCase.execute()
                     else -> throw IllegalArgumentException("Unsupported format")
                 }
                 

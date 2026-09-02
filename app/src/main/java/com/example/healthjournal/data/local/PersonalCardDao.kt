@@ -21,6 +21,9 @@ interface PersonalCardDao {
     @Query("DELETE FROM personal_card WHERE id = :id")
     suspend fun deletePersonalCard(id: String)
 
+    @Query("DELETE FROM personal_card")
+    suspend fun clearAll()
+
     @Query("SELECT * FROM personal_card WHERE syncStatus = 'PENDING_SYNC'")
     suspend fun getPendingSyncEntries(): List<PersonalCard>
 
