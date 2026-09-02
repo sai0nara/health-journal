@@ -46,6 +46,14 @@ Last updated: 2026-09-02
   guidance when the device is nearly full.
 - Restore twice back-to-back: two successful replaces on the same install.
 
+## Cross-references
+
+- `Docs/prd/restore-from-backup.md` — the requirements under test.
+- `Docs/psd/restore-from-backup.md` — the design the cases verify.
+- [[export-restore]] — the export/restore pipeline page explaining the test suite.
+- [[unit-tests]] — the JVM stack these unit tests belong to.
+- [[instrumented]] — the instrumented stack these androidTest cases belong to.
+
 ## Sources
 
 - `app/src/test/java/com/example/healthjournal/export/RestoreViewModelTest.kt` — ViewModel transitions.

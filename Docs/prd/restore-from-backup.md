@@ -97,6 +97,14 @@ file never destroys current data.
 - Merging a backup into the existing dataset.
 - Restoring while the sync worker is mid-flight (restore wins and re-syncs).
 
+## Cross-references
+
+- `Docs/psd/restore-from-backup.md` — the specification that implements these requirements.
+- `Docs/tests/restore-from-backup.md` — the test cases that verify them.
+- [[export-restore]] — the export/restore pipeline page explaining the cited code.
+- [[sync-engine]] — the restore worker and the post-restore re-sync.
+- [[data-layer]] — the Room database a restore replaces.
+
 ## Sources
 
 - `app/src/main/java/com/example/healthjournal/ui/screens/RestoreScreen.kt` — the Restore tab UI (FR-1, FR-4, FR-10).

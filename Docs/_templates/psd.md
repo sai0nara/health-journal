@@ -46,6 +46,12 @@ for each (typed errors, retry, data-intact guarantees).
 Libraries or platform services the feature relies on (Room transactions,
 WorkManager, cryptography, SAF, ...).
 
+## Cross-references
+
+- `Docs/prd/<feature>.md` — the requirements this specification implements.
+- `Docs/tests/<feature>.md` — the test cases that verify this design.
+- [[export-restore]] or another relevant wiki page — where the cited code is explained.
+
 ## Sources
 
 - `app/src/main/java/.../Owning.kt` — where the design is implemented.

@@ -53,6 +53,12 @@ into scenarios.
 
 Anything explicitly deferred past this feature.
 
+## Cross-references
+
+- `Docs/psd/<feature>.md` — the specification that implements these requirements.
+- `Docs/tests/<feature>.md` — the test cases that verify them.
+- [[export-restore]] or another relevant wiki page — where the cited code is explained.
+
 ## Sources
 
 - `app/src/main/java/.../Owning.kt` — where the above requirement is implemented.

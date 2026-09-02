@@ -98,6 +98,15 @@ feature wrote, optionally wrapped in an outer AES-256 container. The pipeline is
 - zip4j for the encrypted outer container (AES-256, inner `backup.zip` entry).
 - STL-free pure-JVM coordinator kept off the Android classpath for JVM tests.
 
+## Cross-references
+
+- `Docs/prd/restore-from-backup.md` — the requirements this specification implements.
+- `Docs/tests/restore-from-backup.md` — the test cases that verify this design.
+- [[export-restore]] — the export/restore pipeline page explaining the cited code.
+- [[sync-engine]] — the restore worker + re-sync seam.
+- [[data-layer]] — the Room database the atomic swap targets.
+- [[ui-layer]] — the RestoreScreen rendering these states.
+
 ## Sources
 
 - `app/src/main/java/com/example/healthjournal/ui/screens/RestoreScreen.kt` — screen/state rendering.

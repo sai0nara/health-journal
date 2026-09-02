@@ -33,6 +33,12 @@ Last updated: YYYY-MM-DD
 
 Anything that needs a real device or an external system (SAF pickers, Drive).
 
+## Cross-references
+
+- `Docs/prd/<feature>.md` — the requirements under test.
+- `Docs/psd/<feature>.md` — the design the cases verify.
+- [[export-restore]] or another relevant wiki page — where the test suite is explained.
+
 ## Sources
 
 - `app/src/test/java/.../XTest.kt` — unit coverage.
