@@ -203,20 +203,27 @@ def walk_docs(root: str):
 
 
 def docs_slugs(root: str):
-    """Return the set of feature slugs claimed in Docs/index.md.
+    """Return (all_slugs, planned_slugs) claimed in Docs/index.md.
 
     A feature is claimed by listing any of its `Docs/<type>/<slug>.md` paths
-    (backticked) in the catalog. Once claimed, all three documents are mandatory.
+    (backticked) in the catalog. A feature is *planned* (not yet built) when the
+    claimed line also carries the marker `— planned`; a planned feature ships
+    its PRD up front and is exempt from the psd/tests requirement.
     """
-    slugs = set()
+    all_slugs = set()
+    planned = set()
     path = os.path.join(root, "Docs", "index.md")
     if not os.path.exists(path):
-        return slugs
-    for tk in _BACKTICK_RE.findall(_read(path)):
-        m = re.match(r"^Docs/(%s)/([^/]+?)\.md$" % "|".join(DOCS_DIRS), tk)
-        if m:
-            slugs.add(m.group(2))
-    return slugs
+        return all_slugs, planned
+    for line in _read(path).splitlines():
+        m = re.match(r"^-\s+`Docs/(%s)/([^/]+?)\.md`\s*—\s*(.*)$" % "|".join(DOCS_DIRS), line)
+        if not m:
+            continue
+        feature_type, slug, rest = m.group(1), m.group(2), m.group(3)
+        all_slugs.add(slug)
+        if "planned" in rest.lower():
+            planned.add(slug)
+    return all_slugs, planned
 
 
 def _basename_map(pages):
@@ -316,7 +323,7 @@ def run_lint(root: str):
 
     # ---- product docs (Docs/prd | psd | tests) ------------------------------
     docs = walk_docs(root)
-    indexed_slugs = docs_slugs(root)
+    indexed_slugs, planned_slugs = docs_slugs(root)
 
     for p in docs:
         text = _read(p.abs)
@@ -336,10 +343,12 @@ def run_lint(root: str):
         if p.basename not in indexed_slugs:
             findings.append(("INDEX", p.rel, f"feature '{p.basename}' not listed in the docs catalog"))
 
-    # completeness: a feature claimed in Docs/index.md must ship all three docs
+    # completeness: a feature claimed in Docs/index.md must ship the PRD, and
+    # (unless marked planned) the psd + tests too
     if os.path.exists(os.path.join(root, "Docs", "index.md")):
         for slug in sorted(indexed_slugs):
-            for t in DOCS_DIRS:
+            required = ("prd",) if slug in planned_slugs else DOCS_DIRS
+            for t in required:
                 fp = os.path.join("Docs", t, f"{slug}.md")
                 if not os.path.exists(os.path.join(root, fp)):
                     findings.append(("MISSING", "Docs/index.md", f"feature '{slug}' lacks '{fp}'"))

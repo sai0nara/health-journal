@@ -118,7 +118,10 @@ same citation and freshness rules as vault pages, minus the navigation:
 - `Docs/index.md` is the feature catalog and its own source of truth for
   completness: list all three paths for a feature there. The lint's `MISSING`
   finding fails if a claimed feature lacks any of its three documents, so
-  onboarding a feature is authoritative at index time.
+  onboarding a feature is authoritative at index time. A **planned** feature
+  (one not yet built) is documented as its PRD up front: mark the index line
+  with `— planned`, and only `Docs/prd/<slug>.md` is required — the PSD and test
+  cases are added when the feature ships.
 - No footer, and no ORPHAN/BROKEN/FOOTER checks apply to `Docs/`; `STAMP`
   (missing `Last updated:`), `STALE`, `UNTRACKED`, and `REVIEW` all still apply.
 - Templates for each type live in `Docs/_templates/`.

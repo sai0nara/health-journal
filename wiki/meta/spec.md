@@ -27,7 +27,10 @@ Rule 3 is extended to the product docs: the lint enforces the same
 citation/freshness rules on `Docs/prd`, `Docs/psd`, and `Docs/tests`, and treats
 `Docs/index.md` as the source of truth for which feature documents must exist
 (the `MISSING` check fails a feature that lacks any of its three documents).
-Templates under `Docs/_templates/` are exempt from checks.
+A feature marked `— planned` in the catalog is exempt from the psd/tests
+requirement: it ships its PRD up front, and the PSD and test cases are added
+when the feature is built. Templates under `Docs/_templates/` are exempt from
+checks.
 
 ## Accuracy gate
 

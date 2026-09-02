@@ -354,6 +354,36 @@ def test_docs_stale_and_index_advisory():
           any(f[0] == "INDEX" and f[1].endswith("restore.md") for f in findings))
 
 
+def test_docs_planned_feature_exempt_from_missing():
+    pages = _docs_pages(claimed=False)
+    # ai-insights is claimed but marked planned: only its PRD is required
+    pages["Docs/index.md"] = (
+        "# Docs\n\n"
+        f"Last updated: {_TODAY}\n\n"
+        "## Features\n"
+        "- `Docs/prd/ai-insights.md` — planned\n"
+    )
+    pages["Docs/prd/ai-insights.md"] = _doc("Planned PRD body.")
+    root = _make_repo(pages, commit=True)
+    missing = [f for f in run_lint(root) if f[0] == "MISSING"]
+    check("MISSING does not fire for a planned feature lacking psd/tests", not missing)
+
+
+def test_docs_planned_feature_still_needs_prd():
+    pages = _docs_pages(claimed=False)
+    pages["Docs/index.md"] = (
+        "# Docs\n\n"
+        f"Last updated: {_TODAY}\n\n"
+        "## Features\n"
+        "- `Docs/prd/ai-insights.md` — planned\n"
+    )
+    # index claims the PRD but no PRD file exists
+    root = _make_repo(pages, commit=True)
+    missing = [f for f in run_lint(root) if f[0] == "MISSING"]
+    check("MISSING fires for a planned feature without its PRD",
+          any("ai-insights" in f[2] and "prd" in f[2] for f in missing))
+
+
 def main():
     test_parser()
     test_golden()
@@ -369,6 +399,8 @@ def main():
     test_docs_stamp_fires_without_last_updated()
     test_docs_missing_fires_for_unshipped_doc()
     test_docs_stale_and_index_advisory()
+    test_docs_planned_feature_exempt_from_missing()
+    test_docs_planned_feature_still_needs_prd()
 
     print(f"\n{PASS} passed, {FAIL} failed")
     return 1 if FAIL else 0
