@@ -18,6 +18,8 @@ Last updated: 2026-09-02
 - `Docs/prd/export.md` — PRD
 - `Docs/prd/health-connect.md` — PRD
 - `Docs/prd/history-feed.md` — PRD
+- `Docs/prd/medical-color-system.md` — PRD
+- `Docs/prd/personal-card.md` — PRD
 - `Docs/prd/photos-media.md` — PRD
 - `Docs/prd/restore-from-backup.md` — PRD
 - `Docs/psd/body-measurements.md` — PSD
@@ -26,6 +28,8 @@ Last updated: 2026-09-02
 - `Docs/psd/export.md` — PSD
 - `Docs/psd/health-connect.md` — PSD
 - `Docs/psd/history-feed.md` — PSD
+- `Docs/psd/medical-color-system.md` — PSD
+- `Docs/psd/personal-card.md` — PSD
 - `Docs/psd/photos-media.md` — PSD
 - `Docs/psd/restore-from-backup.md` — PSD
 - `Docs/tests/body-measurements.md` — tests
@@ -34,5 +38,7 @@ Last updated: 2026-09-02
 - `Docs/tests/export.md` — tests
 - `Docs/tests/health-connect.md` — tests
 - `Docs/tests/history-feed.md` — tests
+- `Docs/tests/medical-color-system.md` — tests
+- `Docs/tests/personal-card.md` — tests
 - `Docs/tests/photos-media.md` — tests
 - `Docs/tests/restore-from-backup.md` — tests
