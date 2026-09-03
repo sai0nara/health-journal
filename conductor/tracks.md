@@ -41,8 +41,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [~] **Track: Restore from Backup**
   *Link: [./tracks/restore_from_backup_20260828/](./tracks/restore_from_backup_20260828/)*
 
----
-
-- [ ] **Track: Refactor Body measurements Params card view to see all data**
-  *Link: [./tracks/refactor_bm_card_20260903/](./tracks/refactor_bm_card_20260903/)*
-
