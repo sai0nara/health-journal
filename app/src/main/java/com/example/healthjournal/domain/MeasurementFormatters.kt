@@ -48,7 +48,7 @@ fun List<BodyMeasurementEntry>.toParamTrend(field: MeasurementField): List<Pair<
         .toList()
 
 /** Column accessor for a parameter, keeping chart code reflection-free. */
-private fun BodyMeasurementEntry.valueFor(field: MeasurementField): Double? = when (field) {
+internal fun BodyMeasurementEntry.valueFor(field: MeasurementField): Double? = when (field) {
     MeasurementField.WEIGHT -> weight_kg
     MeasurementField.CHEST -> chest_cm
     MeasurementField.WAIST -> waist_cm
@@ -58,5 +58,5 @@ private fun BodyMeasurementEntry.valueFor(field: MeasurementField): Double? = wh
     MeasurementField.BICEP -> bicep_cm
 }
 
-private fun Double.formatMeasurement(): String =
+internal fun Double.formatMeasurement(): String =
     BigDecimal(toString()).stripTrailingZeros().toPlainString()
