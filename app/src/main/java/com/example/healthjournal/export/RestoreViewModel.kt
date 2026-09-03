@@ -41,6 +41,7 @@ class RestoreViewModel(
     private data class PendingSelection(val fileUri: String, val passphrase: String?)
 
     private var pending: PendingSelection? = null
+    private var tempFile: File? = null
 
     /** User picked a backup file; validate its manifest before confirming. */
     fun selectBackup(uri: String) {
@@ -119,11 +120,18 @@ class RestoreViewModel(
 
     fun reset() {
         pending = null
+        tempFile?.delete()
+        tempFile = null
         _uiState.value = RestoreUiState.Idle
     }
 
     fun backFromError() {
         reset()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        tempFile?.delete()
     }
 
     /** Resolves a content:// or file:// URI to a local [File] (content URIs are copied to cache). */
@@ -136,6 +144,7 @@ class RestoreViewModel(
         getApplication<Application>().contentResolver.openInputStream(uri)?.use { input ->
             tmp.outputStream().use { input.copyTo(it) }
         }
+        tempFile = tmp
         return tmp
     }
 

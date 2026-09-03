@@ -9,6 +9,7 @@ import com.example.healthjournal.data.local.PersonalCard
 import com.google.gson.Gson
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -58,15 +59,14 @@ class BackupDataReaderTest {
     }
 
     @Test
-    fun read_survivesIndividuallyMalformedEntityFiles() {
-        val staging = tempFolder.newFolder("partially_bad")
+    fun read_throwsOnMalformedEntityFile() {
+        val staging = tempFolder.newFolder("bad_entity")
         writeJson(staging, BackupWriter.EntityFile.JOURNAL, entities.journalEntries)
-        // Malformed goals file should not abort the whole read
         File(staging, BackupWriter.EntityFile.GOALS).writeText("not json at all")
 
-        val result = BackupDataReader(gson).read(staging)
-
-        assertEquals(entities.journalEntries, result.journalEntries)
-        assertEquals(emptyList<GoalEntity>(), result.goals)
+        val error = assertThrows(RestoreError.CorruptedFile::class.java) {
+            BackupDataReader(gson).read(staging)
+        }
+        assertEquals("Malformed ${BackupWriter.EntityFile.GOALS} in backup.", error.message)
     }
 }

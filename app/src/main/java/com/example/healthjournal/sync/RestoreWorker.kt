@@ -39,10 +39,16 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
         val passphrase = inputData.getString(KEY_PASSPHRASE)
         val backupFile = resolveBackupFile(uri)
 
-        val coordinator = coordinatorProvider(applicationContext)
-        return when (val outcome = coordinator.run(backupFile, passphrase)) {
-            is RestoreCoordinator.Outcome.Success -> Result.success(successOutput(outcome.result))
-            is RestoreCoordinator.Outcome.Failure -> workerFailure(outcome.error)
+        return try {
+            val coordinator = coordinatorProvider(applicationContext)
+            when (val outcome = coordinator.run(backupFile, passphrase)) {
+                is RestoreCoordinator.Outcome.Success -> Result.success(successOutput(outcome.result))
+                is RestoreCoordinator.Outcome.Failure -> workerFailure(outcome.error)
+            }
+        } finally {
+            if (backupFile.parentFile == applicationContext.cacheDir) {
+                backupFile.delete()
+            }
         }
     }
 
