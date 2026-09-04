@@ -38,26 +38,16 @@ class RestoreViewModel(
     private val _uiState = MutableStateFlow<RestoreUiState>(RestoreUiState.Idle)
     val uiState: StateFlow<RestoreUiState> = _uiState
 
-    private data class PendingSelection(val fileUri: String, val passphrase: String?)
+    private data class PendingSelection(val workerUri: String, val passphrase: String?)
 
     private var pending: PendingSelection? = null
-    private var tempFile: File? = null
 
     /** User picked a backup file; validate its manifest before confirming. */
     fun selectBackup(uri: String) {
         viewModelScope.launch(dispatcher) {
             _uiState.value = RestoreUiState.Validating
             try {
-                val file = resolveUriToFile(uri)
-                val manifest = backupReader.readManifest(file, null)
-                val fileUri = "file://${file.absolutePath}"
-                pending = PendingSelection(fileUri, null)
-                _uiState.value = RestoreUiState.ConfirmationRequired(
-                    fileUri = fileUri,
-                    isEncrypted = false,
-                    schemaVersion = manifest.schemaVersion,
-                    backupTimestamp = manifest.backupTimestamp
-                )
+                confirmAfterValidation(uri, passphrase = null, isEncrypted = false)
             } catch (e: RestoreError.WrongPassphrase) {
                 _uiState.value = RestoreUiState.PassphraseRequired(uri)
             } catch (e: RestoreError) {
@@ -76,18 +66,11 @@ class RestoreViewModel(
         viewModelScope.launch(dispatcher) {
             _uiState.value = RestoreUiState.Validating
             try {
-                val file = resolveUriToFile(current.fileUri)
-                val manifest = backupReader.readManifest(file, passphrase)
-                val fileUri = "file://${file.absolutePath}"
-                pending = PendingSelection(fileUri, passphrase)
-                _uiState.value = RestoreUiState.ConfirmationRequired(
-                    fileUri = fileUri,
-                    isEncrypted = true,
-                    schemaVersion = manifest.schemaVersion,
-                    backupTimestamp = manifest.backupTimestamp
-                )
+                confirmAfterValidation(current.fileUri, passphrase, isEncrypted = true)
             } catch (e: RestoreError.WrongPassphrase) {
-                _uiState.value = RestoreUiState.Error(e, requestPassphrase = true)
+                // Return to PassphraseRequired so the user can retry with a fresh passphrase,
+                // rather than an Error that would otherwise no-op on retry.
+                _uiState.value = RestoreUiState.PassphraseRequired(current.fileUri)
             } catch (e: RestoreError) {
                 _uiState.value = RestoreUiState.Error(e)
             } catch (e: Exception) {
@@ -98,16 +81,40 @@ class RestoreViewModel(
         }
     }
 
+    /**
+     * Copies the selection to a temporary file (content URIs), reads + validates its
+     * manifest, and records the ORIGINAL [workerUri] in [pending]. The worker receives the
+     * original selection URI (it copies the file itself and owns its cleanup) rather than a
+     * cache temp path that this ViewModel might delete before the async worker runs. A
+     * temporary cache copy created only for validation is deleted immediately after reading;
+     * a real `file://` selection is never deleted here.
+     */
+    private suspend fun confirmAfterValidation(workerUri: String, passphrase: String?, isEncrypted: Boolean) {
+        val resolved = resolveUriToFile(workerUri)
+        try {
+            val manifest = backupReader.readManifest(resolved.file, passphrase)
+            pending = PendingSelection(workerUri, passphrase)
+            _uiState.value = RestoreUiState.ConfirmationRequired(
+                fileUri = workerUri,
+                isEncrypted = isEncrypted,
+                schemaVersion = manifest.schemaVersion,
+                backupTimestamp = manifest.backupTimestamp
+            )
+        } finally {
+            if (resolved.isTemp) resolved.file.delete()
+        }
+    }
+
     /** User confirmed the restore; enqueue/run it and surface the outcome. */
     fun confirmRestore() {
         val selection = pending ?: return
         viewModelScope.launch(dispatcher) {
             _uiState.value = RestoreUiState.Processing
             try {
-                val result = restoreToCompletion(getApplication(), selection.fileUri, selection.passphrase)
+                val result = restoreToCompletion(getApplication(), selection.workerUri, selection.passphrase)
                 _uiState.value = RestoreUiState.Success(result)
             } catch (e: RestoreError.WrongPassphrase) {
-                _uiState.value = RestoreUiState.Error(e, requestPassphrase = true)
+                _uiState.value = RestoreUiState.PassphraseRequired(selection.workerUri)
             } catch (e: RestoreError) {
                 _uiState.value = RestoreUiState.Error(e)
             } catch (e: Exception) {
@@ -120,8 +127,6 @@ class RestoreViewModel(
 
     fun reset() {
         pending = null
-        tempFile?.delete()
-        tempFile = null
         _uiState.value = RestoreUiState.Idle
     }
 
@@ -129,24 +134,25 @@ class RestoreViewModel(
         reset()
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        tempFile?.delete()
-    }
-
-    /** Resolves a content:// or file:// URI to a local [File] (content URIs are copied to cache). */
-    private fun resolveUriToFile(uriString: String): File {
+    /**
+     * Resolves a content:// or file:// URI to a local [File] for manifest validation. For a
+     * content:// URI the file is copied into the app cache and [ResolvedFile.isTemp] is true
+     * (so the copy can be deleted after validation); a `file://` URI maps directly to the
+     * user's file and [ResolvedFile.isTemp] is false (never deleted here).
+     */
+    private fun resolveUriToFile(uriString: String): ResolvedFile {
         if (uriString.startsWith("file://")) {
-            return File(uriString.removePrefix("file://"))
+            return ResolvedFile(File(uriString.removePrefix("file://")), isTemp = false)
         }
         val uri = Uri.parse(uriString)
         val tmp = File(getApplication<Application>().cacheDir, "restore_selected_${System.currentTimeMillis()}.zip")
         getApplication<Application>().contentResolver.openInputStream(uri)?.use { input ->
             tmp.outputStream().use { input.copyTo(it) }
         }
-        tempFile = tmp
-        return tmp
+        return ResolvedFile(tmp, isTemp = true)
     }
+
+    private data class ResolvedFile(val file: File, val isTemp: Boolean)
 
 }
 

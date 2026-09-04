@@ -33,7 +33,7 @@ class ExportViewModel(
     private val fullBackupUseCase = fullBackupUseCase
     private val exportService = ExportServiceImpl(application.cacheDir)
 
-    fun exportData(startDate: Long, endDate: Long, format: String) {
+    fun exportData(startDate: Long, endDate: Long, format: String, passphrase: String? = null) {
         viewModelScope.launch {
             _exportState.value = ExportState.Generating(0f, "Preparing export...")
             exportService.cleanupCache()
@@ -41,7 +41,7 @@ class ExportViewModel(
             try {
                 val file = when (format.uppercase()) {
                     "PDF" -> pdfExportUseCase.execute(startDate, endDate)
-                    "ZIP" -> fullBackupUseCase.execute()
+                    "ZIP" -> fullBackupUseCase.execute(passphrase)
                     else -> throw IllegalArgumentException("Unsupported format")
                 }
                 

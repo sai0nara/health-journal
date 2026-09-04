@@ -22,6 +22,7 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import java.io.File
 import java.util.zip.ZipFile
+import net.lingala.zip4j.ZipFile as Zip4jZipFile
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -156,6 +157,87 @@ class FullBackupUseCaseTest {
     }
 
     @Test
+    fun execute_withPassphrase_producesEncryptedOuterArchive() = runTest {
+        val journalDao = mockk<JournalDao>()
+        val bodyDao = mockk<BodyMeasurementDao>()
+        val db = mockDatabase(version = 12, journalDao = journalDao, bodyMeasurementDao = bodyDao)
+
+        val journalRepo = mockk<JournalRepository>()
+        coEvery { journalRepo.getAllEntriesInDateRange(0L, Long.MAX_VALUE) } returns
+            listOf(JournalEntry(entry_id = "e1", description = "x"))
+        coEvery { journalDao.getAllDeletedEntries() } returns emptyList()
+        coEvery { journalDao.getAllTags() } returns emptyList()
+
+        val bodyRepo = mockk<BodyMeasurementRepository>()
+        coEvery { bodyRepo.allEntries } returns flowOf(emptyList())
+        coEvery { bodyDao.getAllDeletedEntries() } returns emptyList()
+
+        val goalsRepo = mockk<GoalsRepository>()
+        coEvery { goalsRepo.getAll() } returns emptyList()
+
+        val pcRepo = mockk<PersonalCardRepository>()
+        val personalCardDao = mockk<PersonalCardDao>()
+        coEvery { db.personalCardDao() } returns personalCardDao
+        coEvery { pcRepo.getPersonalCardSnapshot() } returns null
+
+        val useCase = FullBackupUseCase(
+            database = db,
+            journalRepository = journalRepo,
+            bodyMeasurementRepository = bodyRepo,
+            goalsRepository = goalsRepo,
+            personalCardRepository = pcRepo,
+            filesDir = tempFolder.root,
+            exportsDir = tempFolder.root,
+            gson = gson
+        )
+
+        val zip = useCase.execute(passphrase = "s3cret")
+
+        assertTrue(zip.exists())
+        // Outer archive is AES-256 encrypted with the passphrase and wraps the inner backup
+        Zip4jZipFile(zip, "s3cret".toCharArray()).use { zf ->
+            assertTrue(zf.isEncrypted)
+            assertTrue(zf.getFileHeaders().any { it.fileName == BackupEncryptor.INNER_ENTRY_NAME })
+        }
+    }
+
+    @Test
+    fun execute_nullPassphrase_producesPlainArchive() = runTest {
+        val journalDao = mockk<JournalDao>()
+        val db = mockDatabase(journalDao = journalDao)
+        coEvery { journalDao.getAllDeletedEntries() } returns emptyList()
+        coEvery { journalDao.getAllTags() } returns emptyList()
+        val bodyRepo = mockk<BodyMeasurementRepository>()
+        coEvery { bodyRepo.allEntries } returns flowOf(emptyList())
+        coEvery { db.bodyMeasurementDao().getAllDeletedEntries() } returns emptyList()
+        val goalsRepo = mockk<GoalsRepository>()
+        coEvery { goalsRepo.getAll() } returns emptyList()
+        val pcRepo = mockk<PersonalCardRepository>()
+        coEvery { pcRepo.getPersonalCardSnapshot() } returns null
+        coEvery { db.personalCardDao() } returns mockk()
+        val journalRepo = mockk<JournalRepository>()
+        coEvery { journalRepo.getAllEntriesInDateRange(0L, Long.MAX_VALUE) } returns emptyList()
+
+        val useCase = FullBackupUseCase(
+            database = db,
+            journalRepository = journalRepo,
+            bodyMeasurementRepository = bodyRepo,
+            goalsRepository = goalsRepo,
+            personalCardRepository = pcRepo,
+            filesDir = tempFolder.root,
+            exportsDir = tempFolder.root,
+            gson = gson
+        )
+
+        val zip = useCase.execute(passphrase = null)
+
+        // Plain archive is a standard ZIP with the manifest, not an encrypted container
+        ZipFile(zip).use { zf ->
+            assertTrue(zf.getEntry(BackupWriter.MANIFEST_NAME) != null)
+        }
+    }
+
+    @Test
     fun execute_includesMediaFilesReferencedByEntries() = runTest {
         val filesDir = File(tempFolder.root, "files")
         val photosDir = File(filesDir, "photos")
@@ -204,7 +286,8 @@ class FullBackupUseCaseTest {
         val zip = useCase.execute()
 
         ZipFile(zip).use { zf ->
-            val bytes = zf.getInputStream(zf.getEntry("media/photo_test.jpg")).use { it.readBytes() }
+            val mediaEntry = zf.getEntry("media/photo_test.jpg") ?: error("media entry missing")
+            val bytes = zf.getInputStream(mediaEntry).use { it.readBytes() }
             assertNotNull(bytes)
             assertTrue(bytes.contentEquals(byteArrayOf(9, 9, 9)))
         }

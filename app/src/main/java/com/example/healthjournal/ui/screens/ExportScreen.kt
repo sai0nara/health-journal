@@ -36,7 +36,17 @@ fun ExportScreen(
     var startDate by rememberSaveable { mutableLongStateOf(System.currentTimeMillis() - 30 * 24 * 60 * 60 * 1000L) } // 30 days ago
     var endDate by rememberSaveable { mutableLongStateOf(System.currentTimeMillis()) }
     var selectedFormat by rememberSaveable { mutableStateOf("PDF") }
-    
+    var encryptBackup by rememberSaveable { mutableStateOf(false) }
+    var passphrase by rememberSaveable { mutableStateOf("") }
+
+    // Reset encryption state when switching away from ZIP (encryption is ZIP-only)
+    LaunchedEffect(selectedFormat) {
+        if (selectedFormat != "ZIP") {
+            encryptBackup = false
+            passphrase = ""
+        }
+    }
+
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
 
@@ -93,8 +103,8 @@ fun ExportScreen(
                         style = MaterialTheme.typography.bodyLarge
                     )
 
-            // Date Selection (only PDF is date-scoped; ZIP is always a full backup)
             if (selectedFormat == "PDF") {
+                // Date Selection (PDF is date-scoped)
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Row(
@@ -126,6 +136,16 @@ fun ExportScreen(
                         }
                     }
                 }
+            } else {
+                // ZIP always exports a full backup; make that explicit instead of hiding a date range
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "ZIP exports your full backup (all history, measurements, and media) regardless of date range.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
 
             // Format Selection
@@ -155,6 +175,32 @@ fun ExportScreen(
                 }
             }
 
+            // Encrypt backup (ZIP only) - optional AES-256 passphrase protection
+            if (selectedFormat == "ZIP") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Checkbox(
+                            checked = encryptBackup,
+                            onCheckedChange = { encryptBackup = it },
+                            modifier = Modifier.testTag("encrypt_backup")
+                        )
+                        Text("Encrypt backup", modifier = Modifier.padding(start = 8.dp))
+                    }
+                    if (encryptBackup) {
+                        OutlinedTextField(
+                            value = passphrase,
+                            onValueChange = { passphrase = it },
+                            label = { Text("Enter passphrase") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+
             if (exportState is ExportState.Generating) {
                 val state = exportState as ExportState.Generating
                 Column(
@@ -167,7 +213,14 @@ fun ExportScreen(
                 }
             } else {
                 Button(
-                    onClick = { viewModel.exportData(startDate, endDate, selectedFormat) },
+                    onClick = {
+                        val pass = if (selectedFormat == "ZIP" && encryptBackup && passphrase.isNotBlank()) {
+                            passphrase
+                        } else {
+                            null
+                        }
+                        viewModel.exportData(startDate, endDate, selectedFormat, pass)
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = exportState !is ExportState.Generating
                 ) {

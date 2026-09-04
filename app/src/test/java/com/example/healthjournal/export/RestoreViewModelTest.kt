@@ -71,6 +71,20 @@ class RestoreViewModelTest {
         )
     }
 
+    private fun capturedViewModel(): Pair<RestoreViewModel, MutableList<Pair<String, String?>>> {
+        val captured = mutableListOf<Pair<String, String?>>()
+        val vm = RestoreViewModel(
+            application = application,
+            dispatcher = dispatcher,
+            backupReader = BackupReader(Gson()),
+            restoreToCompletion = { _, uri, pass ->
+                captured.add(uri to pass)
+                RestoreResult(0, 0, 0, 0, 0, 0)
+            }
+        )
+        return vm to captured
+    }
+
     private fun RestoreViewModel.state() = uiState.value
 
     @Before
@@ -133,7 +147,7 @@ class RestoreViewModelTest {
     }
 
     @Test
-    fun onPassphraseSubmitted_wrongPassphrase_showsErrorRequestingPassphrase() = runTest {
+    fun onPassphraseSubmitted_wrongPassphrase_returnsToPassphrasePrompt() = runTest {
         val vm = newViewModel()
         val encrypted = encrypt(buildBackup(), "secret")
 
@@ -143,10 +157,8 @@ class RestoreViewModelTest {
         vm.submitPassphrase("wrong")
         dispatcher.scheduler.advanceUntilIdle()
 
-        val state = vm.state()
-        assertTrue(state is RestoreUiState.Error)
-        assertTrue((state as RestoreUiState.Error).error is RestoreError.WrongPassphrase)
-        assertEquals(true, state.requestPassphrase)
+        // A wrong passphrase returns to PassphraseRequired so the user can retry
+        assertTrue(vm.state() is RestoreUiState.PassphraseRequired)
     }
 
     @Test
@@ -202,5 +214,57 @@ class RestoreViewModelTest {
 
         vm.reset()
         assertEquals(RestoreUiState.Idle, vm.state())
+    }
+
+    @Test
+    fun confirmRestore_passesOriginalUriAndPassphraseToWorker() = runTest {
+        // Select an encrypted backup; the content URI must be preserved and forwarded
+        // to the restore worker (which copies it itself), rather than a cache temp path
+        // that the ViewModel could delete before the async worker runs.
+        val (vm, captured) = capturedViewModel()
+        val encrypted = encrypt(buildBackup(), "secret")
+        val originalUri = "file://${encrypted.absolutePath}"
+
+        vm.selectBackup(originalUri)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.state() is RestoreUiState.PassphraseRequired)
+
+        vm.submitPassphrase("secret")
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.state() is RestoreUiState.ConfirmationRequired)
+
+        vm.confirmRestore()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, captured.size)
+        // The URI forwarded to the worker must be the original selection, not a cache temp file.
+        assertEquals(originalUri, captured.single().first)
+        // The passphrase must be forwarded with the URI.
+        assertEquals("secret", captured.single().second)
+    }
+
+    @Test
+    fun confirmRestore_wrongPassphrase_letsUserRetryPassphrase() = runTest {
+        val vm = newViewModel(restoreError = RestoreError.WrongPassphrase())
+        val encrypted = encrypt(buildBackup(), "secret")
+        val originalUri = "file://${encrypted.absolutePath}"
+
+        vm.selectBackup(originalUri)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.state() is RestoreUiState.PassphraseRequired)
+
+        vm.submitPassphrase("secret")
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.state() is RestoreUiState.ConfirmationRequired)
+
+        vm.confirmRestore()
+        dispatcher.scheduler.advanceUntilIdle()
+        // Failure transitions back to PassphraseRequired so the retry path works via submitPassphrase
+        assertTrue(vm.state() is RestoreUiState.PassphraseRequired)
+
+        // Retrying validates the manifest against the ORIGINAL uri (no silent no-op)
+        vm.submitPassphrase("secret")
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.state() is RestoreUiState.ConfirmationRequired)
     }
 }
