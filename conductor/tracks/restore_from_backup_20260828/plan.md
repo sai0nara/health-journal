@@ -44,8 +44,11 @@
 
 ## Phase 5: Integration & Polish
 - [x] Task: Wire/verify navigation & DI wiring in MainActivity/factories
-- [ ] Task: End-to-end test: export -> encrypt -> full wipe app -> restore -> verify
+- [x] Task: End-to-end test: export -> encrypt -> full wipe app -> restore -> verify
 - [x] Task: Write integration tests (export/restore round-trip, sync enqueue)
 - [x] Task: Test light/dark theme rendering of restore UI
 - [x] Task: Manual risk pass: ZIP-bomb, Zip-Slip, wrong passphrase, version mismatch, low disk
 - [ ] Task: Conductor - User Manual Verification 'Integration' (Protocol in workflow.md)
+
+## Phase: Review Fixes
+- [~] Task: Apply review suggestions
