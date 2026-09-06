@@ -37,3 +37,9 @@ This file tracks all major tracks for the project. Each track has its own detail
   *Link: [./tracks/body_measurements_20260821/](./tracks/body_measurements_20260821/)*
 
 
+---
+
+- [ ] **Track: Replace App Icon & Add App Bar Branding**
+  *Link: [./tracks/app_icon_and_branding_20260906/](./tracks/app_icon_and_branding_20260906/)*
+
+
