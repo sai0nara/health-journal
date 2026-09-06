@@ -39,7 +39,12 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Replace App Icon & Add App Bar Branding**
+- [x] **Track: Replace App Icon & Add App Bar Branding**
   *Link: [./tracks/app_icon_and_branding_20260906/](./tracks/app_icon_and_branding_20260906/)*
+
+---
+
+- [ ] **Track: Replace Body Measurement Action Icon**
+  *Link: [./tracks/replace_measurement_icon_20260906/](./tracks/replace_measurement_icon_20260906/)*
 
 
