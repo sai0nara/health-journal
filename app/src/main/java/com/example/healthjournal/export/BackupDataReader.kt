@@ -40,7 +40,7 @@ class BackupDataReader(private val gson: Gson) {
             val token = object : TypeToken<List<T>>() {}.type
             gson.fromJson<List<T>>(json, token) ?: emptyList()
         } catch (e: Exception) {
-            emptyList()
+            throw RestoreError.CorruptedFile("Malformed $fileName in backup.", e)
         }
     }
 }

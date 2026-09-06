@@ -335,6 +335,91 @@ class MeasurementScreenTest {
     }
 
     @Test
+    fun card_allParamsVisibleNotTruncated() {
+        val fullEntry = BodyMeasurementEntry(
+            entry_id = "full",
+            timestamp = 3_000L,
+            weight_kg = 78.5,
+            chest_cm = 98.0,
+            waist_cm = 85.0,
+            glute_cm = 102.0,
+            thigh_cm = 55.0,
+            calf_cm = 37.0,
+            bicep_cm = 33.0
+        )
+
+        step("Open with an entry that has all seven parameters") {
+            setScreen(listOf(fullEntry))
+        }
+
+        step("Weight is displayed") {
+            composeTestRule.onNodeWithText("78.5 kg").assertExists()
+        }
+
+        step("All circumference params are individually visible") {
+            composeTestRule.onNodeWithText("Chest 98 cm").assertExists()
+            composeTestRule.onNodeWithText("Waist 85 cm").assertExists()
+            composeTestRule.onNodeWithText("Glute 102 cm").assertExists()
+            composeTestRule.onNodeWithText("Thighs 55 cm").assertExists()
+            composeTestRule.onNodeWithText("Calves 37 cm").assertExists()
+            composeTestRule.onNodeWithText("Biceps 33 cm").assertExists()
+        }
+    }
+
+    @Test
+    fun card_weightOnlyShowsCleanLayout() {
+        step("Open with a weight-only entry") {
+            setScreen(listOf(BodyMeasurementEntry(entry_id = "wt", timestamp = 1_000L, weight_kg = 80.0)))
+        }
+
+        step("Weight is displayed as individual text node") {
+            composeTestRule.onNodeWithText("80 kg").assertExists()
+        }
+    }
+
+    @Test
+    fun card_circumferenceOnlyShowsGrid() {
+        step("Open with circumference-only entry") {
+            setScreen(
+                listOf(
+                    BodyMeasurementEntry(
+                        entry_id = "circ",
+                        timestamp = 2_000L,
+                        waist_cm = 85.0,
+                        chest_cm = 98.0
+                    )
+                )
+            )
+        }
+
+        step("Both circumference params are visible as individual text nodes") {
+            composeTestRule.onNodeWithText("Waist 85 cm").assertExists()
+            composeTestRule.onNodeWithText("Chest 98 cm").assertExists()
+        }
+    }
+
+    @Test
+    fun card_partialParamsOnlyNonNullShown() {
+        step("Open with weight + waist only") {
+            setScreen(
+                listOf(
+                    BodyMeasurementEntry(
+                        entry_id = "partial",
+                        timestamp = 1_500L,
+                        weight_kg = 75.0,
+                        waist_cm = 80.0
+                    )
+                )
+            )
+        }
+
+        step("Recorded params are visible as individual text nodes") {
+            composeTestRule.onNodeWithText("75 kg").assertExists()
+            composeTestRule.onNodeWithText("Waist 80 cm").assertExists()
+        }
+    }
+
+    @Test
     fun goalSheet_invalidInputShowsErrorAndBlocksSave() {
         val ctx = setScreen(
             listOf(BodyMeasurementEntry(entry_id = "e1", timestamp = 1_000L, weight_kg = 80.0))

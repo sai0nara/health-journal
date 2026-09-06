@@ -37,6 +37,7 @@ class RestoreCoordinator(
 
     /** Runs a restore of [backupFile]; returns [Outcome.Success] or [Outcome.Failure]. */
     suspend fun run(backupFile: File, passphrase: String?): Outcome {
+        scratchDir.mkdirs()
         try {
             val plainZip = decryptInnerIfEncrypted(backupFile, passphrase)
 

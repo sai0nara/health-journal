@@ -13,10 +13,18 @@ Findings (see meta/spec.md):
     UNTRACKED  cited path exists locally but is not committed              FAIL
     BROKEN     a wikilink points at a page that does not exist             FAIL
     DUPLICATE  two pages share a basename, so one is unreachable           FAIL
+    STAMP      a product doc (Docs/prd|psd|tests) has no Last updated      FAIL
+    MISSING    a Docs/ feature in the catalog lacks one of prd/psd/tests   FAIL
     REVIEW     a cited source's last commit is newer than 'Last updated:'  advisory
     ORPHAN     nothing links to the page (root page exempt)                advisory
     INDEX      page missing from the catalog, or catalogued but gone       advisory
     FOOTER     page missing its back-navigation footer (root+index exempt) advisory
+
+The lint checks the wiki vault (wiki/) and the product docs (Docs/prd|psd|tests).
+Product docs follow the same citation and freshness rules as vault pages; they
+carry no footer/wikilink navigation, so BROKEN/ORPHAN/FOOTER do not apply to
+them. Features are claimed in Docs/index.md; a claimed feature must ship all
+three documents (prd + psd + tests) or MISSING fails.
 
 Usage:
     python3 wiki/lint.py [--root DIR] [--exit0]
@@ -144,7 +152,7 @@ def last_commit_date(root: str, rel_path: str) -> str | None:
 # ---- vault discovery -------------------------------------------------------
 
 class Choice:
-    """Categorise an md file under the vault."""
+    """Categorise an md file under the vault (or the product docs)."""
 
     def __init__(self, root: str, path: str):
         self.root = root
@@ -157,6 +165,15 @@ class Choice:
         tail = rel[len("wiki/"):] if rel.startswith("wiki/") else rel
         self.is_index = tail == "index.md"
         self.is_root = tail == "service/overview.md"
+        self.is_docs = self._docs_type(rel) is not None
+        self.docs_type = self._docs_type(rel)
+
+    @staticmethod
+    def _docs_type(rel: str) -> str | None:
+        for t in DOCS_DIRS:
+            if rel.startswith(f"Docs/{t}/"):
+                return t
+        return None
 
 
 def walk_pages(root: str, vault: str = "wiki"):
@@ -166,6 +183,47 @@ def walk_pages(root: str, vault: str = "wiki"):
             if fn.endswith(".md"):
                 pages.append(Choice(root, os.path.join(dirpath, fn)))
     return pages
+
+
+DOCS_DIRS = ("prd", "psd", "tests")
+
+
+def walk_docs(root: str):
+    """Product-doc pages under Docs/prd|psd|tests."""
+    pages = []
+    for t in DOCS_DIRS:
+        base = os.path.join(root, "Docs", t)
+        if not os.path.isdir(base):
+            continue
+        for dirpath, _dirnames, filenames in os.walk(base):
+            for fn in filenames:
+                if fn.endswith(".md"):
+                    pages.append(Choice(root, os.path.join(dirpath, fn)))
+    return sorted(pages, key=lambda p: p.rel)
+
+
+def docs_slugs(root: str):
+    """Return (all_slugs, planned_slugs) claimed in Docs/index.md.
+
+    A feature is claimed by listing any of its `Docs/<type>/<slug>.md` paths
+    (backticked) in the catalog. A feature is *planned* (not yet built) when the
+    claimed line also carries the marker `— planned`; a planned feature ships
+    its PRD up front and is exempt from the psd/tests requirement.
+    """
+    all_slugs = set()
+    planned = set()
+    path = os.path.join(root, "Docs", "index.md")
+    if not os.path.exists(path):
+        return all_slugs, planned
+    for line in _read(path).splitlines():
+        m = re.match(r"^-\s+`Docs/(%s)/([^/]+?)\.md`\s*—\s*(.*)$" % "|".join(DOCS_DIRS), line)
+        if not m:
+            continue
+        feature_type, slug, rest = m.group(1), m.group(2), m.group(3)
+        all_slugs.add(slug)
+        if "planned" in rest.lower():
+            planned.add(slug)
+    return all_slugs, planned
 
 
 def _basename_map(pages):
@@ -263,6 +321,38 @@ def run_lint(root: str):
             if target not in content_basenames and target not in valid_basenames:
                 findings.append(("INDEX", "wiki/index.md", f"catalogued [[{target}]] but no such page"))
 
+    # ---- product docs (Docs/prd | psd | tests) ------------------------------
+    docs = walk_docs(root)
+    indexed_slugs, planned_slugs = docs_slugs(root)
+
+    for p in docs:
+        text = _read(p.abs)
+        date = _last_updated(text)
+        if date is None:
+            findings.append(("STAMP", p.rel, "missing 'Last updated:' stamp"))
+        for cite in parse_citations(text):
+            status = _check_citation(root, cite)
+            if status == "stale":
+                findings.append(("STALE", p.rel, f"cited path '{cite}' does not exist"))
+            elif status == "untracked":
+                findings.append(("UNTRACKED", p.rel, f"cited path '{cite}' exists but is not committed"))
+            elif status == "ok" and date and not _is_glob(cite):
+                src_date = last_commit_date(root, cite)
+                if src_date and src_date > date:
+                    findings.append(("REVIEW", p.rel, f"source '{cite}' changed ({src_date}) after page date ({date})"))
+        if p.basename not in indexed_slugs:
+            findings.append(("INDEX", p.rel, f"feature '{p.basename}' not listed in the docs catalog"))
+
+    # completeness: a feature claimed in Docs/index.md must ship the PRD, and
+    # (unless marked planned) the psd + tests too
+    if os.path.exists(os.path.join(root, "Docs", "index.md")):
+        for slug in sorted(indexed_slugs):
+            required = ("prd",) if slug in planned_slugs else DOCS_DIRS
+            for t in required:
+                fp = os.path.join("Docs", t, f"{slug}.md")
+                if not os.path.exists(os.path.join(root, fp)):
+                    findings.append(("MISSING", "Docs/index.md", f"feature '{slug}' lacks '{fp}'"))
+
     return findings
 
 
@@ -302,8 +392,9 @@ def _read(path: str) -> str:
 
 def _report(root: str, findings) -> int:
     order = {"STALE": 0, "UNTRACKED": 1, "BROKEN": 2, "DUPLICATE": 3,
-             "REVIEW": 4, "ORPHAN": 5, "INDEX": 6, "FOOTER": 7}
-    failing = {k: v for k, v in order.items() if v <= 3}
+             "STAMP": 4, "MISSING": 5,
+             "REVIEW": 6, "ORPHAN": 7, "INDEX": 8, "FOOTER": 9}
+    failing = {k: v for k, v in order.items() if v <= 5}
     grouped = {}
     for kind, rel, msg in findings:
         grouped.setdefault(kind, []).append((rel, msg))

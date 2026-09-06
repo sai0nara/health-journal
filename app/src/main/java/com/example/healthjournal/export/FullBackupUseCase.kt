@@ -32,7 +32,15 @@ class FullBackupUseCase(
     private val gson: Gson = Gson()
 ) {
 
-    suspend fun execute(): File {
+    suspend fun execute(): File = execute(passphrase = null)
+
+    /**
+     * Produces a full backup archive. When [passphrase] is non-blank, the plain
+     * backup is wrapped by [BackupEncryptor] into an AES-256 encrypted outer
+     * archive (single `backup.zip` entry), so restore must be given the same
+     * passphrase. When null/blank, the archive is plain.
+     */
+    suspend fun execute(passphrase: String?): File {
         exportsDir.mkdirs()
         val schemaVersion = database.openHelper.readableDatabase.version
         val archive = File(exportsDir, "health_journal_backup_${System.currentTimeMillis()}.zip")
@@ -64,11 +72,27 @@ class FullBackupUseCase(
 
         val writer = BackupWriter(gson = gson, schemaVersion = schemaVersion)
 
-        ZipOutputStream(FileOutputStream(archive)).use { zos ->
-            writer.writeBackup(zos, data, collectMedia(journalEntries))
-        }
+        val plain = File(exportsDir, "health_journal_plain_${System.currentTimeMillis()}.zip")
+        try {
+            ZipOutputStream(FileOutputStream(plain)).use { zos ->
+                writer.writeBackup(zos, data, collectMedia(journalEntries))
+            }
 
-        return archive
+            if (passphrase.isNullOrBlank()) {
+                if (!plain.renameTo(archive)) {
+                    archive.delete()
+                    plain.copyTo(archive)
+                    plain.delete()
+                }
+            } else {
+                BackupEncryptor().encrypt(plain, archive, passphrase)
+            }
+            return archive
+        } finally {
+            if (plain.exists()) {
+                plain.delete()
+            }
+        }
     }
 
     private fun mergeTombstones(

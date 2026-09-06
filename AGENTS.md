@@ -1,60 +1,81 @@
-# Health Journal Project Overview
+# Health Journal
 
-This is an Android health journal application designed for personal event logging and health metric tracking. It leverages modern Android development practices, including Jetpack Compose for the UI, Room for local data persistence, and follows the MVVM (Model-View-ViewModel) architectural pattern.
+Android health journal app for personal event logging and health metric
+tracking. Kotlin + Jetpack Compose (Material 3), Room persistence, MVVM with a
+repository pattern, Kotlin Coroutines/Flow, Jetpack Navigation. No DI framework —
+ViewModels and their dependencies are constructed manually (with per-ViewModel
+`Factory` classes reading DAOs off the singleton `JournalDatabase`).
 
-## Key Technologies
-- **Language:** Kotlin
-- **UI Framework:** Jetpack Compose (Material 3)
-- **Database:** Room Persistence Library
-- **Navigation:** Jetpack Navigation Compose
-- **Architecture:** MVVM with Repository pattern
-- **Asynchronous Programming:** Kotlin Coroutines and Flow
+## Branches & PRs
 
-## Project Structure
-- `app/src/main/java/com/example/healthjournal/`
-    - `MainActivity.kt`: Entry point, sets up navigation and provides ViewModels.
-    - `data/`: Contains the data layer.
-        - `JournalRepository.kt`: Orchestrates data between the local database and the UI.
-        - `local/`: Room database components (`JournalDao`, `JournalDatabase`, `JournalEntry`).
-    - `ui/`: Contains the UI layer.
-        - `screens/`: Individual Compose screens (`AddEntryScreen`, `HistoryScreen`).
-        - `theme/`: App-wide Compose themes and styling.
-    - `viewmodel/`: Contains ViewModels for business logic and UI state management.
-- `Docs/`: Project documentation.
-    - `PRD.md`: Product Requirements Document detailing the vision and features.
-    - `Plan.md`: Implementation and development plan.
-    - `Stories.md`: User stories and functional requirements.
-- `wiki/`: LLMwiki vault for persistent knowledge management.
-    - `service/`, `modules/`, `tests/`, `integrations/`: knowledge pages.
-    - `meta/`: contract (`spec.md`) and operational schema (`schema.md`).
-    - `hooks/`: end-of-turn hook scripts; `lint.py` is the vault checker.
-- `.opencode/plugins/wiki.js`: registers the vault hooks in opencode.
+- Development happens on feature branches named `feat/<topic>`; finished work is
+  merged via a GitHub PR (use `gh`), not by committing to `main`.
+- Do not commit unless the user asks. Never stage unrelated working-tree changes
+  (e.g. drafts, `AGENTS.md` edits, deletions of legacy docs) — stage only the
+  files your change touches.
 
-## Building and Running
-The project uses Gradle for build management.
+## Driving the project: `conductor/`
 
-### Key Commands:
-- **Build the project:** `JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home ./gradlew build`
-- **Install debug build on connected device/emulator:** `JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home ./gradlew installDebug`
-- **Run unit tests:** `JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home ./gradlew test`
-- **Run instrumented tests:** `JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home ./gradlew connectedAndroidTest`
-- **Clean build artifacts:** `JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home ./gradlew clean`
+`conductor/` is the project-management layer. Before starting work, read the
+track workflow (`conductor/workflow.md`) and current track status
+(`conductor/tracks.md` — one `[x]`/`[~]`/`[ ]` line per track). Each track has its
+own plan under `conductor/tracks/<track_id>/plan.md` (or `conductor/archive/` for
+finished ones). Work follows TDD: red (failing test) → green → refactor → UI test.
+Aim for >80% coverage and UI tests on every user-facing feature.
 
-## Development Conventions
-- **UI:** Exclusively use Jetpack Compose for building user interfaces.
-- **State Management:** Use `StateFlow` in ViewModels to expose UI state.
-- **Dependency Management:** Kotlin DSL (`.gradle.kts`) is used for all Gradle configuration files.
-- **Data Model:** `JournalEntry` uses UUID-based string IDs for future synchronization compatibility (e.g., Google Drive sync as mentioned in `PRD.md`).
-- **Architecture:** Maintain strict separation between the UI, business logic (ViewModel), and data access (Repository).
+## Building & testing
 
-## Roadmap Highlights (from PRD)
-- [x] Basic entry logging and history view.
-- [x] Integration with Google Drive for cloud synchronization.
-- [ ] Health Connect integration for automatic metric importing (steps, heart rate, sleep).
-- [ ] AI-driven health insights based on logs and metrics.
-- [ ] Export functionality (CSV/XML).
+`JAVA_HOME` must point at a JDK 21; every Gradle command needs it:
+
+```sh
+export JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home
+```
+
+- Build: `./gradlew build`
+- Install debug build on a device/emulator: `./gradlew installDebug`
+- JVM unit tests: `./gradlew :app:testDebugUnitTest`
+- Instrumented tests (require a connected device/emulator): `./gradlew connectedAndroidTest`
+- Allure report: `./gradlew :app:allureServe`
+- `wiki/lint.py` and related scripts use stock `python3` + `git`; no test framework.
+
+## Documentation
+
+- `Docs/<type>/` is the documented-feature set, one feature = a lower-kebab-case
+  slug in three files: `Docs/prd/<slug>.md` (requirements), `Docs/psd/<slug>.md`
+  (design/spec), `Docs/tests/<slug>.md` (test cases). The catalog is
+  `Docs/index.md`; a feature must list all three paths there or the wiki lint's
+  `MISSING` check fails. A not-yet-built feature is PRD-only and marked `— planned`
+  in the index. Templates live in `Docs/_templates/`.
+- Legacy root docs (`Docs/PRD.md`, `Docs/Plan.md`, `Docs/Stories.md`) have been
+  retired — the per-feature PRD/PSD docs replaced them. `Docs/Review.md` and
+  `Docs/Defects.md` are the review/defect registers.
+
+## Code layout
+
+Under `app/src/main/java/com/example/healthjournal/`:
+
+- `ui/` — Compose screens, components, theme. `theme/` has the light/dark
+  semantic color system (`Theme.kt`, `Color.kt`).
+- `viewmodel/` — UI state (StateFlow) and business orchestration.
+- `data/` — repositories (`JournalRepository`, `BodyMeasurementRepository`,
+  `GoalsRepository`, `PersonalCardRepository`) over Room `local/` DAOs/entities.
+- `domain/` — pure validation/formatting (e.g. `ValidateMeasurements`,
+  `validation/` for demographics, `UtcToLocalDate`).
+- `sync/` — Google Drive sync engine (`SyncWorker`, `SyncMerge`, payload codecs,
+  tombstones) plus the restore worker.
+- `export/` — PDF/ZIP export, full backup, and restore (`PdfExportUseCase`,
+  `ZipExportUseCase`, `FullBackupUseCase`, `RestoreCoordinator`, `RestoreViewModel`).
+- `health/` — Health Connect integration (`HealthConnectManager`).
+- `media/` — attachment compression (`MediaCompressionService`).
+- `auth/` — Drive auth (`GoogleAuthManager` uses CredentialManager; `SessionManager`).
+- `util/` — HTML entity/parser helpers (`HtmlEntities`, `HtmlParser`).
+
+Database migrations live in `data/local/JournalDatabase.kt`. Schema is exported;
+the goals/tables, body measurements, and personal card were added via versioned
+migrations with `exportSchema = true`.
 
 ## Wiki (LLMwiki)
+
 The operational contract for the vault lives in `wiki/meta/schema.md`; the full
 contract and rationale is `wiki/meta/spec.md`. Read the operational schema
 before modifying code or wiki content.
@@ -68,7 +89,7 @@ Three rules govern every change:
 3. **The lint exits 0 before the turn ends** — run it before finishing.
 
 Commands:
-- Lint: `python3 wiki/lint.py`
+- Lint: `python3 wiki/lint.py` (or `wiki/lint.sh` from the repo root)
 - Hook self-tests: `python3 wiki/hooks/test_hooks.py`
 - Lint self-tests: `python3 wiki/test_lint.py`
 
@@ -76,4 +97,10 @@ Content boundary: the wiki describes this repo's architecture and behavior.
 No secrets, personal data, or issue-tracker references go in wiki pages. New
 pages must follow the structure in `wiki/meta/schema.md`. The hooks registered
 in `.opencode/plugins/wiki.js` run at the end of each turn: they name pages
-affected by changed code and report vault health.
+affected by changed code and report vault health. The `Docs/` product docs are
+covered by the same lint (freshness + path checks) but are exempt from the
+wikilink/navigation checks.
+
+## Roadmap
+
+Described in Trello board https://trello.com/b/xlytOSCh/health-journal

@@ -3,6 +3,8 @@ package com.example.healthjournal.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,13 +52,13 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.data.local.BodyMeasurementEntry
 import com.example.healthjournal.domain.GoalValidator
 import com.example.healthjournal.domain.MeasurementField
+import com.example.healthjournal.domain.formatMeasurement
 import com.example.healthjournal.domain.toParamTrend
-import com.example.healthjournal.domain.toSummary
+import com.example.healthjournal.domain.valueFor
 import com.example.healthjournal.ui.components.GoalSheet
 import com.example.healthjournal.ui.components.ParamTrendChart
 import com.example.healthjournal.viewmodel.BodyAnalyticsViewModel
@@ -263,12 +265,19 @@ private fun ChartHeader(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MeasurementCard(
     entry: BodyMeasurementEntry,
     dateLabel: String,
     onDelete: () -> Unit
 ) {
+    val circumferenceParams = MeasurementField.entries
+        .filter { it != MeasurementField.WEIGHT }
+        .mapNotNull { field ->
+            entry.valueFor(field)?.let { field.label to it }
+        }
+
     OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.outlinedCardColors(
@@ -280,43 +289,61 @@ private fun MeasurementCard(
                 .fillMaxWidth()
                 .padding(start = 16.dp, top = 12.dp, bottom = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = entry.toSummary(),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+                if (entry.weight_kg != null) {
+                    Text(
+                        text = "${entry.weight_kg.formatMeasurement()} kg",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                if (circumferenceParams.isNotEmpty()) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        circumferenceParams.forEach { (label, value) ->
+                            Text(
+                                text = "$label ${value.formatMeasurement()} cm",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+
                 Text(
                     text = dateLabel,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
-            if (entry.isSynced == true) {
-                Icon(
-                    Icons.Default.CloudDone,
-                    contentDescription = "Cloud Synced",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            } else {
-                Icon(
-                    Icons.Default.CloudSync,
-                    contentDescription = "Local Only",
-                    tint = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Default.DeleteOutline,
-                    contentDescription = "Delete measurement",
-                    tint = MaterialTheme.colorScheme.error
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (entry.isSynced == true) {
+                    Icon(
+                        Icons.Default.CloudDone,
+                        contentDescription = "Cloud Synced",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.CloudSync,
+                        contentDescription = "Local Only",
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        Icons.Default.DeleteOutline,
+                        contentDescription = "Delete measurement",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }

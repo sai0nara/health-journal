@@ -8,6 +8,7 @@ Exit 0 => all pass; non-zero => failures printed.
 
 from __future__ import annotations
 
+import datetime
 import os
 import subprocess
 import sys
@@ -260,6 +261,129 @@ def test_last_updated_parser():
     check("Last updated parser missing", _last_updated("xx\n\n") is None)
 
 
+# ---- product docs (Docs/prd | psd | tests) ----------------------------------
+
+_TODAY = datetime.date.today().isoformat()
+
+
+def _doc(text: str) -> str:
+    return (
+        f"# Doc\n\nLast updated: {_TODAY}\n\n"
+        "## Body\n\n"
+        + text
+        + "\n\n## Sources\n- `README.md` — the readme\n"
+    )
+
+
+def _docs_pages(claimed=True):
+    pages = {
+        "README.md": "# fixture\n",
+        "Docs/index.md": (
+            "# Docs\n\n"
+            f"Last updated: {_TODAY}\n\n"
+            "## Features\n"
+            "- `Docs/prd/restore.md` — the PRD\n"
+            "- `Docs/psd/restore.md` — the PSD\n"
+            f"- `Docs/tests/restore.md` — the tests\n"
+        ),
+    }
+    if claimed:
+        pages["Docs/prd/restore.md"] = _doc("PRD body with project context `Docs/psd/restore.md`.")
+        pages["Docs/psd/restore.md"] = _doc("PSD body.")
+        pages["Docs/tests/restore.md"] = _doc("Tests body.")
+    return pages
+
+
+def test_docs_golden():
+    root = _make_repo(_docs_pages(), commit=True)
+    kinds = _kinds(run_lint(root))
+    check("docs golden: no STAMP/MISSING/STALE", not (set(kinds) & {"STAMP", "MISSING", "STALE"}))
+
+
+def test_docs_stamp_fires_without_last_updated():
+    pages = _docs_pages()
+    pages["Docs/tests/restore.md"] = (
+        "# Tests\n\n## Body\n\n## Sources\n- `README.md` — the readme\n"
+    )
+    root = _make_repo(pages, commit=True)
+    stamps = [f for f in run_lint(root) if f[0] == "STAMP"]
+    check("STAMP fires for a doc without Last updated",
+          any(f[1].endswith("tests/restore.md") for f in stamps))
+
+
+def test_docs_missing_fires_for_unshipped_doc():
+    pages = _docs_pages(claimed=False)
+    # claimed via index but the tests doc is never written
+    pages["Docs/index.md"] = (
+        "# Docs\n\n"
+        f"Last updated: {_TODAY}\n\n"
+        "## Features\n"
+        "- `Docs/prd/restore.md` — the PRD\n"
+        "- `Docs/psd/restore.md` — the PSD\n"
+        "- `Docs/tests/restore.md` — the tests\n"
+    )
+    pages["Docs/prd/restore.md"] = _doc("PRD body.")
+    pages["Docs/psd/restore.md"] = _doc("PSD body.")
+    root = _make_repo(pages, commit=True)
+    missing = [f for f in run_lint(root) if f[0] == "MISSING"]
+    check("MISSING fires for a claimed-but-absent doc",
+          any("tests/restore.md" in f[2] for f in missing))
+
+
+def test_docs_stale_and_index_advisory():
+    pages = _docs_pages(claimed=False)
+    # catalog claims a different feature; the restore docs go unclaimed
+    pages["Docs/index.md"] = (
+        "# Docs\n\n"
+        f"Last updated: {_TODAY}\n\n"
+        "## Features\n"
+        "- `Docs/prd/export.md` — the PRD\n"
+        "- `Docs/psd/export.md` — the PSD\n"
+        "- `Docs/tests/export.md` — the tests\n"
+    )
+    pages["Docs/prd/restore.md"] = _doc("PRD body.")
+    pages["Docs/psd/restore.md"] = (
+        "# PSD\n\nLast updated: 2026-01-01\n\n## Body\n\n"
+        "## Sources\n- `README.md` — the readme\n- `does/not/exist.kt` — missing\n"
+    )
+    root = _make_repo(pages, commit=True)
+    findings = run_lint(root)
+    check("STALE fires for a doc citing a dead path",
+          any(f[0] == "STALE" for f in findings))
+    check("INDEX advisory fires for a doc absent from the catalog",
+          any(f[0] == "INDEX" and f[1].endswith("restore.md") for f in findings))
+
+
+def test_docs_planned_feature_exempt_from_missing():
+    pages = _docs_pages(claimed=False)
+    # ai-insights is claimed but marked planned: only its PRD is required
+    pages["Docs/index.md"] = (
+        "# Docs\n\n"
+        f"Last updated: {_TODAY}\n\n"
+        "## Features\n"
+        "- `Docs/prd/ai-insights.md` — planned\n"
+    )
+    pages["Docs/prd/ai-insights.md"] = _doc("Planned PRD body.")
+    root = _make_repo(pages, commit=True)
+    missing = [f for f in run_lint(root) if f[0] == "MISSING"]
+    check("MISSING does not fire for a planned feature lacking psd/tests", not missing)
+
+
+def test_docs_planned_feature_still_needs_prd():
+    pages = _docs_pages(claimed=False)
+    pages["Docs/index.md"] = (
+        "# Docs\n\n"
+        f"Last updated: {_TODAY}\n\n"
+        "## Features\n"
+        "- `Docs/prd/ai-insights.md` — planned\n"
+    )
+    # index claims the PRD but no PRD file exists
+    root = _make_repo(pages, commit=True)
+    missing = [f for f in run_lint(root) if f[0] == "MISSING"]
+    check("MISSING fires for a planned feature without its PRD",
+          any("ai-insights" in f[2] and "prd" in f[2] for f in missing))
+
+
 def main():
     test_parser()
     test_golden()
@@ -271,6 +395,12 @@ def main():
     test_duplicate_reported()
     test_stale_and_broken_and_untracked()
     test_last_updated_parser()
+    test_docs_golden()
+    test_docs_stamp_fires_without_last_updated()
+    test_docs_missing_fires_for_unshipped_doc()
+    test_docs_stale_and_index_advisory()
+    test_docs_planned_feature_exempt_from_missing()
+    test_docs_planned_feature_still_needs_prd()
 
     print(f"\n{PASS} passed, {FAIL} failed")
     return 1 if FAIL else 0

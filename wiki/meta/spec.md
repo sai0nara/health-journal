@@ -2,7 +2,7 @@
 
 > The contract that governs the LLM Wiki: what may go in, who publishes, how freshness is maintained, and the accuracy gate.
 
-Last updated: 2026-09-01
+Last updated: 2026-09-02
 
 ## Purpose
 
@@ -22,6 +22,15 @@ capable agent more correct than it would be reading source directly.
 2. **Cite, don't copy.** Durable structure is explained; mutable values are *cited*
    to the file that owns them, never transcribed.
 3. **The lint exits 0 before the turn ends.**
+
+Rule 3 is extended to the product docs: the lint enforces the same
+citation/freshness rules on `Docs/prd`, `Docs/psd`, and `Docs/tests`, and treats
+`Docs/index.md` as the source of truth for which feature documents must exist
+(the `MISSING` check fails a feature that lacks any of its three documents).
+A feature marked `— planned` in the catalog is exempt from the psd/tests
+requirement: it ships its PRD up front, and the PSD and test cases are added
+when the feature is built. Templates under `Docs/_templates/` are exempt from
+checks.
 
 ## Accuracy gate
 
@@ -46,6 +55,7 @@ here so it stays a decision rather than drift:
 | Vault lives under `wiki/`, not a fresh top-level `<vault>/` directory | An existing `wiki/` (with its own `GEMINI.md` schema, `sources/`, `pages/`, `log.md`) already shipped in this repo. Building in place keeps existing references valid, and the pre-existing page content is migrated into the new structure in the same change. |
 | `ci/` and `deploy/` categories are dropped | The repository has no CI pipeline (no `.github/workflows`) and no deployment path. Categories that answer no real question are omitted rather than left empty. |
 | Pre-existing wiki content absorbed | `wiki/pages/google_drive_auth_summary.md`, `wiki/pages/app_data_folder.md`, `wiki/pages/credential_manager.md`, and `wiki/sources/google_drive_auth_research_2026.md` are folded into `wiki/integrations/google-drive.md`. |
+| Product docs sit outside the vault tree | PRD/PSD/tests docs are authored under `Docs/prd`, `Docs/psd`, `Docs/tests`, not as vault pages, because three files per feature share a basename and collide with the vault's wikilink-by-basename rule. They reuse the vault's citation/freshness rules (schema `Product docs` section) and are governed by the same lint. |
 
 ## Freshness
 
@@ -68,5 +78,6 @@ sentence. That is the system's real ceiling and it is intended.
 - `wiki/lint.sh` — the deterministic checker that enforces the structural rules.
 - `wiki/meta/schema.md` — the operational schema that tells an author how to file a
   page in this vault.
+- `Docs/index.md` — the feature catalog that the docs completeness check reads.
 
 Back to [[overview]]
