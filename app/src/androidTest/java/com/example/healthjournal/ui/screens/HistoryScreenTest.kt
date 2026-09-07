@@ -69,6 +69,74 @@ class HistoryScreenTest {
         }
     }
     @Test
+    fun testHistoryScreen_ShowsAppLogoInTopBar() {
+        step("Open History Screen") {
+            viewModel.allEntries.value = emptyList()
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
+                        onAddEntryClick = {},
+                        onEntryClick = {},
+                        onArchiveClick = {},
+                        onExportClick = {}
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify app logo is displayed in the top app bar") {
+            composeTestRule.onNodeWithTag("app_logo").assertExists()
+            composeTestRule.onNodeWithTag("app_logo").assertIsDisplayed()
+        }
+
+        step("Verify the title text is still displayed next to the logo") {
+            composeTestRule.onNodeWithText("Health Journal").assertExists()
+            composeTestRule.onNodeWithText("Health Journal").assertIsDisplayed()
+        }
+    }
+    @Test
+    fun testHistoryScreen_OverflowMenu_revealsSecondaryActions() {
+        var archiveClicked = false
+        step("Open History Screen") {
+            viewModel.allEntries.value = emptyList()
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
+                        onAddEntryClick = {},
+                        onEntryClick = {},
+                        onArchiveClick = { archiveClicked = true },
+                        onExportClick = {}
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Secondary actions are hidden until the overflow menu opens") {
+            composeTestRule.onNodeWithText("View Archive").assertDoesNotExist()
+        }
+
+        step("Open the overflow menu") {
+            composeTestRule.onNodeWithTag("overflow_menu").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Overflow actions appear and invoke their callbacks") {
+            composeTestRule.onNodeWithText("View Archive").assertExists()
+            composeTestRule.onNodeWithText("View Archive").performClick()
+            composeTestRule.waitForIdle()
+            org.junit.Assert.assertTrue(
+                "onArchiveClick was not invoked from the overflow menu",
+                archiveClicked
+            )
+        }
+    }
+    @Test
     fun testHistoryScreen_SwipeToArchiveAndUndo() {
         val entry = JournalEntry(entry_id = "1", description = "Test Swipe")
         

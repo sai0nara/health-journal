@@ -1,7 +1,7 @@
 {
   "track_id": "app_icon_and_branding_20260906",
   "type": "feature",
-  "status": "new",
+  "status": "completed",
   "created_at": "2026-09-06T11:46:48Z",
   "updated_at": "2026-09-06T11:46:48Z",
   "description": "Replace application launcher icon (standard + round) with a new source image and add the logo as in-app branding in the History screen top app bar."

@@ -10,6 +10,7 @@
 
     <string name="personal_card_title">Personal Card</string>
     <string name="cd_open_personal_card">Open Personal Card</string>
+    <string name="cd_app_logo">Health Journal logo</string>
     <string name="action_back">Navigate back</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_save">Save</string>

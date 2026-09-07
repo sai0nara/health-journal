@@ -3,6 +3,7 @@ package com.example.healthjournal.ui.screens
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -26,10 +27,12 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -95,6 +98,7 @@ fun HistoryScreen(
     val pullToRefreshState = rememberPullToRefreshState()
 
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showOverflow by remember { mutableStateOf(false) }
     val measurementViewModel: com.example.healthjournal.viewmodel.BodyMeasurementViewModel =
         viewModel(factory = measurementViewModelFactory)
     var showMeasurementSheet by remember { mutableStateOf(false) }
@@ -107,7 +111,23 @@ fun HistoryScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Health Journal") },
+                navigationIcon = {
+                    Image(
+                        painter = painterResource(R.drawable.app_logo),
+                        contentDescription = stringResource(R.string.cd_app_logo),
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .size(32.dp)
+                            .testTag("app_logo")
+                    )
+                },
+                title = {
+                    Text(
+                        "Health Journal",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
                 actions = {
                     IconButton(onClick = onPersonalCardClick) {
                         Icon(Icons.Default.Person, contentDescription = stringResource(R.string.cd_open_personal_card))
@@ -118,25 +138,38 @@ fun HistoryScreen(
                     IconButton(onClick = onExportClick) {
                         Icon(Icons.Default.FileDownload, contentDescription = "Export Data")
                     }
-                    IconButton(onClick = onArchiveClick) {
-                        Icon(Icons.Default.Archive, contentDescription = "View Archive")
+                    IconButton(
+                        onClick = { showOverflow = true },
+                        modifier = Modifier.testTag("overflow_menu")
+                    ) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
                     }
-                    IconButton(onClick = { showAboutDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "About App"
-                        )
-                    }
-                    IconButton(onClick = { viewModel.setSortOrder(!isAscending) }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Sort, 
-                            contentDescription = "Sort order"
-                        )
-                    }
-                    if (isUserSignedIn) {
-                        IconButton(onClick = { viewModel.syncNow() }) {
-                            Icon(Icons.Default.Sync, contentDescription = "Sync Now")
+                    DropdownMenu(
+                        expanded = showOverflow,
+                        onDismissRequest = { showOverflow = false }
+                    ) {
+                        if (isUserSignedIn) {
+                            DropdownMenuItem(
+                                text = { Text("Sync Now") },
+                                onClick = { showOverflow = false; viewModel.syncNow() },
+                                leadingIcon = { Icon(Icons.Default.Sync, contentDescription = null) }
+                            )
                         }
+                        DropdownMenuItem(
+                            text = { Text("View Archive") },
+                            onClick = { showOverflow = false; onArchiveClick() },
+                            leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Sort order") },
+                            onClick = { showOverflow = false; viewModel.setSortOrder(!isAscending) },
+                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("About App") },
+                            onClick = { showOverflow = false; showAboutDialog = true },
+                            leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }
+                        )
                     }
                 }
             )
