@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-09-01
+Last updated: 2026-09-06
 
 ## What lives here
 
@@ -25,6 +25,9 @@ touch repositories or DAOs directly.
 
 Long journal entries are truncated in the list with a "Show More" interaction point,
 exercised by the truncation UI test on the instrumented stack.
+
+The History top app bar carries the bundled app logo (`app/src/main/res/drawable-nodpi/app_logo.png`)
+next to the title; the same artwork backs the launcher icon via the `mipmap-*` resources.
 
 ## Cross-references
 
