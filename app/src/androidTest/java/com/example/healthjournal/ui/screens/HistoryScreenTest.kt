@@ -137,6 +137,38 @@ class HistoryScreenTest {
         }
     }
     @Test
+    fun testHistoryScreen_MeasurementsAction_usesChartIconAndNavigates() {
+        var measurementsClicked = false
+        step("Open History Screen") {
+            viewModel.allEntries.value = emptyList()
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
+                        onAddEntryClick = {},
+                        onEntryClick = {},
+                        onArchiveClick = {},
+                        onExportClick = {},
+                        onMeasurementsClick = { measurementsClicked = true }
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify the new chart icon drives measurements navigation") {
+            composeTestRule.onNodeWithTag("measurements_chart_icon").assertExists()
+            composeTestRule.onNodeWithTag("measurements_chart_icon").assertIsDisplayed()
+            composeTestRule.onNodeWithTag("measurements_chart_icon").performClick()
+            composeTestRule.waitForIdle()
+            org.junit.Assert.assertTrue(
+                "onMeasurementsClick was not invoked from the chart action",
+                measurementsClicked
+            )
+        }
+    }
+    @Test
     fun testHistoryScreen_SwipeToArchiveAndUndo() {
         val entry = JournalEntry(entry_id = "1", description = "Test Swipe")
         

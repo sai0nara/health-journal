@@ -130,8 +130,16 @@ fun HistoryScreen(
                     IconButton(onClick = onPersonalCardClick) {
                         Icon(Icons.Default.Person, contentDescription = stringResource(R.string.cd_open_personal_card))
                     }
-                    IconButton(onClick = onMeasurementsClick) {
-                        Icon(Icons.Default.MonitorWeight, contentDescription = "View Measurements")
+                    IconButton(
+                        onClick = onMeasurementsClick,
+                        modifier = Modifier.testTag("measurements_chart_icon")
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.measurements_chart),
+                            contentDescription = "View Measurements",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                     IconButton(onClick = onExportClick) {
                         Icon(Icons.Default.FileDownload, contentDescription = "Export Data")

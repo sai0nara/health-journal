@@ -38,7 +38,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Replace Body Measurement Action Icon**
+- [x] **Track: Replace Body Measurement Action Icon**
   *Link: [./tracks/replace_measurement_icon_20260906/](./tracks/replace_measurement_icon_20260906/)*
 
 

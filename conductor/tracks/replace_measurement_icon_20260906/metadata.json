@@ -1,7 +1,7 @@
 {
   "track_id": "replace_measurement_icon_20260906",
   "type": "feature",
-  "status": "new",
+  "status": "completed",
   "created_at": "2026-09-06T16:43:00Z",
   "updated_at": "2026-09-06T16:43:00Z",
   "description": "Replace the History top-bar 'View Measurements' action icon with the new chart artwork (theme-aware tinted drawable)."
