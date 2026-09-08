@@ -39,7 +39,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Workout Tracking (v1)**
+- [~] **Track: Workout Tracking (v1)**
   *Link: [./tracks/workout_20260907/](./tracks/workout_20260907/)*
 
 

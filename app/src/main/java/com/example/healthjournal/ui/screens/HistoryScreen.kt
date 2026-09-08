@@ -60,6 +60,7 @@ fun HistoryScreen(
     onArchiveClick: () -> Unit,
     onExportClick: () -> Unit,
     onMeasurementsClick: () -> Unit = {},
+    onWorkoutClick: () -> Unit = {},
     onPersonalCardClick: () -> Unit = {}
 ) {
     val entries by viewModel.allEntries.collectAsState()
@@ -165,6 +166,11 @@ fun HistoryScreen(
                             text = { Text("View Archive") },
                             onClick = { showOverflow = false; onArchiveClick() },
                             leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Workouts") },
+                            onClick = { showOverflow = false; onWorkoutClick() },
+                            leadingIcon = { Icon(Icons.Default.FitnessCenter, contentDescription = null) }
                         )
                         DropdownMenuItem(
                             text = { Text("Sort order") },

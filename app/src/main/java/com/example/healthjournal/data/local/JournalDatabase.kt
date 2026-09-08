@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class], version = 12, exportSchema = true)
+@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class], version = 13, exportSchema = true)
 @androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
@@ -18,12 +18,14 @@ abstract class JournalDatabase : RoomDatabase() {
 
     abstract fun personalCardDao(): PersonalCardDao
 
+    abstract fun workoutSessionDao(): WorkoutSessionDao
+
     companion object {
         @Volatile
         private var INSTANCE: JournalDatabase? = null
 
         /** Current Room database schema version; single-sourced for restore validation. */
-        const val CURRENT_SCHEMA_VERSION: Int = 12
+        const val CURRENT_SCHEMA_VERSION: Int = 13
 
         // v1 -> v2: add isSynced
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -152,6 +154,22 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        // v12 -> v13: add workout_sessions table for workout tracking
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `workout_sessions` (" +
+                        "`session_id` TEXT NOT NULL, `type` TEXT NOT NULL, " +
+                        "`status` TEXT NOT NULL, `startTimestamp` INTEGER NOT NULL, " +
+                        "`endTimestamp` INTEGER, `elapsedSeconds` INTEGER NOT NULL, " +
+                        "`targetDistanceM` REAL, `targetDurationMin` REAL, " +
+                        "`calories` REAL, `notes` TEXT NOT NULL, " +
+                        "`lastModified` INTEGER NOT NULL, `isSynced` INTEGER, " +
+                        "`syncStatus` TEXT, PRIMARY KEY(`session_id`))"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -161,7 +179,7 @@ abstract class JournalDatabase : RoomDatabase() {
                 ).addMigrations(
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
                     MIGRATION_4_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10,
-                    MIGRATION_10_11, MIGRATION_11_12
+                    MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13
                 ).build()
                 INSTANCE = instance
                 instance

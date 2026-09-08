@@ -17,8 +17,8 @@ touch repositories or DAOs directly.
 ## Key areas
 
 - **Screens** — `AddEntryScreen`, `HistoryScreen`, `ArchiveScreen`,
-  `MeasurementsScreen`, `PersonalCardScreen`, plus the export and restore screens in
-  the [[export-restore]] feature.
+  `MeasurementsScreen`, `PersonalCardScreen`, `WorkoutScreen`, plus the
+  export and restore screens in the [[export-restore]] feature.
 - **Components** — reusable pieces such as `JournalEntryItem`, `RichTextToolbar`,
   `MeasurementEntrySheet`, `ParamTrendChart`, and `SharedSearchBar`.
 - **Theme** — a custom material theme and the medical color system under `ui/theme`.

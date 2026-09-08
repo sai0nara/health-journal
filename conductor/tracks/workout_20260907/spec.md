@@ -8,7 +8,7 @@ A Workout hub where users browse activity categories (Run, Fitness/Strength, Yog
 - **Configuration:** Per-type setup — target distance/duration, timer, rest intervals — with validation.
 - **Timed active session:** Start/pause/resume/stop with elapsed timer; haptic confirmation on start/stop/lap and interval completion. No GPS route drawing in v1.
 - **Summary → Journal:** On finish, a summary screen saves the workout (type, duration, calories, notes) as a journal entry, which then syncs via the existing Drive sync.
-- **Manual log:** 'Log Past Workout' form (type, duration, calories, date/time, notes) appends to the Journal feed with validation.
+- **Manual log:** Per workout type, a 'Log Past <Type>' dialog (opened from the configuration screen, header names the chosen activity) with duration, calories, date, and notes; appends to the Journal feed with validation. The date field copies the Personal Card Date of Birth entry and validation rules (digit masking as yyyy-MM-dd with calendar picker; blank allowed; invalid format, future date, and 130-year rules with identical messages).
 - **Crash recovery:** Session state persisted to Room every few seconds; on launch, an unfinished session prompts 'Resume Workout' or 'Discard'.
 - **Health Connect:** New EXERCISE read/write permissions through the existing permission flow; completed workouts are written as Health Connect exercise records.
 - **Architecture:** MVVM with MVI-style sealed `WorkoutUiState` (`Idle`, `Configuring`, `Active`, `Paused`, `Summary`, `Error`) over `StateFlow`; repository over Room DAO + Health Connect data source; ViewModel built manually via a per-ViewModel `Factory` (no DI framework, per repo convention).

@@ -53,6 +53,8 @@ class MainActivity : ComponentActivity() {
         val exportViewModel = ExportViewModel(application, journalRepository, fullBackupUseCase)
         val restoreViewModel = com.example.healthjournal.export.RestoreViewModel(application)
         val personalCardViewModelFactory = com.example.healthjournal.viewmodel.PersonalCardViewModelFactory(personalCardRepository)
+        val workoutRepository = com.example.healthjournal.data.WorkoutRepository(database.workoutSessionDao())
+        val workoutHealthSource = com.example.healthjournal.health.HealthConnectWorkoutDataSource(this)
 
         // Trigger sync on start
         SyncManager.enqueuePeriodicSync(this)
@@ -72,7 +74,30 @@ class MainActivity : ComponentActivity() {
                             onArchiveClick = { navController.navigate("archive") },
                             onExportClick = { navController.navigate("export") },
                             onMeasurementsClick = { navController.navigate("measurements") },
-                            onPersonalCardClick = { navController.navigate("personal_card") }
+                            onPersonalCardClick = { navController.navigate("personal_card") },
+                            onWorkoutClick = { navController.navigate("workout") }
+                        )
+                    }
+                    composable("workout") {
+                        val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+                        val workoutViewModelFactory = androidx.compose.runtime.remember {
+                            com.example.healthjournal.viewmodel.WorkoutViewModelFactory(
+                                repository = workoutRepository,
+                                healthSource = workoutHealthSource,
+                                journalRepository = journalRepository,
+                                onHaptic = { kind ->
+                                    // Strong confirm tick for session control events.
+                                    haptic.performHapticFeedback(
+                                        androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress
+                                    )
+                                }
+                            )
+                        }
+                        val workoutViewModel: com.example.healthjournal.viewmodel.WorkoutViewModel =
+                            viewModel(factory = workoutViewModelFactory)
+                        com.example.healthjournal.ui.screens.WorkoutScreen(
+                            viewModel = workoutViewModel,
+                            onBack = { navController.popBackStack() }
                         )
                     }
                     composable("measurements") {
