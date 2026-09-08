@@ -38,6 +38,7 @@ next to the title; the same artwork backs the launcher icon via the `mipmap-*` r
 ## Sources
 
 - `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` — the main history feed screen.
+- `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` — the workout hub, session screen, and manual-log dialog.
 - `app/src/main/java/com/example/healthjournal/ui/theme` — theme and color system sources.
 
 Back to [[overview]]
