@@ -2,9 +2,10 @@
 
 > A reactive, DB-driven feed over the non-archived entries couples with a
 > swipe/undo archive interaction; the Archive screen reuses the same search and
-> tag filters over the archived rows and adds multi-select delete/restore.
+> tag filters over the archived rows and adds multi-select delete/restore. A
+> Workouts overflow-menu action opens the workout hub.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-08
 
 ## Overview
 
@@ -12,7 +13,8 @@ Both History and Archive are thin Compose layers over `StateFlow<List<JournalEnt
 derived from the current search query and selected tags. The DAO filters by the
 `isArchived` flag so the two surfaces never overlap. Archiving merely flips the
 flag (plus a `lastModified` bump); permanent deletion is the only destructive
-path and leaves a tombstone.
+path and leaves a tombstone. An overflow-menu item (`FitnessCenter`) opens the
+workout hub, giving the top-level entry point to the workout feature.
 
 ## Architecture
 

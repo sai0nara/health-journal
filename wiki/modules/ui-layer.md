@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-09-06
+Last updated: 2026-09-08
 
 ## What lives here
 

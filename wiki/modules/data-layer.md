@@ -2,7 +2,7 @@
 
 > The Room persistence layer: entities, DAOs, converters, and the repositories that own local reads and writes.
 
-Last updated: 2026-09-01
+Last updated: 2026-09-08
 
 ## What lives here
 
@@ -18,14 +18,14 @@ from the UI layer.
 
 - **Database and DAOs.** Room is configured via the database class in
   `data/local`. Each DAO covers a domain (journal entries, body measurements, goals,
-  personal card, body-measurement DAO).
+  personal card, workout sessions).
 - **Entities and relations.** Entities such as `JournalEntry`, `BodyMeasurementEntry`,
-  `GoalEntity`, and `PersonalCard` model rows; cross-reference tables like
-  `EntryTagCrossRef` model many-to-many links (journal entry to tags).
+  `GoalEntity`, `PersonalCard`, and `WorkoutSession` model rows; cross-reference
+  tables like `EntryTagCrossRef` model many-to-many links (journal entry to tags).
 - **Type converters.** `JournalTypeConverters` (and the `UnitConverter`) bridge
   non-primitive types into Room columns.
 - **Repositories.** `JournalRepository`, `BodyMeasurementRepository`, `GoalsRepository`,
-  and `PersonalCardRepository` expose feature-scoped operations.
+  `PersonalCardRepository`, and `WorkoutRepository` expose feature-scoped operations.
 
 ## Sync coexistence
 
