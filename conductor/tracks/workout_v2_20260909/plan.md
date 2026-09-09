@@ -7,8 +7,8 @@ main as one PR or a stacked PR after v1 merges.
 ## Phase 1: Domain + Activity Catalog
 - [x] Task: Write failing unit tests for the expanded WorkoutType catalog (10 types, labels, per-type target kind, Health Connect mapping, MET calorie values) (37ad11e)
 - [x] Task: Implement the 10-type catalog with per-type target semantics and MET calorie estimation; green tests (37ad11e)
-- [ ] Task: Write failing unit tests for HIIT interval-phase domain logic (manual advance, round counting, haptic cue trigger)
-- [ ] Task: Implement HIIT interval-phase domain logic; green tests
+- [x] Task: Write failing unit tests for HIIT interval-phase domain logic (manual advance, round counting, haptic cue trigger) (87afe8a)
+- [x] Task: Implement HIIT interval-phase domain logic; green tests (87afe8a)
 - [ ] Task: Conductor - User Manual Verification 'Domain + Activity Catalog' (Protocol in workflow.md)
 
 ## Phase 2: Set/Rep Matrix (Data + Domain)
