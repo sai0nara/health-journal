@@ -4,6 +4,11 @@
 adds migration 13→14. Work happens on this branch on top of v1, then merges to
 main as one PR or a stacked PR after v1 merges.
 
+> **Deviation (Phase 1 verification):** the 13→14 slot was consumed by the
+> checkout fix for the orphaned `isSynced`/`syncStatus` columns (early v13 build
+> shipped them; the v1 review-fix removed them from the entity without a version
+> bump). Phase 2 set/rep persistence therefore uses **MIGRATION_14_15**.
+
 ## Phase 1: Domain + Activity Catalog
 - [x] Task: Write failing unit tests for the expanded WorkoutType catalog (10 types, labels, per-type target kind, Health Connect mapping, MET calorie values) (37ad11e)
 - [x] Task: Implement the 10-type catalog with per-type target semantics and MET calorie estimation; green tests (37ad11e)
@@ -14,8 +19,8 @@ main as one PR or a stacked PR after v1 merges.
 ## Phase 2: Set/Rep Matrix (Data + Domain)
 - [ ] Task: Write failing unit tests for the set/reps model (exercises, sets validated, tonnage calculation)
 - [ ] Task: Implement exercises/sets model + tonnage use-case; green tests
-- [ ] Task: Write failing unit tests for Room persistence of sets (schema 13→14 migration, TypeConverter or table)
-- [ ] Task: Implement schema 13→14 migration + persistence; update exported schema JSON; green tests
+- [ ] Task: Write failing unit tests for Room persistence of sets (schema 14→15 migration, TypeConverter or table)
+- [ ] Task: Implement schema 14→15 migration + persistence; update exported schema JSON; green tests
 - [ ] Task: Conductor - User Manual Verification 'Set/Rep Matrix' (Protocol in workflow.md)
 
 ## Phase 3: Session Engine (MVI) + ViewModel
