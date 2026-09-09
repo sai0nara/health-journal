@@ -1,0 +1,40 @@
+# Implementation Plan: Workout Tracking v2
+
+**Prerequisite:** v1 workspace (this branch), schema 12–13 already present; v2
+adds migration 13→14. Work happens on this branch on top of v1, then merges to
+main as one PR or a stacked PR after v1 merges.
+
+## Phase 1: Domain + Activity Catalog
+- [ ] Task: Write failing unit tests for the expanded WorkoutType catalog (10 types, labels, per-type target kind, Health Connect mapping, MET calorie values)
+- [ ] Task: Implement the 10-type catalog with per-type target semantics and MET calorie estimation; green tests
+- [ ] Task: Write failing unit tests for HIIT interval-phase domain logic (manual advance, round counting, haptic cue trigger)
+- [ ] Task: Implement HIIT interval-phase domain logic; green tests
+- [ ] Task: Conductor - User Manual Verification 'Domain + Activity Catalog' (Protocol in workflow.md)
+
+## Phase 2: Set/Rep Matrix (Data + Domain)
+- [ ] Task: Write failing unit tests for the set/reps model (exercises, sets validated, tonnage calculation)
+- [ ] Task: Implement exercises/sets model + tonnage use-case; green tests
+- [ ] Task: Write failing unit tests for Room persistence of sets (schema 13→14 migration, TypeConverter or table)
+- [ ] Task: Implement schema 13→14 migration + persistence; update exported schema JSON; green tests
+- [ ] Task: Conductor - User Manual Verification 'Set/Rep Matrix' (Protocol in workflow.md)
+
+## Phase 3: Session Engine (MVI) + ViewModel
+- [ ] Task: Write failing ViewModel tests for Active-state extensions: countdown, HIIT phase/round advance, set-matrix adds/rest timer, summary composition, crash-recovery of sets + intervals
+- [ ] Task: Implement ViewModel countdown + HIIT interval control + set-matrix operations + recovery restore; green tests
+- [ ] Task: Rerun unit suite to green; verify >80% coverage on new code
+- [ ] Task: Conductor - User Manual Verification 'Session Engine (MVI) + ViewModel' (Protocol in workflow.md)
+
+## Phase 4: UI + Navigation + Polish
+- [ ] Task: Write failing Compose UI tests for: catalog discovery (10 types), configuration per type, countdown, HIIT phase/round UI, set-matrix editing, summary (tonnage, rounds, laps), manual-log dialog extras
+- [ ] Task: Implement Workout UI updates (Material 3, semantic tokens) + History entry polish; wire per-type config/manual-log
+- [ ] Task: Run instrumented UI tests until green on device
+- [ ] Task: Conductor - User Manual Verification 'UI + Navigation + Polish' (Protocol in workflow.md)
+
+## Phase 5: Integration & Health Connect
+- [ ] Task: End-to-end tests: 10-type session → summary → journal entry → Health Connect EXERCISE write (all 10 mappings); verify crash-recovery mid-set and mid-interval
+- [ ] Task: Verify Health Connect write for new types with granted/denied permission paths; airplane-mode logging pass
+- [ ] Task: Update affected wiki pages (agent owns the vault) and run wiki lint (exit 0); commit wiki + code together
+- [ ] Task: Conductor - User Manual Verification 'Integration & Health Connect' (Protocol in workflow.md)
+
+## Phase 6: Review Fixes
+- [ ] Task: Code review of v2 changes; apply suggestions; record SHA (protocol in workflow.md)
