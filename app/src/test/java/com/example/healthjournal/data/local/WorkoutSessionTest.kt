@@ -7,7 +7,7 @@ import org.junit.Test
 
 /**
  * Unit tests for the WorkoutSession entity defaults: a fresh session is an
- * unfinished, unsynced active record with generated identity and timestamps.
+ * unfinished active record with generated identity and timestamps.
  */
 class WorkoutSessionTest {
 
@@ -19,8 +19,6 @@ class WorkoutSessionTest {
         assertEquals(WorkoutStatus.ACTIVE.name, session.status)
         assertNull(session.endTimestamp)
         assertEquals(0L, session.elapsedSeconds)
-        assertEquals(false, session.isSynced)
-        assertEquals("PENDING_SYNC", session.syncStatus)
     }
 
     @Test

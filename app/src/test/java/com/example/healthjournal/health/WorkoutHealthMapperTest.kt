@@ -57,17 +57,26 @@ class WorkoutHealthMapperTest {
     }
 
     @Test
+    fun unknownType_mapsToUnknownInsteadOfThrowing() {
+        val record = WorkoutSession(type = "SNOWBOARDING").toHealthRecord(now = 2_000L)
+
+        assertEquals(HealthExerciseType.UNKNOWN, record.exerciseType)
+    }
+
+    @Test
     fun optionalMetrics_passThrough() {
         val session = WorkoutSession(
             type = WorkoutType.RUN.name,
             calories = 343.0,
-            targetDistanceM = 5_000.0
+            targetDistanceM = 5_000.0,
+            notes = "Felt strong"
         )
 
         val record = session.toHealthRecord(now = 2_000L)
 
         assertEquals(343.0, record.caloriesKcal!!, 0.0)
         assertEquals(5_000.0, record.distanceMeters!!, 0.0)
+        assertEquals("Felt strong", record.notes)
     }
 
     @Test
@@ -76,5 +85,6 @@ class WorkoutHealthMapperTest {
 
         assertNull(record.caloriesKcal)
         assertNull(record.distanceMeters)
+        assertNull(record.notes)
     }
 }

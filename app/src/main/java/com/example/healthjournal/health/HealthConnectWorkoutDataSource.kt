@@ -49,7 +49,7 @@ class HealthConnectWorkoutDataSource(context: Context) : WorkoutHealthDataSource
                         endZoneOffset = ZoneOffset.systemDefault().rules.getOffset(end),
                         exerciseType = record.exerciseType.toSessionType(),
                         title = "Workout",
-                        notes = null,
+                        notes = record.notes,
                         metadata = Metadata()
                     )
                 )
@@ -93,11 +93,13 @@ class HealthConnectWorkoutDataSource(context: Context) : WorkoutHealthDataSource
         HealthExerciseType.RUNNING -> ExerciseSessionRecord.EXERCISE_TYPE_RUNNING
         HealthExerciseType.STRENGTH_TRAINING -> ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING
         HealthExerciseType.YOGA -> ExerciseSessionRecord.EXERCISE_TYPE_YOGA
+        HealthExerciseType.UNKNOWN -> ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT
     }
 
     private fun Int.toHealthType(): HealthExerciseType = when (this) {
         ExerciseSessionRecord.EXERCISE_TYPE_RUNNING -> HealthExerciseType.RUNNING
         ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING -> HealthExerciseType.STRENGTH_TRAINING
-        else -> HealthExerciseType.YOGA
+        ExerciseSessionRecord.EXERCISE_TYPE_YOGA -> HealthExerciseType.YOGA
+        else -> HealthExerciseType.UNKNOWN
     }
 }

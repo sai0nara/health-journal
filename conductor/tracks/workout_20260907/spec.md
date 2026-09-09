@@ -15,6 +15,7 @@ A Workout hub where users browse activity categories (Run, Fitness/Strength, Yog
 
 ## Non-Functional Requirements
 - **Offline-first:** Timers, session persistence, and manual logging work fully offline; Drive sync happens in the background when connected.
+- **Sync scope:** `workout_sessions` are local-only in v1 (no Drive sync/backup/restore; no `isSynced`/`syncStatus` plumbing). Only the journal entry produced from a workout summary syncs to Drive.
 - **Timer correctness:** High-frequency timer updates must not cause race conditions, backpressure issues, or list recomposition storms (immutable state, keyed lazy lists, batched Room writes every few seconds — not every tick).
 - **Permissions:** Runtime request for Health Connect EXERCISE scopes; no location permission in v1 (no GPS).
 - **Design system:** Material 3 via `MaterialTheme.colorScheme` semantic tokens; no absolute colors.

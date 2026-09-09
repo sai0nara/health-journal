@@ -4,7 +4,8 @@ package com.example.healthjournal.health
 enum class HealthExerciseType {
     RUNNING,
     STRENGTH_TRAINING,
-    YOGA
+    YOGA,
+    UNKNOWN
 }
 
 /**
@@ -16,7 +17,8 @@ data class WorkoutHealthRecord(
     val startTimeMillis: Long,
     val endTimeMillis: Long,
     val caloriesKcal: Double?,
-    val distanceMeters: Double?
+    val distanceMeters: Double?,
+    val notes: String? = null
 )
 
 /**

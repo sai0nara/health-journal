@@ -24,7 +24,5 @@ data class WorkoutSession(
     val targetDurationMin: Double? = null,
     val calories: Double? = null,
     val notes: String = "",
-    val lastModified: Long = startTimestamp,
-    val isSynced: Boolean? = false,
-    val syncStatus: String? = "PENDING_SYNC"
+    val lastModified: Long = startTimestamp
 )

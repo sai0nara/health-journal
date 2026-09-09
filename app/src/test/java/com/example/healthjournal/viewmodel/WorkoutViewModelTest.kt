@@ -125,6 +125,22 @@ class WorkoutViewModelTest {
     }
 
     @Test
+    fun startSession_withUnfinishedSession_goesToRecoveryInstead() = runTest {
+        repository.saveSession(WorkoutSession(status = WorkoutStatus.PAUSED.name))
+        val vm = newViewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.selectType(WorkoutType.RUN)
+        vm.updateTarget("5")
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.startSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(vm.uiState.value is WorkoutUiState.RecoveryRequired)
+        assertEquals(0, haptics.size)
+    }
+
+    @Test
     fun startSession_withInvalidTarget_reportsInlineError() = runTest {
         val vm = newViewModel()
         dispatcher.scheduler.advanceUntilIdle()
@@ -306,9 +322,15 @@ class WorkoutViewModelTest {
 
     @Test
     fun recentSessions_emitsRepositoryHistoryNewestFirst() = runTest {
-        repository.saveSession(WorkoutSession(startTimestamp = 1_000L))
-        repository.saveSession(WorkoutSession(startTimestamp = 3_000L))
-        repository.saveSession(WorkoutSession(startTimestamp = 2_000L))
+        repository.saveSession(
+            WorkoutSession(status = WorkoutStatus.COMPLETED.name, startTimestamp = 1_000L)
+        )
+        repository.saveSession(
+            WorkoutSession(status = WorkoutStatus.COMPLETED.name, startTimestamp = 3_000L)
+        )
+        repository.saveSession(
+            WorkoutSession(status = WorkoutStatus.COMPLETED.name, startTimestamp = 2_000L)
+        )
 
         val vm = newViewModel()
         dispatcher.scheduler.advanceUntilIdle()

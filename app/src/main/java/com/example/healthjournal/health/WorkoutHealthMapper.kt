@@ -8,16 +8,18 @@ import com.example.healthjournal.domain.WorkoutType
  * health record; JVM-testable because it never touches Health Connect types.
  */
 fun WorkoutSession.toHealthRecord(now: Long = System.currentTimeMillis()): WorkoutHealthRecord {
-    val exerciseType = when (WorkoutType.valueOf(type)) {
+    val exerciseType = when (WorkoutType.entries.firstOrNull { it.name == type }) {
         WorkoutType.RUN -> HealthExerciseType.RUNNING
         WorkoutType.FITNESS -> HealthExerciseType.STRENGTH_TRAINING
         WorkoutType.YOGA -> HealthExerciseType.YOGA
+        null -> HealthExerciseType.UNKNOWN
     }
     return WorkoutHealthRecord(
         exerciseType = exerciseType,
         startTimeMillis = startTimestamp,
         endTimeMillis = endTimestamp ?: now,
         caloriesKcal = calories,
-        distanceMeters = targetDistanceM
+        distanceMeters = targetDistanceM,
+        notes = notes.takeIf { it.isNotBlank() }
     )
 }

@@ -4,6 +4,7 @@ import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.data.local.WorkoutSessionDao
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -22,6 +23,7 @@ class WorkoutRepositoryTest {
     @Before
     fun setup() {
         coEvery { dao.getAllSessions() } returns flowOf(emptyList())
+        every { dao.getCompletedSessions() } returns flowOf(emptyList())
         repository = WorkoutRepository(dao)
     }
 
@@ -49,6 +51,16 @@ class WorkoutRepositoryTest {
         val result = WorkoutRepository(dao).sessions.first()
 
         assertEquals(sessions, result)
+    }
+
+    @Test
+    fun completedSessions_exposesCompletedOnlyDaoFlow() = runBlocking {
+        val completed = listOf(WorkoutSession(), WorkoutSession())
+        every { dao.getCompletedSessions() } returns flowOf(completed)
+
+        val result = WorkoutRepository(dao).completedSessions.first()
+
+        assertEquals(completed, result)
     }
 
     @Test

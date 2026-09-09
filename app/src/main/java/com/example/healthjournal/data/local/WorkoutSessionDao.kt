@@ -13,6 +13,10 @@ interface WorkoutSessionDao {
     @Query("SELECT * FROM workout_sessions ORDER BY startTimestamp DESC")
     fun getAllSessions(): Flow<List<WorkoutSession>>
 
+    /** Finished workout history for discovery, newest first. */
+    @Query("SELECT * FROM workout_sessions WHERE status = 'COMPLETED' ORDER BY startTimestamp DESC")
+    fun getCompletedSessions(): Flow<List<WorkoutSession>>
+
     @Query("SELECT * FROM workout_sessions WHERE session_id = :sessionId")
     suspend fun getSessionById(sessionId: String): WorkoutSession?
 

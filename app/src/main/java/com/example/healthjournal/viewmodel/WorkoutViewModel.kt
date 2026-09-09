@@ -46,9 +46,9 @@ class WorkoutViewModel(
     private val _uiState = MutableStateFlow<WorkoutUiState>(WorkoutUiState.Idle)
     val uiState: StateFlow<WorkoutUiState> = _uiState
 
-    /** Workout history for discovery, newest first. */
+    /** Workout history for discovery, newest first (completed only). */
     val recentSessions: StateFlow<List<WorkoutSession>> =
-        repository.sessions.stateIn(
+        repository.completedSessions.stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
             initialValue = emptyList()
@@ -80,6 +80,12 @@ class WorkoutViewModel(
     fun startSession() {
         val current = _uiState.value as? WorkoutUiState.Configuring ?: return
         viewModelScope.launch(dispatcher) {
+            val unfinished = repository.getUnfinishedSession()
+            if (unfinished != null) {
+                // Never start a second session while one is unfinished.
+                _uiState.value = WorkoutUiState.RecoveryRequired(unfinished)
+                return@launch
+            }
             val errors = ValidateWorkout.validateTarget(current.type, current.target)
             if (errors.isNotEmpty()) {
                 _uiState.value = current.copy(

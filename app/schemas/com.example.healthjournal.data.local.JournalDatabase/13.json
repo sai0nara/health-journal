@@ -343,7 +343,7 @@
       },
       {
         "tableName": "workout_sessions",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`session_id` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `startTimestamp` INTEGER NOT NULL, `endTimestamp` INTEGER, `elapsedSeconds` INTEGER NOT NULL, `targetDistanceM` REAL, `targetDurationMin` REAL, `calories` REAL, `notes` TEXT NOT NULL, `lastModified` INTEGER NOT NULL, `isSynced` INTEGER, `syncStatus` TEXT, PRIMARY KEY(`session_id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`session_id` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `startTimestamp` INTEGER NOT NULL, `endTimestamp` INTEGER, `elapsedSeconds` INTEGER NOT NULL, `targetDistanceM` REAL, `targetDurationMin` REAL, `calories` REAL, `notes` TEXT NOT NULL, `lastModified` INTEGER NOT NULL, PRIMARY KEY(`session_id`))",
         "fields": [
           {
             "fieldPath": "session_id",
@@ -410,18 +410,6 @@
             "columnName": "lastModified",
             "affinity": "INTEGER",
             "notNull": true
-          },
-          {
-            "fieldPath": "isSynced",
-            "columnName": "isSynced",
-            "affinity": "INTEGER",
-            "notNull": false
-          },
-          {
-            "fieldPath": "syncStatus",
-            "columnName": "syncStatus",
-            "affinity": "TEXT",
-            "notNull": false
           }
         ],
         "primaryKey": {

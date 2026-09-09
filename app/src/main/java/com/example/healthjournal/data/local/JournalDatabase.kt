@@ -164,8 +164,7 @@ abstract class JournalDatabase : RoomDatabase() {
                         "`endTimestamp` INTEGER, `elapsedSeconds` INTEGER NOT NULL, " +
                         "`targetDistanceM` REAL, `targetDurationMin` REAL, " +
                         "`calories` REAL, `notes` TEXT NOT NULL, " +
-                        "`lastModified` INTEGER NOT NULL, `isSynced` INTEGER, " +
-                        "`syncStatus` TEXT, PRIMARY KEY(`session_id`))"
+                        "`lastModified` INTEGER NOT NULL, PRIMARY KEY(`session_id`))"
                 )
             }
         }

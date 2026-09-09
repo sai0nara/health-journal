@@ -2,6 +2,7 @@ package com.example.healthjournal.data.local
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 
 /**
  * In-memory [WorkoutSessionDao] for ViewModel unit tests: behaves like Room
@@ -13,6 +14,9 @@ class FakeWorkoutSessionDao : WorkoutSessionDao {
     private val feed = MutableStateFlow<List<WorkoutSession>>(emptyList())
 
     override fun getAllSessions(): Flow<List<WorkoutSession>> = feed
+
+    override fun getCompletedSessions(): Flow<List<WorkoutSession>> =
+        feed.map { all -> all.filter { it.status == WorkoutStatus.COMPLETED.name } }
 
     override suspend fun getSessionById(sessionId: String): WorkoutSession? =
         store[sessionId]

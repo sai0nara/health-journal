@@ -14,6 +14,9 @@ class WorkoutRepository(private val dao: WorkoutSessionDao) {
     /** Reactive workout-history feed, newest first. */
     val sessions: Flow<List<WorkoutSession>> = dao.getAllSessions()
 
+    /** Finished-only workout history for discovery, newest first. */
+    val completedSessions: Flow<List<WorkoutSession>> = dao.getCompletedSessions()
+
     suspend fun getSessionById(sessionId: String): WorkoutSession? =
         dao.getSessionById(sessionId)
 
