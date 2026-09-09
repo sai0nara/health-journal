@@ -1,11 +1,13 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.WorkoutRepository
@@ -72,6 +74,16 @@ class WorkoutScreenTest {
         composeTestRule.onNodeWithText("Yoga").assertExists()
         // Type-less logging is gone: the log dialog opens per workout type.
         composeTestRule.onNodeWithText("Log Past Workout").assertDoesNotExist()
+    }
+
+    @Test
+    fun idle_catalogScrollsToReachLastActivity() {
+        openScreen()
+
+        // All ten categories must be reachable: the catalog scrolls.
+        composeTestRule.onNodeWithTag("workout_catalog")
+            .performScrollToNode(hasText("Calisthenics"))
+        composeTestRule.onNodeWithText("Calisthenics").assertIsDisplayed()
     }
 
     @Test

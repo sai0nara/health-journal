@@ -206,18 +206,31 @@ private fun IdleContent(
     recentLabels: List<String>,
     onSelectType: (WorkoutType) -> Unit
 ) {
-    Text("Choose a workout", style = MaterialTheme.typography.titleMedium)
-    WorkoutType.entries.forEach { type ->
-        OutlinedButton(
-            onClick = { onSelectType(type) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(type.label)
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("workout_catalog")
+    ) {
+        item {
+            Text("Choose a workout", style = MaterialTheme.typography.titleMedium)
         }
-    }
-    if (recentLabels.isNotEmpty()) {
-        Text("Recent", style = MaterialTheme.typography.titleMedium)
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(WorkoutType.entries) { type ->
+            OutlinedButton(
+                onClick = { onSelectType(type) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(type.label)
+            }
+        }
+        if (recentLabels.isNotEmpty()) {
+            item {
+                Text(
+                    "Recent",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
             items(recentLabels) { label ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Text(
