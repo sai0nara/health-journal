@@ -2,9 +2,10 @@
 
 > A thin `HealthConnectManager` reads the day's blood pressure, heart rate, and
 > sleep; the ViewModel derives the date window and the Add Entry screen drives
-> the platform permission flow before calling it.
+> the platform permission flow before calling it. The workout hub additionally
+> writes completed sessions as exercise records.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-08
 
 ## Overview
 
@@ -13,6 +14,9 @@ three record types. `syncHealthData(timestamp)` computes the day-window (and a
 previous-night window for sleep), calls the manager, and returns a
 `HealthSyncResult` that the Add Entry screen merges into local state before
 saving the entry. Permissions and SDK availability gate the whole flow.
+
+Workouts extend this: `HealthConnectWorkoutDataSource` writes each completed
+workout as an exercise record, sharing the same granted-permission gate.
 
 ## Architecture
 
@@ -44,8 +48,9 @@ saving the entry. Permissions and SDK availability gate the whole flow.
 | Journal ViewModel | `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` | date-window derivation + `HealthSyncResult` |
 | Add Entry screen | `app/src/main/java/com/example/healthjournal/ui/screens/AddEntryScreen.kt` | permission launcher + metric display |
 | Rationale activity | `app/src/main/java/com/example/healthjournal/PermissionsRationaleActivity.kt` | platform rationale/usage surface |
-| Manifest / permissions | `app/src/main/AndroidManifest.xml`, `app/src/main/res/values/health_permissions.xml` | declared read permissions + intent filters |
+| Manifest / permissions | `app/src/main/AndroidManifest.xml`, `app/src/main/res/values/health_permissions.xml` | declared read/write permissions + intent filters |
 | Entry columns | `app/src/main/java/com/example/healthjournal/data/local/JournalEntry.kt` | persisted metric fields |
+| Workout data source | `app/src/main/java/com/example/healthjournal/health/HealthConnectWorkoutDataSource.kt` | writes finished workouts as exercise records |
 
 ## Edge cases & failure handling
 
@@ -59,11 +64,13 @@ saving the entry. Permissions and SDK availability gate the whole flow.
 ## Dependencies
 
 - Health Connect SDK (`connect-client`); the permission controller contract.
-- The three read scopes: blood pressure, heart rate, sleep.
+- The three read scopes: blood pressure, heart rate, sleep; plus exercise
+  read/write for the workout hub.
 
 ## Sources
 
-- `app/src/main/java/com/example/healthjournal/health/HealthConnectManager.kt` — reads.
+- `app/src/main/java/com/example/healthjournal/health/HealthConnectManager.kt` — reads + permission gate.
+- `app/src/main/java/com/example/healthjournal/health/HealthConnectWorkoutDataSource.kt` — workout writes.
 - `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` — window + result.
 - `app/src/main/java/com/example/healthjournal/ui/screens/AddEntryScreen.kt` — permission flow.
 - `app/src/main/java/com/example/healthjournal/PermissionsRationaleActivity.kt` — rationale.

@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-09-06
+Last updated: 2026-09-08
 
 ## What lives here
 
@@ -17,8 +17,8 @@ touch repositories or DAOs directly.
 ## Key areas
 
 - **Screens** — `AddEntryScreen`, `HistoryScreen`, `ArchiveScreen`,
-  `MeasurementsScreen`, `PersonalCardScreen`, plus the export and restore screens in
-  the [[export-restore]] feature.
+  `MeasurementsScreen`, `PersonalCardScreen`, `WorkoutScreen`, plus the
+  export and restore screens in the [[export-restore]] feature.
 - **Components** — reusable pieces such as `JournalEntryItem`, `RichTextToolbar`,
   `MeasurementEntrySheet`, `ParamTrendChart`, and `SharedSearchBar`.
 - **Theme** — a custom material theme and the medical color system under `ui/theme`.
@@ -38,6 +38,7 @@ next to the title; the same artwork backs the launcher icon via the `mipmap-*` r
 ## Sources
 
 - `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` — the main history feed screen.
+- `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` — the workout hub, session screen, and manual-log dialog.
 - `app/src/main/java/com/example/healthjournal/ui/theme` — theme and color system sources.
 
 Back to [[overview]]

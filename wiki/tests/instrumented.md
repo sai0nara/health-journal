@@ -2,7 +2,7 @@
 
 > The on-device test stack under `app/src/androidTest` — Compose UI tests plus Room DAO and migration tests that need the Android framework.
 
-Last updated: 2026-09-01
+Last updated: 2026-09-08
 
 ## What this stack is
 
@@ -41,7 +41,7 @@ suites. The JVM suite is a different task and needs no device.
 
 ## Sources
 
-- `app/src/androidTest/java/com/example/healthjournal/ui/screens` — Compose screen tests live here.
+- `app/src/androidTest/java/com/example/healthjournal/ui/screens` — Compose screen tests live here (including the workout hub/session screens).
 - `app/src/androidTest/java/com/example/healthjournal/data/local` — DAO and migration tests live here.
 - `app/build.gradle.kts` — the instrumented test dependencies and the compose-runner listener switch.
 

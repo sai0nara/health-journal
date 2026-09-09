@@ -2,18 +2,20 @@
 
 > Browse the journal chronologically, search and filter it, and manage an
 > archive (archive by swipe, restore, or permanently delete) from the History
-> and Archive screens.
+> and Archive screens. The History overflow menu also opens the workout hub.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-08
 
 ## Overview
 
 The History screen is the app's home: a reverse-chronological feed of journal
 entries with search, tag filtering, sorting, swipe-to-archive with undo, and
-pull-to-refresh that triggers a sync. The Archive screen holds entries the user
-soft-removed via the `isArchived` flag and supports search, tag filtering,
-restore, and permanent (batch or empty-all) deletion. Archiving is not deletion:
-an archived row remains in the database, just filtered from the active feed.
+pull-to-refresh that triggers a sync. An overflow-menu action opens the workout
+hub, giving the top-level entry point to the workout feature. The Archive screen
+holds entries the user soft-removed via the `isArchived` flag and supports
+search, tag filtering, restore, and permanent (batch or empty-all) deletion.
+Archiving is not deletion: an archived row remains in the database, just filtered
+from the active feed.
 
 ## Goals / Non-goals
 
@@ -56,6 +58,7 @@ an archived row remains in the database, just filtered from the active feed.
   confirmation); the whole archive can be emptied with confirmation.
 - FR-8: Permanent deletion writes a tombstone and cleans up the entry's local
   media files.
+- FR-9: A Workouts overflow-menu action opens the workout hub.
 
 ## Non-functional requirements
 

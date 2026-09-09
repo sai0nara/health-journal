@@ -1,0 +1,50 @@
+package com.example.healthjournal.data.local
+
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
+
+/**
+ * In-memory [WorkoutSessionDao] for ViewModel unit tests: behaves like Room
+ * for upserts, identity lookup, and the unfinished-session recovery query.
+ */
+class FakeWorkoutSessionDao : WorkoutSessionDao {
+
+    private val store = mutableMapOf<String, WorkoutSession>()
+    private val feed = MutableStateFlow<List<WorkoutSession>>(emptyList())
+
+    override fun getAllSessions(): Flow<List<WorkoutSession>> = feed
+
+    override fun getCompletedSessions(): Flow<List<WorkoutSession>> =
+        feed.map { all -> all.filter { it.status == WorkoutStatus.COMPLETED.name } }
+
+    override suspend fun getSessionById(sessionId: String): WorkoutSession? =
+        store[sessionId]
+
+    override suspend fun getUnfinishedSession(): WorkoutSession? =
+        store.values
+            .filter {
+                it.status == WorkoutStatus.ACTIVE.name ||
+                    it.status == WorkoutStatus.PAUSED.name
+            }
+            .maxByOrNull { it.startTimestamp }
+
+    override suspend fun upsertSession(session: WorkoutSession) {
+        store[session.session_id] = session
+        emit()
+    }
+
+    override suspend fun deleteSessionById(sessionId: String) {
+        store.remove(sessionId)
+        emit()
+    }
+
+    override suspend fun clearAll() {
+        store.clear()
+        emit()
+    }
+
+    private fun emit() {
+        feed.value = store.values.sortedByDescending { it.startTimestamp }
+    }
+}

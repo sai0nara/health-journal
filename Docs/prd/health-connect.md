@@ -2,8 +2,9 @@
 
 > Pull a day's blood pressure, heart rate, and sleep from Google Health Connect
 > into a journal entry, with a clear permission flow and a rationale screen.
+> The workout hub additionally writes completed workouts as exercise records.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-08
 
 ## Overview
 
@@ -13,6 +14,9 @@ blood pressure for the day, average heart rate, and the previous night's sleep
 duration. Access requires Health Connect read permissions, requested through
 the platform permission controller, backed by a compatibility rationale screen.
 
+Separately, the workout hub requests exercise read/write permissions and writes
+each completed workout to Health Connect as an exercise record.
+
 ## Goals / Non-goals
 
 **Goals**
@@ -21,10 +25,11 @@ the platform permission controller, backed by a compatibility rationale screen.
   day and populate the entry's metric columns.
 - Request the three read permissions and handle grant/deny with guidance.
 - Show a rationale screen for the platform's permission flow.
+- Write completed workouts to Health Connect as exercise records (workout hub).
 
 **Non-goals**
 
-- Writing data back to Health Connect.
+- Writing vitals data (blood pressure, heart rate, sleep) back to Health Connect.
 - Reading steps (the app moved from steps to blood pressure).
 - Body measurements from Health Connect (separate feature; not synced in).
 
@@ -45,11 +50,14 @@ the platform permission controller, backed by a compatibility rationale screen.
 - FR-6: Read permissions are requested via the platform permission controller;
   denial shows guidance.
 - FR-7: A rationale activity is registered for the platform's permission flow.
+- FR-8: The workout hub requests exercise read/write permissions; each completed
+  workout is written as an exercise record, with denial degrading gracefully.
 
 ## Non-functional requirements
 
 - Degradation: any read failure returns a null metric, never a crash.
-- Privacy: only the three requested read scopes are used.
+- Privacy: only the requested read scopes (vitals) and exercise read/write are
+  used.
 
 ## Acceptance criteria
 
@@ -61,18 +69,19 @@ the platform permission controller, backed by a compatibility rationale screen.
 
 ## Out of scope
 
-- Health Connect write-back.
+- Writing vitals back to Health Connect.
 - Body measurements via Health Connect.
 
 ## Cross-references
 
 - `Docs/prd/entry-logging.md` — where the vitals are attached.
 - [[health-connect]] — the Health Connect integration page.
-- [[ui-layer]] — the Add Entry / rationale UI.
+- [[ui-layer]] — the Add Entry / rationale UI and the workout hub entry point.
 
 ## Sources
 
 - `app/src/main/java/com/example/healthjournal/health/HealthConnectManager.kt` — reading vitals from Health Connect.
+- `app/src/main/java/com/example/healthjournal/health/HealthConnectWorkoutDataSource.kt` — writing workout exercise records.
 - `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` — `syncHealthData` + date-window logic.
 - `app/src/main/java/com/example/healthjournal/ui/screens/AddEntryScreen.kt` — permission launcher + metric display.
 - `app/src/main/java/com/example/healthjournal/PermissionsRationaleActivity.kt` — rationale screen.

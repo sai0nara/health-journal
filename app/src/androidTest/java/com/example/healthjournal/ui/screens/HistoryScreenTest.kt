@@ -98,8 +98,7 @@ class HistoryScreenTest {
         }
     }
     @Test
-    fun testHistoryScreen_OverflowMenu_revealsSecondaryActions() {
-        var archiveClicked = false
+    fun testHistoryScreen_OverflowMenu_revealsSecondaryActions() {        var archiveClicked = false
         step("Open History Screen") {
             viewModel.allEntries.value = emptyList()
             composeTestRule.setContent {
@@ -165,6 +164,42 @@ class HistoryScreenTest {
             org.junit.Assert.assertTrue(
                 "onMeasurementsClick was not invoked from the chart action",
                 measurementsClicked
+            )
+        }
+    }
+    @Test
+    fun testHistoryScreen_OverflowMenu_opensWorkoutScreen() {
+        var workoutClicked = false
+        step("Open History Screen") {
+            viewModel.allEntries.value = emptyList()
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
+                        onAddEntryClick = {},
+                        onEntryClick = {},
+                        onArchiveClick = {},
+                        onExportClick = {},
+                        onWorkoutClick = { workoutClicked = true }
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Open the overflow menu and choose Workouts") {
+            composeTestRule.onNodeWithTag("overflow_menu").performClick()
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithText("Workouts").assertExists()
+            composeTestRule.onNodeWithText("Workouts").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify workouts navigation was invoked") {
+            org.junit.Assert.assertTrue(
+                "onWorkoutClick was not invoked from the overflow menu",
+                workoutClicked
             )
         }
     }

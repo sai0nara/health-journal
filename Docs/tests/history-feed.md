@@ -1,9 +1,10 @@
 # History Feed — Test Cases
 
 > Maps the feed, search, tag, and archive behaviors to unit and instrumented
-> coverage, including the swipe-archive/undo interaction and batch operations.
+> coverage, including the swipe-archive/undo interaction and batch operations,
+> and the workout-hub entry point.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-08
 
 ## Automated coverage
 
@@ -11,7 +12,7 @@ Last updated: 2026-09-02
 |---|---|---|
 | JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/JournalViewModelTest.kt` | archive/restore/delete/empty call-through, tag-toggle sync, feed query selection |
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/JournalRepositoryTest.kt` | tombstone grace-period cleanup, tag/query delegation, import |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` | feed display, swipe-to-archive + undo |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` | feed display, swipe-to-archive + undo, workout-hub entry |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/ArchiveScreenTest.kt` | multi-select batch delete, empty-archive flow, search |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/JournalDaoTest.kt` | sort asc/desc, LIKE search, tag AND-filter, tag lifecycle |
 
@@ -27,6 +28,7 @@ Last updated: 2026-09-02
 | T-6 | AC-5 | Empty archive | entries archived, confirm bottom sheet | all archived rows deleted, tombstones written |
 | T-7 | AC-5 | Restore selected | archived entries selected | `isArchived` flipped back |
 | T-8 | FR-8 | Local media cleanup | archived entry with photos | files removed (see photos-media) |
+| T-9 | FR-9 | Workout hub entry | History screen | overflow menu's Workouts action opens the workout hub |
 
 ## Manual checks
 
