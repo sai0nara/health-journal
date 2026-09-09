@@ -27,3 +27,6 @@
 - [x] Task: Test light/dark theme rendering of workout UI
 - [x] Task: Update affected wiki pages (agent owns the vault) and run wiki lint (exit 0); commit wiki + code together
 - [ ] Task: Conductor - User Manual Verification 'Workout Integration' (Protocol in workflow.md)
+
+## Phase 5: Review Fixes
+- [x] Task: Apply review suggestions (a8a02fe)
