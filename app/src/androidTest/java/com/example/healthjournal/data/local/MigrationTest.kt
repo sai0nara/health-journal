@@ -64,4 +64,34 @@ class MigrationTest {
                 "VALUES ('bm1', 2000, 2000, 78.5, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'PENDING_SYNC')"
         )
     }
+
+    @Test
+    fun migrate13To14_DropsOrphanedWorkoutSyncColumns() {
+        // A v13 database built by an early workout build carried isSynced and
+        // syncStatus on workout_sessions; those columns were later declared
+        // dead and removed from the entity. The 13->14 migration must drop
+        // them so the persisted schema matches the recompiled v14 identity.
+        helper.createDatabase("$dbName-13-14", 13)
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-13-14",
+            14,
+            true,
+            JournalDatabase.MIGRATION_13_14
+        )
+
+        db.query("PRAGMA table_info(workout_sessions)").use { cursor ->
+            val columns = buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                }
+            }
+            org.junit.Assert.assertFalse("isSynced should be dropped", "isSynced" in columns)
+            org.junit.Assert.assertFalse("syncStatus should be dropped", "syncStatus" in columns)
+            org.junit.Assert.assertTrue(
+                "workout_sessions data should survive the migration",
+                columns.contains("lastModified")
+            )
+        }
+    }
 }
