@@ -37,9 +37,3 @@ This file tracks all major tracks for the project. Each track has its own detail
   *Link: [./tracks/body_measurements_20260821/](./tracks/body_measurements_20260821/)*
 
 
----
-
-- [~] **Track: Workout Tracking (v1)**
-  *Link: [./tracks/workout_20260907/](./tracks/workout_20260907/)*
-
-
