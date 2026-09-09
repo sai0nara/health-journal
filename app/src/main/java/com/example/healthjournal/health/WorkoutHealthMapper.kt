@@ -12,6 +12,13 @@ fun WorkoutSession.toHealthRecord(now: Long = System.currentTimeMillis()): Worko
         WorkoutType.RUN -> HealthExerciseType.RUNNING
         WorkoutType.FITNESS -> HealthExerciseType.STRENGTH_TRAINING
         WorkoutType.YOGA -> HealthExerciseType.YOGA
+        WorkoutType.HIIT -> HealthExerciseType.HIIT
+        WorkoutType.WALKING_HIKING -> HealthExerciseType.HIKING
+        WorkoutType.CYCLING -> HealthExerciseType.CYCLING
+        WorkoutType.STRETCHING_MOBILITY -> HealthExerciseType.STRETCHING
+        WorkoutType.PILATES -> HealthExerciseType.PILATES
+        WorkoutType.SWIMMING -> HealthExerciseType.SWIMMING
+        WorkoutType.CALISTHENICS -> HealthExerciseType.CALISTHENICS
         null -> HealthExerciseType.UNKNOWN
     }
     return WorkoutHealthRecord(

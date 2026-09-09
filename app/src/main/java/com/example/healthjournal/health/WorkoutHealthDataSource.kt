@@ -5,6 +5,13 @@ enum class HealthExerciseType {
     RUNNING,
     STRENGTH_TRAINING,
     YOGA,
+    HIIT,
+    HIKING,
+    CYCLING,
+    STRETCHING,
+    PILATES,
+    SWIMMING,
+    CALISTHENICS,
     UNKNOWN
 }
 

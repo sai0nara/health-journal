@@ -93,6 +93,13 @@ class HealthConnectWorkoutDataSource(context: Context) : WorkoutHealthDataSource
         HealthExerciseType.RUNNING -> ExerciseSessionRecord.EXERCISE_TYPE_RUNNING
         HealthExerciseType.STRENGTH_TRAINING -> ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING
         HealthExerciseType.YOGA -> ExerciseSessionRecord.EXERCISE_TYPE_YOGA
+        HealthExerciseType.HIIT -> ExerciseSessionRecord.EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING
+        HealthExerciseType.HIKING -> ExerciseSessionRecord.EXERCISE_TYPE_HIKING
+        HealthExerciseType.CYCLING -> ExerciseSessionRecord.EXERCISE_TYPE_BIKING
+        HealthExerciseType.STRETCHING -> ExerciseSessionRecord.EXERCISE_TYPE_STRETCHING
+        HealthExerciseType.PILATES -> ExerciseSessionRecord.EXERCISE_TYPE_PILATES
+        HealthExerciseType.SWIMMING -> ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL
+        HealthExerciseType.CALISTHENICS -> ExerciseSessionRecord.EXERCISE_TYPE_CALISTHENICS
         HealthExerciseType.UNKNOWN -> ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT
     }
 
@@ -100,6 +107,13 @@ class HealthConnectWorkoutDataSource(context: Context) : WorkoutHealthDataSource
         ExerciseSessionRecord.EXERCISE_TYPE_RUNNING -> HealthExerciseType.RUNNING
         ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING -> HealthExerciseType.STRENGTH_TRAINING
         ExerciseSessionRecord.EXERCISE_TYPE_YOGA -> HealthExerciseType.YOGA
+        ExerciseSessionRecord.EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING -> HealthExerciseType.HIIT
+        ExerciseSessionRecord.EXERCISE_TYPE_HIKING -> HealthExerciseType.HIKING
+        ExerciseSessionRecord.EXERCISE_TYPE_BIKING -> HealthExerciseType.CYCLING
+        ExerciseSessionRecord.EXERCISE_TYPE_STRETCHING -> HealthExerciseType.STRETCHING
+        ExerciseSessionRecord.EXERCISE_TYPE_PILATES -> HealthExerciseType.PILATES
+        ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL -> HealthExerciseType.SWIMMING
+        ExerciseSessionRecord.EXERCISE_TYPE_CALISTHENICS -> HealthExerciseType.CALISTHENICS
         else -> HealthExerciseType.UNKNOWN
     }
 }
