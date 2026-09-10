@@ -2,6 +2,7 @@ package com.example.healthjournal.data.local
 
 import androidx.room.TypeConverter
 import com.example.healthjournal.domain.StrengthExercise
+import com.example.healthjournal.domain.WorkoutIntervalSession
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
@@ -120,6 +121,22 @@ class JournalTypeConverters {
             gson.fromJson<List<StrengthExercise>>(value, listType) ?: emptyList()
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    @TypeConverter
+    fun fromWorkoutIntervalSession(value: WorkoutIntervalSession?): String? {
+        if (value == null) return null
+        return gson.toJson(value)
+    }
+
+    @TypeConverter
+    fun toWorkoutIntervalSession(value: String?): WorkoutIntervalSession? {
+        if (value == null) return null
+        return try {
+            gson.fromJson(value, WorkoutIntervalSession::class.java) ?: WorkoutIntervalSession()
+        } catch (e: Exception) {
+            WorkoutIntervalSession()
         }
     }
 }

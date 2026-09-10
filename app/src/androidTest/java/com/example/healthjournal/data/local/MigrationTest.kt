@@ -66,6 +66,48 @@ class MigrationTest {
     }
 
     @Test
+    fun migrate15To16_AddsIntervalStateColumnAndPreservesWorkoutData() {
+        helper.createDatabase("$dbName-15-16", 15).apply {
+            execSQL(
+                "INSERT INTO workout_sessions (session_id, type, status, startTimestamp, elapsedSeconds, setMatrix, notes, lastModified) " +
+                    "VALUES ('migrated_ws_15_16', 'HIIT', 'ACTIVE', 1000, 0, '[{\"name\":\"Squat\",\"sets\":[]}]', 'Before 15 to 16', 1000)"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-15-16",
+            16,
+            true,
+            JournalDatabase.MIGRATION_15_16
+        )
+
+        db.query("PRAGMA table_info(workout_sessions)").use { cursor ->
+            val columns = buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                }
+            }
+            org.junit.Assert.assertTrue("intervalState column should be added", "intervalState" in columns)
+            org.junit.Assert.assertTrue("setMatrix should survive", "setMatrix" in columns)
+        }
+
+        db.query("SELECT setMatrix FROM workout_sessions WHERE session_id = 'migrated_ws_15_16'").use { cursor ->
+            org.junit.Assert.assertTrue("Previously inserted row lost", cursor.moveToFirst())
+            org.junit.Assert.assertTrue(cursor.getString(0).contains("Squat"))
+        }
+
+        db.execSQL(
+            "INSERT INTO workout_sessions (session_id, type, status, startTimestamp, elapsedSeconds, intervalState, notes, lastModified) " +
+                "VALUES ('ws_with_interval', 'HIIT', 'ACTIVE', 2000, 0, '{\"phase\":\"REST\",\"rounds\":2,\"intervals\":3}', '', 2000)"
+        )
+        db.query("SELECT intervalState FROM workout_sessions WHERE session_id = 'ws_with_interval'").use { cursor ->
+            org.junit.Assert.assertTrue("intervalState should be readable", cursor.moveToFirst())
+            org.junit.Assert.assertTrue(cursor.getString(0).contains("REST"))
+        }
+    }
+
+    @Test
     fun migrate14To15_AddsSetMatrixColumnAndPreservesWorkoutData() {
         helper.createDatabase("$dbName-14-15", 14).apply {
             execSQL(

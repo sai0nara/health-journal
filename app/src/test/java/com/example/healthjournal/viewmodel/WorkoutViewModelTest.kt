@@ -62,6 +62,21 @@ class WorkoutViewModelTest {
         onHaptic = { haptics.add(it) }
     )
 
+    /** Starts a configured session and runs it past the 3-2-1 countdown. */
+    private fun startActiveSession(type: WorkoutType, target: String): WorkoutViewModel {
+        val vm = newViewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.selectType(type)
+        vm.updateTarget(target)
+        vm.startSession()
+        dispatcher.scheduler.advanceUntilIdle()
+        while (vm.uiState.value is WorkoutUiState.Countdown) {
+            vm.advanceTime(1)
+            dispatcher.scheduler.advanceUntilIdle()
+        }
+        return vm
+    }
+
     @Test
     fun initialState_withoutUnfinishedSession_isIdle() = runTest {
         val vm = newViewModel()
@@ -106,14 +121,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun startSession_withValidTarget_createsActiveSession() = runTest {
-        val vm = newViewModel()
-        dispatcher.scheduler.advanceUntilIdle()
-        vm.selectType(WorkoutType.RUN)
-        vm.updateTarget("5")
-        dispatcher.scheduler.advanceUntilIdle()
-
-        vm.startSession()
-        dispatcher.scheduler.advanceUntilIdle()
+        val vm = startActiveSession(WorkoutType.RUN, "5")
 
         val state = vm.uiState.value
         assertTrue(state is WorkoutUiState.Active)
@@ -158,12 +166,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun pauseAndResume_toggleActiveAndPaused() = runTest {
-        val vm = newViewModel()
-        dispatcher.scheduler.advanceUntilIdle()
-        vm.selectType(WorkoutType.YOGA)
-        vm.updateTarget("30")
-        vm.startSession()
-        dispatcher.scheduler.advanceUntilIdle()
+        val vm = startActiveSession(WorkoutType.YOGA, "30")
 
         vm.pauseSession()
         dispatcher.scheduler.advanceUntilIdle()
@@ -180,12 +183,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun advanceTime_batchesPersistenceEveryFiveSeconds() = runTest {
-        val vm = newViewModel()
-        dispatcher.scheduler.advanceUntilIdle()
-        vm.selectType(WorkoutType.RUN)
-        vm.updateTarget("5")
-        vm.startSession()
-        dispatcher.scheduler.advanceUntilIdle()
+        val vm = startActiveSession(WorkoutType.RUN, "5")
 
         vm.advanceTime(3)
         dispatcher.scheduler.advanceUntilIdle()
@@ -200,12 +198,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun finishSession_savesCompletedJournalAndHealthSummary() = runTest {
-        val vm = newViewModel()
-        dispatcher.scheduler.advanceUntilIdle()
-        vm.selectType(WorkoutType.RUN)
-        vm.updateTarget("5")
-        vm.startSession()
-        dispatcher.scheduler.advanceUntilIdle()
+        val vm = startActiveSession(WorkoutType.RUN, "5")
         vm.advanceTime(1_800)
         dispatcher.scheduler.advanceUntilIdle()
 
@@ -233,12 +226,22 @@ class WorkoutViewModelTest {
     @Test
     fun finishSession_healthDenied_stillSucceedsUnsynced() = runTest {
         val denied = FakeWorkoutHealthDataSource(permissionGranted = false)
-        val vm = newViewModel(health = denied)
+        val vm = WorkoutViewModel(
+            repository = repository,
+            healthSource = denied,
+            journalRepository = journalRepository,
+            dispatcher = dispatcher,
+            onHaptic = { haptics.add(it) }
+        )
         dispatcher.scheduler.advanceUntilIdle()
         vm.selectType(WorkoutType.YOGA)
         vm.updateTarget("30")
         vm.startSession()
         dispatcher.scheduler.advanceUntilIdle()
+        while (vm.uiState.value is WorkoutUiState.Countdown) {
+            vm.advanceTime(1)
+            dispatcher.scheduler.advanceUntilIdle()
+        }
         vm.advanceTime(600)
         dispatcher.scheduler.advanceUntilIdle()
 
@@ -344,12 +347,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun closeSummary_returnsToIdle() = runTest {
-        val vm = newViewModel()
-        dispatcher.scheduler.advanceUntilIdle()
-        vm.selectType(WorkoutType.RUN)
-        vm.updateTarget("5")
-        vm.startSession()
-        dispatcher.scheduler.advanceUntilIdle()
+        val vm = startActiveSession(WorkoutType.RUN, "5")
         vm.finishSession()
         dispatcher.scheduler.advanceUntilIdle()
         assertTrue(vm.uiState.value is WorkoutUiState.Summary)

@@ -78,8 +78,13 @@ fun WorkoutScreen(
     var manualLogType by remember { mutableStateOf<WorkoutType?>(null) }
 
     val state = uiState
-    if (state is WorkoutUiState.Active) {
-        val sessionId = state.session.session_id
+    val session = when (state) {
+        is WorkoutUiState.Active -> state.session
+        is WorkoutUiState.Countdown -> state.session
+        else -> null
+    }
+    if (session != null) {
+        val sessionId = session.session_id
         LaunchedEffect(sessionId) {
             while (true) {
                 kotlinx.coroutines.delay(1_000)
@@ -124,6 +129,10 @@ fun WorkoutScreen(
                     onStart = { viewModel.startSession() },
                     onBack = { viewModel.cancelConfiguring() },
                     onLogPast = { manualLogType = state.type }
+                )
+
+                is WorkoutUiState.Countdown -> CountdownContent(
+                    secondsRemaining = state.secondsRemaining
                 )
 
                 is WorkoutUiState.Active -> SessionContent(
@@ -286,6 +295,22 @@ private fun ConfiguringContent(
         modifier = Modifier.fillMaxWidth()
     ) {
         Text("Log past ${state.type.label} instead")
+    }
+}
+
+@Composable
+private fun CountdownContent(secondsRemaining: Int) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text("Get ready", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = secondsRemaining.toString(),
+            style = MaterialTheme.typography.displayLarge,
+            modifier = Modifier.testTag("workout_countdown")
+        )
     }
 }
 

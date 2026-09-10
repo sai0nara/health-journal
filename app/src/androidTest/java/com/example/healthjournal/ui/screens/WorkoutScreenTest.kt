@@ -138,6 +138,10 @@ class WorkoutScreenTest {
         composeTestRule.onNodeWithText("Start").performClick()
         composeTestRule.waitForIdle()
 
+        // Wait out the 3-2-1 countdown by advancing the engine's clock.
+        viewModel.advanceTime(WorkoutViewModel.COUNTDOWN_SECONDS.toLong())
+        composeTestRule.waitForIdle()
+
         composeTestRule.onNodeWithTag("workout_timer").assertExists()
         composeTestRule.onNodeWithTag("workout_timer").assertIsDisplayed()
         composeTestRule.onNodeWithText("Pause").assertExists()
@@ -258,6 +262,9 @@ class WorkoutScreenTest {
         composeTestRule.onNodeWithText("Start").performClick()
         composeTestRule.waitForIdle()
 
+        // Clear the 3-2-1 countdown first, then run the clock.
+        viewModel.advanceTime(WorkoutViewModel.COUNTDOWN_SECONDS.toLong())
+        composeTestRule.waitForIdle()
         viewModel.advanceTime(1_800)
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("Finish").performClick()

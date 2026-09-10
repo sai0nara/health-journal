@@ -2,6 +2,8 @@ package com.example.healthjournal.data.local
 
 import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.StrengthSet
+import com.example.healthjournal.domain.WorkoutIntervalPhase
+import com.example.healthjournal.domain.WorkoutIntervalSession
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -109,5 +111,18 @@ class JournalTypeConvertersTest {
     fun setMatrix_emptyMatrix_roundTripsAsEmptyList() {
         val json = converters.fromStrengthExercises(emptyList())
         assertEquals(emptyList<StrengthExercise>(), converters.toStrengthExercises(json))
+    }
+
+    @Test
+    fun intervalState_roundTripsLosslessly() {
+        val interval = WorkoutIntervalSession(phase = WorkoutIntervalPhase.REST, rounds = 2, intervals = 3)
+
+        val json = converters.fromWorkoutIntervalSession(interval)
+        assertEquals(interval, converters.toWorkoutIntervalSession(json))
+    }
+
+    @Test
+    fun intervalState_nullColumn_readsBackNull() {
+        assertNull(converters.toWorkoutIntervalSession(null))
     }
 }

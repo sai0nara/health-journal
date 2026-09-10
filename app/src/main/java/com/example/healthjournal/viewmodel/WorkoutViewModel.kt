@@ -9,7 +9,12 @@ import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.data.local.WorkoutStatus
 import com.example.healthjournal.domain.CalorieEstimator
+import com.example.healthjournal.domain.StrengthExercise
+import com.example.healthjournal.domain.StrengthSet
+import com.example.healthjournal.domain.TonnageCalculator
+import com.example.healthjournal.domain.ValidateStrengthExercise
 import com.example.healthjournal.domain.ValidateWorkout
+import com.example.healthjournal.domain.WorkoutIntervalSession
 import com.example.healthjournal.domain.WorkoutType
 import com.example.healthjournal.health.WorkoutHealthDataSource
 import com.example.healthjournal.health.toHealthRecord
@@ -24,7 +29,8 @@ import kotlinx.coroutines.launch
 /** Haptic cues the UI plays for workout control events. */
 enum class WorkoutHaptic {
     START,
-    STOP
+    STOP,
+    INTERVAL
 }
 
 /**
@@ -105,7 +111,10 @@ class WorkoutViewModel(
                 targetDurationMin = targetDurationMin
             )
             repository.saveSession(session)
-            _uiState.value = WorkoutUiState.Active(session)
+            _uiState.value = WorkoutUiState.Countdown(
+                session = session,
+                secondsRemaining = COUNTDOWN_SECONDS
+            )
             onHaptic(WorkoutHaptic.START)
         }
     }
@@ -131,19 +140,108 @@ class WorkoutViewModel(
     }
 
     /**
-     * Advances the running clock. Persistence is batched: the session row is
-     * rewritten only on five-second boundaries (plus always on pause/finish)
-     * instead of on every tick.
+     * Advances either the pre-session countdown or the running clock.
+     * During the countdown the session row is left untouched; once it hits
+     * zero the session goes Active at zero elapsed time. In Active, persistence
+     * is batched: the session row is rewritten only on five-second boundaries
+     * (plus always on pause/finish) instead of on every tick. Rest-timer
+     * seconds also tick down here so one clock source drives both.
      */
     fun advanceTime(seconds: Long) {
-        val current = _uiState.value as? WorkoutUiState.Active ?: return
-        viewModelScope.launch(dispatcher) {
-            val elapsed = current.session.elapsedSeconds + seconds
-            val advanced = current.session.copy(elapsedSeconds = elapsed)
-            _uiState.value = WorkoutUiState.Active(advanced)
-            if (elapsed % PERSIST_EVERY_SECONDS == 0L) {
-                repository.saveSession(advanced)
+        val current = _uiState.value
+        when (current) {
+            is WorkoutUiState.Countdown -> {
+                val remaining = current.secondsRemaining - seconds.toInt()
+                if (remaining <= 0) {
+                    _uiState.value = WorkoutUiState.Active(current.session)
+                } else {
+                    _uiState.value = current.copy(secondsRemaining = remaining)
+                }
             }
+            is WorkoutUiState.Active -> viewModelScope.launch(dispatcher) {
+                val elapsed = current.session.elapsedSeconds + seconds
+                val advanced = current.session.copy(elapsedSeconds = elapsed)
+                _uiState.value = WorkoutUiState.Active(
+                    session = advanced,
+                    restSeconds = (current.restSeconds - seconds).coerceAtLeast(0L).toInt(),
+                    setMatrixError = current.setMatrixError
+                )
+                if (elapsed % PERSIST_EVERY_SECONDS == 0L) {
+                    repository.saveSession(advanced)
+                }
+            }
+            else -> Unit
+        }
+    }
+
+    /**
+     * Advances the manual HIIT interval tracker one boundary (WORK <-> REST),
+     * persists immediately for crash recovery, and emits a haptic cue. Only
+     * meaningful while Active on an HIIT session.
+     */
+    fun advanceInterval() {
+        val current = _uiState.value as? WorkoutUiState.Active ?: return
+        if (WorkoutType.valueOf(current.session.type) != WorkoutType.HIIT) return
+        val tracker = current.session.intervalState ?: WorkoutIntervalSession()
+        val advance = tracker.advance()
+        viewModelScope.launch(dispatcher) {
+            val updated = current.session.copy(intervalState = advance.session)
+            repository.saveSession(updated)
+            _uiState.value = current.copy(session = updated)
+            onHaptic(WorkoutHaptic.INTERVAL)
+        }
+    }
+
+    /**
+     * Adds a named strength exercise to the set matrix while Active on a
+     * Fitness session; invalid names surface as an inline error.
+     */
+    fun addExercise(name: String) {
+        val current = _uiState.value as? WorkoutUiState.Active ?: return
+        if (WorkoutType.valueOf(current.session.type) != WorkoutType.FITNESS) return
+        val nameError = ValidateStrengthExercise.validateName(name)
+        if (nameError != null) {
+            _uiState.value = current.copy(setMatrixError = nameError)
+            return
+        }
+        val exercise = StrengthExercise(name = name.trim())
+        viewModelScope.launch(dispatcher) {
+            val matrix = (current.session.setMatrix ?: emptyList()) + exercise
+            val updated = current.session.copy(setMatrix = matrix)
+            repository.saveSession(updated)
+            _uiState.value = current.copy(session = updated, setMatrixError = null)
+        }
+    }
+
+    /**
+     * Adds a validated set (kg, reps) to an exercise and starts the rest
+     * timer. Invalid values surface as an inline error without mutating.
+     */
+    fun addSet(exerciseId: String, kg: Double, reps: Int) {
+        val current = _uiState.value as? WorkoutUiState.Active ?: return
+        if (WorkoutType.valueOf(current.session.type) != WorkoutType.FITNESS) return
+        val errors = ValidateStrengthExercise.validateSet(kg = kg, reps = reps)
+        if (errors.isNotEmpty()) {
+            _uiState.value = current.copy(
+                setMatrixError = errors["kg"] ?: errors["reps"]
+            )
+            return
+        }
+        viewModelScope.launch(dispatcher) {
+            val matrix = (current.session.setMatrix ?: emptyList()).map { exercise ->
+                if (exercise.id == exerciseId) {
+                    exercise.copy(sets = exercise.sets + StrengthSet(kg = kg, reps = reps))
+                } else {
+                    exercise
+                }
+            }
+            val updated = current.session.copy(setMatrix = matrix)
+            repository.saveSession(updated)
+            _uiState.value = current.copy(
+                session = updated,
+                setMatrixError = null,
+                restSeconds = DEFAULT_REST_SECONDS
+            )
         }
     }
 
@@ -180,7 +278,11 @@ class WorkoutViewModel(
             _uiState.value = WorkoutUiState.Summary(
                 session = completed,
                 caloriesKcal = calories,
-                healthSynced = healthSynced
+                healthSynced = healthSynced,
+                tonnageKg = completed.setMatrix
+                    ?.let(TonnageCalculator::tonnageKg),
+                intervalRounds = completed.intervalState?.rounds ?: 0,
+                intervalIntervals = completed.intervalState?.intervals ?: 0
             )
             onHaptic(WorkoutHaptic.STOP)
         }
@@ -297,6 +399,12 @@ class WorkoutViewModel(
     companion object {
         /** Session rows are rewritten on these elapsed-second boundaries. */
         const val PERSIST_EVERY_SECONDS = 5L
+
+        /** Pre-session countdown length in seconds (3-2-1). */
+        const val COUNTDOWN_SECONDS = 3
+
+        /** Between-sets rest timer length in seconds for the set matrix. */
+        const val DEFAULT_REST_SECONDS = 60
     }
 }
 
