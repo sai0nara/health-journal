@@ -6,6 +6,8 @@ import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.data.local.WorkoutStatus
 import com.example.healthjournal.domain.WorkoutType
 import com.example.healthjournal.health.FakeWorkoutHealthDataSource
+import com.example.healthjournal.health.HealthExerciseType
+import com.example.healthjournal.domain.WorkoutIntervalPhase
 import com.example.healthjournal.data.JournalRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -254,6 +256,81 @@ class WorkoutViewModelTest {
     }
 
     @Test
+    fun finishSession_newTypes_healthDenied_stillCompleteUnsynced() = runTest {
+        for (type in listOf(
+            WorkoutType.HIIT, WorkoutType.CALISTHENICS, WorkoutType.SWIMMING,
+            WorkoutType.WALKING_HIKING, WorkoutType.PILATES
+        )) {
+            val denied = FakeWorkoutHealthDataSource(permissionGranted = false)
+            val vm = newViewModel(health = denied)
+            dispatcher.scheduler.advanceUntilIdle()
+            vm.selectType(type)
+            vm.updateTarget("20")
+            vm.startSession()
+            dispatcher.scheduler.advanceUntilIdle()
+            while (vm.uiState.value is WorkoutUiState.Countdown) {
+                vm.advanceTime(1)
+                dispatcher.scheduler.advanceUntilIdle()
+            }
+            vm.advanceTime(600)
+            dispatcher.scheduler.advanceUntilIdle()
+
+            vm.finishSession()
+            dispatcher.scheduler.advanceUntilIdle()
+
+            val state = vm.uiState.value
+            assertTrue(state is WorkoutUiState.Summary)
+            assertEquals(false, (state as WorkoutUiState.Summary).healthSynced)
+            assertTrue(denied.storedRecords().isEmpty())
+        }
+    }
+
+    @Test
+    fun finishSession_airplaneMode_healthWriteThrows_stillCompletesUnsynced() = runTest {
+        val offline = FakeWorkoutHealthDataSource()
+        offline.writeFailure = RuntimeException("no connection")
+        val vm = newViewModel(health = offline)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.selectType(WorkoutType.RUN)
+        vm.updateTarget("5")
+        vm.startSession()
+        dispatcher.scheduler.advanceUntilIdle()
+        while (vm.uiState.value is WorkoutUiState.Countdown) {
+            vm.advanceTime(1)
+            dispatcher.scheduler.advanceUntilIdle()
+        }
+        vm.advanceTime(600)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value
+        assertTrue(state is WorkoutUiState.Summary)
+        assertEquals(false, (state as WorkoutUiState.Summary).healthSynced)
+        assertTrue(offline.storedRecords().isEmpty())
+    }
+
+    @Test
+    fun saveManualLog_airplaneMode_healthWriteThrows_stillSucceeds() = runTest {
+        val offline = FakeWorkoutHealthDataSource()
+        offline.writeFailure = RuntimeException("no connection")
+        val vm = newViewModel(health = offline)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.saveManualLog(
+            type = WorkoutType.CALISTHENICS,
+            durationMinutes = "20",
+            calories = "",
+            timestamp = 1_000L
+        )
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(vm.uiState.value is WorkoutUiState.Idle)
+        assertTrue(offline.storedRecords().isEmpty())
+    }
+
+    @Test
     fun saveManualLog_valid_persistsCompletedSessionAndJournal() = runTest {
         val vm = newViewModel()
         dispatcher.scheduler.advanceUntilIdle()
@@ -401,5 +478,108 @@ class WorkoutViewModelTest {
         coVerify { journalRepository.insert(withArg { entry ->
             assertTrue(entry.description.contains("Rounds: 1 · Intervals: 1"))
         }) }
+    }
+
+    @Test
+    fun finishSession_allTenTypes_produceSummaryJournalAndExerciseWrite() = runTest {
+        val expectedTypes = mapOf(
+            WorkoutType.RUN to HealthExerciseType.RUNNING,
+            WorkoutType.FITNESS to HealthExerciseType.STRENGTH_TRAINING,
+            WorkoutType.YOGA to HealthExerciseType.YOGA,
+            WorkoutType.HIIT to HealthExerciseType.HIIT,
+            WorkoutType.WALKING_HIKING to HealthExerciseType.HIKING,
+            WorkoutType.CYCLING to HealthExerciseType.CYCLING,
+            WorkoutType.STRETCHING_MOBILITY to HealthExerciseType.STRETCHING,
+            WorkoutType.PILATES to HealthExerciseType.PILATES,
+            WorkoutType.SWIMMING to HealthExerciseType.SWIMMING,
+            WorkoutType.CALISTHENICS to HealthExerciseType.CALISTHENICS
+        )
+        for ((type, healthType) in expectedTypes) {
+            val health = FakeWorkoutHealthDataSource()
+            val vm = newViewModel(health = health)
+            dispatcher.scheduler.advanceUntilIdle()
+            vm.selectType(type)
+            vm.updateTarget("30")
+            vm.startSession()
+            dispatcher.scheduler.advanceUntilIdle()
+            while (vm.uiState.value is WorkoutUiState.Countdown) {
+                vm.advanceTime(1)
+                dispatcher.scheduler.advanceUntilIdle()
+            }
+            vm.advanceTime(600)
+            dispatcher.scheduler.advanceUntilIdle()
+
+            vm.finishSession()
+            dispatcher.scheduler.advanceUntilIdle()
+
+            assertTrue(vm.uiState.value is WorkoutUiState.Summary)
+            assertEquals(healthType, health.storedRecords().single().exerciseType)
+        }
+        coVerify(exactly = expectedTypes.size) { journalRepository.insert(any()) }
+    }
+
+    @Test
+    fun crashRecovery_midSet_resumesFinishesWithTonnageAndStrengthWrite() = runTest {
+        val first = startActiveSession(WorkoutType.FITNESS, "30")
+        first.addExercise("Squat")
+        dispatcher.scheduler.advanceUntilIdle()
+        first.addSet(
+            exerciseId = (first.uiState.value as WorkoutUiState.Active)
+                .session.setMatrix!!.single().id,
+            kg = 100.0,
+            reps = 5
+        )
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val recovered = newViewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(recovered.uiState.value is WorkoutUiState.RecoveryRequired)
+
+        recovered.resumeRecovery()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val active = recovered.uiState.value as WorkoutUiState.Active
+        assertEquals("Squat", active.session.setMatrix!!.single().name)
+        assertEquals(100.0, active.session.setMatrix!!.single().sets.single().kg, 0.0)
+        recovered.advanceTime(600)
+        dispatcher.scheduler.advanceUntilIdle()
+        recovered.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val summary = recovered.uiState.value as WorkoutUiState.Summary
+        assertEquals(500.0, summary.tonnageKg!!, 0.0)
+        assertEquals(
+            HealthExerciseType.STRENGTH_TRAINING,
+            healthSource.storedRecords().single().exerciseType
+        )
+    }
+
+    @Test
+    fun crashRecovery_midInterval_resumesFinishesWithIntervalCountsAndWrite() = runTest {
+        val first = startActiveSession(WorkoutType.HIIT, "20")
+        first.advanceInterval()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val recovered = newViewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(recovered.uiState.value is WorkoutUiState.RecoveryRequired)
+
+        recovered.resumeRecovery()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val active = recovered.uiState.value as WorkoutUiState.Active
+        assertEquals(WorkoutIntervalPhase.REST, active.session.intervalState!!.phase)
+        assertEquals(1, active.session.intervalState!!.intervals)
+        recovered.advanceInterval()
+        dispatcher.scheduler.advanceUntilIdle()
+        recovered.advanceTime(600)
+        dispatcher.scheduler.advanceUntilIdle()
+        recovered.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val summary = recovered.uiState.value as WorkoutUiState.Summary
+        assertEquals(1, summary.intervalRounds)
+        assertEquals(2, summary.intervalIntervals)
+        assertEquals(HealthExerciseType.HIIT, healthSource.storedRecords().single().exerciseType)
     }
 }

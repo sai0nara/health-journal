@@ -11,9 +11,13 @@ class FakeWorkoutHealthDataSource(
 
     private val stored = mutableListOf<WorkoutHealthRecord>()
 
+    /** When set, [writeRecord] throws like an offline/airplane-mode client. */
+    var writeFailure: Exception? = null
+
     override suspend fun hasPermissions(): Boolean = permissionGranted
 
     override suspend fun writeRecord(record: WorkoutHealthRecord): Boolean {
+        writeFailure?.let { throw it }
         if (!permissionGranted) return false
         stored.add(record)
         return true
