@@ -3,6 +3,7 @@ package com.example.healthjournal.data.local
 import java.util.UUID
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.healthjournal.domain.StrengthExercise
 
 /** Lifecycle states of a workout session; only one unfinished session exists at a time. */
 enum class WorkoutStatus {
@@ -24,5 +25,6 @@ data class WorkoutSession(
     val targetDurationMin: Double? = null,
     val calories: Double? = null,
     val notes: String = "",
+    val setMatrix: List<StrengthExercise>? = null,
     val lastModified: Long = startTimestamp
 )

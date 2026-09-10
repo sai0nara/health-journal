@@ -66,6 +66,47 @@ class MigrationTest {
     }
 
     @Test
+    fun migrate14To15_AddsSetMatrixColumnAndPreservesWorkoutData() {
+        helper.createDatabase("$dbName-14-15", 14).apply {
+            execSQL(
+                "INSERT INTO workout_sessions (session_id, type, status, startTimestamp, elapsedSeconds, notes, lastModified) " +
+                    "VALUES ('migrated_ws', 'FITNESS', 'ACTIVE', 1000, 0, 'Before 14 to 15', 1000)"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-14-15",
+            15,
+            true,
+            JournalDatabase.MIGRATION_14_15
+        )
+
+        db.query("PRAGMA table_info(workout_sessions)").use { cursor ->
+            val columns = buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                }
+            }
+            org.junit.Assert.assertTrue("setMatrix column should be added", "setMatrix" in columns)
+        }
+
+        db.query("SELECT notes FROM workout_sessions WHERE session_id = 'migrated_ws'").use { cursor ->
+            org.junit.Assert.assertTrue("Previously inserted row lost", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Before 14 to 15", cursor.getString(0))
+        }
+
+        db.execSQL(
+            "INSERT INTO workout_sessions (session_id, type, status, startTimestamp, elapsedSeconds, setMatrix, notes, lastModified) " +
+                "VALUES ('ws_with_matrix', 'FITNESS', 'ACTIVE', 2000, 0, '[{\"name\":\"Squat\",\"sets\":[{\"kg\":60.0,\"reps\":10}]}]', '', 2000)"
+        )
+        db.query("SELECT setMatrix FROM workout_sessions WHERE session_id = 'ws_with_matrix'").use { cursor ->
+            org.junit.Assert.assertTrue("setMatrix should be readable", cursor.moveToFirst())
+            org.junit.Assert.assertTrue(cursor.getString(0).contains("Squat"))
+        }
+    }
+
+    @Test
     fun migrate13To14_DropsOrphanedWorkoutSyncColumns() {
         // A v13 database built by an early workout build carried isSynced and
         // syncStatus on workout_sessions; those columns were later declared

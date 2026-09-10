@@ -1,84 +1,42 @@
 package com.example.healthjournal.data.local
 
+import com.example.healthjournal.domain.StrengthExercise
+import com.example.healthjournal.domain.StrengthSet
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * Unit tests for JournalTypeConverters, specifically verifying
- * correct serialization/deserialization of AttachmentData with
- * the new isLocalOnly field and syncStatus handling.
+ * Unit tests for the set-matrix JSON converter: a WorkoutSession persists its
+ * strength exercises/sets (kg + reps) in a single text column, serialized
+ * with Gson.
  */
 class JournalTypeConvertersTest {
 
     private val converters = JournalTypeConverters()
 
     @Test
-    fun fromAttachmentList_serializesCorrectly() {
-        val attachments = listOf(
-            AttachmentData(
-                name = "photo.jpg",
-                uri = "/data/files/photo.jpg",
-                mimeType = "image/jpeg",
-                isLocalOnly = true
+    fun setMatrix_roundTripsLosslessly() {
+        val exercises = listOf(
+            StrengthExercise(
+                name = "Squat",
+                sets = listOf(StrengthSet(kg = 60.0, reps = 10), StrengthSet(kg = 70.0, reps = 8))
             ),
-            AttachmentData(
-                name = "report.pdf",
-                uri = "https://cloud.example.com/report.pdf",
-                mimeType = "application/pdf",
-                isLocalOnly = false
-            )
+            StrengthExercise(name = "Plank", sets = emptyList())
         )
 
-        val json = converters.fromAttachmentList(attachments)
-        val deserialized = converters.toAttachmentList(json)
-
-        assertEquals(2, deserialized.size)
-        assertEquals("photo.jpg", deserialized[0].name)
-        assertTrue(deserialized[0].isLocalOnly == true)
-        assertEquals("report.pdf", deserialized[1].name)
-        assertFalse(deserialized[1].isLocalOnly == true)
+        val json = converters.fromStrengthExercises(exercises)
+        assertEquals(exercises, converters.toStrengthExercises(json))
     }
 
     @Test
-    fun toAttachmentList_returnsEmptyListForNull() {
-        val result = converters.toAttachmentList(null)
-        assertTrue(result.isEmpty())
+    fun setMatrix_nullColumn_readsBackNull() {
+        assertNull(converters.toStrengthExercises(null))
     }
 
     @Test
-    fun toAttachmentList_returnsEmptyListForInvalidJson() {
-        val result = converters.toAttachmentList("{invalid-json")
-        assertTrue(result.isEmpty())
-    }
-
-    @Test
-    fun roundTrip_preservesIsLocalOnlyField() {
-        val original = listOf(
-            AttachmentData("test.jpg", "/local/test.jpg", "image/jpeg", true),
-            AttachmentData("cloud.jpg", "https://cdn.com/cloud.jpg", "image/jpeg", false)
-        )
-
-        val json = converters.fromAttachmentList(original)
-        val restored = converters.toAttachmentList(json)
-
-        assertEquals(original.size, restored.size)
-        for (i in original.indices) {
-            assertEquals(original[i].name, restored[i].name)
-            assertEquals(original[i].uri, restored[i].uri)
-            assertEquals(original[i].mimeType, restored[i].mimeType)
-            assertEquals(original[i].isLocalOnly, restored[i].isLocalOnly)
-        }
-    }
-
-    @Test
-    fun emptyAttachmentList_serializesAndDeserializes() {
-        val emptyList = emptyList<AttachmentData>()
-
-        val json = converters.fromAttachmentList(emptyList)
-        val result = converters.toAttachmentList(json)
-
-        assertTrue(result.isEmpty())
+    fun setMatrix_emptyMatrix_roundTripsAsEmptyList() {
+        val json = converters.fromStrengthExercises(emptyList())
+        assertEquals(emptyList<StrengthExercise>(), converters.toStrengthExercises(json))
     }
 }

@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class], version = 14, exportSchema = true)
+@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class], version = 15, exportSchema = true)
 @androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
@@ -25,7 +25,7 @@ abstract class JournalDatabase : RoomDatabase() {
         private var INSTANCE: JournalDatabase? = null
 
         /** Current Room database schema version; single-sourced for restore validation. */
-        const val CURRENT_SCHEMA_VERSION: Int = 13
+        const val CURRENT_SCHEMA_VERSION: Int = 15
 
         // v1 -> v2: add isSynced
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -191,6 +191,15 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        // v14 -> v15: add setMatrix column holding the strength set/reps matrix
+        // (exercises with sets) as Gson JSON, keeping sets atomic with the session
+        // row for crash recovery.
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE `workout_sessions` ADD COLUMN `setMatrix` TEXT")
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -201,7 +210,7 @@ abstract class JournalDatabase : RoomDatabase() {
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
                     MIGRATION_4_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10,
                     MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
-                    MIGRATION_13_14
+                    MIGRATION_13_14, MIGRATION_14_15
                 ).build()
                 INSTANCE = instance
                 instance
