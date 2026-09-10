@@ -19,6 +19,7 @@ class WorkoutSessionTest {
         assertEquals(WorkoutStatus.ACTIVE.name, session.status)
         assertNull(session.endTimestamp)
         assertEquals(0L, session.elapsedSeconds)
+        assertNull("Fresh sessions have no set matrix", session.setMatrix)
     }
 
     @Test
