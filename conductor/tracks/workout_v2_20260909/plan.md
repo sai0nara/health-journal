@@ -7,7 +7,9 @@ main as one PR or a stacked PR after v1 merges.
 > **Deviation (Phase 1 verification):** the 13→14 slot was consumed by the
 > checkout fix for the orphaned `isSynced`/`syncStatus` columns (early v13 build
 > shipped them; the v1 review-fix removed them from the entity without a version
-> bump). Phase 2 set/rep persistence therefore uses **MIGRATION_14_15**.
+> bump). Phase 2 set/rep persistence therefore uses **MIGRATION_14_15**, and
+> Phase 3 interval-state persistence (cheap parallel-history column, no row
+> rewriting) uses **MIGRATION_15_16**.
 
 ## Phase 1: Domain + Activity Catalog [checkpoint: 833c818]
 - [x] Task: Write failing unit tests for the expanded WorkoutType catalog (10 types, labels, per-type target kind, Health Connect mapping, MET calorie values) (37ad11e)
@@ -24,9 +26,9 @@ main as one PR or a stacked PR after v1 merges.
 - [x] Task: Conductor - User Manual Verification 'Set/Rep Matrix' (Protocol in workflow.md) [fb69b5b: report in git note, user confirmed user_version=15 + setMatrix column]
 
 ## Phase 3: Session Engine (MVI) + ViewModel
-- [ ] Task: Write failing ViewModel tests for Active-state extensions: countdown, HIIT phase/round advance, set-matrix adds/rest timer, summary composition, crash-recovery of sets + intervals
-- [ ] Task: Implement ViewModel countdown + HIIT interval control + set-matrix operations + recovery restore; green tests
-- [ ] Task: Rerun unit suite to green; verify >80% coverage on new code
+- [x] Task: Write failing ViewModel tests for Active-state extensions: countdown, HIIT phase/round advance, set-matrix adds/rest timer, summary composition, crash-recovery of sets + intervals (e661529)
+- [x] Task: Implement ViewModel countdown + HIIT interval control + set-matrix operations + recovery restore; green tests (e661529)
+- [x] Task: Rerun unit suite to green; verify >80% coverage on new code (e661529: 409 JVM 0 failures; 22/22 on-device; every new engine behavior has dedicated unit + UI tests — repo has no JaCoCo, evidence is test enumeration as in Phases 1-2)
 - [ ] Task: Conductor - User Manual Verification 'Session Engine (MVI) + ViewModel' (Protocol in workflow.md)
 
 ## Phase 4: UI + Navigation + Polish
