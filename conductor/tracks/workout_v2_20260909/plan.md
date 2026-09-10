@@ -31,7 +31,7 @@ main as one PR or a stacked PR after v1 merges.
 - [x] Task: Rerun unit suite to green; verify >80% coverage on new code (e661529: 409 JVM 0 failures; 22/22 on-device; every new engine behavior has dedicated unit + UI tests — repo has no JaCoCo, evidence is test enumeration as in Phases 1-2)
 - [x] Task: Conductor - User Manual Verification 'Session Engine (MVI) + ViewModel' (Protocol in workflow.md) [d952499: report in git note, user confirmed countdown 3-2-1 works on device; set-matrix/HIIT UI deferred to Phase 4]
 
-## Phase 4: UI + Navigation + Polish
+## Phase 4: UI + Navigation + Polish [checkpoint: de617cf]
 - [x] Task: Write failing Compose UI tests for: catalog discovery (10 types), configuration per type, countdown, HIIT phase/round UI, set-matrix editing, summary (tonnage, rounds, laps), manual-log dialog extras (9 new tests; red on-device before implementation)
 - [x] Task: Implement Workout UI updates (M3, semantic tokens) + History entry polish; wire per-type config/manual-log (HIIT phase/round UI + Next interval; Fitness set-matrix editor with rest timer + inline errors; summary tonnage + rounds/intervals; manual-log laps/movements extras)
 - [x] Task: Run instrumented UI tests until green on device (47256c6: WorkoutScreenTest 27/27 on SM-F936B)
