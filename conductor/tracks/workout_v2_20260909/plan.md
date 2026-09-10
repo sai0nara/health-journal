@@ -38,8 +38,8 @@ main as one PR or a stacked PR after v1 merges.
 - [x] Task: Conductor - User Manual Verification 'UI + Navigation + Polish' (Protocol in workflow.md) [de617cf: report in git note, user confirmed YES — Fitness sets/tonnage, HIIT phases/rounds, Swimming laps + Calisthenics movements extras all behaved as described]
 
 ## Phase 5: Integration & Health Connect
-- [ ] Task: End-to-end tests: 10-type session → summary → journal entry → Health Connect EXERCISE write (all 10 mappings); verify crash-recovery mid-set and mid-interval
-- [ ] Task: Verify Health Connect write for new types with granted/denied permission paths; airplane-mode logging pass
+- [x] Task: End-to-end tests: 10-type session → summary → journal entry → Health Connect EXERCISE write (all 10 mappings); verify crash-recovery mid-set and mid-interval (2b49569: allTenTypes + crashRecovery_midSet + crashRecovery_midInterval; green-over-verified wiring, see task git note)
+- [x] Task: Verify Health Connect write for new types with granted/denied permission paths; airplane-mode logging pass (2b49569: denied-path for 5 new types unsynced-but-complete; writeFailure fake proves airplane-mode write never breaks finish/manual-log)
 - [ ] Task: Update affected wiki pages (agent owns the vault) and run wiki lint (exit 0); commit wiki + code together
 - [ ] Task: Conductor - User Manual Verification 'Integration & Health Connect' (Protocol in workflow.md)
 
