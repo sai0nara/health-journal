@@ -35,7 +35,7 @@ main as one PR or a stacked PR after v1 merges.
 - [x] Task: Write failing Compose UI tests for: catalog discovery (10 types), configuration per type, countdown, HIIT phase/round UI, set-matrix editing, summary (tonnage, rounds, laps), manual-log dialog extras (9 new tests; red on-device before implementation)
 - [x] Task: Implement Workout UI updates (M3, semantic tokens) + History entry polish; wire per-type config/manual-log (HIIT phase/round UI + Next interval; Fitness set-matrix editor with rest timer + inline errors; summary tonnage + rounds/intervals; manual-log laps/movements extras)
 - [x] Task: Run instrumented UI tests until green on device (47256c6: WorkoutScreenTest 27/27 on SM-F936B)
-- [ ] Task: Conductor - User Manual Verification 'UI + Navigation + Polish' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'UI + Navigation + Polish' (Protocol in workflow.md) [de617cf: report in git note, user confirmed YES — Fitness sets/tonnage, HIIT phases/rounds, Swimming laps + Calisthenics movements extras all behaved as described]
 
 ## Phase 5: Integration & Health Connect
 - [ ] Task: End-to-end tests: 10-type session → summary → journal entry → Health Connect EXERCISE write (all 10 mappings); verify crash-recovery mid-set and mid-interval
