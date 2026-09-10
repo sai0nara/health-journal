@@ -4,12 +4,14 @@
 > direct Health Connect SDK reads are exercised indirectly (there is no
 > dedicated manager test today).
 
-Last updated: 2026-09-02
+Last updated: 2026-09-10
 
 ## Automated coverage
 
 | Stack | Test file | Scope |
 |---|---|---|
+| JVM | `app/src/test/java/com/example/healthjournal/health/WorkoutHealthMapperTest.kt` | session → exercise-record mapping, incl. UNKNOWN fallback |
+| JVM | `app/src/test/java/com/example/healthjournal/viewmodel/WorkoutViewModelTest.kt` | finish logs locally with denied/unavailable Health Connect write |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/AddEntryScreenTest.kt` | Health button present/enabled; unavailable path toasts |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/components/EnrichmentPanelTest.kt` | Health button callback fires |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/MigrationTest.kt` | metric columns survive migrations |
@@ -22,6 +24,9 @@ Last updated: 2026-09-02
 | T-2 | FR-6 | Health button callback | Enrichment shown | tapping Health invokes the sync callback |
 | T-3 | AC-1/AC-2 | Permission granted/denied | granted path | vitals filled on the entry; deny path toasts (verified via real device) |
 | T-4 | FR-4 | Metric columns survive migration | schema migration | `bp_systolic`, `bp_diastolic`, `heart_rate_avg`, `sleep_hours` preserved |
+| T-5 | FR-8 | Discovered workout types map | 10 workout types | each becomes its exercise counterpart; unmapped → `UNKNOWN` (JVM `WorkoutHealthMapperTest`) |
+| T-6 | FR-9 | Health Connect write denied | permission denied | workout still finishes, journal entry + summary saved locally (JVM `WorkoutViewModelTest`) |
+| T-7 | FR-9 | Airplane mode | Health write throws | workout still finishes; manual log still confirms (JVM `WorkoutViewModelTest`) |
 
 ## Manual checks
 

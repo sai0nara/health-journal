@@ -5,7 +5,7 @@
 > URI lists, remapped across Drive sync and backup/restore, and deleted through
 > a sandboxed local-file helper.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-10
 
 ## Overview
 

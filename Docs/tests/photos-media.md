@@ -3,7 +3,7 @@
 > Verifies compression behavior, sandboxed cleanup, JSON persistence, and the
 > sync/restore media remap across the JVM unit and instrumented suites.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-10
 
 ## Automated coverage
 

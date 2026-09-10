@@ -4,7 +4,7 @@
 > app-private storage with image compression, and manage that media across
 > capture, sync, restore, and deletion.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-10
 
 ## Overview
 

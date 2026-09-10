@@ -40,7 +40,7 @@ main as one PR or a stacked PR after v1 merges.
 ## Phase 5: Integration & Health Connect
 - [x] Task: End-to-end tests: 10-type session → summary → journal entry → Health Connect EXERCISE write (all 10 mappings); verify crash-recovery mid-set and mid-interval (2b49569: allTenTypes + crashRecovery_midSet + crashRecovery_midInterval; green-over-verified wiring, see task git note)
 - [x] Task: Verify Health Connect write for new types with granted/denied permission paths; airplane-mode logging pass (2b49569: denied-path for 5 new types unsynced-but-complete; writeFailure fake proves airplane-mode write never breaks finish/manual-log)
-- [ ] Task: Update affected wiki pages (agent owns the vault) and run wiki lint (exit 0); commit wiki + code together
+- [x] Task: Update affected wiki pages (agent owns the vault) and run wiki lint (exit 0); commit wiki + code together (wiki: ui-layer, data-layer, health-connect integration, unit-tests, instrumented refreshed for WorkoutScreen/JournalDatabase v16/converters/health-write; Docs: health-connect prd/psd/tests + photos-media + entry-logging + body-measurements dates/content; lint exit 0)
 - [ ] Task: Conductor - User Manual Verification 'Integration & Health Connect' (Protocol in workflow.md)
 
 ## Phase 6: Review Fixes

@@ -2,7 +2,7 @@
 
 > The on-device test stack under `app/src/androidTest` — Compose UI tests plus Room DAO and migration tests that need the Android framework.
 
-Last updated: 2026-09-08
+Last updated: 2026-09-10
 
 ## What this stack is
 
@@ -11,6 +11,13 @@ device or emulator. It includes Compose UI tests (exercising screens under
 `ui/screens` and `ui/components`), Room DAO tests, and database migration tests
 under `data/local`. Its dependencies come from the module build file's
 `androidTestImplementation` block.
+
+The workout session screens are exercised end-to-end here: the catalog,
+per-type configuration, active-session controls (countdown, HIIT phase/round,
+set-matrix editor with rest timer), summary composition, and manual-log extras,
+driven deterministically through the viewmodel's `advanceTime`. The migration
+tests alongside verify the full schema chain up to the current version,
+including the workout set-matrix (14→15) and interval-state (15→16) columns.
 
 This is the second of two test stacks. Unlike the [[unit-tests]] JVM stack, it
 requires a running device and cannot run in a plain JVM context.
