@@ -11,10 +11,13 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.WorkoutRepository
+import com.example.healthjournal.domain.WorkoutType
 import com.example.healthjournal.util.FakeWorkoutHealthDataSource
 import com.example.healthjournal.util.FakeWorkoutSessionDao
 import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.data.local.WorkoutStatus
+import com.example.healthjournal.domain.StrengthExercise
+import com.example.healthjournal.domain.StrengthSet
 import com.example.healthjournal.ui.theme.HealthJournalTheme
 import com.example.healthjournal.viewmodel.WorkoutViewModel
 import io.mockk.coEvery
@@ -62,6 +65,27 @@ class WorkoutScreenTest {
         composeTestRule.onNodeWithText("Run").performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("Log past Run instead").performClick()
+        composeTestRule.waitForIdle()
+    }
+
+    /** Starts a session of [type] and runs it past the 3-2-1 countdown. */
+    private fun startActiveSession(type: WorkoutType, target: String) {
+        openScreen()
+        composeTestRule.onNodeWithText(type.label).performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("workout_target_field").performTextInput(target)
+        composeTestRule.onNodeWithText("Start").performClick()
+        composeTestRule.waitForIdle()
+        viewModel.advanceTime(WorkoutViewModel.COUNTDOWN_SECONDS.toLong())
+        composeTestRule.waitForIdle()
+    }
+
+    /** Opens the manual-log dialog for [type] without a target. */
+    private fun openLogDialogForType(type: WorkoutType) {
+        openScreen()
+        composeTestRule.onNodeWithText(type.label).performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Log past ${type.label} instead").performClick()
         composeTestRule.waitForIdle()
     }
 
@@ -284,5 +308,121 @@ class WorkoutScreenTest {
 
         composeTestRule.onNodeWithText("Resume").assertExists()
         composeTestRule.onNodeWithText("Discard").assertExists()
+    }
+
+    @Test
+    fun hiitActive_showsPhaseIndicatorAndNextIntervalControl() {
+        startActiveSession(WorkoutType.HIIT, "20")
+
+        composeTestRule.onNodeWithTag("hiit_phase").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("next_interval_button").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Next interval").assertExists()
+    }
+
+    @Test
+    fun hiitActive_nextInterval_advancesPhaseAndCountsRound() {
+        startActiveSession(WorkoutType.HIIT, "20")
+
+        composeTestRule.onNodeWithText("Next interval").performClick()
+        composeTestRule.waitForIdle()
+
+        // Work -> Rest crossing completes the first round.
+        composeTestRule.onNodeWithText("Rest").assertExists()
+        composeTestRule.onNodeWithTag("hiit_rounds").assertExists()
+    }
+
+    @Test
+    fun fitnessActive_showsSetMatrixEditor() {
+        startActiveSession(WorkoutType.FITNESS, "30")
+
+        composeTestRule.onNodeWithText("Add exercise").assertExists()
+        composeTestRule.onNodeWithTag("exercise_name_field").assertExists()
+        composeTestRule.onNodeWithText("No exercises yet").assertExists()
+    }
+
+    @Test
+    fun fitnessActive_addExerciseAndSet_showsSetWithTonnageAndRestTimer() {
+        startActiveSession(WorkoutType.FITNESS, "30")
+
+        composeTestRule.onNodeWithTag("exercise_name_field").performTextInput("Squat")
+        composeTestRule.onNodeWithText("Add exercise").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Squat").assertExists()
+        composeTestRule.onNodeWithTag("set_kg_field_0").performTextInput("60")
+        composeTestRule.onNodeWithTag("set_reps_field_0").performTextInput("10")
+        composeTestRule.onNodeWithTag("add_set_button_0").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("60 kg × 10 reps").assertExists()
+        composeTestRule.onNodeWithTag("workout_rest_timer").assertIsDisplayed()
+        composeTestRule.onNodeWithText("90 kg").assertDoesNotExist()
+    }
+
+    @Test
+    fun fitnessActive_addSet_invalidValues_showsInlineError() {
+        startActiveSession(WorkoutType.FITNESS, "30")
+
+        composeTestRule.onNodeWithTag("exercise_name_field").performTextInput("Squat")
+        composeTestRule.onNodeWithText("Add exercise").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("set_kg_field_0").performTextInput("0")
+        composeTestRule.onNodeWithTag("add_set_button_0").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Weight must be greater than zero").assertExists()
+    }
+
+    @Test
+    fun fitnessSummary_showsTonnage() {
+        startActiveSession(WorkoutType.FITNESS, "30")
+        composeTestRule.onNodeWithTag("exercise_name_field").performTextInput("Squat")
+        composeTestRule.onNodeWithText("Add exercise").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("set_kg_field_0").performTextInput("60")
+        composeTestRule.onNodeWithTag("set_reps_field_0").performTextInput("10")
+        composeTestRule.onNodeWithTag("add_set_button_0").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Finish").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Tonnage: 600 kg", substring = true).assertExists()
+    }
+
+    @Test
+    fun HIITSummary_showsRoundsAndIntervals() {
+        startActiveSession(WorkoutType.HIIT, "20")
+        composeTestRule.onNodeWithText("Next interval").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Finish").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Rounds: 1", substring = true).assertExists()
+        composeTestRule.onNodeWithText("Intervals: 1", substring = true).assertExists()
+    }
+
+    @Test
+    fun swimmingManualLog_showsLapsField() {
+        openLogDialogForType(WorkoutType.SWIMMING)
+
+        composeTestRule.onNodeWithTag("manual_laps_field").assertExists()
+    }
+
+    @Test
+    fun calisthenicsManualLog_showsMovementCountsField() {
+        openLogDialogForType(WorkoutType.CALISTHENICS)
+
+        composeTestRule.onNodeWithTag("manual_movements_field").assertExists()
+    }
+
+    @Test
+    fun runManualLog_hasNoLapsOrMovementsExtras() {
+        openLogDialogForRun()
+
+        composeTestRule.onNodeWithTag("manual_laps_field").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("manual_movements_field").assertDoesNotExist()
     }
 }

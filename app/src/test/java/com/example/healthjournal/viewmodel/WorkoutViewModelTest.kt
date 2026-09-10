@@ -371,4 +371,35 @@ class WorkoutViewModelTest {
 
         assertTrue(vm.uiState.value is WorkoutUiState.Idle)
     }
+
+    @Test
+    fun finishSession_journalDescriptionCarriesTonnage() = runTest {
+        val vm = startActiveSession(WorkoutType.FITNESS, "30")
+        vm.addExercise("Squat")
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.addSet(exerciseId = (vm.uiState.value as WorkoutUiState.Active)
+            .session.setMatrix!!.single().id, kg = 60.0, reps = 10)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { journalRepository.insert(withArg { entry ->
+            assertTrue(entry.description.contains("Tonnage: 600 kg"))
+        }) }
+    }
+
+    @Test
+    fun finishSession_journalDescriptionCarriesIntervalCounts() = runTest {
+        val vm = startActiveSession(WorkoutType.HIIT, "20")
+        vm.advanceInterval()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { journalRepository.insert(withArg { entry ->
+            assertTrue(entry.description.contains("Rounds: 1 · Intervals: 1"))
+        }) }
+    }
 }

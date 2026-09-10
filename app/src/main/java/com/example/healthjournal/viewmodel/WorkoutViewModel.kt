@@ -296,7 +296,8 @@ class WorkoutViewModel(
         type: WorkoutType?,
         durationMinutes: String,
         calories: String,
-        timestamp: Long
+        timestamp: Long,
+        note: String = ""
     ) {
         viewModelScope.launch(dispatcher) {
             val errors = ValidateWorkout.validateManualLog(
@@ -321,7 +322,8 @@ class WorkoutViewModel(
                 startTimestamp = timestamp,
                 endTimestamp = timestamp + (minutes * 60_000).toLong(),
                 elapsedSeconds = (minutes * 60).toLong(),
-                calories = kcal
+                calories = kcal,
+                notes = note
             )
             repository.saveSession(completed)
             journalRepository.insert(
@@ -393,8 +395,20 @@ class WorkoutViewModel(
             "%.1f kcal".format(caloriesKcal)
         }
         val base = "Workout: ${type.label}, $minutesText, $caloriesText"
-        return if (session.notes.isNotBlank()) "$base\n${session.notes}" else base
+        val details = buildList {
+            session.setMatrix
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { add("Tonnage: ${formatTonnage(TonnageCalculator.tonnageKg(it))} kg") }
+            session.intervalState?.let {
+                if (it.intervals > 0) add("Rounds: ${it.rounds} · Intervals: ${it.intervals}")
+            }
+        }
+        val withDetails = if (details.isEmpty()) base else (listOf(base) + details).joinToString("\n")
+        return if (session.notes.isNotBlank()) "$withDetails\n${session.notes}" else withDetails
     }
+
+    private fun formatTonnage(value: Double): String =
+        if (value == value.toLong().toDouble()) "${value.toLong()}" else "%.1f".format(value)
 
     companion object {
         /** Session rows are rewritten on these elapsed-second boundaries. */
