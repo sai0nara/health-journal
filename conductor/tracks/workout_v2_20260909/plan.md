@@ -19,8 +19,8 @@ main as one PR or a stacked PR after v1 merges.
 ## Phase 2: Set/Rep Matrix (Data + Domain)
 - [x] Task: Write failing unit tests for the set/reps model (exercises, sets validated, tonnage calculation) (48cc0a9)
 - [x] Task: Implement exercises/sets model + tonnage use-case; green tests (48cc0a9)
-- [ ] Task: Write failing unit tests for Room persistence of sets (schema 14→15 migration, TypeConverter or table)
-- [ ] Task: Implement schema 14→15 migration + persistence; update exported schema JSON; green tests
+- [x] Task: Write failing unit tests for Room persistence of sets (schema 14→15 migration, TypeConverter or table) (fd158cc)
+- [x] Task: Implement schema 14→15 migration + persistence; update exported schema JSON; green tests (fd158cc)
 - [ ] Task: Conductor - User Manual Verification 'Set/Rep Matrix' (Protocol in workflow.md)
 
 ## Phase 3: Session Engine (MVI) + ViewModel
