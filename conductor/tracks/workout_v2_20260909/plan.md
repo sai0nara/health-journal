@@ -16,12 +16,12 @@ main as one PR or a stacked PR after v1 merges.
 - [x] Task: Implement HIIT interval-phase domain logic; green tests (87afe8a)
 - [x] Task: Conductor - User Manual Verification 'Domain + Activity Catalog' (Protocol in workflow.md) [833c818: report in git note, user confirmed YES after 2 fix rounds]
 
-## Phase 2: Set/Rep Matrix (Data + Domain)
+## Phase 2: Set/Rep Matrix (Data + Domain) [checkpoint: fb69b5b]
 - [x] Task: Write failing unit tests for the set/reps model (exercises, sets validated, tonnage calculation) (48cc0a9)
 - [x] Task: Implement exercises/sets model + tonnage use-case; green tests (48cc0a9)
 - [x] Task: Write failing unit tests for Room persistence of sets (schema 14→15 migration, TypeConverter or table) (fd158cc)
 - [x] Task: Implement schema 14→15 migration + persistence; update exported schema JSON; green tests (fd158cc)
-- [ ] Task: Conductor - User Manual Verification 'Set/Rep Matrix' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Set/Rep Matrix' (Protocol in workflow.md) [fb69b5b: report in git note, user confirmed user_version=15 + setMatrix column]
 
 ## Phase 3: Session Engine (MVI) + ViewModel
 - [ ] Task: Write failing ViewModel tests for Active-state extensions: countdown, HIIT phase/round advance, set-matrix adds/rest timer, summary composition, crash-recovery of sets + intervals
