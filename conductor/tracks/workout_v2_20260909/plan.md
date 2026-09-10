@@ -25,11 +25,11 @@ main as one PR or a stacked PR after v1 merges.
 - [x] Task: Implement schema 14→15 migration + persistence; update exported schema JSON; green tests (fd158cc)
 - [x] Task: Conductor - User Manual Verification 'Set/Rep Matrix' (Protocol in workflow.md) [fb69b5b: report in git note, user confirmed user_version=15 + setMatrix column]
 
-## Phase 3: Session Engine (MVI) + ViewModel
+## Phase 3: Session Engine (MVI) + ViewModel [checkpoint: d952499]
 - [x] Task: Write failing ViewModel tests for Active-state extensions: countdown, HIIT phase/round advance, set-matrix adds/rest timer, summary composition, crash-recovery of sets + intervals (e661529)
 - [x] Task: Implement ViewModel countdown + HIIT interval control + set-matrix operations + recovery restore; green tests (e661529)
 - [x] Task: Rerun unit suite to green; verify >80% coverage on new code (e661529: 409 JVM 0 failures; 22/22 on-device; every new engine behavior has dedicated unit + UI tests — repo has no JaCoCo, evidence is test enumeration as in Phases 1-2)
-- [ ] Task: Conductor - User Manual Verification 'Session Engine (MVI) + ViewModel' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Session Engine (MVI) + ViewModel' (Protocol in workflow.md) [d952499: report in git note, user confirmed countdown 3-2-1 works on device; set-matrix/HIIT UI deferred to Phase 4]
 
 ## Phase 4: UI + Navigation + Polish
 - [ ] Task: Write failing Compose UI tests for: catalog discovery (10 types), configuration per type, countdown, HIIT phase/round UI, set-matrix editing, summary (tonnage, rounds, laps), manual-log dialog extras
