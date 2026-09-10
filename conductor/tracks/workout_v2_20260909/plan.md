@@ -37,11 +37,11 @@ main as one PR or a stacked PR after v1 merges.
 - [x] Task: Run instrumented UI tests until green on device (47256c6: WorkoutScreenTest 27/27 on SM-F936B)
 - [x] Task: Conductor - User Manual Verification 'UI + Navigation + Polish' (Protocol in workflow.md) [de617cf: report in git note, user confirmed YES — Fitness sets/tonnage, HIIT phases/rounds, Swimming laps + Calisthenics movements extras all behaved as described]
 
-## Phase 5: Integration & Health Connect
+## Phase 5: Integration & Health Connect [checkpoint: 30af25c]
 - [x] Task: End-to-end tests: 10-type session → summary → journal entry → Health Connect EXERCISE write (all 10 mappings); verify crash-recovery mid-set and mid-interval (2b49569: allTenTypes + crashRecovery_midSet + crashRecovery_midInterval; green-over-verified wiring, see task git note)
 - [x] Task: Verify Health Connect write for new types with granted/denied permission paths; airplane-mode logging pass (2b49569: denied-path for 5 new types unsynced-but-complete; writeFailure fake proves airplane-mode write never breaks finish/manual-log)
 - [x] Task: Update affected wiki pages (agent owns the vault) and run wiki lint (exit 0); commit wiki + code together (wiki: ui-layer, data-layer, health-connect integration, unit-tests, instrumented refreshed for WorkoutScreen/JournalDatabase v16/converters/health-write; Docs: health-connect prd/psd/tests + photos-media + entry-logging + body-measurements dates/content; lint exit 0)
-- [ ] Task: Conductor - User Manual Verification 'Integration & Health Connect' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Integration & Health Connect' (Protocol in workflow.md) [30af25c: report in git note, user confirmed YES — hub entry from History, workout completes locally with journal+summary, Health Connect exercise write works, denial/airplane-mode never blocks logging]
 
 ## Phase 6: Review Fixes
 - [ ] Task: Code review of v2 changes; apply suggestions; record SHA (protocol in workflow.md)
