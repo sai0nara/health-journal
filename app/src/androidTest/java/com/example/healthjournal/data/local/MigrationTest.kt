@@ -150,11 +150,19 @@ class MigrationTest {
 
     @Test
     fun migrate13To14_DropsOrphanedWorkoutSyncColumns() {
-        // A v13 database built by an early workout build carried isSynced and
-        // syncStatus on workout_sessions; those columns were later declared
-        // dead and removed from the entity. The 13->14 migration must drop
-        // them so the persisted schema matches the recompiled v14 identity.
-        helper.createDatabase("$dbName-13-14", 13)
+        // A real shipped-early v13 database carries isSynced and syncStatus on
+        // workout_sessions; the exported 13.json snapshot only knows the clean
+        // shape. Simulate that DB here, then assert the migration both removes
+        // the columns and preserves the row data.
+        helper.createDatabase("$dbName-13-14", 13).apply {
+            execSQL("ALTER TABLE workout_sessions ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+            execSQL("ALTER TABLE workout_sessions ADD COLUMN syncStatus TEXT")
+            execSQL(
+                "INSERT INTO workout_sessions (session_id, type, status, startTimestamp, elapsedSeconds, notes, lastModified, isSynced, syncStatus) " +
+                    "VALUES ('early_v13', 'RUN', 'ACTIVE', 1000, 42, 'Before 13 to 14', 1000, 1, 'PENDING_SYNC')"
+            )
+            close()
+        }
 
         val db = helper.runMigrationsAndValidate(
             "$dbName-13-14",
@@ -173,8 +181,15 @@ class MigrationTest {
             org.junit.Assert.assertFalse("syncStatus should be dropped", "syncStatus" in columns)
             org.junit.Assert.assertTrue(
                 "workout_sessions data should survive the migration",
-                columns.contains("lastModified")
+                "lastModified" in columns
             )
+        }
+
+        db.query("SELECT type, elapsedSeconds, notes FROM workout_sessions WHERE session_id = 'early_v13'").use { cursor ->
+            org.junit.Assert.assertTrue("Previously inserted row lost", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("RUN", cursor.getString(0))
+            org.junit.Assert.assertEquals(42L, cursor.getLong(1))
+            org.junit.Assert.assertEquals("Before 13 to 14", cursor.getString(2))
         }
     }
 }

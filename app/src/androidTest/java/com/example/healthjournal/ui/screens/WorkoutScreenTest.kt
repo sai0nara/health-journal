@@ -144,6 +144,18 @@ class WorkoutScreenTest {
     }
 
     @Test
+    fun configureWalkingHiking_showsDistanceTargetLabel() {
+        openScreen()
+        composeTestRule.onNodeWithTag("workout_catalog")
+            .performScrollToNode(hasText("Walking/Hiking"))
+        composeTestRule.onNodeWithText("Walking/Hiking").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Target distance (km)").assertExists()
+        composeTestRule.onNodeWithText("Target duration (min)").assertDoesNotExist()
+    }
+
+    @Test
     fun selectType_showsConfiguration() {
         openScreen()
         composeTestRule.onNodeWithText("Run").performClick()
@@ -357,6 +369,27 @@ class WorkoutScreenTest {
         composeTestRule.onNodeWithText("60 kg × 10 reps").assertExists()
         composeTestRule.onNodeWithTag("workout_rest_timer").assertIsDisplayed()
         composeTestRule.onNodeWithText("90 kg").assertDoesNotExist()
+    }
+
+    @Test
+    fun fitnessActive_secondExercise_doesNotMirrorInputAcrossCards() {
+        startActiveSession(WorkoutType.FITNESS, "30")
+
+        composeTestRule.onNodeWithTag("exercise_name_field").performTextInput("Squat")
+        composeTestRule.onNodeWithText("Add exercise").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("exercise_name_field").performTextInput("Bench")
+        composeTestRule.onNodeWithText("Add exercise").performClick()
+        composeTestRule.waitForIdle()
+
+        // Both cards render, but only one (the active) card owns the kg/reps
+        // input. A second input row would share the same text state and mirror
+        // whatever is typed into the first card.
+        composeTestRule.onNodeWithText("Squat").assertExists()
+        composeTestRule.onNodeWithText("Bench").assertExists()
+        composeTestRule.onNodeWithTag("set_kg_field_0").assertExists()
+        composeTestRule.onNodeWithTag("set_kg_field_1").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("set_reps_field_1").assertDoesNotExist()
     }
 
     @Test

@@ -38,6 +38,7 @@ class WorkoutViewModelTest {
     private lateinit var healthSource: FakeWorkoutHealthDataSource
     private val journalRepository: JournalRepository = mockk(relaxed = true)
     private val haptics = mutableListOf<WorkoutHaptic>()
+    private var nowMillis = 1_700_000_000_000L
 
     @Before
     fun setup() {
@@ -46,6 +47,7 @@ class WorkoutViewModelTest {
         repository = WorkoutRepository(dao)
         healthSource = FakeWorkoutHealthDataSource()
         haptics.clear()
+        nowMillis = 1_700_000_000_000L
         coEvery { journalRepository.insert(any()) } returns Unit
     }
 
@@ -61,7 +63,19 @@ class WorkoutViewModelTest {
         healthSource = health,
         journalRepository = journalRepository,
         dispatcher = dispatcher,
-        onHaptic = { haptics.add(it) }
+        onHaptic = { haptics.add(it) },
+        clock = { nowMillis }
+    )
+
+    private fun newViewModelWithClock(
+        clock: () -> Long
+    ): WorkoutViewModel = WorkoutViewModel(
+        repository = repository,
+        healthSource = healthSource,
+        journalRepository = journalRepository,
+        dispatcher = dispatcher,
+        onHaptic = { haptics.add(it) },
+        clock = clock
     )
 
     /** Starts a configured session and runs it past the 3-2-1 countdown. */
@@ -135,6 +149,24 @@ class WorkoutViewModelTest {
     }
 
     @Test
+    fun startSession_walkingHiking_distanceCapable_UsesDistanceTarget() = runTest {
+        val vm = startActiveSession(WorkoutType.WALKING_HIKING, "6")
+
+        val session = (vm.uiState.value as WorkoutUiState.Active).session
+        assertEquals(6_000.0, session.targetDistanceM!!, 0.0)
+        assertEquals(null, session.targetDurationMin)
+    }
+
+    @Test
+    fun startSession_cycling_distanceCapable_UsesDistanceTarget() = runTest {
+        val vm = startActiveSession(WorkoutType.CYCLING, "25")
+
+        val session = (vm.uiState.value as WorkoutUiState.Active).session
+        assertEquals(25_000.0, session.targetDistanceM!!, 0.0)
+        assertEquals(null, session.targetDurationMin)
+    }
+
+    @Test
     fun startSession_withUnfinishedSession_goesToRecoveryInstead() = runTest {
         repository.saveSession(WorkoutSession(status = WorkoutStatus.PAUSED.name))
         val vm = newViewModel()
@@ -196,6 +228,93 @@ class WorkoutViewModelTest {
         vm.advanceTime(2)
         dispatcher.scheduler.advanceUntilIdle()
         assertEquals(5L, dao.getSessionById(active.session.session_id)!!.elapsedSeconds)
+    }
+
+    @Test
+    fun advanceTime_afterDoze_catchesUpElapsedFromInjectedClock() = runTest {
+        var wall = 10_000L
+        val vm = newViewModelWithClock { wall }
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.selectType(WorkoutType.RUN)
+        vm.updateTarget("5")
+        vm.startSession()
+        dispatcher.scheduler.advanceUntilIdle()
+        while (vm.uiState.value is WorkoutUiState.Countdown) {
+            vm.advanceTime(1)
+            dispatcher.scheduler.advanceUntilIdle()
+        }
+        assertTrue(vm.uiState.value is WorkoutUiState.Active)
+        assertEquals(0L, (vm.uiState.value as WorkoutUiState.Active).session.elapsedSeconds)
+
+        // The device dozes: no ticks fire, then the wall clock jumps five minutes ahead.
+        wall += 300_000L
+        vm.advanceTime(1)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val active = vm.uiState.value as WorkoutUiState.Active
+        assertEquals(300L, active.session.elapsedSeconds)
+    }
+
+    @Test
+    fun advanceTime_afterDoze_decrementsRestTimerFromInjectedClock() = runTest {
+        var wall = 10_000L
+        val vm = newViewModelWithClock { wall }
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.selectType(WorkoutType.FITNESS)
+        vm.updateTarget("30")
+        vm.startSession()
+        dispatcher.scheduler.advanceUntilIdle()
+        while (vm.uiState.value is WorkoutUiState.Countdown) {
+            vm.advanceTime(1)
+            dispatcher.scheduler.advanceUntilIdle()
+        }
+        vm.addExercise("Squat")
+        dispatcher.scheduler.advanceUntilIdle()
+        val exerciseId = (vm.uiState.value as WorkoutUiState.Active).session.setMatrix!!.single().id
+        vm.addSet(exerciseId, kg = 40.0, reps = 10)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(WorkoutViewModel.DEFAULT_REST_SECONDS, (vm.uiState.value as WorkoutUiState.Active).restSeconds)
+
+        // Doze for the remaining rest interval: one late tick must catch the rest timer up.
+        wall += WorkoutViewModel.DEFAULT_REST_SECONDS * 1_000L
+        vm.advanceTime(1)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, (vm.uiState.value as WorkoutUiState.Active).restSeconds)
+    }
+
+    @Test
+    fun advanceTime_pausedWallTimeDoesNotCountAfterResume() = runTest {
+        var wall = 10_000L
+        val vm = newViewModelWithClock { wall }
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.selectType(WorkoutType.RUN)
+        vm.updateTarget("5")
+        vm.startSession()
+        dispatcher.scheduler.advanceUntilIdle()
+        while (vm.uiState.value is WorkoutUiState.Countdown) {
+            vm.advanceTime(1)
+            dispatcher.scheduler.advanceUntilIdle()
+        }
+        vm.advanceTime(120)
+        dispatcher.scheduler.advanceUntilIdle()
+        val sessionId = (vm.uiState.value as WorkoutUiState.Active).session.session_id
+
+        vm.pauseSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        // Ten minutes frozen in PAUSED: wall time must not accrue to the session.
+        wall += 600_000L
+        vm.resumeSession()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.advanceTime(1)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val active = vm.uiState.value as WorkoutUiState.Active
+        assertEquals(121L, active.session.elapsedSeconds)
+        // 121s is not a persistence boundary; the stored row reflects the resume snapshot
+        // and must not have absorbed the ten paused minutes.
+        assertEquals(120L, dao.getSessionById(sessionId)!!.elapsedSeconds)
     }
 
     @Test

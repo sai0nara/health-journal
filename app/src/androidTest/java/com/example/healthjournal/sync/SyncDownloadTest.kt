@@ -310,6 +310,7 @@ class SyncDownloadTest {
             coEvery {
                 mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_GOALS_FILE)
             } returns null
+            coEvery { mock.downloadDataFile(DriveServiceHelper.PERSONAL_CARD_FILE) } returns null
             coEvery { mock.uploadDataFile(any(), any()) } answers {
                 uploadedFiles[firstArg()] = secondArg()
                 "uploaded"
@@ -369,6 +370,7 @@ class SyncDownloadTest {
             coEvery {
                 mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_GOALS_FILE)
             } returns null
+            coEvery { mock.downloadDataFile(DriveServiceHelper.PERSONAL_CARD_FILE) } returns null
             coEvery { mock.uploadDataFile(any(), any()) } answers {
                 uploadedFiles[firstArg()] = secondArg()
                 "uploaded"
@@ -428,6 +430,7 @@ class SyncDownloadTest {
             coEvery {
                 mock.downloadDataFile(DriveServiceHelper.MEASUREMENTS_GOALS_FILE)
             } returns null
+            coEvery { mock.downloadDataFile(DriveServiceHelper.PERSONAL_CARD_FILE) } returns null
             coEvery { mock.uploadDataFile(any(), any()) } answers {
                 uploadedFiles[firstArg()] = secondArg()
                 "uploaded"

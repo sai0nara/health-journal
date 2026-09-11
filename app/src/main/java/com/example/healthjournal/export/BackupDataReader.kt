@@ -6,6 +6,7 @@ import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.WorkoutSession
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
@@ -28,7 +29,8 @@ class BackupDataReader(private val gson: Gson) {
         goals = readList<GoalEntity>(stagingDir, BackupWriter.EntityFile.GOALS),
         personalCards = readList<PersonalCard>(stagingDir, BackupWriter.EntityFile.PERSONAL_CARD),
         deletedEntries = readList<DeletedEntry>(stagingDir, BackupWriter.EntityFile.DELETED_ENTRIES),
-        entryTags = readList<EntryTagCrossRef>(stagingDir, BackupWriter.EntityFile.ENTRY_TAGS)
+        entryTags = readList<EntryTagCrossRef>(stagingDir, BackupWriter.EntityFile.ENTRY_TAGS),
+        workoutSessions = readList<WorkoutSession>(stagingDir, BackupWriter.EntityFile.WORKOUTS)
     )
 
     private inline fun <reified T> readList(stagingDir: File, fileName: String): List<T> {

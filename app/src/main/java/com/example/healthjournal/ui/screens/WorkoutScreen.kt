@@ -286,7 +286,7 @@ private fun ConfiguringContent(
         onValueChange = onTargetChange,
         label = {
             Text(
-                if (state.type == WorkoutType.RUN) "Target distance (km)"
+                if (state.type.targetKind.supportsDistance) "Target distance (km)"
                 else "Target duration (min)"
             )
         },
@@ -446,6 +446,11 @@ private fun SetMatrixEditor(
         if (list.isEmpty()) {
             Text("No exercises yet", style = MaterialTheme.typography.bodyMedium)
         }
+        // Only the tapped card is "active"; the first present exercise is active
+        // by default so a single-exercise workout shows its inputs immediately.
+        // Keeping the other cards read-only means their per-card kg/reps rows
+        // cannot share (and therefore mirror) the active card's text state.
+        val activeId = activeExerciseId ?: list.firstOrNull()?.id
         list.forEachIndexed { index, exercise ->
             Card(modifier = Modifier.fillMaxWidth(), onClick = { activeExerciseId = exercise.id }) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -456,7 +461,7 @@ private fun SetMatrixEditor(
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                    val isActive = activeExerciseId == exercise.id || activeExerciseId == null
+                    val isActive = exercise.id == activeId
                     if (isActive) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(

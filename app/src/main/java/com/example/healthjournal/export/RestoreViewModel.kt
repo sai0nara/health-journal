@@ -184,14 +184,15 @@ private suspend fun runRestoreThroughWorker(context: Context, fileUri: String, p
 
     if (finished.state == WorkInfo.State.SUCCEEDED) {
         val data = finished.outputData
-        return RestoreResult(
-            journalEntryCount = data.getInt(RestoreWorker.KEY_RESULT_JOURNAL, 0),
-            bodyMeasurementCount = data.getInt(RestoreWorker.KEY_RESULT_BODY, 0),
-            goalCount = data.getInt(RestoreWorker.KEY_RESULT_GOALS, 0),
-            deletedEntryCount = data.getInt(RestoreWorker.KEY_RESULT_DELETED, 0),
-            tagCount = data.getInt(RestoreWorker.KEY_RESULT_TAGS, 0),
-            mediaFileCount = data.getInt(RestoreWorker.KEY_RESULT_MEDIA, 0)
-        )
+return RestoreResult(
+                    journalEntryCount = data.getInt(RestoreWorker.KEY_RESULT_JOURNAL, 0),
+                    bodyMeasurementCount = data.getInt(RestoreWorker.KEY_RESULT_BODY, 0),
+                    goalCount = data.getInt(RestoreWorker.KEY_RESULT_GOALS, 0),
+                    deletedEntryCount = data.getInt(RestoreWorker.KEY_RESULT_DELETED, 0),
+                    tagCount = data.getInt(RestoreWorker.KEY_RESULT_TAGS, 0),
+                    mediaFileCount = data.getInt(RestoreWorker.KEY_RESULT_MEDIA, 0),
+                    workoutCount = data.getInt(RestoreWorker.KEY_RESULT_WORKOUTS, 0)
+                )
     }
 
     throw when (finished.outputData.getString(RestoreWorker.KEY_ERROR_TYPE)) {

@@ -27,6 +27,10 @@ interface WorkoutSessionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertSession(session: WorkoutSession)
 
+    /** Bulk insert for full-backup restore (identity-preserving, replaces overlaps). */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(sessions: List<WorkoutSession>)
+
     @Query("DELETE FROM workout_sessions WHERE session_id = :sessionId")
     suspend fun deleteSessionById(sessionId: String)
 

@@ -12,6 +12,8 @@ import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
 import com.example.healthjournal.data.local.PersonalCardDao
+import com.example.healthjournal.data.local.WorkoutSession
+import com.example.healthjournal.data.local.WorkoutSessionDao
 import io.mockk.coEvery
 import io.mockk.coJustRun
 import io.mockk.coVerify
@@ -44,10 +46,12 @@ class RestoreRepositoryTest {
         val bodyDao = mockk<BodyMeasurementDao>()
         val goalDao = mockk<GoalDao>()
         val personalCardDao = mockk<PersonalCardDao>()
+        val workoutDao = mockk<WorkoutSessionDao>()
         coEvery { db.journalDao() } returns journalDao
         coEvery { db.bodyMeasurementDao() } returns bodyDao
         coEvery { db.goalDao() } returns goalDao
         coEvery { db.personalCardDao() } returns personalCardDao
+        coEvery { db.workoutSessionDao() } returns workoutDao
 
         coJustRun { journalDao.clearAllEntries() }
         coJustRun { journalDao.clearAllDeletedEntries() }
@@ -60,6 +64,8 @@ class RestoreRepositoryTest {
         coJustRun { goalDao.importAll(any()) }
         coJustRun { personalCardDao.clearAll() }
         coJustRun { personalCardDao.insertOrUpdate(any()) }
+        coJustRun { workoutDao.clearAll() }
+        coJustRun { workoutDao.insertAll(any()) }
 
         val published = mutableListOf<List<JournalEntry>>()
         if (recordInsertAll) {
@@ -80,7 +86,8 @@ class RestoreRepositoryTest {
         goals = listOf(GoalEntity(parameterId = "weight", target = 75.0, lastModified = 1L)),
         personalCards = listOf(PersonalCard(id = "personal_card")),
         deletedEntries = listOf(DeletedEntry(entry_id = "eDel")),
-        entryTags = listOf(EntryTagCrossRef("e1", "health"))
+        entryTags = listOf(EntryTagCrossRef("e1", "health")),
+        workoutSessions = listOf(WorkoutSession(session_id = "w1", type = "RUN", startTimestamp = 10L))
     )
 
     @Test
@@ -94,6 +101,7 @@ class RestoreRepositoryTest {
         val bodyDao = harness.db.bodyMeasurementDao()
         val goalDao = harness.db.goalDao()
         val pcDao = harness.db.personalCardDao()
+        val workoutDao = harness.db.workoutSessionDao()
 
         // Wipe
         coVerify { journalDao.clearAllEntries() }
@@ -102,6 +110,7 @@ class RestoreRepositoryTest {
         coVerify { bodyDao.clearAll() }
         coVerify { goalDao.clear() }
         coVerify { pcDao.clearAll() }
+        coVerify { workoutDao.clearAll() }
         // Insert
         coVerify { journalDao.insertAll(listOf(sampleData.journalEntries[0])) }
         coVerify { journalDao.insertAllDeletedEntries(listOf(sampleData.deletedEntries[0])) }
@@ -109,6 +118,7 @@ class RestoreRepositoryTest {
         coVerify { bodyDao.replaceAll(listOf(sampleData.bodyMeasurements[0])) }
         coVerify { goalDao.importAll(listOf(sampleData.goals[0])) }
         coVerify { pcDao.insertOrUpdate(sampleData.personalCards[0]) }
+        coVerify { workoutDao.insertAll(listOf(sampleData.workoutSessions[0])) }
 
         assertEquals(1, result.journalEntryCount)
         assertEquals(1, result.bodyMeasurementCount)
@@ -116,7 +126,8 @@ class RestoreRepositoryTest {
         assertEquals(1, result.deletedEntryCount)
         assertEquals(1, result.tagCount)
         assertEquals(0, result.mediaFileCount)
-        assertEquals(5, result.totalRecords)
+        assertEquals(1, result.workoutCount)
+        assertEquals(6, result.totalRecords)
     }
 
     @Test

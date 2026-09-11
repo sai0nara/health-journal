@@ -49,6 +49,14 @@ class WorkoutViewModel(
     private val clock: () -> Long = System::currentTimeMillis
 ) : ViewModel() {
 
+    /**
+     * Wall-clock reading of the last tick, used to reconcile the running
+     * timer against [clock] so elapsed/rest time survives Doze: the UI ticker
+     * only fires `advanceTime(1)` per delayed tick, which under-reports when
+     * the device sleeps between ticks.
+     */
+    private var lastTickMillis: Long = clock()
+
     private val _uiState = MutableStateFlow<WorkoutUiState>(WorkoutUiState.Idle)
     val uiState: StateFlow<WorkoutUiState> = _uiState
 
@@ -100,9 +108,12 @@ class WorkoutViewModel(
                 return@launch
             }
             val targetValue = current.target.trim().replace(',', '.').toDouble()
-            // Run targets are entered in kilometres; everything else in minutes.
-            val targetDistanceM = if (current.type == WorkoutType.RUN) targetValue * 1_000 else null
-            val targetDurationMin = if (current.type == WorkoutType.RUN) null else targetValue
+            // Distance-capable types (Run, Walking/Hiking, Cycling) take their
+            // target in kilometres and store metres; the rest take minutes.
+            val targetDistanceM =
+                if (current.type.targetKind.supportsDistance) targetValue * 1_000 else null
+            val targetDurationMin =
+                if (current.type.targetKind.supportsDistance) null else targetValue
             val session = WorkoutSession(
                 type = current.type.name,
                 status = WorkoutStatus.ACTIVE.name,
@@ -110,6 +121,7 @@ class WorkoutViewModel(
                 targetDistanceM = targetDistanceM,
                 targetDurationMin = targetDurationMin
             )
+            lastTickMillis = clock()
             repository.saveSession(session)
             _uiState.value = WorkoutUiState.Countdown(
                 session = session,
@@ -133,6 +145,7 @@ class WorkoutViewModel(
         val current = _uiState.value as? WorkoutUiState.Paused ?: return
         viewModelScope.launch(dispatcher) {
             val active = current.session.copy(status = WorkoutStatus.ACTIVE.name)
+            lastTickMillis = clock()
             repository.saveSession(active)
             _uiState.value = WorkoutUiState.Active(active)
             onHaptic(WorkoutHaptic.START)
@@ -140,18 +153,26 @@ class WorkoutViewModel(
     }
 
     /**
-     * Advances either the pre-session countdown or the running clock.
-     * During the countdown the session row is left untouched; once it hits
-     * zero the session goes Active at zero elapsed time. In Active, persistence
-     * is batched: the session row is rewritten only on five-second boundaries
-     * (plus always on pause/finish) instead of on every tick. Rest-timer
-     * seconds also tick down here so one clock source drives both.
+     * Advances either the pre-session countdown or the running clock. The
+     * delta reconciles the explicitly supplied [seconds] against the wall
+     * clock ([clock]) since the last tick, so time spent in Doze — when the
+     * UI ticker fires late rather than once per real second — is still
+     * counted. During the countdown the session row is left untouched; once
+     * it hits zero the session goes Active at zero elapsed time. In Active,
+     * persistence is batched: the session row is rewritten only on
+     * five-second boundaries (plus always on pause/finish) instead of on
+     * every tick. Rest-timer seconds also tick down here so one clock source
+     * drives both.
      */
     fun advanceTime(seconds: Long) {
+        val now = clock()
+        val wallDelta = ((now - lastTickMillis) / 1000L).coerceAtLeast(0L)
+        val delta = maxOf(seconds, wallDelta)
+        lastTickMillis = now
         val current = _uiState.value
         when (current) {
             is WorkoutUiState.Countdown -> {
-                val remaining = current.secondsRemaining - seconds.toInt()
+                val remaining = current.secondsRemaining - delta.toInt()
                 if (remaining <= 0) {
                     _uiState.value = WorkoutUiState.Active(current.session)
                 } else {
@@ -159,11 +180,11 @@ class WorkoutViewModel(
                 }
             }
             is WorkoutUiState.Active -> viewModelScope.launch(dispatcher) {
-                val elapsed = current.session.elapsedSeconds + seconds
+                val elapsed = current.session.elapsedSeconds + delta
                 val advanced = current.session.copy(elapsedSeconds = elapsed)
                 _uiState.value = WorkoutUiState.Active(
                     session = advanced,
-                    restSeconds = (current.restSeconds - seconds).coerceAtLeast(0L).toInt(),
+                    restSeconds = (current.restSeconds - delta).coerceAtLeast(0L).toInt(),
                     setMatrixError = current.setMatrixError
                 )
                 if (elapsed % PERSIST_EVERY_SECONDS == 0L) {
@@ -345,6 +366,7 @@ class WorkoutViewModel(
         val current = _uiState.value as? WorkoutUiState.RecoveryRequired ?: return
         viewModelScope.launch(dispatcher) {
             val active = current.session.copy(status = WorkoutStatus.ACTIVE.name)
+            lastTickMillis = clock()
             repository.saveSession(active)
             _uiState.value = WorkoutUiState.Active(active)
             onHaptic(WorkoutHaptic.START)

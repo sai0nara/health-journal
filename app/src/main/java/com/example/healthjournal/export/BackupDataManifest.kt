@@ -6,6 +6,7 @@ import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.WorkoutSession
 
 /**
  * Immutable snapshot of every Room entity that participates in a full backup
@@ -17,7 +18,8 @@ data class BackupData(
     val goals: List<GoalEntity> = emptyList(),
     val personalCards: List<PersonalCard> = emptyList(),
     val deletedEntries: List<DeletedEntry> = emptyList(),
-    val entryTags: List<EntryTagCrossRef> = emptyList()
+    val entryTags: List<EntryTagCrossRef> = emptyList(),
+    val workoutSessions: List<WorkoutSession> = emptyList()
 )
 
 /**

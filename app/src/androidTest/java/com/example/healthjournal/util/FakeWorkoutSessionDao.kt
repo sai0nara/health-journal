@@ -37,6 +37,11 @@ class FakeWorkoutSessionDao : WorkoutSessionDao {
         emit()
     }
 
+    override suspend fun insertAll(sessions: List<WorkoutSession>) {
+        sessions.forEach { store[it.session_id] = it }
+        emit()
+    }
+
     override suspend fun deleteSessionById(sessionId: String) {
         store.remove(sessionId)
         emit()

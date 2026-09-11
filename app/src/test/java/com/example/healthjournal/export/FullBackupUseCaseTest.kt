@@ -15,6 +15,8 @@ import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
 import com.example.healthjournal.data.local.PersonalCardDao
+import com.example.healthjournal.data.local.WorkoutSession
+import com.example.healthjournal.data.local.WorkoutSessionDao
 import com.google.gson.Gson
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -42,13 +44,16 @@ class FullBackupUseCaseTest {
     private fun mockDatabase(
         version: Int = 12,
         journalDao: JournalDao = mockk(),
-        bodyMeasurementDao: BodyMeasurementDao = mockk()
+        bodyMeasurementDao: BodyMeasurementDao = mockk(),
+        workoutSessionDao: WorkoutSessionDao = mockk()
     ): JournalDatabase {
         val db = mockk<JournalDatabase>()
         val helper = mockk<androidx.sqlite.db.SupportSQLiteOpenHelper>()
         val sqLiteDatabase = mockk<androidx.sqlite.db.SupportSQLiteDatabase>()
         coEvery { db.journalDao() } returns journalDao
         coEvery { db.bodyMeasurementDao() } returns bodyMeasurementDao
+        coEvery { db.workoutSessionDao() } returns workoutSessionDao
+        coEvery { workoutSessionDao.getAllSessions() } returns flowOf(emptyList())
         coEvery { db.openHelper } returns helper
         coEvery { helper.readableDatabase } returns sqLiteDatabase
         coEvery { sqLiteDatabase.version } returns version
@@ -66,7 +71,14 @@ class FullBackupUseCaseTest {
     fun execute_producesFullBackupWithAllEntitiesAndManifest() = runTest {
         val journalDao = mockk<JournalDao>()
         val bodyDao = mockk<BodyMeasurementDao>()
-        val db = mockDatabase(version = 12, journalDao = journalDao, bodyMeasurementDao = bodyDao)
+        val workoutDao = mockk<WorkoutSessionDao>()
+        val db = mockDatabase(
+            version = 12,
+            journalDao = journalDao,
+            bodyMeasurementDao = bodyDao,
+            workoutSessionDao = workoutDao
+        )
+        coEvery { workoutDao.getAllSessions() } returns flowOf(listOf(WorkoutSession(session_id = "w1", type = "RUN", startTimestamp = 10L)))
 
         val journalRepo = mockk<JournalRepository>()
         coEvery { journalRepo.getAllEntriesInDateRange(0L, Long.MAX_VALUE) } returns
@@ -122,6 +134,10 @@ class FullBackupUseCaseTest {
 
         val tags = gson.fromJson(readText(zip, BackupWriter.EntityFile.ENTRY_TAGS), Array<EntryTagCrossRef>::class.java)
         assertEquals(1, tags.size)
+
+        val workouts = gson.fromJson(readText(zip, BackupWriter.EntityFile.WORKOUTS), Array<WorkoutSession>::class.java)
+        assertEquals(1, workouts.size)
+        assertEquals("w1", workouts[0].session_id)
     }
 
     @Test

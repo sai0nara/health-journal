@@ -173,6 +173,9 @@ abstract class JournalDatabase : RoomDatabase() {
         // early workout build shipped on workout_sessions and that were later
         // declared dead; the schema changed at v13 without a version bump, so
         // this migration realigns on-disk DBs with the recompiled identity.
+        // Recreate-and-copy, matching the pattern used by the older migrations,
+        // because ALTER TABLE ... DROP COLUMN needs SQLite >= 3.35 and would
+        // crash app startup on API 26-31 devices on the shipped-early build.
         val MIGRATION_13_14 = object : Migration(13, 14) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 val columns = database.query("PRAGMA table_info(`workout_sessions`)").use { cursor ->
@@ -182,11 +185,23 @@ abstract class JournalDatabase : RoomDatabase() {
                         }
                     }
                 }
-                if ("isSynced" in columns) {
-                    database.execSQL("ALTER TABLE `workout_sessions` DROP COLUMN `isSynced`")
-                }
-                if ("syncStatus" in columns) {
-                    database.execSQL("ALTER TABLE `workout_sessions` DROP COLUMN `syncStatus`")
+                val hasOrphans = "isSynced" in columns || "syncStatus" in columns
+                if (hasOrphans) {
+                    database.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `workout_sessions_new` (" +
+                            "`session_id` TEXT NOT NULL, `type` TEXT NOT NULL, " +
+                            "`status` TEXT NOT NULL, `startTimestamp` INTEGER NOT NULL, " +
+                            "`endTimestamp` INTEGER, `elapsedSeconds` INTEGER NOT NULL, " +
+                            "`targetDistanceM` REAL, `targetDurationMin` REAL, " +
+                            "`calories` REAL, `notes` TEXT NOT NULL, " +
+                            "`lastModified` INTEGER NOT NULL, PRIMARY KEY(`session_id`))"
+                    )
+                    database.execSQL(
+                        "INSERT OR IGNORE INTO `workout_sessions_new` (`session_id`, `type`, `status`, `startTimestamp`, `endTimestamp`, `elapsedSeconds`, `targetDistanceM`, `targetDurationMin`, `calories`, `notes`, `lastModified`) " +
+                            "SELECT `session_id`, `type`, `status`, `startTimestamp`, `endTimestamp`, `elapsedSeconds`, `targetDistanceM`, `targetDurationMin`, `calories`, `notes`, `lastModified` FROM `workout_sessions`"
+                    )
+                    database.execSQL("DROP TABLE `workout_sessions`")
+                    database.execSQL("ALTER TABLE `workout_sessions_new` RENAME TO `workout_sessions`")
                 }
             }
         }
