@@ -44,4 +44,4 @@ main as one PR or a stacked PR after v1 merges.
 - [x] Task: Conductor - User Manual Verification 'Integration & Health Connect' (Protocol in workflow.md) [30af25c: report in git note, user confirmed YES — hub entry from History, workout completes locally with journal+summary, Health Connect exercise write works, denial/airplane-mode never blocks logging]
 
 ## Phase 6: Review Fixes
-- [ ] Task: Code review of v2 changes; apply suggestions; record SHA (protocol in workflow.md)
+- [x] Task: Code review of v2 changes; apply suggestions; record SHA (protocol in workflow.md) (f4923e5)
