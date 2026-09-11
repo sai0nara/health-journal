@@ -33,5 +33,10 @@ enum class WorkoutType(val label: String, val met: Double, val targetKind: Worko
     STRETCHING_MOBILITY("Stretching", 2.5, WorkoutTargetKind.DURATION_MIN),
     PILATES("Pilates", 3.0, WorkoutTargetKind.DURATION_MIN),
     SWIMMING("Swimming", 8.0, WorkoutTargetKind.DURATION_WITH_LAPS),
-    CALISTHENICS("Calisthenics", 8.0, WorkoutTargetKind.DURATION_WITH_MOVEMENTS)
+    CALISTHENICS("Calisthenics", 8.0, WorkoutTargetKind.DURATION_WITH_MOVEMENTS);
+
+    companion object {
+        /** Safe lookup for stored names; null for unknown/legacy values. */
+        fun fromName(name: String): WorkoutType? = entries.firstOrNull { it.name == name }
+    }
 }

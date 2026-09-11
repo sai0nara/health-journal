@@ -54,4 +54,17 @@ class WorkoutTypeTest {
             WorkoutType.entries.filter { it.targetKind.supportsDistance }.toSet()
         )
     }
+
+    @Test
+    fun fromName_resolvesKnownTypes() {
+        assertEquals(WorkoutType.RUN, WorkoutType.fromName("RUN"))
+        assertEquals(WorkoutType.HIIT, WorkoutType.fromName("HIIT"))
+        assertEquals(WorkoutType.CALISTHENICS, WorkoutType.fromName("CALISTHENICS"))
+    }
+
+    @Test
+    fun fromName_returnsNullForUnknownStoredNames() {
+        assertEquals(null, WorkoutType.fromName("SPINNING"))
+        assertEquals(null, WorkoutType.fromName(""))
+    }
 }

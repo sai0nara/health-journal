@@ -16,6 +16,7 @@ import com.example.healthjournal.domain.ValidateStrengthExercise
 import com.example.healthjournal.domain.ValidateWorkout
 import com.example.healthjournal.domain.WorkoutIntervalSession
 import com.example.healthjournal.domain.WorkoutType
+import com.example.healthjournal.domain.formatCompact
 import com.example.healthjournal.health.WorkoutHealthDataSource
 import com.example.healthjournal.health.toHealthRecord
 import kotlinx.coroutines.CoroutineDispatcher
@@ -202,11 +203,11 @@ class WorkoutViewModel(
      */
     fun advanceInterval() {
         val current = _uiState.value as? WorkoutUiState.Active ?: return
-        if (WorkoutType.valueOf(current.session.type) != WorkoutType.HIIT) return
+        if (WorkoutType.fromName(current.session.type) != WorkoutType.HIIT) return
         val tracker = current.session.intervalState ?: WorkoutIntervalSession()
-        val advance = tracker.advance()
+        val updatedTracker = tracker.advance()
         viewModelScope.launch(dispatcher) {
-            val updated = current.session.copy(intervalState = advance.session)
+            val updated = current.session.copy(intervalState = updatedTracker)
             repository.saveSession(updated)
             _uiState.value = current.copy(session = updated)
             onHaptic(WorkoutHaptic.INTERVAL)
@@ -219,7 +220,7 @@ class WorkoutViewModel(
      */
     fun addExercise(name: String) {
         val current = _uiState.value as? WorkoutUiState.Active ?: return
-        if (WorkoutType.valueOf(current.session.type) != WorkoutType.FITNESS) return
+        if (WorkoutType.fromName(current.session.type) != WorkoutType.FITNESS) return
         val nameError = ValidateStrengthExercise.validateName(name)
         if (nameError != null) {
             _uiState.value = current.copy(setMatrixError = nameError)
@@ -240,7 +241,7 @@ class WorkoutViewModel(
      */
     fun addSet(exerciseId: String, kg: Double, reps: Int) {
         val current = _uiState.value as? WorkoutUiState.Active ?: return
-        if (WorkoutType.valueOf(current.session.type) != WorkoutType.FITNESS) return
+        if (WorkoutType.fromName(current.session.type) != WorkoutType.FITNESS) return
         val errors = ValidateStrengthExercise.validateSet(kg = kg, reps = reps)
         if (errors.isNotEmpty()) {
             _uiState.value = current.copy(
@@ -275,7 +276,7 @@ class WorkoutViewModel(
         viewModelScope.launch(dispatcher) {
             val end = clock()
             val calories = CalorieEstimator.estimate(
-                type = WorkoutType.valueOf(current.type),
+                type = WorkoutType.fromName(current.type) ?: WorkoutType.FITNESS,
                 durationMinutes = current.elapsedSeconds / 60.0
             )
             val completed = current.copy(
@@ -404,7 +405,7 @@ class WorkoutViewModel(
     }
 
     private fun describe(session: WorkoutSession, caloriesKcal: Double): String {
-        val type = WorkoutType.valueOf(session.type)
+        val typeLabel = WorkoutType.fromName(session.type)?.label ?: session.type
         val minutes = session.elapsedSeconds / 60.0
         val minutesText = if (minutes == minutes.toLong().toDouble()) {
             "${minutes.toLong()} min"
@@ -416,11 +417,11 @@ class WorkoutViewModel(
         } else {
             "%.1f kcal".format(caloriesKcal)
         }
-        val base = "Workout: ${type.label}, $minutesText, $caloriesText"
+        val base = "Workout: $typeLabel, $minutesText, $caloriesText"
         val details = buildList {
             session.setMatrix
                 ?.takeIf { it.isNotEmpty() }
-                ?.let { add("Tonnage: ${formatTonnage(TonnageCalculator.tonnageKg(it))} kg") }
+                ?.let { add("Tonnage: ${formatCompact(TonnageCalculator.tonnageKg(it))} kg") }
             session.intervalState?.let {
                 if (it.intervals > 0) add("Rounds: ${it.rounds} · Intervals: ${it.intervals}")
             }
@@ -428,9 +429,6 @@ class WorkoutViewModel(
         val withDetails = if (details.isEmpty()) base else (listOf(base) + details).joinToString("\n")
         return if (session.notes.isNotBlank()) "$withDetails\n${session.notes}" else withDetails
     }
-
-    private fun formatTonnage(value: Double): String =
-        if (value == value.toLong().toDouble()) "${value.toLong()}" else "%.1f".format(value)
 
     companion object {
         /** Session rows are rewritten on these elapsed-second boundaries. */

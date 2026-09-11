@@ -6,8 +6,8 @@ import org.junit.Test
 /**
  * Unit tests for the manual-interval HIIT domain logic: there is no fixed
  * plan, the user advances between work/rest phases by hand, and every
- * boundary crossing emits a haptic cue. A round completes each time the
- * user finishes a WORK interval and crosses into REST.
+ * crossing counts as one interval. A round completes each time the user
+ * finishes a WORK interval and crosses into REST.
  */
 class WorkoutIntervalSessionTest {
 
@@ -22,32 +22,30 @@ class WorkoutIntervalSessionTest {
 
     @Test
     fun advanceFromWork_startsRestAndCompletesRound() {
-        val advance = WorkoutIntervalSession().advance()
+        val advanced = WorkoutIntervalSession().advance()
 
-        assertEquals(WorkoutIntervalPhase.REST, advance.session.phase)
-        assertEquals(1, advance.session.rounds)
-        assertEquals(1, advance.session.intervals)
-        assertEquals(WorkoutIntervalCue.REST_START, advance.cue)
+        assertEquals(WorkoutIntervalPhase.REST, advanced.phase)
+        assertEquals(1, advanced.rounds)
+        assertEquals(1, advanced.intervals)
     }
 
     @Test
     fun advanceFromRest_returnsToWorkKeepingRoundCount() {
-        val advance = WorkoutIntervalSession(
+        val advanced = WorkoutIntervalSession(
             phase = WorkoutIntervalPhase.REST,
             rounds = 1,
             intervals = 1
         ).advance()
 
-        assertEquals(WorkoutIntervalPhase.WORK, advance.session.phase)
-        assertEquals(1, advance.session.rounds)
-        assertEquals(2, advance.session.intervals)
-        assertEquals(WorkoutIntervalCue.WORK_START, advance.cue)
+        assertEquals(WorkoutIntervalPhase.WORK, advanced.phase)
+        assertEquals(1, advanced.rounds)
+        assertEquals(2, advanced.intervals)
     }
 
     @Test
     fun alternatingAdvances_accumulateRoundsAndIntervalsCorrectly() {
         var session = WorkoutIntervalSession()
-        repeat(4) { session = session.advance().session }
+        repeat(4) { session = session.advance() }
 
         // WORK -> REST(round 1) -> WORK -> REST(round 2) -> WORK
         assertEquals(WorkoutIntervalPhase.WORK, session.phase)
@@ -56,26 +54,11 @@ class WorkoutIntervalSessionTest {
     }
 
     @Test
-    fun everyAdvance_emitsAHapticCue() {
+    fun sixAdvances_accumulateThreeRoundsAndSixIntervals() {
         var session = WorkoutIntervalSession()
-        val cues = mutableListOf<WorkoutIntervalCue>()
-        repeat(6) {
-            val advance = session.advance()
-            cues += advance.cue
-            session = advance.session
-        }
+        repeat(6) { session = session.advance() }
 
-        assertEquals(
-            listOf(
-                WorkoutIntervalCue.REST_START,
-                WorkoutIntervalCue.WORK_START,
-                WorkoutIntervalCue.REST_START,
-                WorkoutIntervalCue.WORK_START,
-                WorkoutIntervalCue.REST_START,
-                WorkoutIntervalCue.WORK_START
-            ),
-            cues
-        )
+        assertEquals(WorkoutIntervalPhase.WORK, session.phase)
         assertEquals(3, session.rounds)
         assertEquals(6, session.intervals)
     }

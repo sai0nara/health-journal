@@ -52,6 +52,7 @@ import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.ValidateWorkout
 import com.example.healthjournal.domain.WorkoutIntervalSession
 import com.example.healthjournal.domain.WorkoutType
+import com.example.healthjournal.domain.formatCompact
 import com.example.healthjournal.domain.validation.DateInputMask
 import com.example.healthjournal.domain.validation.ValidateDateOfBirthUseCase
 import com.example.healthjournal.domain.validation.ValidationResult
@@ -121,7 +122,8 @@ fun WorkoutScreen(
             when (state) {
                 is WorkoutUiState.Idle -> IdleContent(
                     recentLabels = recentSessions.map {
-                        "${WorkoutType.valueOf(it.type).label} · ${formatDate(it.startTimestamp)}"
+                        val type = WorkoutType.fromName(it.type)
+                        "${type?.label ?: it.type} · ${formatDate(it.startTimestamp)}"
                     },
                     onSelectType = { viewModel.selectType(it) }
                 )
@@ -355,7 +357,7 @@ private fun SessionContent(
         if (paused) {
             Text("Paused", style = MaterialTheme.typography.titleMedium)
         }
-        val type = WorkoutType.valueOf(session.type)
+        val type = WorkoutType.fromName(session.type)
         when (type) {
             WorkoutType.HIIT -> IntervalControls(
                 intervalState = session.intervalState,
@@ -457,7 +459,7 @@ private fun SetMatrixEditor(
                     Text(exercise.name, style = MaterialTheme.typography.titleSmall)
                     exercise.sets.forEach { set ->
                         Text(
-                            "${formatNumber(set.kg)} kg × ${set.reps} reps",
+                            "${formatCompact(set.kg)} kg × ${set.reps} reps",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -545,13 +547,13 @@ private fun SummaryContent(
     ) {
         Text("Workout Complete", style = MaterialTheme.typography.headlineSmall)
         Text(
-            "${formatCalories(caloriesKcal)} kcal",
+            "${formatCompact(caloriesKcal)} kcal",
             style = MaterialTheme.typography.displaySmall
         )
         Text(formatElapsed(elapsedSeconds), style = MaterialTheme.typography.titleMedium)
         tonnageKg?.let {
             Text(
-                "Tonnage: ${formatNumber(it)} kg",
+                "Tonnage: ${formatCompact(it)} kg",
                 style = MaterialTheme.typography.titleMedium
             )
         }
@@ -790,20 +792,6 @@ private fun formatElapsed(totalSeconds: Long): String {
     val seconds = totalSeconds % 60
     return "%02d:%02d".format(minutes, seconds)
 }
-
-private fun formatCalories(caloriesKcal: Double): String =
-    if (caloriesKcal == caloriesKcal.toLong().toDouble()) {
-        "${caloriesKcal.toLong()}"
-    } else {
-        "%.1f".format(caloriesKcal)
-    }
-
-private fun formatNumber(value: Double): String =
-    if (value == value.toLong().toDouble()) {
-        "${value.toLong()}"
-    } else {
-        "%.1f".format(value)
-    }
 
 private fun formatDate(timestamp: Long): String =
     Instant.ofEpochMilli(timestamp)
