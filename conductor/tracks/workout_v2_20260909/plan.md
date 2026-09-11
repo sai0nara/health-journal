@@ -42,6 +42,10 @@ main as one PR or a stacked PR after v1 merges.
 - [x] Task: Verify Health Connect write for new types with granted/denied permission paths; airplane-mode logging pass (2b49569: denied-path for 5 new types unsynced-but-complete; writeFailure fake proves airplane-mode write never breaks finish/manual-log)
 - [x] Task: Update affected wiki pages (agent owns the vault) and run wiki lint (exit 0); commit wiki + code together (wiki: ui-layer, data-layer, health-connect integration, unit-tests, instrumented refreshed for WorkoutScreen/JournalDatabase v16/converters/health-write; Docs: health-connect prd/psd/tests + photos-media + entry-logging + body-measurements dates/content; lint exit 0)
 - [x] Task: Conductor - User Manual Verification 'Integration & Health Connect' (Protocol in workflow.md) [30af25c: report in git note, user confirmed YES — hub entry from History, workout completes locally with journal+summary, Health Connect exercise write works, denial/airplane-mode never blocks logging]
-
 ## Phase 6: Review Fixes [checkpoint: a850bd0]
+
 - [x] Task: Code review of v2 changes; apply suggestions; record SHA (protocol in workflow.md) (f4923e5)
+
+## Phase 7: Architecture Review Fixes
+
+- [x] Task: Apply review suggestions (safe WorkoutType lookup, RestoreViewModel indentation, shared number formatter, dead-cue removal, EOF newlines) (6b049a5)
