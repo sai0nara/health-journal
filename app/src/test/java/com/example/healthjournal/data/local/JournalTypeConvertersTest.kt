@@ -1,14 +1,20 @@
 package com.example.healthjournal.data.local
 
+import com.example.healthjournal.domain.StrengthExercise
+import com.example.healthjournal.domain.StrengthSet
+import com.example.healthjournal.domain.WorkoutIntervalPhase
+import com.example.healthjournal.domain.WorkoutIntervalSession
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
  * Unit tests for JournalTypeConverters, specifically verifying
  * correct serialization/deserialization of AttachmentData with
- * the new isLocalOnly field and syncStatus handling.
+ * the new isLocalOnly field and syncStatus handling, plus the
+ * strength set-matrix JSON round-trip used by workout sessions.
  */
 class JournalTypeConvertersTest {
 
@@ -80,5 +86,43 @@ class JournalTypeConvertersTest {
         val result = converters.toAttachmentList(json)
 
         assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun setMatrix_roundTripsLosslessly() {
+        val exercises = listOf(
+            StrengthExercise(
+                name = "Squat",
+                sets = listOf(StrengthSet(kg = 60.0, reps = 10), StrengthSet(kg = 70.0, reps = 8))
+            ),
+            StrengthExercise(name = "Plank", sets = emptyList())
+        )
+
+        val json = converters.fromStrengthExercises(exercises)
+        assertEquals(exercises, converters.toStrengthExercises(json))
+    }
+
+    @Test
+    fun setMatrix_nullColumn_readsBackNull() {
+        assertNull(converters.toStrengthExercises(null))
+    }
+
+    @Test
+    fun setMatrix_emptyMatrix_roundTripsAsEmptyList() {
+        val json = converters.fromStrengthExercises(emptyList())
+        assertEquals(emptyList<StrengthExercise>(), converters.toStrengthExercises(json))
+    }
+
+    @Test
+    fun intervalState_roundTripsLosslessly() {
+        val interval = WorkoutIntervalSession(phase = WorkoutIntervalPhase.REST, rounds = 2, intervals = 3)
+
+        val json = converters.fromWorkoutIntervalSession(interval)
+        assertEquals(interval, converters.toWorkoutIntervalSession(json))
+    }
+
+    @Test
+    fun intervalState_nullColumn_readsBackNull() {
+        assertNull(converters.toWorkoutIntervalSession(null))
     }
 }

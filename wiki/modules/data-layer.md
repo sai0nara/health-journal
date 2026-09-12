@@ -2,7 +2,7 @@
 
 > The Room persistence layer: entities, DAOs, converters, and the repositories that own local reads and writes.
 
-Last updated: 2026-09-08
+Last updated: 2026-09-10
 
 ## What lives here
 
@@ -14,6 +14,17 @@ Repositories are the boundary the [[viewmodel-layer]] talks to. When a feature n
 to persist or query data, it goes through a repository, never directly through a DAO
 from the UI layer.
 
+## Workout session persistence
+
+`WorkoutSession` rows carry the session lifecycle (status, timestamps, elapsed
+seconds, calories) plus two structured payloads: the strength **set matrix** and the
+HIIT **interval state**, both of which `JournalTypeConverters` serializes to JSON for
+Room's Gson columns. The schema is at version 16, added incrementally via the
+versioned migrations in `JournalDatabase.kt` (13→14 drops orphaned sync columns,
+14→15 adds the set matrix, 15→16 adds the interval state); the exported JSON schema
+lives under `app/schemas/`. These payloads are what the session engine restores on
+crash recovery (see [[viewmodel-layer]]).
+
 ## Key components
 
 - **Database and DAOs.** Room is configured via the database class in
@@ -23,7 +34,8 @@ from the UI layer.
   `GoalEntity`, `PersonalCard`, and `WorkoutSession` model rows; cross-reference
   tables like `EntryTagCrossRef` model many-to-many links (journal entry to tags).
 - **Type converters.** `JournalTypeConverters` (and the `UnitConverter`) bridge
-  non-primitive types into Room columns.
+  non-primitive types into Room columns — media/attachment JSON, the workout set
+  matrix, and the HIIT interval state.
 - **Repositories.** `JournalRepository`, `BodyMeasurementRepository`, `GoalsRepository`,
   `PersonalCardRepository`, and `WorkoutRepository` expose feature-scoped operations.
 

@@ -60,3 +60,7 @@ internal fun BodyMeasurementEntry.valueFor(field: MeasurementField): Double? = w
 
 internal fun Double.formatMeasurement(): String =
     BigDecimal(toString()).stripTrailingZeros().toPlainString()
+
+/** Formats a number as an integer when whole and one decimal otherwise. */
+fun formatCompact(value: Double): String =
+    if (value == value.toLong().toDouble()) "${value.toLong()}" else "%.1f".format(value)

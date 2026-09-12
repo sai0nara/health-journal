@@ -4,7 +4,7 @@
 > the JVM unit level, plus the sheet and screen behaviors (including light/dark)
 > at the instrumented level.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-10
 
 ## Automated coverage
 

@@ -5,7 +5,7 @@
 > the platform permission flow before calling it. The workout hub additionally
 > writes completed sessions as exercise records.
 
-Last updated: 2026-09-08
+Last updated: 2026-09-10
 
 ## Overview
 
@@ -15,8 +15,13 @@ previous-night window for sleep), calls the manager, and returns a
 `HealthSyncResult` that the Add Entry screen merges into local state before
 saving the entry. Permissions and SDK availability gate the whole flow.
 
-Workouts extend this: `HealthConnectWorkoutDataSource` writes each completed
-workout as an exercise record, sharing the same granted-permission gate.
+Workouts extend this: `WorkoutHealthMapper` converts a `WorkoutSession` to a
+`WorkoutHealthRecord` (each of the 10 workout types → an exercise type, unmapped
+→ `UNKNOWN`), and `HealthConnectWorkoutDataSource` writes it as an exercise
+record sharing the same granted-permission gate. The write is fire-and-forget
+from the user's perspective: `WorkoutViewModel` completes the local journal entry
+and summary regardless of Health Connect availability, so denial or airplane mode
+never blocks logging.
 
 ## Architecture
 

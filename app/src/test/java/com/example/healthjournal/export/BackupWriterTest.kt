@@ -6,6 +6,7 @@ import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.WorkoutSession
 import com.google.gson.Gson
 import java.io.File
 import java.io.FileOutputStream
@@ -70,6 +71,9 @@ class BackupWriterTest {
         ),
         entryTags = listOf(
             EntryTagCrossRef(entryId = "e1", tag = "health")
+        ),
+        workoutSessions = listOf(
+            WorkoutSession(session_id = "w1", type = "RUN", startTimestamp = 10L)
         )
     )
 
@@ -88,6 +92,7 @@ class BackupWriterTest {
         assertTrue(manifest.contents.contains(BackupWriter.EntityFile.BODY_MEASUREMENTS))
         assertTrue(manifest.contents.contains(BackupWriter.EntityFile.GOALS))
         assertTrue(manifest.contents.contains(BackupWriter.EntityFile.PERSONAL_CARD))
+        assertTrue(manifest.contents.contains(BackupWriter.EntityFile.WORKOUTS))
     }
 
     @Test
@@ -130,6 +135,13 @@ class BackupWriterTest {
             Array<EntryTagCrossRef>::class.java
         )
         assertEquals(1, tags.size)
+
+        val workouts = gson.fromJson(
+            readEntryText(zip, BackupWriter.EntityFile.WORKOUTS)!!,
+            Array<WorkoutSession>::class.java
+        )
+        assertEquals(1, workouts.size)
+        assertEquals("w1", workouts[0].session_id)
     }
 
     @Test
@@ -155,7 +167,8 @@ class BackupWriterTest {
             goals = emptyList(),
             personalCards = emptyList(),
             deletedEntries = emptyList(),
-            entryTags = emptyList()
+            entryTags = emptyList(),
+            workoutSessions = emptyList()
         )
         val zip = createBackup(empty)
 

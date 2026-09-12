@@ -2,7 +2,7 @@
 
 > The JVM test stack under `app/src/test` — fast, framework-level tests that run without a device.
 
-Last updated: 2026-09-08
+Last updated: 2026-09-10
 
 ## What this stack is
 
@@ -37,7 +37,7 @@ in place.
 
 ## Sources
 
-- `app/src/test/java/com/example/healthjournal/viewmodel` — ViewModel unit tests live here (including workout session state transitions).
+- `app/src/test/java/com/example/healthjournal/viewmodel` — ViewModel unit tests live here, including the workout session engine: countdown, HIIT interval control, set-matrix ops, crash recovery, finish-flow summary/journaling, and the Health Connect exercise-record write via the `WorkoutHealthDataSource` seam (denied/airplane-mode paths included).
 - `app/src/test/java/com/example/healthjournal/export` — export/restore unit tests live here.
 - `app/src/test/java/com/example/healthjournal/domain` — workout/manual-log validation tests live here.
 - `app/build.gradle.kts` — the JVM test dependencies.

@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-09-08
+Last updated: 2026-09-10
 
 ## What lives here
 
@@ -13,6 +13,28 @@ and color system.
 Screens are driven by the [[viewmodel-layer]]: they read state from a ViewModel's
 `StateFlow` and forward user intentions (clicks, submits) back to it. Screens do not
 touch repositories or DAOs directly.
+
+## Workout hub session screen
+
+`WorkoutScreen` is the single screen behind the catalog, configuration, the active
+session, and the summary:
+
+- **Catalog and configuration** — a scrollable catalog of the 10 workout types
+  (source of truth: the `WorkoutType` catalog in the domain layer) and a per-type
+  configuration step that asks for the type's target (distance or duration).
+- **Active session** — a 3-2-1 countdown before the timer, then per-type controls:
+  the HIIT screen shows the interval phase indicator and round counter with a
+  "Next interval" button; the Fitness screen shows the set-matrix editor
+  (add exercise, per-exercise weight/reps and "Add set") plus the between-sets rest
+  timer; the rest rely on the elapsed-time timer and pause.
+- **Summary** — elapsed time and calories, plus Fitness tonnage and HIIT
+  rounds/intervals, with the finished session also journaled.
+- **Manual log** — logging a past workout, with per-type extras (laps for Swimming,
+  movement counts for Calisthenics).
+
+The summary and controls are driven from the viewmodel's `WorkoutUiState` (see
+[[viewmodel-layer]]); the countdown and rest timer advance through the viewmodel's
+`advanceTime`, keeping the composed UI deterministic under test.
 
 ## Key areas
 

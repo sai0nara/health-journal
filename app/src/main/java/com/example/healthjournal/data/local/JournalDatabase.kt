@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class], version = 13, exportSchema = true)
+@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class], version = 16, exportSchema = true)
 @androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
@@ -25,7 +25,7 @@ abstract class JournalDatabase : RoomDatabase() {
         private var INSTANCE: JournalDatabase? = null
 
         /** Current Room database schema version; single-sourced for restore validation. */
-        const val CURRENT_SCHEMA_VERSION: Int = 13
+        const val CURRENT_SCHEMA_VERSION: Int = 16
 
         // v1 -> v2: add isSynced
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -169,6 +169,61 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        // v13 -> v14: drop the orphaned isSynced/syncStatus columns that an
+        // early workout build shipped on workout_sessions and that were later
+        // declared dead; the schema changed at v13 without a version bump, so
+        // this migration realigns on-disk DBs with the recompiled identity.
+        // Recreate-and-copy, matching the pattern used by the older migrations,
+        // because ALTER TABLE ... DROP COLUMN needs SQLite >= 3.35 and would
+        // crash app startup on API 26-31 devices on the shipped-early build.
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                val columns = database.query("PRAGMA table_info(`workout_sessions`)").use { cursor ->
+                    buildSet {
+                        while (cursor.moveToNext()) {
+                            add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                        }
+                    }
+                }
+                val hasOrphans = "isSynced" in columns || "syncStatus" in columns
+                if (hasOrphans) {
+                    database.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `workout_sessions_new` (" +
+                            "`session_id` TEXT NOT NULL, `type` TEXT NOT NULL, " +
+                            "`status` TEXT NOT NULL, `startTimestamp` INTEGER NOT NULL, " +
+                            "`endTimestamp` INTEGER, `elapsedSeconds` INTEGER NOT NULL, " +
+                            "`targetDistanceM` REAL, `targetDurationMin` REAL, " +
+                            "`calories` REAL, `notes` TEXT NOT NULL, " +
+                            "`lastModified` INTEGER NOT NULL, PRIMARY KEY(`session_id`))"
+                    )
+                    database.execSQL(
+                        "INSERT OR IGNORE INTO `workout_sessions_new` (`session_id`, `type`, `status`, `startTimestamp`, `endTimestamp`, `elapsedSeconds`, `targetDistanceM`, `targetDurationMin`, `calories`, `notes`, `lastModified`) " +
+                            "SELECT `session_id`, `type`, `status`, `startTimestamp`, `endTimestamp`, `elapsedSeconds`, `targetDistanceM`, `targetDurationMin`, `calories`, `notes`, `lastModified` FROM `workout_sessions`"
+                    )
+                    database.execSQL("DROP TABLE `workout_sessions`")
+                    database.execSQL("ALTER TABLE `workout_sessions_new` RENAME TO `workout_sessions`")
+                }
+            }
+        }
+
+        // v14 -> v15: add setMatrix column holding the strength set/reps matrix
+        // (exercises with sets) as Gson JSON, keeping sets atomic with the session
+        // row for crash recovery.
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE `workout_sessions` ADD COLUMN `setMatrix` TEXT")
+            }
+        }
+
+        // v15 -> v16: add intervalState column holding the manual HIIT interval
+        // phase/round tracker as Gson JSON, persisted for crash recovery just
+        // like the strength set matrix.
+        val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE `workout_sessions` ADD COLUMN `intervalState` TEXT")
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -178,7 +233,8 @@ abstract class JournalDatabase : RoomDatabase() {
                 ).addMigrations(
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
                     MIGRATION_4_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10,
-                    MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13
+                    MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
+                    MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16
                 ).build()
                 INSTANCE = instance
                 instance

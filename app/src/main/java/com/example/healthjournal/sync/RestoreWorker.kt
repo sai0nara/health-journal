@@ -60,6 +60,7 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
             .putInt(KEY_RESULT_DELETED, result.deletedEntryCount)
             .putInt(KEY_RESULT_TAGS, result.tagCount)
             .putInt(KEY_RESULT_MEDIA, result.mediaFileCount)
+            .putInt(KEY_RESULT_WORKOUTS, result.workoutCount)
             .build()
 
     /** Resolves a content:// or file:// URI into a local [File] (content URIs are copied to cache). */
@@ -103,6 +104,7 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
         const val KEY_RESULT_DELETED = "key_result_deleted"
         const val KEY_RESULT_TAGS = "key_result_tags"
         const val KEY_RESULT_MEDIA = "key_result_media"
+        const val KEY_RESULT_WORKOUTS = "key_result_workouts"
 
         const val ERROR_TYPE_WRONG_PASSPHRASE = "wrong_passphrase"
         const val ERROR_TYPE_VERSION_MISMATCH = "version_mismatch"

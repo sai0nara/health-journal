@@ -190,7 +190,8 @@ private suspend fun runRestoreThroughWorker(context: Context, fileUri: String, p
             goalCount = data.getInt(RestoreWorker.KEY_RESULT_GOALS, 0),
             deletedEntryCount = data.getInt(RestoreWorker.KEY_RESULT_DELETED, 0),
             tagCount = data.getInt(RestoreWorker.KEY_RESULT_TAGS, 0),
-            mediaFileCount = data.getInt(RestoreWorker.KEY_RESULT_MEDIA, 0)
+            mediaFileCount = data.getInt(RestoreWorker.KEY_RESULT_MEDIA, 0),
+            workoutCount = data.getInt(RestoreWorker.KEY_RESULT_WORKOUTS, 0)
         )
     }
 

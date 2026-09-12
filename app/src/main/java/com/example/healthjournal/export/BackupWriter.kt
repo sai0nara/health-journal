@@ -50,7 +50,8 @@ class BackupWriter(
             EntityFile.GOALS,
             EntityFile.PERSONAL_CARD,
             EntityFile.DELETED_ENTRIES,
-            EntityFile.ENTRY_TAGS
+            EntityFile.ENTRY_TAGS,
+            EntityFile.WORKOUTS
         )
 
         val manifest = BackupManifest(
@@ -67,6 +68,7 @@ class BackupWriter(
         writeJsonEntry(zip, EntityFile.PERSONAL_CARD, data.personalCards)
         writeJsonEntry(zip, EntityFile.DELETED_ENTRIES, data.deletedEntries)
         writeJsonEntry(zip, EntityFile.ENTRY_TAGS, data.entryTags)
+        writeJsonEntry(zip, EntityFile.WORKOUTS, data.workoutSessions)
 
         for ((entryName, sourceFile) in mediaFiles) {
             writeMediaEntry(zip, entryName, sourceFile)
@@ -109,5 +111,6 @@ class BackupWriter(
         const val PERSONAL_CARD = "personal_card.json"
         const val DELETED_ENTRIES = "deleted_entries.json"
         const val ENTRY_TAGS = "entry_tags.json"
+        const val WORKOUTS = "workouts.json"
     }
 }

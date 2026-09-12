@@ -4,7 +4,7 @@
 > into a journal entry, with a clear permission flow and a rationale screen.
 > The workout hub additionally writes completed workouts as exercise records.
 
-Last updated: 2026-09-08
+Last updated: 2026-09-10
 
 ## Overview
 
@@ -52,6 +52,11 @@ each completed workout to Health Connect as an exercise record.
 - FR-7: A rationale activity is registered for the platform's permission flow.
 - FR-8: The workout hub requests exercise read/write permissions; each completed
   workout is written as an exercise record, with denial degrading gracefully.
+  Every workout type maps to an exercise counter-type (e.g. Fitness → strength
+  training, HIIT → high-intensity interval training); unmapped types degrade to
+  `UNKNOWN` rather than failing the write.
+- FR-9: Completing a workout always records the journal entry and summary locally
+  even when the Health Connect write is denied or unavailable (airplane mode).
 
 ## Non-functional requirements
 

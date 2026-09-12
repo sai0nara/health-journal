@@ -14,6 +14,13 @@ class CalorieEstimatorTest {
         assertEquals(9.8, WorkoutType.RUN.met, 0.0)
         assertEquals(6.0, WorkoutType.FITNESS.met, 0.0)
         assertEquals(3.0, WorkoutType.YOGA.met, 0.0)
+        assertEquals(8.0, WorkoutType.HIIT.met, 0.0)
+        assertEquals(5.0, WorkoutType.WALKING_HIKING.met, 0.0)
+        assertEquals(7.5, WorkoutType.CYCLING.met, 0.0)
+        assertEquals(2.5, WorkoutType.STRETCHING_MOBILITY.met, 0.0)
+        assertEquals(3.0, WorkoutType.PILATES.met, 0.0)
+        assertEquals(8.0, WorkoutType.SWIMMING.met, 0.0)
+        assertEquals(8.0, WorkoutType.CALISTHENICS.met, 0.0)
     }
 
     @Test

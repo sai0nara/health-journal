@@ -13,10 +13,11 @@ data class RestoreResult(
     val goalCount: Int,
     val deletedEntryCount: Int,
     val tagCount: Int,
-    val mediaFileCount: Int
+    val mediaFileCount: Int,
+    val workoutCount: Int = 0
 ) {
     val totalRecords: Int
-        get() = journalEntryCount + bodyMeasurementCount + goalCount + deletedEntryCount + tagCount
+        get() = journalEntryCount + bodyMeasurementCount + goalCount + deletedEntryCount + tagCount + workoutCount
 }
 
 /**
@@ -53,6 +54,7 @@ class RestoreRepository(
                 val bodyDao = db.bodyMeasurementDao()
                 val goalDao = db.goalDao()
                 val personalCardDao = db.personalCardDao()
+                val workoutDao = db.workoutSessionDao()
 
                 journalDao.clearAllEntries()
                 journalDao.clearAllDeletedEntries()
@@ -60,6 +62,7 @@ class RestoreRepository(
                 bodyDao.clearAll()
                 goalDao.clear()
                 personalCardDao.clearAll()
+                workoutDao.clearAll()
 
                 journalDao.insertAll(dataToWrite.journalEntries)
                 journalDao.insertAllDeletedEntries(dataToWrite.deletedEntries)
@@ -67,6 +70,7 @@ class RestoreRepository(
                 bodyDao.replaceAll(dataToWrite.bodyMeasurements)
                 goalDao.importAll(dataToWrite.goals)
                 dataToWrite.personalCards.forEach { personalCardDao.insertOrUpdate(it) }
+                workoutDao.insertAll(dataToWrite.workoutSessions)
             }
         } catch (e: Exception) {
             copiedFiles.forEach { it.delete() }
@@ -79,7 +83,8 @@ class RestoreRepository(
             goalCount = data.goals.size,
             deletedEntryCount = data.deletedEntries.size,
             tagCount = data.entryTags.size,
-            mediaFileCount = mediaCount
+            mediaFileCount = mediaCount,
+            workoutCount = data.workoutSessions.size
         )
     }
 

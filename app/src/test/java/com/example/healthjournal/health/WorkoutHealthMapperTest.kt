@@ -27,6 +27,34 @@ class WorkoutHealthMapperTest {
             HealthExerciseType.YOGA,
             WorkoutSession(type = WorkoutType.YOGA.name).toHealthRecord(now = 2_000L).exerciseType
         )
+        assertEquals(
+            HealthExerciseType.HIIT,
+            WorkoutSession(type = WorkoutType.HIIT.name).toHealthRecord(now = 2_000L).exerciseType
+        )
+        assertEquals(
+            HealthExerciseType.HIKING,
+            WorkoutSession(type = WorkoutType.WALKING_HIKING.name).toHealthRecord(now = 2_000L).exerciseType
+        )
+        assertEquals(
+            HealthExerciseType.CYCLING,
+            WorkoutSession(type = WorkoutType.CYCLING.name).toHealthRecord(now = 2_000L).exerciseType
+        )
+        assertEquals(
+            HealthExerciseType.STRETCHING,
+            WorkoutSession(type = WorkoutType.STRETCHING_MOBILITY.name).toHealthRecord(now = 2_000L).exerciseType
+        )
+        assertEquals(
+            HealthExerciseType.PILATES,
+            WorkoutSession(type = WorkoutType.PILATES.name).toHealthRecord(now = 2_000L).exerciseType
+        )
+        assertEquals(
+            HealthExerciseType.SWIMMING,
+            WorkoutSession(type = WorkoutType.SWIMMING.name).toHealthRecord(now = 2_000L).exerciseType
+        )
+        assertEquals(
+            HealthExerciseType.CALISTHENICS,
+            WorkoutSession(type = WorkoutType.CALISTHENICS.name).toHealthRecord(now = 2_000L).exerciseType
+        )
     }
 
     @Test

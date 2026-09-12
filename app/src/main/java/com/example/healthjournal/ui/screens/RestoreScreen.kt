@@ -244,6 +244,7 @@ private fun RestoreSuccessContent(result: com.example.healthjournal.export.Resto
                 MetadataRow("Goals", result.goalCount.toString())
                 MetadataRow("Deleted entries", result.deletedEntryCount.toString())
                 MetadataRow("Tags", result.tagCount.toString())
+                MetadataRow("Workouts", result.workoutCount.toString())
                 MetadataRow("Media files", result.mediaFileCount.toString())
                 MetadataRow("Total records", result.totalRecords.toString())
             }

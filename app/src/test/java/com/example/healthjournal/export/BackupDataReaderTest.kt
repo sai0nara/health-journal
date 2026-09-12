@@ -6,6 +6,7 @@ import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.WorkoutSession
 import com.google.gson.Gson
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -31,7 +32,8 @@ class BackupDataReaderTest {
         goals = listOf(GoalEntity(parameterId = "weight", target = 75.0, lastModified = 1L)),
         personalCards = listOf(PersonalCard(id = "pc")),
         deletedEntries = listOf(DeletedEntry(entry_id = "d1")),
-        entryTags = listOf(EntryTagCrossRef("e1", "health"))
+        entryTags = listOf(EntryTagCrossRef("e1", "health")),
+        workoutSessions = listOf(WorkoutSession(session_id = "w1", type = "RUN", startTimestamp = 10L))
     )
 
     @Test
@@ -43,6 +45,7 @@ class BackupDataReaderTest {
         writeJson(staging, BackupWriter.EntityFile.PERSONAL_CARD, entities.personalCards)
         writeJson(staging, BackupWriter.EntityFile.DELETED_ENTRIES, entities.deletedEntries)
         writeJson(staging, BackupWriter.EntityFile.ENTRY_TAGS, entities.entryTags)
+        writeJson(staging, BackupWriter.EntityFile.WORKOUTS, entities.workoutSessions)
 
         val result = BackupDataReader(gson).read(staging)
 
