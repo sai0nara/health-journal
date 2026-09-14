@@ -10,10 +10,10 @@
 - [x] Task: Seed the built-in curated exercise catalog (muscle categories + pre-mapped alternative movements) as a versioned constants source (not a migration); test seeding is idempotent + catalog count > threshold (047e994)
 - [x] Task: Conductor - User Manual Verification 'Data Model + Persistence' (Protocol in workflow.md) [0a3ebcf]
 
-## Phase 2: Domain Use Cases (1RM + Conversion)
+## Phase 2: Domain Use Cases (1RM + Conversion) [checkpoint: 4f3f64f]
 - [x] Task: Write failing unit tests for CalculateOneRepMaxUseCase (Epley formula, bounds: weight>0, reps>=1), ConvertAlternativeExerciseWeightUseCase (1RM ratio from historical logs, default coefficient fallback when history insufficient) (b4f2694)
 - [x] Task: Implement both use cases in `domain/`; green unit tests (b4f2694)
-- [ ] Task: Conductor - User Manual Verification 'Domain Use Cases' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Domain Use Cases' (Protocol in workflow.md) [4f3f64f]
 
 ## Phase 3: Preset Management (Repository + ViewModel)
 - [ ] Task: Write failing ViewModel tests for preset CRUD + validation (name required, at least one exercise, per-exercise defaults respected, inline errors)
