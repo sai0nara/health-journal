@@ -16,10 +16,10 @@
 - [x] Task: Conductor - User Manual Verification 'Domain Use Cases' (Protocol in workflow.md) [4f3f64f]
 
 ## Phase 3: Preset Management (Repository + ViewModel)
-- [ ] Task: Write failing ViewModel tests for preset CRUD + validation (name required, at least one exercise, per-exercise defaults respected, inline errors)
-- [ ] Task: Implement PresetRepository + PresetViewModel (MVI sealed states Idle/Editing/List) + manual Factory; green unit tests
-- [ ] Task: Write Compose UI tests for preset library screen (list, create/edit/delete, exercise search dropdown); red before implementation
-- [ ] Task: Implement preset library UI (M3, semantic tokens, searchable dropdown); green UI tests on device
+- [x] Task: Write failing ViewModel tests for preset CRUD + validation (name required, at least one exercise, per-exercise defaults respected, inline errors) [red] (4903e05)
+- [x] Task: Implement PresetRepository + PresetViewModel (MVI sealed states Idle/Editing/List) + manual Factory; green unit tests (4903e05)
+- [x] Task: Write Compose UI tests for preset library screen (list, create/edit/delete, exercise search dropdown); red before implementation
+- [~] Task: Implement preset library UI (M3, semantic tokens, searchable dropdown); green UI tests on device
 - [ ] Task: Conductor - User Manual Verification 'Preset Management' (Protocol in workflow.md)
 
 ## Phase 4: Routine Execution (Active-State Machine)

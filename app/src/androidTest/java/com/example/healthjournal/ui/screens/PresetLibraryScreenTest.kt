@@ -1,0 +1,197 @@
+package com.example.healthjournal.ui.screens
+
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.hasText
+import com.example.healthjournal.data.PresetRepository
+import com.example.healthjournal.data.local.ExerciseCatalogItem
+import com.example.healthjournal.data.local.WorkoutPreset
+import com.example.healthjournal.domain.ScheduledDay
+import com.example.healthjournal.ui.theme.HealthJournalTheme
+import com.example.healthjournal.util.FakeExerciseCatalogDao
+import com.example.healthjournal.util.FakeWorkoutPresetDao
+import com.example.healthjournal.viewmodel.PresetViewModel
+import kotlinx.coroutines.runBlocking
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+
+class PresetLibraryScreenTest {
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
+    private lateinit var presetDao: FakeWorkoutPresetDao
+    private lateinit var catalogDao: FakeExerciseCatalogDao
+    private lateinit var repository: PresetRepository
+    private lateinit var viewModel: PresetViewModel
+
+    @Before
+    fun setup() {
+        presetDao = FakeWorkoutPresetDao()
+        catalogDao = FakeExerciseCatalogDao()
+        repository = PresetRepository(presetDao)
+        viewModel = PresetViewModel(repository, catalogDao)
+        runBlocking {
+            catalogDao.insertAll(
+                listOf(
+                    ExerciseCatalogItem(
+                        id = "bench-press",
+                        name = "Bench Press",
+                        muscleCategory = "Chest"
+                    ),
+                    ExerciseCatalogItem(
+                        id = "squat",
+                        name = "Squat",
+                        muscleCategory = "Legs"
+                    )
+                )
+            )
+        }
+    }
+
+    private fun openScreen() {
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                PresetLibraryScreen(viewModel = viewModel, onBack = {})
+            }
+        }
+        composeTestRule.waitForIdle()
+    }
+
+    @Test
+    fun emptyLibrary_showsEmptyStateAndCreateButton() {
+        openScreen()
+
+        composeTestRule.onNodeWithTag("preset_library_list").assertExists()
+        composeTestRule.onNodeWithText("No presets yet").assertExists()
+        composeTestRule.onNodeWithText("Create Preset").assertExists()
+    }
+
+    @Test
+    fun libraryWithPresets_listsThem() {
+        runBlocking {
+            repository.savePreset(WorkoutPreset(id = "p1", name = "Leg Day"))
+        }
+        openScreen()
+
+        composeTestRule.onNodeWithText("Leg Day").assertExists()
+    }
+
+    @Test
+    fun createButton_opensBlankCreateForm() {
+        openScreen()
+
+        composeTestRule.onNodeWithText("Create Preset").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_name_field").assertExists()
+        composeTestRule.onNodeWithText("Save Preset").assertExists()
+    }
+
+    @Test
+    fun createForm_withBlankName_showsInlineError_andStaysOnForm() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Save Preset").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Preset name is required").assertExists()
+        composeTestRule.onNodeWithTag("preset_name_field").assertExists()
+    }
+
+    @Test
+    fun createForm_withoutExercises_showsExerciseError() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_name_field").performTextInput("Leg Day")
+        composeTestRule.onNodeWithText("Save Preset").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Add at least one exercise").assertExists()
+    }
+
+    @Test
+    fun exerciseSearch_filtersCatalog_SelectingAddsToDraft() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Bench")
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Bench Press").assertExists()
+
+        composeTestRule.onNodeWithText("Bench Press").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_draft_list").performScrollToNode(hasText("Bench Press"))
+        composeTestRule.onNodeWithText("Bench Press").assertIsDisplayed()
+    }
+
+    @Test
+    fun create_validPreset_savesAndBacksToList() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_name_field").performTextInput("Leg Day")
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Squat")
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Squat").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Save Preset").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_library_list").assertExists()
+        composeTestRule.onNodeWithText("Leg Day").assertExists()
+    }
+
+    @Test
+    fun tappingPreset_opensItInTheEditForm() {
+        runBlocking {
+            repository.savePreset(
+                WorkoutPreset(
+                    id = "p1",
+                    name = "Leg Day",
+                    scheduledDay = ScheduledDay.MONDAY.name
+                )
+            )
+        }
+        openScreen()
+
+        composeTestRule.onNodeWithText("Leg Day").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_name_field").assertExists()
+        composeTestRule.onNodeWithText("Save Preset").assertExists()
+    }
+
+    @Test
+    fun deletePromptsAndRemovesPresetFromList() {
+        runBlocking {
+            repository.savePreset(WorkoutPreset(id = "p1", name = "Leg Day"))
+        }
+        openScreen()
+
+        composeTestRule.onNodeWithTag("preset_delete_p1").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Delete Preset?").assertExists()
+        composeTestRule.onNodeWithText("Delete").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_library_list").assertExists()
+        composeTestRule.onNodeWithText("Leg Day").assertDoesNotExist()
+    }
+}
