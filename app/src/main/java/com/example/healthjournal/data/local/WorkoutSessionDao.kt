@@ -17,6 +17,10 @@ interface WorkoutSessionDao {
     @Query("SELECT * FROM workout_sessions WHERE status = 'COMPLETED' ORDER BY startTimestamp DESC")
     fun getCompletedSessions(): Flow<List<WorkoutSession>>
 
+    /** Completed strength sessions carrying a set matrix, oldest first, for per-exercise analytics. */
+    @Query("SELECT * FROM workout_sessions WHERE status = 'COMPLETED' AND setMatrix IS NOT NULL ORDER BY startTimestamp ASC")
+    fun getCompletedWithSetMatrix(): Flow<List<WorkoutSession>>
+
     @Query("SELECT * FROM workout_sessions WHERE session_id = :sessionId")
     suspend fun getSessionById(sessionId: String): WorkoutSession?
 

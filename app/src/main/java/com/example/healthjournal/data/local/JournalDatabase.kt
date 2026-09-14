@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class], version = 16, exportSchema = true)
+@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class, WorkoutPreset::class, ExerciseCatalogItem::class], version = 17, exportSchema = true)
 @androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
@@ -20,12 +20,16 @@ abstract class JournalDatabase : RoomDatabase() {
 
     abstract fun workoutSessionDao(): WorkoutSessionDao
 
+    abstract fun workoutPresetDao(): WorkoutPresetDao
+
+    abstract fun exerciseCatalogDao(): ExerciseCatalogDao
+
     companion object {
         @Volatile
         private var INSTANCE: JournalDatabase? = null
 
         /** Current Room database schema version; single-sourced for restore validation. */
-        const val CURRENT_SCHEMA_VERSION: Int = 16
+        const val CURRENT_SCHEMA_VERSION: Int = 17
 
         // v1 -> v2: add isSynced
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -224,6 +228,34 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        // v16 -> v17: add the workout-preset library and searchable exercise
+        // catalog. RPE on logged sets rides inside the existing setMatrix Gson
+        // JSON column, so no column change is needed there. Both tables are
+        // brand new; nothing pre-existing is recreated.
+        val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `workout_presets` (" +
+                        "`id` TEXT NOT NULL, `name` TEXT NOT NULL, " +
+                        "`scheduledDay` TEXT NOT NULL, `exercises` TEXT NOT NULL, " +
+                        "`lastModified` INTEGER NOT NULL, PRIMARY KEY(`id`))"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_workout_presets_name` ON `workout_presets` (`name`)"
+                )
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `exercise_catalog` (" +
+                        "`id` TEXT NOT NULL, `name` TEXT NOT NULL, " +
+                        "`muscleCategory` TEXT NOT NULL, `alternativeIds` TEXT NOT NULL, " +
+                        "`isUserAdded` INTEGER NOT NULL, `lastModified` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`id`))"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_exercise_catalog_name` ON `exercise_catalog` (`name`)"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -234,7 +266,8 @@ abstract class JournalDatabase : RoomDatabase() {
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
                     MIGRATION_4_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10,
                     MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
-                    MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16
+                    MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
+                    MIGRATION_16_17
                 ).build()
                 INSTANCE = instance
                 instance

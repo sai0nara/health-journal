@@ -21,6 +21,12 @@ class FakeWorkoutSessionDao : WorkoutSessionDao {
     override fun getCompletedSessions(): Flow<List<WorkoutSession>> =
         feed.map { all -> all.filter { it.status == WorkoutStatus.COMPLETED.name } }
 
+    override fun getCompletedWithSetMatrix(): Flow<List<WorkoutSession>> =
+        feed.map { all ->
+            all.filter { it.status == WorkoutStatus.COMPLETED.name && it.setMatrix != null }
+                .sortedBy { it.startTimestamp }
+        }
+
     override suspend fun getSessionById(sessionId: String): WorkoutSession? =
         store[sessionId]
 

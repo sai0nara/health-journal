@@ -149,6 +149,57 @@ class MigrationTest {
     }
 
     @Test
+    fun migrate16To17_AddsPresetAndCatalogTablesAndPreservesWorkoutData() {
+        helper.createDatabase("$dbName-16-17", 16).apply {
+            execSQL(
+                "INSERT INTO workout_sessions (session_id, type, status, startTimestamp, elapsedSeconds, setMatrix, notes, lastModified) " +
+                    "VALUES ('migrated_ws_16_17', 'FITNESS', 'ACTIVE', 1000, 0, '[{\"name\":\"Squat\",\"sets\":[]}]', 'Before 16 to 17', 1000)"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-16-17",
+            17,
+            true,
+            JournalDatabase.MIGRATION_16_17
+        )
+
+        db.query("PRAGMA table_info(workout_sessions)").use { cursor ->
+            val columns = buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                }
+            }
+            org.junit.Assert.assertTrue("intervalState should survive", "intervalState" in columns)
+            org.junit.Assert.assertTrue("setMatrix should survive", "setMatrix" in columns)
+        }
+
+        db.query("SELECT setMatrix FROM workout_sessions WHERE session_id = 'migrated_ws_16_17'").use { cursor ->
+            org.junit.Assert.assertTrue("Previously inserted row lost", cursor.moveToFirst())
+            org.junit.Assert.assertTrue(cursor.getString(0).contains("Squat"))
+        }
+
+        db.execSQL(
+            "INSERT INTO workout_presets (id, name, scheduledDay, exercises, lastModified) " +
+                "VALUES ('preset1', 'Leg Day', 'ANY', '[{\"exerciseId\":\"squat\",\"targetSets\":4,\"defaultReps\":8,\"defaultWeightKg\":60.0,\"restSeconds\":90}]', 2000)"
+        )
+        db.query("SELECT name FROM workout_presets WHERE id = 'preset1'").use { cursor ->
+            org.junit.Assert.assertTrue("workout_presets should be usable", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Leg Day", cursor.getString(0))
+        }
+
+        db.execSQL(
+            "INSERT INTO exercise_catalog (id, name, muscleCategory, alternativeIds, isUserAdded, lastModified) " +
+                "VALUES ('squat', 'Barbell Squat', 'Quads', '[\"leg-press\"]', 0, 2000)"
+        )
+        db.query("SELECT muscleCategory FROM exercise_catalog WHERE id = 'squat'").use { cursor ->
+            org.junit.Assert.assertTrue("exercise_catalog should be usable", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Quads", cursor.getString(0))
+        }
+    }
+
+    @Test
     fun migrate13To14_DropsOrphanedWorkoutSyncColumns() {
         // A real shipped-early v13 database carries isSynced and syncStatus on
         // workout_sessions; the exported 13.json snapshot only knows the clean
