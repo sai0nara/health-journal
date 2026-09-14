@@ -2,11 +2,12 @@ package com.example.healthjournal.domain
 
 import java.util.UUID
 
-/** One logged working set: the weight lifted and the repetitions completed. */
+/** One logged working set: the weight lifted, repetitions completed, and optional RPE. */
 data class StrengthSet(
     val id: String = UUID.randomUUID().toString(),
     val kg: Double,
-    val reps: Int
+    val reps: Int,
+    val rpe: Int? = null
 )
 
 /** A named exercise holding its logged sets within an active session. */

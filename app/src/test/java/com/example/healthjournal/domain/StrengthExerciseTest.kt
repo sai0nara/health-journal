@@ -62,6 +62,20 @@ class StrengthExerciseTest {
     }
 
     @Test
+    fun set_withoutRpe_defaultsToNull() {
+        val set = StrengthSet(kg = 60.0, reps = 10)
+
+        assertNull("An unrated set has no RPE by default", set.rpe)
+    }
+
+    @Test
+    fun set_withRpe_preservesTheRate() {
+        val set = StrengthSet(kg = 60.0, reps = 10, rpe = 8)
+
+        assertEquals(8, set.rpe)
+    }
+
+    @Test
     fun tonnage_sumsKgTimesRepsAcrossAllSetsAndExercises() {
         val exercises = listOf(
             StrengthExercise(

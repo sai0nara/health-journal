@@ -1,6 +1,7 @@
 package com.example.healthjournal.data.local
 
 import androidx.room.TypeConverter
+import com.example.healthjournal.domain.PresetExercise
 import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.WorkoutIntervalSession
 import com.google.gson.Gson
@@ -137,6 +138,23 @@ class JournalTypeConverters {
             gson.fromJson(value, WorkoutIntervalSession::class.java) ?: WorkoutIntervalSession()
         } catch (e: Exception) {
             WorkoutIntervalSession()
+        }
+    }
+
+    @TypeConverter
+    fun fromPresetExercises(value: List<PresetExercise>?): String? {
+        if (value == null) return null
+        return gson.toJson(value)
+    }
+
+    @TypeConverter
+    fun toPresetExercises(value: String?): List<PresetExercise>? {
+        if (value == null) return null
+        return try {
+            val listType = object : TypeToken<List<PresetExercise>>() {}.type
+            gson.fromJson<List<PresetExercise>>(value, listType) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 }

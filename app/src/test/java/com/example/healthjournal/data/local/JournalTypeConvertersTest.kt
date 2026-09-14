@@ -1,5 +1,6 @@
 package com.example.healthjournal.data.local
 
+import com.example.healthjournal.domain.PresetExercise
 import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.StrengthSet
 import com.example.healthjournal.domain.WorkoutIntervalPhase
@@ -124,5 +125,47 @@ class JournalTypeConvertersTest {
     @Test
     fun intervalState_nullColumn_readsBackNull() {
         assertNull(converters.toWorkoutIntervalSession(null))
+    }
+
+    @Test
+    fun presetExercises_roundTripsLosslessly() {
+        val exercises = listOf(
+            PresetExercise(
+                exerciseId = "squat",
+                targetSets = 4,
+                defaultReps = 8,
+                defaultWeightKg = 60.0,
+                restSeconds = 90
+            ),
+            PresetExercise(
+                exerciseId = "leg-press",
+                targetSets = 3,
+                defaultReps = 12,
+                defaultWeightKg = 140.0,
+                restSeconds = 120
+            )
+        )
+
+        val json = converters.fromPresetExercises(exercises)
+        assertEquals(exercises, converters.toPresetExercises(json))
+    }
+
+    @Test
+    fun presetExercises_nullColumn_readsBackNull() {
+        assertNull(converters.toPresetExercises(null))
+    }
+
+    @Test
+    fun presetExercises_emptyPreset_roundTripsAsEmptyList() {
+        val json = converters.fromPresetExercises(emptyList())
+        assertEquals(emptyList<PresetExercise>(), converters.toPresetExercises(json))
+    }
+
+    @Test
+    fun alternativeIds_roundTripsStringList() {
+        val ids = listOf("dumbbell-press", "machine-press")
+
+        val json = converters.fromStringList(ids)
+        assertEquals(ids, converters.toStringList(json))
     }
 }
