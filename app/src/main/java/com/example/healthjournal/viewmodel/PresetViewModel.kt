@@ -115,6 +115,26 @@ class PresetViewModel(
     }
 
     /**
+     * Replaces the exercise at [index] with [exercise]. Invalid per-exercise
+     * defaults surface as an inline error without mutating the draft.
+     */
+    fun updateExercise(index: Int, exercise: PresetExercise) {
+        val current = _uiState.value as? PresetUiState.Editing ?: return
+        if (index !in current.exercises.indices) return
+        val error = ValidatePreset.validateExercise(exercise)
+        if (error != null) {
+            _uiState.value = current.copy(exerciseError = error)
+            return
+        }
+        _uiState.value = current.copy(
+            exercises = current.exercises.mapIndexed { i, existing ->
+                if (i == index) exercise else existing
+            },
+            exerciseError = null
+        )
+    }
+
+    /**
      * Validates the draft and persists it, backing to the library on
      * success; inline errors keep the screen on the draft otherwise.
      */

@@ -230,6 +230,50 @@ class PresetViewModelTest {
     }
 
     @Test
+    fun updateExercise_replacesDefaultsAtThatIndex() = runTest {
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+        vm.addExercise(benchPress)
+        vm.addExercise(benchPress.copy(exerciseId = "squat", defaultWeightKg = 100.0))
+
+        vm.updateExercise(0, benchPress.copy(defaultWeightKg = 65.0, defaultReps = 8))
+
+        val state = vm.uiState.value as PresetUiState.Editing
+        assertEquals(
+            listOf(benchPress.copy(defaultWeightKg = 65.0, defaultReps = 8), benchPress.copy(exerciseId = "squat", defaultWeightKg = 100.0)),
+            state.exercises
+        )
+    }
+
+    @Test
+    fun updateExercise_withInvalidDefaults_showsInlineError_andLeavesDraft() = runTest {
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+        vm.addExercise(benchPress)
+
+        vm.updateExercise(0, benchPress.copy(defaultReps = 0))
+
+        val state = vm.uiState.value as PresetUiState.Editing
+        assertEquals(ValidatePreset.ERROR_REPS_POSITIVE, state.exerciseError)
+        assertEquals(listOf(benchPress), state.exercises)
+    }
+
+    @Test
+    fun updateExercise_outOfRangeIndex_isIgnored() = runTest {
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+        vm.addExercise(benchPress)
+
+        vm.updateExercise(5, benchPress.copy(defaultWeightKg = 80.0))
+
+        val state = vm.uiState.value as PresetUiState.Editing
+        assertEquals(listOf(benchPress), state.exercises)
+    }
+
+    @Test
     fun edit_loadsExistingPresetIntoDraft() = runTest {
         repository.savePreset(
             WorkoutPreset(

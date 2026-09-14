@@ -70,7 +70,7 @@ class PresetLibraryScreenTest {
 
         composeTestRule.onNodeWithTag("preset_library_list").assertExists()
         composeTestRule.onNodeWithText("No presets yet").assertExists()
-        composeTestRule.onNodeWithText("Create Preset").assertExists()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -87,7 +87,7 @@ class PresetLibraryScreenTest {
     fun createButton_opensBlankCreateForm() {
         openScreen()
 
-        composeTestRule.onNodeWithText("Create Preset").performClick()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithTag("preset_name_field").assertExists()
@@ -97,7 +97,7 @@ class PresetLibraryScreenTest {
     @Test
     fun createForm_withBlankName_showsInlineError_andStaysOnForm() {
         openScreen()
-        composeTestRule.onNodeWithText("Create Preset").performClick()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Save Preset").performClick()
@@ -110,7 +110,7 @@ class PresetLibraryScreenTest {
     @Test
     fun createForm_withoutExercises_showsExerciseError() {
         openScreen()
-        composeTestRule.onNodeWithText("Create Preset").performClick()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithTag("preset_name_field").performTextInput("Leg Day")
@@ -123,7 +123,7 @@ class PresetLibraryScreenTest {
     @Test
     fun exerciseSearch_filtersCatalog_SelectingAddsToDraft() {
         openScreen()
-        composeTestRule.onNodeWithText("Create Preset").performClick()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Bench")
@@ -141,13 +141,13 @@ class PresetLibraryScreenTest {
     @Test
     fun create_validPreset_savesAndBacksToList() {
         openScreen()
-        composeTestRule.onNodeWithText("Create Preset").performClick()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithTag("preset_name_field").performTextInput("Leg Day")
         composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Squat")
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Squat").performClick()
+        composeTestRule.onNodeWithTag("exercise_search_result").performClick()
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Save Preset").performClick()
