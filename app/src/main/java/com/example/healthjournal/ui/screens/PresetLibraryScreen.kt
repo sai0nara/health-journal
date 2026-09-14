@@ -109,7 +109,8 @@ fun PresetLibraryScreen(
                 onRemoveExercise = { viewModel.removeExercise(it) },
                 onUpdateExercise = { idx, ex -> viewModel.updateExercise(idx, ex) },
                 onSave = { viewModel.savePreset() },
-                onCancel = { viewModel.cancelEditing() }
+                onCancel = { viewModel.cancelEditing() },
+                modifier = Modifier.padding(padding)
             )
         }
     }
@@ -212,10 +213,11 @@ private fun EditingContent(
     onRemoveExercise: (Int) -> Unit,
     onUpdateExercise: (Int, PresetExercise) -> Unit,
     onSave: () -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)

@@ -4,11 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.healthjournal.data.JournalRepository
+import com.example.healthjournal.data.local.ExerciseCatalogSeeder
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.ui.screens.AddEntryScreen
 import com.example.healthjournal.ui.screens.ArchiveScreen
@@ -20,6 +22,7 @@ import com.example.healthjournal.viewmodel.JournalViewModelFactory
 import com.example.healthjournal.sync.SyncManager
 import com.example.healthjournal.export.ExportViewModel
 import com.example.healthjournal.ui.screens.ExportScreen
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,6 +30,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val database = JournalDatabase.getDatabase(this)
+        lifecycleScope.launch {
+            ExerciseCatalogSeeder.seed(database.exerciseCatalogDao())
+        }
         val journalRepository = JournalRepository(database.journalDao())
         val measurementRepository = com.example.healthjournal.data.BodyMeasurementRepository(
             database.bodyMeasurementDao()
@@ -97,6 +103,23 @@ class MainActivity : ComponentActivity() {
                             viewModel(factory = workoutViewModelFactory)
                         com.example.healthjournal.ui.screens.WorkoutScreen(
                             viewModel = workoutViewModel,
+                            onBack = { navController.popBackStack() },
+                            onPresetsClick = { navController.navigate("presets") }
+                        )
+                    }
+                    composable("presets") {
+                        val presetFactory = androidx.compose.runtime.remember {
+                            com.example.healthjournal.viewmodel.PresetViewModelFactory(
+                                repository = com.example.healthjournal.data.PresetRepository(
+                                    database.workoutPresetDao()
+                                ),
+                                catalogDao = database.exerciseCatalogDao()
+                            )
+                        }
+                        val presetViewModel: com.example.healthjournal.viewmodel.PresetViewModel =
+                            androidx.lifecycle.viewmodel.compose.viewModel(factory = presetFactory)
+                        com.example.healthjournal.ui.screens.PresetLibraryScreen(
+                            viewModel = presetViewModel,
                             onBack = { navController.popBackStack() }
                         )
                     }

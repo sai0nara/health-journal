@@ -75,7 +75,8 @@ import java.time.format.ResolverStyle
 @Composable
 fun WorkoutScreen(
     viewModel: WorkoutViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onPresetsClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val recentSessions by viewModel.recentSessions.collectAsState()
@@ -125,7 +126,8 @@ fun WorkoutScreen(
                         val type = WorkoutType.fromName(it.type)
                         "${type?.label ?: it.type} · ${formatDate(it.startTimestamp)}"
                     },
-                    onSelectType = { viewModel.selectType(it) }
+                    onSelectType = { viewModel.selectType(it) },
+                    onPresetsClick = onPresetsClick
                 )
 
                 is WorkoutUiState.Configuring -> ConfiguringContent(
@@ -177,7 +179,8 @@ fun WorkoutScreen(
                 is WorkoutUiState.RecoveryRequired -> {
                     IdleContent(
                         recentLabels = emptyList(),
-                        onSelectType = { viewModel.selectType(it) }
+                        onSelectType = { viewModel.selectType(it) },
+                        onPresetsClick = onPresetsClick
                     )
                     AlertDialog(
                         onDismissRequest = { viewModel.discardRecovery() },
@@ -199,7 +202,8 @@ fun WorkoutScreen(
                 is WorkoutUiState.Error -> {
                     IdleContent(
                         recentLabels = emptyList(),
-                        onSelectType = { viewModel.selectType(it) }
+                        onSelectType = { viewModel.selectType(it) },
+                        onPresetsClick = onPresetsClick
                     )
                     AlertDialog(
                         onDismissRequest = { viewModel.dismissError() },
@@ -231,7 +235,8 @@ fun WorkoutScreen(
 @Composable
 private fun IdleContent(
     recentLabels: List<String>,
-    onSelectType: (WorkoutType) -> Unit
+    onSelectType: (WorkoutType) -> Unit,
+    onPresetsClick: () -> Unit
 ) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -248,6 +253,16 @@ private fun IdleContent(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(type.label)
+            }
+        }
+        item {
+            Button(
+                onClick = onPresetsClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("presets_entry")
+            ) {
+                Text("Presets")
             }
         }
         if (recentLabels.isNotEmpty()) {

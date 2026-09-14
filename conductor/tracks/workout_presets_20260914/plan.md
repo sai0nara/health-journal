@@ -20,7 +20,7 @@
 - [x] Task: Implement PresetRepository + PresetViewModel (MVI sealed states Idle/Editing/List) + manual Factory; green unit tests (4903e05)
 - [x] Task: Write Compose UI tests for preset library screen (list, create/edit/delete, exercise search dropdown); red before implementation (913c2ce)
 - [x] Task: Implement preset library UI (M3, semantic tokens, searchable dropdown); green UI tests on device
-- [ ] Task: Conductor - User Manual Verification 'Preset Management' (Protocol in workflow.md)
+- [~] Task: Conductor - User Manual Verification 'Preset Management' (Protocol in workflow.md)
 
 ## Phase 4: Routine Execution (Active-State Machine)
 - [ ] Task: Write failing unit tests: routine start from preset, set completion (weight/reps/RPE/checkbox), rest-timer auto-start + screen-awake flag, exercise dropdown swap mid-routine, crash-recovery resumes at last completed set
