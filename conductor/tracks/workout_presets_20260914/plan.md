@@ -5,9 +5,9 @@
 > **Deviation note (Phase 1):** schema moves 16→17 and the v2 manual in-session set-matrix is replaced by preset-driven routine execution (spec), so the existing `StrengthSet` gains an optional RPE field and the `Active`-state set-matrix editing is superseded by a routine-execution state machine. Vico is added to the tech stack (documented in `tech-stack.md`) before any chart code is written.
 
 ## Phase 1: Data Model + Persistence (schema 16→17) [checkpoint: TBD]
-- [ ] Task: Write failing unit tests for new entities: WorkoutPreset (name, scheduled day, exercises with default sets/reps/weight/rest), ExerciseCatalog (name, muscle category, alternative-movement ids), logged-set RPE extension; converters (setMatrix + preset data classes) (prereq: define model shapes first) [red]
-- [ ] Task: Implement entities + Room schema 16→17 (migration with explicit `ALTER TABLE`/recreate path for the RPE column + new tables); DAOs (preset CRUD, catalog search, alternative mapping, per-exercise historical weight query with indexes); update exported schema JSON; green JVM tests [green]
-- [ ] Task: Seed the built-in curated exercise catalog (muscle categories + pre-mapped alternative movements) as a versioned constants source (not a migration); test seeding is idempotent + catalog count > threshold
+- [x] Task: Write failing unit tests for new entities: WorkoutPreset (name, scheduled day, exercises with default sets/reps/weight/rest), ExerciseCatalog (name, muscle category, alternative-movement ids), logged-set RPE extension; converters (setMatrix + preset data classes) (prereq: define model shapes first) [red] (2825745)
+- [x] Task: Implement entities + Room schema 16→17 (migration with explicit `ALTER TABLE`/recreate path for the RPE column + new tables); DAOs (preset CRUD, catalog search, alternative mapping, per-exercise historical weight query with indexes); update exported schema JSON; green JVM tests [green] (ed6db16)
+- [x] Task: Seed the built-in curated exercise catalog (muscle categories + pre-mapped alternative movements) as a versioned constants source (not a migration); test seeding is idempotent + catalog count > threshold (047e994)
 - [ ] Task: Conductor - User Manual Verification 'Data Model + Persistence' (Protocol in workflow.md)
 
 ## Phase 2: Domain Use Cases (1RM + Conversion)
