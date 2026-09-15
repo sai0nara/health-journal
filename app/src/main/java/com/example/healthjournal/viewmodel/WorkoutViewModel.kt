@@ -7,6 +7,7 @@ import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.PresetRepository
 import com.example.healthjournal.data.WorkoutRepository
 import com.example.healthjournal.data.local.ExerciseCatalogDao
+import com.example.healthjournal.data.local.ExerciseCatalogItem
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
@@ -82,6 +83,14 @@ class WorkoutViewModel(
     /** Saved preset routines for the hub's routine picker, newest-edited first. */
     val presets: StateFlow<List<WorkoutPreset>> =
         (presetRepository?.presets ?: emptyFlow()).stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
+        )
+
+    /** Full exercise catalog for the routine swap dropdown, grouped by category. */
+    val catalogExercises: StateFlow<List<ExerciseCatalogItem>> =
+        (catalogDao?.getAllExercises() ?: emptyFlow()).stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
             initialValue = emptyList()
