@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import com.example.healthjournal.R
 import com.example.healthjournal.data.local.ExerciseCatalogItem
 import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.StrengthSet
@@ -90,6 +91,7 @@ fun WorkoutScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val recentSessions by viewModel.recentSessions.collectAsState()
+    val presets by viewModel.presets.collectAsState()
     val catalogExercises by viewModel.catalogExercises.collectAsState()
     var manualLogType by remember { mutableStateOf<WorkoutType?>(null) }
 
@@ -137,7 +139,9 @@ fun WorkoutScreen(
                         val type = WorkoutType.fromName(it.type)
                         "${type?.label ?: it.type} · ${formatDate(it.startTimestamp)}"
                     },
+                    presets = presets,
                     onSelectType = { viewModel.selectType(it) },
+                    onStartRoutine = { presetId -> viewModel.startPreset(presetId) },
                     onPresetsClick = onPresetsClick
                 )
 
@@ -208,7 +212,9 @@ fun WorkoutScreen(
                 is WorkoutUiState.RecoveryRequired -> {
                     IdleContent(
                         recentLabels = emptyList(),
+                        presets = presets,
                         onSelectType = { viewModel.selectType(it) },
+                        onStartRoutine = { presetId -> viewModel.startPreset(presetId) },
                         onPresetsClick = onPresetsClick
                     )
                     AlertDialog(
@@ -231,7 +237,9 @@ fun WorkoutScreen(
                 is WorkoutUiState.Error -> {
                     IdleContent(
                         recentLabels = emptyList(),
+                        presets = presets,
                         onSelectType = { viewModel.selectType(it) },
+                        onStartRoutine = { presetId -> viewModel.startPreset(presetId) },
                         onPresetsClick = onPresetsClick
                     )
                     AlertDialog(
@@ -264,7 +272,9 @@ fun WorkoutScreen(
 @Composable
 private fun IdleContent(
     recentLabels: List<String>,
+    presets: List<WorkoutPreset>,
     onSelectType: (WorkoutType) -> Unit,
+    onStartRoutine: (presetId: String) -> Unit,
     onPresetsClick: () -> Unit
 ) {
     LazyColumn(
@@ -292,6 +302,39 @@ private fun IdleContent(
                     .testTag("presets_entry")
             ) {
                 Text("Presets")
+            }
+        }
+        if (presets.isNotEmpty()) {
+            item {
+                Text(
+                    "Routines",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+            items(presets, key = { it.id }) { preset ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(preset.name, style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                text = "${preset.exercises.size} exercises",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Button(
+                            onClick = { onStartRoutine(preset.id) },
+                            modifier = Modifier.testTag("routine_start_${preset.id}")
+                        ) {
+                            Text("Start routine")
+                        }
+                    }
+                }
             }
         }
         if (recentLabels.isNotEmpty()) {

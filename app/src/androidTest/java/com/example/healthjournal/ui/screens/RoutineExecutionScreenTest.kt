@@ -138,6 +138,26 @@ class RoutineExecutionScreenTest {
     }
 
     @Test
+    fun hubRoutines_listsPresetsAndStartsRoutineFromIdle() {
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                WorkoutScreen(viewModel = viewModel, onBack = {}, onPresetsClick = {})
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Leg Day").assertExists()
+        composeTestRule.onNodeWithTag("routine_start_p1").assertExists()
+
+        composeTestRule.onNodeWithTag("routine_start_p1").performClick()
+        composeTestRule.waitForIdle()
+        viewModel.advanceTime(WorkoutViewModel.COUNTDOWN_SECONDS.toLong())
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("routine_exercise_0").assertExists()
+    }
+
+    @Test
     fun routineActive_showsExerciseCardsWithPerSetFields() {
         openRoutine()
 
