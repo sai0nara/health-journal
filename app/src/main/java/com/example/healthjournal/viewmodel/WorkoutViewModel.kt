@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.healthjournal.data.JournalRepository
+import com.example.healthjournal.data.PresetRepository
 import com.example.healthjournal.data.WorkoutRepository
+import com.example.healthjournal.data.local.ExerciseCatalogDao
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.data.local.WorkoutStatus
 import com.example.healthjournal.domain.CalorieEstimator
@@ -24,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -31,7 +35,11 @@ import kotlinx.coroutines.launch
 enum class WorkoutHaptic {
     START,
     STOP,
-    INTERVAL
+    INTERVAL,
+    /** Heavy tap when a routine set is checked off. */
+    SET_COMPLETE,
+    /** Success pattern when every set of a planned exercise is done. */
+    EXERCISE_COMPLETE
 }
 
 /**
@@ -47,7 +55,9 @@ class WorkoutViewModel(
     private val journalRepository: JournalRepository,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
     private val onHaptic: (WorkoutHaptic) -> Unit = {},
-    private val clock: () -> Long = System::currentTimeMillis
+    private val clock: () -> Long = System::currentTimeMillis,
+    private val presetRepository: PresetRepository? = null,
+    private val catalogDao: ExerciseCatalogDao? = null
 ) : ViewModel() {
 
     /**
@@ -64,6 +74,14 @@ class WorkoutViewModel(
     /** Workout history for discovery, newest first (completed only). */
     val recentSessions: StateFlow<List<WorkoutSession>> =
         repository.completedSessions.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
+        )
+
+    /** Saved preset routines for the hub's routine picker, newest-edited first. */
+    val presets: StateFlow<List<WorkoutPreset>> =
+        (presetRepository?.presets ?: emptyFlow()).stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
             initialValue = emptyList()
@@ -267,6 +285,169 @@ class WorkoutViewModel(
         }
     }
 
+    /**
+     * Starts a routine session from a saved preset: prebuilds the planned set
+     * matrix (one scaled set-row per target set, prefilling weight/reps, all
+     * uncompleted), resolves catalog names, and enters the same 3-2-1
+     * countdown as a manual session. Requires [presetRepository] and
+     * [catalogDao] wired in; with neither present the call is a no-op.
+     */
+    fun startPreset(presetId: String) {
+        val presetRepository = presetRepository ?: return
+        val catalogDao = catalogDao ?: return
+        viewModelScope.launch(dispatcher) {
+            val unfinished = repository.getUnfinishedSession()
+            if (unfinished != null) {
+                // Never start a second session while one is unfinished.
+                _uiState.value = WorkoutUiState.RecoveryRequired(unfinished)
+                return@launch
+            }
+            val preset = presetRepository.getPreset(presetId)
+            if (preset == null) {
+                _uiState.value = WorkoutUiState.Error("Preset not found")
+                return@launch
+            }
+            val matrix = buildList {
+                for (planned in preset.exercises) {
+                    val name = catalogDao.getExerciseById(planned.exerciseId)?.name
+                    if (name == null || planned.targetSets <= 0) continue
+                    add(
+                        StrengthExercise(
+                            name = name,
+                            sets = List(planned.targetSets) {
+                                StrengthSet(
+                                    kg = planned.defaultWeightKg,
+                                    reps = planned.defaultReps
+                                )
+                            },
+                            targetSets = planned.targetSets,
+                            targetReps = planned.defaultReps,
+                            targetWeightKg = planned.defaultWeightKg,
+                            restSeconds = planned.restSeconds,
+                            exerciseId = planned.exerciseId
+                        )
+                    )
+                }
+            }
+            val session = WorkoutSession(
+                type = WorkoutType.FITNESS.name,
+                status = WorkoutStatus.ACTIVE.name,
+                startTimestamp = clock(),
+                setMatrix = matrix
+            )
+            lastTickMillis = clock()
+            repository.saveSession(session)
+            _uiState.value = WorkoutUiState.Countdown(
+                session = session,
+                secondsRemaining = COUNTDOWN_SECONDS
+            )
+            onHaptic(WorkoutHaptic.START)
+        }
+    }
+
+    /**
+     * Toggles a routine set's completion flag. Checking off a set persists
+     * immediately (crash recovery) and starts the exercise's rest timer with a
+     * heavy haptic; when it completes the exercise's final set a success
+     * haptic fires instead. Unchecking simply persists the set as pending.
+     */
+    fun toggleSetCompleted(exerciseIndex: Int, setIndex: Int) {
+        val current = _uiState.value as? WorkoutUiState.Active ?: return
+        if (WorkoutType.fromName(current.session.type) != WorkoutType.FITNESS) return
+        val matrix = current.session.setMatrix ?: return
+        val exercise = matrix.getOrNull(exerciseIndex) ?: return
+        if (!exercise.isPlanned) return
+        val set = exercise.sets.getOrNull(setIndex) ?: return
+        viewModelScope.launch(dispatcher) {
+            val newCompleted = !set.completed
+            val updatedSets = exercise.sets.mapIndexed { i, s ->
+                if (i == setIndex) s.copy(completed = newCompleted) else s
+            }
+            val updatedExercise = exercise.copy(sets = updatedSets)
+            val matrix = matrix.mapIndexed { i, ex ->
+                if (i == exerciseIndex) updatedExercise else ex
+            }
+            val updated = current.session.copy(setMatrix = matrix)
+            repository.saveSession(updated)
+            _uiState.value = current.copy(
+                session = updated,
+                setMatrixError = null,
+                restSeconds = if (newCompleted) {
+                    exercise.restSeconds ?: DEFAULT_REST_SECONDS
+                } else {
+                    current.restSeconds
+                }
+            )
+            if (newCompleted) {
+                onHaptic(WorkoutHaptic.SET_COMPLETE)
+                if (updatedSets.all { it.completed }) {
+                    onHaptic(WorkoutHaptic.EXERCISE_COMPLETE)
+                }
+            }
+        }
+    }
+
+    /**
+     * Edits a routine set's weight/reps/RPE in place, mirroring the manual
+     * set-validation rules (positive kg, reps >= 1, optional RPE 1..10).
+     * Invalid values surface as an inline error without mutating.
+     */
+    fun updateRoutineSet(
+        exerciseIndex: Int,
+        setIndex: Int,
+        kg: Double,
+        reps: Int,
+        rpe: Int?
+    ) {
+        val current = _uiState.value as? WorkoutUiState.Active ?: return
+        if (WorkoutType.fromName(current.session.type) != WorkoutType.FITNESS) return
+        val matrix = current.session.setMatrix ?: return
+        val exercise = matrix.getOrNull(exerciseIndex) ?: return
+        if (!exercise.isPlanned) return
+        val set = exercise.sets.getOrNull(setIndex) ?: return
+        val errors = ValidateStrengthExercise.validateSet(kg = kg, reps = reps, rpe = rpe)
+        if (errors.isNotEmpty()) {
+            _uiState.value = current.copy(
+                setMatrixError = errors["kg"] ?: errors["reps"] ?: errors["rpe"]
+            )
+            return
+        }
+        viewModelScope.launch(dispatcher) {
+            val updatedSets = exercise.sets.mapIndexed { i, s ->
+                if (i == setIndex) s.copy(kg = kg, reps = reps, rpe = rpe) else s
+            }
+            val updatedExercise = exercise.copy(sets = updatedSets)
+            val matrix = matrix.mapIndexed { i, ex ->
+                if (i == exerciseIndex) updatedExercise else ex
+            }
+            val updated = current.session.copy(setMatrix = matrix)
+            repository.saveSession(updated)
+            _uiState.value = current.copy(session = updated, setMatrixError = null)
+        }
+    }
+
+    /**
+     * Swaps a planned exercise mid-routine to another catalog movement,
+     * preserving the planned structure (targets, rest) and any sets already
+     * checked off. Earlier performed sets keep their logged weights.
+     */
+    fun swapRoutineExercise(exerciseIndex: Int, exerciseId: String, name: String) {
+        val current = _uiState.value as? WorkoutUiState.Active ?: return
+        if (WorkoutType.fromName(current.session.type) != WorkoutType.FITNESS) return
+        val matrix = current.session.setMatrix ?: return
+        val exercise = matrix.getOrNull(exerciseIndex) ?: return
+        if (!exercise.isPlanned) return
+        viewModelScope.launch(dispatcher) {
+            val swapped = exercise.copy(name = name, exerciseId = exerciseId)
+            val updatedMatrix = matrix.mapIndexed { i, ex ->
+                if (i == exerciseIndex) swapped else ex
+            }
+            val updated = current.session.copy(setMatrix = updatedMatrix)
+            repository.saveSession(updated)
+            _uiState.value = current.copy(session = updated, setMatrixError = null)
+        }
+    }
+
     fun finishSession() {
         val current = when (val state = _uiState.value) {
             is WorkoutUiState.Active -> state.session
@@ -446,7 +627,9 @@ class WorkoutViewModelFactory(
     private val repository: WorkoutRepository,
     private val healthSource: WorkoutHealthDataSource,
     private val journalRepository: JournalRepository,
-    private val onHaptic: (WorkoutHaptic) -> Unit = {}
+    private val onHaptic: (WorkoutHaptic) -> Unit = {},
+    private val presetRepository: PresetRepository? = null,
+    private val catalogDao: ExerciseCatalogDao? = null
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(WorkoutViewModel::class.java)) {
@@ -455,7 +638,9 @@ class WorkoutViewModelFactory(
                 repository = repository,
                 healthSource = healthSource,
                 journalRepository = journalRepository,
-                onHaptic = onHaptic
+                onHaptic = onHaptic,
+                presetRepository = presetRepository,
+                catalogDao = catalogDao
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

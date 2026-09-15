@@ -96,7 +96,11 @@ class MainActivity : ComponentActivity() {
                                     haptic.performHapticFeedback(
                                         androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress
                                     )
-                                }
+                                },
+                                presetRepository = com.example.healthjournal.data.PresetRepository(
+                                    database.workoutPresetDao()
+                                ),
+                                catalogDao = database.exerciseCatalogDao()
                             )
                         }
                         val workoutViewModel: com.example.healthjournal.viewmodel.WorkoutViewModel =

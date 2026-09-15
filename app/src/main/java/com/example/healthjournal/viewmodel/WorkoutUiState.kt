@@ -29,7 +29,14 @@ sealed interface WorkoutUiState {
         val restSeconds: Int = 0,
         /** Inline validation error from the latest set-matrix edit, if any. */
         val setMatrixError: String? = null
-    ) : WorkoutUiState
+    ) : WorkoutUiState {
+        /** True when this Active session was started from a preset routine
+         *  (at least one exercise carries planned targets). */
+        val isRoutine: Boolean get() = session.setMatrix?.any { it.isPlanned } == true
+
+        /** Keep the display awake while a routine runs. */
+        val keepScreenOn: Boolean get() = isRoutine
+    }
 
     data class Paused(val session: WorkoutSession) : WorkoutUiState
 

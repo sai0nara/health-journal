@@ -23,8 +23,8 @@
 - [x] Task: Conductor - User Manual Verification 'Preset Management' (Protocol in workflow.md) [b9cf477]
 
 ## Phase 4: Routine Execution (Active-State Machine)
-- [~] Task: Write failing unit tests: routine start from preset, set completion (weight/reps/RPE/checkbox), rest-timer auto-start + screen-awake flag, exercise dropdown swap mid-routine, crash-recovery resumes at last completed set
-- [ ] Task: Implement routine-execution state machine in WorkoutViewModel (replaces v2 set-matrix editing; keeps finish→journal+Health Connect path); green unit tests
+- [x] Task: Write failing unit tests: routine start from preset, set completion (weight/reps/RPE/checkbox), rest-timer auto-start + screen-awake flag, exercise dropdown swap mid-routine, crash-recovery resumes at last completed set [red] (2372f39)
+- [x] Task: Implement routine-execution state machine in WorkoutViewModel (replaces v2 set-matrix editing; keeps finish→journal+Health Connect path); green unit tests
 - [ ] Task: Write failing Compose UI tests: exercise cards, set matrix fields (Weight/Reps/RPE/completion), automatic rest timer countdown, haptic calls on set/exercise completion, exercise dropdown, custom numeric quick-increment pad (+2.5 kg / +5 lb)
 - [ ] Task: Implement execution UI (M3, keyed lazy lists, keep-screen-on flag during active routine); green UI tests on device
 - [ ] Task: Conductor - User Manual Verification 'Routine Execution' (Protocol in workflow.md)
