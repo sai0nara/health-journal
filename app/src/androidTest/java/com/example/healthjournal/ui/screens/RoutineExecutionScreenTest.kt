@@ -237,18 +237,45 @@ class RoutineExecutionScreenTest {
     }
 
     @Test
-    fun routineQuickPad_addsTwoAndHalfKgThenFivePounds() {
+    fun routineQuickPad_actsOnLastEditedSet_notFirstUncompleted() {
         openRoutine()
 
-        composeTestRule.onNodeWithTag("routine_quick_2_5").performClick()
+        composeTestRule.onNodeWithTag("routine_set_rpe_0_1").performTextInput("8")
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
+        composeTestRule.waitForIdle()
+
+        val matrix = persistedMatrix()
+        assertEquals(60.0, matrix.single().sets[0].kg, 0.0)
+        assertEquals(62.5, matrix.single().sets[1].kg, 0.0)
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("60")
+        composeTestRule.onNodeWithTag("routine_set_kg_0_1")
+            .assertEditableText("62.5")
+    }
+
+    @Test
+    fun routineQuickPad_weightAndRepsAdjust() {
+        openRoutine()
+
+        composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("routine_set_kg_0_0")
             .assertEditableText("62.5")
 
-        composeTestRule.onNodeWithTag("routine_quick_5_lb").performClick()
+        composeTestRule.onNodeWithTag("routine_weight_minus").performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("routine_set_kg_0_0")
-            .assertEditableText("64.77")
+            .assertEditableText("60")
+
+        composeTestRule.onNodeWithTag("routine_reps_plus").performClick()
+        composeTestRule.waitForIdle()
+        assertEquals(6, persistedMatrix().single().sets[0].reps)
+
+        composeTestRule.onNodeWithTag("routine_reps_minus").performClick()
+        composeTestRule.waitForIdle()
+        assertEquals(5, persistedMatrix().single().sets[0].reps)
     }
 
     @Test

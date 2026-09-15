@@ -40,7 +40,9 @@ enum class WorkoutHaptic {
     /** Heavy tap when a routine set is checked off. */
     SET_COMPLETE,
     /** Success pattern when every set of a planned exercise is done. */
-    EXERCISE_COMPLETE
+    EXERCISE_COMPLETE,
+    /** Light tap when a routine rest period elapses. */
+    REST_ENDED
 }
 
 /**
@@ -210,11 +212,15 @@ class WorkoutViewModel(
             is WorkoutUiState.Active -> viewModelScope.launch(dispatcher) {
                 val elapsed = current.session.elapsedSeconds + delta
                 val advanced = current.session.copy(elapsedSeconds = elapsed)
+                val restSeconds = (current.restSeconds - delta).coerceAtLeast(0L).toInt()
                 _uiState.value = WorkoutUiState.Active(
                     session = advanced,
-                    restSeconds = (current.restSeconds - delta).coerceAtLeast(0L).toInt(),
+                    restSeconds = restSeconds,
                     setMatrixError = current.setMatrixError
                 )
+                if (current.restSeconds > 0 && restSeconds == 0) {
+                    onHaptic(WorkoutHaptic.REST_ENDED)
+                }
                 if (elapsed % PERSIST_EVERY_SECONDS == 0L) {
                     repository.saveSession(advanced)
                 }
@@ -372,7 +378,25 @@ class WorkoutViewModel(
             val updatedSets = exercise.sets.mapIndexed { i, s ->
                 if (i == setIndex) s.copy(completed = newCompleted) else s
             }
-            val updatedExercise = exercise.copy(sets = updatedSets)
+            val copyForward = newCompleted &&
+                (exercise.targetSets ?: 0) > setIndex + 1
+            val withProgression = if (copyForward) {
+                val next = updatedSets.getOrNull(setIndex + 1)
+                val pristine = next != null &&
+                    !next.completed &&
+                    next.kg == (exercise.targetWeightKg ?: next.kg) &&
+                    next.reps == (exercise.targetReps ?: next.reps)
+                if (pristine) {
+                    updatedSets.mapIndexed { i, s ->
+                        if (i == setIndex + 1) s.copy(kg = set.kg, reps = set.reps) else s
+                    }
+                } else {
+                    updatedSets
+                }
+            } else {
+                updatedSets
+            }
+            val updatedExercise = exercise.copy(sets = withProgression)
             val matrix = matrix.mapIndexed { i, ex ->
                 if (i == exerciseIndex) updatedExercise else ex
             }
@@ -384,12 +408,13 @@ class WorkoutViewModel(
                 restSeconds = if (newCompleted) {
                     exercise.restSeconds ?: DEFAULT_REST_SECONDS
                 } else {
-                    current.restSeconds
+                    // Unchecking stops the rest period; a later re-check restarts it.
+                    0
                 }
             )
             if (newCompleted) {
                 onHaptic(WorkoutHaptic.SET_COMPLETE)
-                if (updatedSets.all { it.completed }) {
+                if (updatedExercise.sets.all { it.completed }) {
                     onHaptic(WorkoutHaptic.EXERCISE_COMPLETE)
                 }
             }
@@ -437,8 +462,9 @@ class WorkoutViewModel(
 
     /**
      * Swaps a planned exercise mid-routine to another catalog movement,
-     * preserving the planned structure (targets, rest) and any sets already
-     * checked off. Earlier performed sets keep their logged weights.
+     * keeping the planned target structure (sets, rest) but resetting every
+     * set row to the planned defaults — performed weights, reps, RPE and
+     * completion flags are cleared so the swapped-in movement starts fresh.
      */
     fun swapRoutineExercise(exerciseIndex: Int, exerciseId: String, name: String) {
         val current = _uiState.value as? WorkoutUiState.Active ?: return
@@ -447,7 +473,20 @@ class WorkoutViewModel(
         val exercise = matrix.getOrNull(exerciseIndex) ?: return
         if (!exercise.isPlanned) return
         viewModelScope.launch(dispatcher) {
-            val swapped = exercise.copy(name = name, exerciseId = exerciseId)
+            val targetSets = exercise.targetSets ?: exercise.sets.size
+            val resets = (0 until targetSets).map {
+                StrengthSet(
+                    kg = exercise.targetWeightKg ?: 20.0,
+                    reps = exercise.targetReps ?: 10,
+                    rpe = null,
+                    completed = false
+                )
+            }
+            val swapped = exercise.copy(
+                name = name,
+                exerciseId = exerciseId,
+                sets = resets
+            )
             val updatedMatrix = matrix.mapIndexed { i, ex ->
                 if (i == exerciseIndex) swapped else ex
             }

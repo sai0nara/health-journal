@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.hasText
@@ -15,8 +16,10 @@ import com.example.healthjournal.domain.ScheduledDay
 import com.example.healthjournal.ui.theme.HealthJournalTheme
 import com.example.healthjournal.util.FakeExerciseCatalogDao
 import com.example.healthjournal.util.FakeWorkoutPresetDao
+import com.example.healthjournal.viewmodel.PresetUiState
 import com.example.healthjournal.viewmodel.PresetViewModel
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -46,9 +49,9 @@ class PresetLibraryScreenTest {
                         muscleCategory = "Chest"
                     ),
                     ExerciseCatalogItem(
-                        id = "squat",
-                        name = "Squat",
-                        muscleCategory = "Legs"
+                        id = "barbell-squat",
+                        name = "Barbell Squat",
+                        muscleCategory = "Quads"
                     )
                 )
             )
@@ -137,6 +140,48 @@ class PresetLibraryScreenTest {
         composeTestRule.onNodeWithTag("preset_draft_list").performScrollToNode(hasText("Bench Press"))
         composeTestRule.onNodeWithText("Bench Press").assertIsDisplayed()
     }
+
+    @Test
+    fun selectingExercise_prefillsSensibleDefaultsPerMovement() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Squat")
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("exercise_search_result").performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(3, selectedDraft().single().targetSets)
+        assertEquals(5, selectedDraft().single().defaultReps)
+        assertEquals(40.0, selectedDraft().single().defaultWeightKg, 0.0)
+        assertEquals(120, selectedDraft().single().restSeconds)
+    }
+
+    @Test
+    fun presetFields_canBeClearedAndRetyped() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Squat")
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("exercise_search_result").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_field_sets").performTextClearance()
+        composeTestRule.onNodeWithTag("preset_field_sets").performTextInput("4")
+        composeTestRule.onNodeWithTag("preset_field_weight").performTextClearance()
+        composeTestRule.onNodeWithTag("preset_field_weight").performTextInput("60")
+        composeTestRule.waitForIdle()
+
+        assertEquals(4, selectedDraft().single().targetSets)
+        assertEquals(60.0, selectedDraft().single().defaultWeightKg, 0.0)
+    }
+
+    /** The exercise draft currently being edited in the form. */
+    private fun selectedDraft(): List<com.example.healthjournal.domain.PresetExercise> =
+        (viewModel.uiState.value as PresetUiState.Editing).exercises
 
     @Test
     fun create_validPreset_savesAndBacksToList() {

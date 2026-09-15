@@ -58,7 +58,12 @@ class MainActivity : ComponentActivity() {
         )
         val exportViewModel = ExportViewModel(application, journalRepository, fullBackupUseCase)
         val restoreViewModel = com.example.healthjournal.export.RestoreViewModel(application)
-        val personalCardViewModelFactory = com.example.healthjournal.viewmodel.PersonalCardViewModelFactory(personalCardRepository)
+        val personalCardViewModelFactory = com.example.healthjournal.viewmodel.PersonalCardViewModelFactory(
+            personalCardRepository,
+            persistUnitSystem = { unitSystem ->
+                com.example.healthjournal.data.local.UnitSettings.write(this, unitSystem)
+            }
+        )
         val workoutRepository = com.example.healthjournal.data.WorkoutRepository(database.workoutSessionDao())
         val workoutHealthSource = com.example.healthjournal.health.HealthConnectWorkoutDataSource(this)
 

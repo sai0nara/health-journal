@@ -47,7 +47,8 @@ data class PersonalCardUiState(
 
 class PersonalCardViewModel(
     private val repository: PersonalCardRepository,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val persistUnitSystem: (UnitSystem) -> Unit = {}
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PersonalCardUiState())
@@ -249,6 +250,7 @@ class PersonalCardViewModel(
             )
         }
         validateDraft()
+        persistUnitSystem(unitSystem)
     }
 
     private fun validateDraft() {
@@ -385,12 +387,16 @@ class PersonalCardViewModel(
 }
 
 class PersonalCardViewModelFactory(
-    private val repository: PersonalCardRepository
+    private val repository: PersonalCardRepository,
+    private val persistUnitSystem: (UnitSystem) -> Unit = {}
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PersonalCardViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return PersonalCardViewModel(repository) as T
+            return PersonalCardViewModel(
+                repository = repository,
+                persistUnitSystem = persistUnitSystem
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.data.local.ExerciseCatalogItem
 import com.example.healthjournal.data.local.WorkoutPreset
+import com.example.healthjournal.data.local.defaultPlanFor
 import com.example.healthjournal.domain.PresetExercise
 import com.example.healthjournal.domain.ScheduledDay
 import com.example.healthjournal.viewmodel.PresetUiState
@@ -329,13 +330,14 @@ private fun ExerciseSearchDropdown(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
+                                val defaults = defaultPlanFor(item.id)
                                 onAddExercise(
                                     PresetExercise(
                                         exerciseId = item.id,
-                                        targetSets = 3,
-                                        defaultReps = 10,
-                                        defaultWeightKg = 20.0,
-                                        restSeconds = 90
+                                        targetSets = defaults.sets,
+                                        defaultReps = defaults.reps,
+                                        defaultWeightKg = defaults.weightKg,
+                                        restSeconds = defaults.restSeconds
                                     )
                                 )
                                 query = ""
@@ -357,6 +359,10 @@ private fun DraftExerciseRow(
     onRemove: () -> Unit
 ) {
     val label = catalog.firstOrNull { it.id == exercise.exerciseId }?.name ?: exercise.exerciseId
+    var setsValue by remember(exercise.exerciseId) { mutableStateOf(exercise.targetSets.toString()) }
+    var repsValue by remember(exercise.exerciseId) { mutableStateOf(exercise.defaultReps.toString()) }
+    var weightValue by remember(exercise.exerciseId) { mutableStateOf(exercise.defaultWeightKg.toString()) }
+    var restValue by remember(exercise.exerciseId) { mutableStateOf(exercise.restSeconds.toString()) }
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
@@ -365,22 +371,33 @@ private fun DraftExerciseRow(
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PresetField(label = "Sets", value = exercise.targetSets.toString(), modifier = Modifier.weight(1f)) {
-                it.toIntOrNull()?.let { onUpdate(exercise.copy(targetSets = it)) }
+            PresetField(Strings.SETS, setsValue, Modifier.weight(1f).testTag("preset_field_sets")) {
+                setsValue = it
+                it.toIntOrNull()?.let { v -> onUpdate(exercise.copy(targetSets = v)) }
             }
-            PresetField(label = "Reps", value = exercise.defaultReps.toString(), modifier = Modifier.weight(1f)) {
-                it.toIntOrNull()?.let { onUpdate(exercise.copy(defaultReps = it)) }
+            PresetField(Strings.REPS, repsValue, Modifier.weight(1f).testTag("preset_field_reps")) {
+                repsValue = it
+                it.toIntOrNull()?.let { v -> onUpdate(exercise.copy(defaultReps = v)) }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PresetField(label = "Weight kg", value = exercise.defaultWeightKg.toString(), modifier = Modifier.weight(1f)) {
-                it.toDoubleOrNull()?.let { onUpdate(exercise.copy(defaultWeightKg = it)) }
+            PresetField(Strings.WEIGHT, weightValue, Modifier.weight(1f).testTag("preset_field_weight")) {
+                weightValue = it
+                it.toDoubleOrNull()?.let { v -> onUpdate(exercise.copy(defaultWeightKg = v)) }
             }
-            PresetField(label = "Rest s", value = exercise.restSeconds.toString(), modifier = Modifier.weight(1f)) {
-                it.toIntOrNull()?.let { onUpdate(exercise.copy(restSeconds = it)) }
+            PresetField(Strings.REST, restValue, Modifier.weight(1f).testTag("preset_field_rest")) {
+                restValue = it
+                it.toIntOrNull()?.let { v -> onUpdate(exercise.copy(restSeconds = v)) }
             }
         }
     }
+}
+
+private object Strings {
+    const val SETS = "Sets"
+    const val REPS = "Reps"
+    const val WEIGHT = "Weight kg"
+    const val REST = "Rest s"
 }
 
 @Composable

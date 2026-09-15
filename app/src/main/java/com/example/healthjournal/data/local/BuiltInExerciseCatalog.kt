@@ -79,6 +79,62 @@ object BuiltInExerciseCatalog {
     )
 }
 
+/** Defaults used when a built-in catalog exercise is added to a preset. */
+data class PresetDefaults(
+    val sets: Int = 3,
+    val reps: Int = 10,
+    val weightKg: Double = 20.0,
+    val restSeconds: Int = 90
+)
+
+/** Per-exercise sensible starting defaults for the curated catalog. */
+fun defaultPlanFor(exerciseId: String): PresetDefaults = when (exerciseId) {
+    "barbell-squat" -> PresetDefaults(3, 5, 40.0, 120)
+    "front-squat" -> PresetDefaults(3, 5, 35.0, 120)
+    "leg-press" -> PresetDefaults(3, 10, 40.0, 90)
+    "hack-squat" -> PresetDefaults(3, 8, 35.0, 90)
+    "goblet-squat" -> PresetDefaults(3, 10, 20.0, 90)
+    "barbell-bench-press" -> PresetDefaults(3, 5, 30.0, 120)
+    "dumbbell-bench-press" -> PresetDefaults(3, 10, 20.0, 90)
+    "machine-chest-press" -> PresetDefaults(3, 10, 25.0, 90)
+    "incline-barbell-press" -> PresetDefaults(3, 5, 25.0, 120)
+    "incline-dumbbell-press" -> PresetDefaults(3, 8, 18.0, 90)
+    "cable-fly" -> PresetDefaults(3, 12, 10.0, 60)
+    "pec-deck" -> PresetDefaults(3, 12, 15.0, 60)
+    "barbell-row" -> PresetDefaults(3, 8, 30.0, 90)
+    "dumbbell-row" -> PresetDefaults(3, 10, 18.0, 90)
+    "seated-cable-row" -> PresetDefaults(3, 10, 25.0, 90)
+    "lat-pulldown" -> PresetDefaults(3, 10, 25.0, 90)
+    "pull-up" -> PresetDefaults(3, 8, 20.0, 90)
+    "t-bar-row" -> PresetDefaults(3, 8, 25.0, 90)
+    "overhead-press" -> PresetDefaults(3, 8, 20.0, 90)
+    "seated-dumbbell-press" -> PresetDefaults(3, 10, 14.0, 90)
+    "machine-shoulder-press" -> PresetDefaults(3, 10, 20.0, 90)
+    "lateral-raise" -> PresetDefaults(3, 12, 6.0, 60)
+    "cable-lateral-raise" -> PresetDefaults(3, 12, 6.0, 60)
+    "romanian-deadlift" -> PresetDefaults(3, 10, 35.0, 120)
+    "stiff-leg-deadlift" -> PresetDefaults(3, 10, 30.0, 120)
+    "leg-curl" -> PresetDefaults(3, 10, 20.0, 60)
+    "conventional-deadlift" -> PresetDefaults(3, 5, 40.0, 150)
+    "trap-bar-deadlift" -> PresetDefaults(3, 5, 40.0, 150)
+    "hip-thrust" -> PresetDefaults(3, 10, 30.0, 90)
+    "barbell-glute-bridge" -> PresetDefaults(3, 10, 25.0, 90)
+    "leg-extension" -> PresetDefaults(3, 12, 15.0, 60)
+    "barbell-curl" -> PresetDefaults(3, 10, 15.0, 60)
+    "dumbbell-curl" -> PresetDefaults(3, 10, 8.0, 60)
+    "cable-curl" -> PresetDefaults(3, 10, 15.0, 60)
+    "close-grip-bench" -> PresetDefaults(3, 8, 25.0, 90)
+    "dips" -> PresetDefaults(3, 10, 20.0, 90)
+    "lying-triceps-extension" -> PresetDefaults(3, 10, 12.0, 60)
+    "cable-triceps-pushdown" -> PresetDefaults(3, 12, 15.0, 60)
+    "plank" -> PresetDefaults(3, 1, 20.0, 0)
+    "cable-crunch" -> PresetDefaults(3, 12, 15.0, 60)
+    "standing-calf-raise" -> PresetDefaults(3, 12, 20.0, 60)
+    "seated-calf-raise" -> PresetDefaults(3, 12, 20.0, 60)
+    "leg-press-calf-raise" -> PresetDefaults(3, 12, 15.0, 60)
+    else -> PresetDefaults()
+}
+
 /**
  * Re-runnable catalog seeder: inserts the curated rows with REPLACE semantics
  * (idempotent, stable ids) and never touches user-created rows. Called at DB

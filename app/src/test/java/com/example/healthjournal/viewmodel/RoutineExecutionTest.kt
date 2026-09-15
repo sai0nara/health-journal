@@ -211,6 +211,54 @@ class RoutineExecutionTest {
     }
 
     @Test
+    fun toggleSetCompleted_copiesPerformedWeightAndRepsToNextPristineSet() = runTest {
+        val vm = startRoutineFor()
+        vm.updateRoutineSet(0, 0, 100.0, 6, null)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val sets = activeState(vm).session.setMatrix!!.single().sets
+        assertTrue(sets[0].completed)
+        assertEquals(100.0, sets[1].kg, 0.0)
+        assertEquals(6, sets[1].reps)
+        assertFalse(sets[1].completed)
+    }
+
+    @Test
+    fun toggleSetCompleted_doesNotOverwriteUserEditedNextSet() = runTest {
+        val vm = startRoutineFor()
+        vm.updateRoutineSet(0, 0, 100.0, 6, null)
+        vm.updateRoutineSet(0, 1, 110.0, 5, null)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val sets = activeState(vm).session.setMatrix!!.single().sets
+        assertEquals(110.0, sets[1].kg, 0.0)
+        assertEquals(5, sets[1].reps)
+    }
+
+    @Test
+    fun toggleSetCompleted_uncheckStopsRestTimer() = runTest {
+        val vm = startRoutineFor()
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(90, activeState(vm).restSeconds)
+
+        vm.advanceTime(15)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(75, activeState(vm).restSeconds)
+
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, activeState(vm).restSeconds)
+    }
+
+    @Test
     fun toggleSetCompleted_uncheckPersistsIncompleteSet() = runTest {
         val vm = startRoutineFor()
         vm.toggleSetCompleted(0, 0)
@@ -254,8 +302,9 @@ class RoutineExecutionTest {
     }
 
     @Test
-    fun swapRoutineExercise_replacesExerciseKeepsPlannedStructure() = runTest {
+    fun swapRoutineExercise_resetsSetsToPlannedDefaults() = runTest {
         val vm = startRoutineFor()
+        vm.updateRoutineSet(0, 0, 100.0, 6, 8)
         vm.toggleSetCompleted(0, 0)
         dispatcher.scheduler.advanceUntilIdle()
 
@@ -268,7 +317,27 @@ class RoutineExecutionTest {
         assertEquals(pressItem.id, exercise.exerciseId)
         assertEquals(3, exercise.targetSets)
         assertEquals(90, exercise.restSeconds)
-        assertTrue(exercise.sets[0].completed)
+        assertEquals(3, exercise.sets.size)
+        assertTrue(exercise.sets.all { !it.completed && it.rpe == null })
+        assertTrue(exercise.sets.all { it.kg == 60.0 && it.reps == 5 })
+    }
+
+    @Test
+    fun restTimer_crossingZero_emitsRestEndedHaptic() = runTest {
+        val vm = startRoutineFor()
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(90, activeState(vm).restSeconds)
+
+        vm.advanceTime(89)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertFalse(haptics.contains(WorkoutHaptic.REST_ENDED))
+
+        vm.advanceTime(1)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, activeState(vm).restSeconds)
+        assertTrue(haptics.contains(WorkoutHaptic.REST_ENDED))
     }
 
     @Test
