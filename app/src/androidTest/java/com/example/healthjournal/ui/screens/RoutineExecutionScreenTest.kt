@@ -1,12 +1,18 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.text.AnnotatedString
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.PresetRepository
 import com.example.healthjournal.data.WorkoutRepository
@@ -123,6 +129,14 @@ class RoutineExecutionScreenTest {
         return runBlocking { dao.getSessionById(sessionId)!!.setMatrix!! }
     }
 
+    /** Asserts an editable field's current text (its EditableText semantics config). */
+    private fun SemanticsNodeInteraction.assertEditableText(value: String) {
+        assert(SemanticsMatcher.expectValue(
+            SemanticsProperties.EditableText,
+            AnnotatedString(value)
+        ))
+    }
+
     @Test
     fun routineActive_showsExerciseCardsWithPerSetFields() {
         openRoutine()
@@ -132,9 +146,11 @@ class RoutineExecutionScreenTest {
         composeTestRule.onNodeWithTag("routine_set_label_0_0").assertTextEquals("Set 1")
         composeTestRule.onNodeWithTag("routine_set_label_0_1").assertTextEquals("Set 2")
         composeTestRule.onNodeWithTag("routine_set_label_0_2").assertTextEquals("Set 3")
-        composeTestRule.onNodeWithTag("routine_set_kg_0_0").assertTextEquals("60")
-        composeTestRule.onNodeWithTag("routine_set_reps_0_0").assertTextEquals("5")
-        composeTestRule.onNodeWithTag("routine_set_rpe_0_0").assertTextEquals("")
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("60")
+        composeTestRule.onNodeWithTag("routine_set_reps_0_0")
+            .assertEditableText("5")
+        composeTestRule.onNodeWithTag("routine_set_rpe_0_0").assertExists()
         composeTestRule.onNodeWithTag("routine_set_done_0_0").assertIsDisplayed()
         composeTestRule.onNodeWithTag("routine_set_done_0_2").assertIsDisplayed()
         composeTestRule.onNodeWithTag("routine_swap_0").assertExists()
@@ -144,14 +160,19 @@ class RoutineExecutionScreenTest {
     fun routineSet_editWeightRepsAndRpe_persists() {
         openRoutine()
 
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextClearance()
         composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextInput("65")
+        composeTestRule.onNodeWithTag("routine_set_reps_0_0").performTextClearance()
         composeTestRule.onNodeWithTag("routine_set_reps_0_0").performTextInput("6")
         composeTestRule.onNodeWithTag("routine_set_rpe_0_0").performTextInput("8")
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithTag("routine_set_kg_0_0").assertTextEquals("65")
-        composeTestRule.onNodeWithTag("routine_set_reps_0_0").assertTextEquals("6")
-        composeTestRule.onNodeWithTag("routine_set_rpe_0_0").assertTextEquals("8")
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("65")
+        composeTestRule.onNodeWithTag("routine_set_reps_0_0")
+            .assertEditableText("6")
+        composeTestRule.onNodeWithTag("routine_set_rpe_0_0")
+            .assertEditableText("8")
         val matrix = persistedMatrix()
         assertEquals(65.0, matrix.single().sets[0].kg, 0.0)
         assertEquals(6, matrix.single().sets[0].reps)
@@ -201,11 +222,13 @@ class RoutineExecutionScreenTest {
 
         composeTestRule.onNodeWithTag("routine_quick_2_5").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag("routine_set_kg_0_0").assertTextEquals("62.5")
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("62.5")
 
         composeTestRule.onNodeWithTag("routine_quick_5_lb").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag("routine_set_kg_0_0").assertTextEquals("64.77")
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("64.77")
     }
 
     @Test
