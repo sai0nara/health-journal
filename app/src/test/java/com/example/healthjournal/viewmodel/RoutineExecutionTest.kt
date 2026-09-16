@@ -213,7 +213,7 @@ class RoutineExecutionTest {
     @Test
     fun toggleSetCompleted_copiesPerformedWeightAndRepsToNextPristineSet() = runTest {
         val vm = startRoutineFor()
-        vm.updateRoutineSet(0, 0, 100.0, 6, null)
+        vm.updateRoutineSet(0, 0, 100.0, 6)
         dispatcher.scheduler.advanceUntilIdle()
 
         vm.toggleSetCompleted(0, 0)
@@ -229,8 +229,8 @@ class RoutineExecutionTest {
     @Test
     fun toggleSetCompleted_doesNotOverwriteUserEditedNextSet() = runTest {
         val vm = startRoutineFor()
-        vm.updateRoutineSet(0, 0, 100.0, 6, null)
-        vm.updateRoutineSet(0, 1, 110.0, 5, null)
+        vm.updateRoutineSet(0, 0, 100.0, 6)
+        vm.updateRoutineSet(0, 1, 110.0, 5)
         dispatcher.scheduler.advanceUntilIdle()
 
         vm.toggleSetCompleted(0, 0)
@@ -274,17 +274,16 @@ class RoutineExecutionTest {
     }
 
     @Test
-    fun updateRoutineSet_editsWeightRepsAndRpe() = runTest {
+    fun updateRoutineSet_editsWeightAndReps() = runTest {
         val vm = startRoutineFor()
 
-        vm.updateRoutineSet(exerciseIndex = 0, setIndex = 0, kg = 65.0, reps = 6, rpe = 8)
+        vm.updateRoutineSet(exerciseIndex = 0, setIndex = 0, kg = 65.0, reps = 6)
         dispatcher.scheduler.advanceUntilIdle()
 
         val active = activeState(vm)
         val set = active.session.setMatrix!!.single().sets[0]
         assertEquals(65.0, set.kg, 0.0)
         assertEquals(6, set.reps)
-        assertEquals(8, set.rpe)
         assertNull(active.setMatrixError)
     }
 
@@ -292,7 +291,7 @@ class RoutineExecutionTest {
     fun updateRoutineSet_invalidValues_surfaceInlineErrorWithoutMutation() = runTest {
         val vm = startRoutineFor()
 
-        vm.updateRoutineSet(exerciseIndex = 0, setIndex = 0, kg = 0.0, reps = 0, rpe = 12)
+        vm.updateRoutineSet(exerciseIndex = 0, setIndex = 0, kg = 0.0, reps = 0)
         dispatcher.scheduler.advanceUntilIdle()
 
         val active = activeState(vm)
@@ -304,7 +303,7 @@ class RoutineExecutionTest {
     @Test
     fun swapRoutineExercise_resetsSetsToPlannedDefaults() = runTest {
         val vm = startRoutineFor()
-        vm.updateRoutineSet(0, 0, 100.0, 6, 8)
+        vm.updateRoutineSet(0, 0, 100.0, 6)
         vm.toggleSetCompleted(0, 0)
         dispatcher.scheduler.advanceUntilIdle()
 
@@ -320,6 +319,51 @@ class RoutineExecutionTest {
         assertEquals(3, exercise.sets.size)
         assertTrue(exercise.sets.all { !it.completed && it.rpe == null })
         assertTrue(exercise.sets.all { it.kg == 60.0 && it.reps == 5 })
+    }
+
+    @Test
+    fun swapRoutineExercise_stopsRestTimer() = runTest {
+        val vm = startRoutineFor()
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.advanceTime(15)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(75, activeState(vm).restSeconds)
+
+        vm.swapRoutineExercise(exerciseIndex = 0, exerciseId = pressItem.id, name = pressItem.name)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, activeState(vm).restSeconds)
+    }
+
+    @Test
+    fun addRoutineSet_appendsPlannedSetAndIncrementsTargets() = runTest {
+        val vm = startRoutineFor()
+
+        vm.addRoutineSet(exerciseIndex = 0)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val active = activeState(vm)
+        val exercise = active.session.setMatrix!!.single()
+        assertEquals(4, exercise.targetSets)
+        assertEquals(4, exercise.sets.size)
+        val added = exercise.sets.last()
+        assertFalse(added.completed)
+        assertEquals(60.0, added.kg, 0.0)
+        assertEquals(5, added.reps)
+        val stored = dao.getSessionById(active.session.session_id)!!
+        assertEquals(4, stored.setMatrix!!.single().sets.size)
+    }
+
+    @Test
+    fun addRoutineSet_onNonPlannedExercise_isNoOp() = runTest {
+        val vm = startActiveSessionCooldown()
+        val before = activeState(vm).session.setMatrix
+
+        vm.addRoutineSet(exerciseIndex = 0)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(before, activeState(vm).session.setMatrix)
     }
 
     @Test
@@ -366,7 +410,7 @@ class RoutineExecutionTest {
     @Test
     fun finishSession_routine_tonnageCountsCompletedSetsOnly() = runTest {
         val vm = startRoutineFor()
-        vm.updateRoutineSet(0, 0, 100.0, 5, null)
+        vm.updateRoutineSet(0, 0, 100.0, 5)
         dispatcher.scheduler.advanceUntilIdle()
         vm.toggleSetCompleted(0, 0)
         dispatcher.scheduler.advanceUntilIdle()

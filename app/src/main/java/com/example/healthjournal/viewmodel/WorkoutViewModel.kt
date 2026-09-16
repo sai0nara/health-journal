@@ -422,39 +422,38 @@ class WorkoutViewModel(
     }
 
     /**
-     * Edits a routine set's weight/reps/RPE in place, mirroring the manual
-     * set-validation rules (positive kg, reps >= 1, optional RPE 1..10).
-     * Invalid values surface as an inline error without mutating.
+     * Edits a routine set's weight/reps in place, mirroring the manual
+     * set-validation rules (positive kg, reps >= 1). Invalid values surface
+     * as an inline error without mutating.
      */
     fun updateRoutineSet(
         exerciseIndex: Int,
         setIndex: Int,
         kg: Double,
-        reps: Int,
-        rpe: Int?
+        reps: Int
     ) {
         val current = _uiState.value as? WorkoutUiState.Active ?: return
         if (WorkoutType.fromName(current.session.type) != WorkoutType.FITNESS) return
         val matrix = current.session.setMatrix ?: return
         val exercise = matrix.getOrNull(exerciseIndex) ?: return
         if (!exercise.isPlanned) return
-        val set = exercise.sets.getOrNull(setIndex) ?: return
-        val errors = ValidateStrengthExercise.validateSet(kg = kg, reps = reps, rpe = rpe)
+        if (setIndex !in exercise.sets.indices) return
+        val errors = ValidateStrengthExercise.validateSet(kg = kg, reps = reps)
         if (errors.isNotEmpty()) {
             _uiState.value = current.copy(
-                setMatrixError = errors["kg"] ?: errors["reps"] ?: errors["rpe"]
+                setMatrixError = errors["kg"] ?: errors["reps"]
             )
             return
         }
         viewModelScope.launch(dispatcher) {
             val updatedSets = exercise.sets.mapIndexed { i, s ->
-                if (i == setIndex) s.copy(kg = kg, reps = reps, rpe = rpe) else s
+                if (i == setIndex) s.copy(kg = kg, reps = reps) else s
             }
             val updatedExercise = exercise.copy(sets = updatedSets)
-            val matrix = matrix.mapIndexed { i, ex ->
+            val updatedMatrix = matrix.mapIndexed { i, ex ->
                 if (i == exerciseIndex) updatedExercise else ex
             }
-            val updated = current.session.copy(setMatrix = matrix)
+            val updated = current.session.copy(setMatrix = updatedMatrix)
             repository.saveSession(updated)
             _uiState.value = current.copy(session = updated, setMatrixError = null)
         }
@@ -489,6 +488,43 @@ class WorkoutViewModel(
             )
             val updatedMatrix = matrix.mapIndexed { i, ex ->
                 if (i == exerciseIndex) swapped else ex
+            }
+            val updated = current.session.copy(setMatrix = updatedMatrix)
+            repository.saveSession(updated)
+            _uiState.value = current.copy(
+                session = updated,
+                setMatrixError = null,
+                // Replacing the exercise's target voids the in-flight rest
+                // period; there is nothing meaningful to rest toward.
+                restSeconds = 0
+            )
+        }
+    }
+
+    /**
+     * Appends an extra planned set to a routine exercise mid-session, seeded
+     * from its planned weight/reps targets, and grows [targetSets] so the
+     * success/tonnage bookkeeping tracks the enlarged plan. Only meaningful
+     * for planned (preset-built) exercises.
+     */
+    fun addRoutineSet(exerciseIndex: Int) {
+        val current = _uiState.value as? WorkoutUiState.Active ?: return
+        if (WorkoutType.fromName(current.session.type) != WorkoutType.FITNESS) return
+        val matrix = current.session.setMatrix ?: return
+        val exercise = matrix.getOrNull(exerciseIndex) ?: return
+        if (!exercise.isPlanned) return
+        viewModelScope.launch(dispatcher) {
+            val added = StrengthSet(
+                kg = exercise.targetWeightKg ?: 20.0,
+                reps = exercise.targetReps ?: 10
+            )
+            val targetSets = 1 + (exercise.targetSets ?: exercise.sets.size)
+            val grown = exercise.copy(
+                sets = exercise.sets + added,
+                targetSets = targetSets
+            )
+            val updatedMatrix = matrix.mapIndexed { i, ex ->
+                if (i == exerciseIndex) grown else ex
             }
             val updated = current.session.copy(setMatrix = updatedMatrix)
             repository.saveSession(updated)

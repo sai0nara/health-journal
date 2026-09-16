@@ -3,6 +3,8 @@ package com.example.healthjournal.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -175,12 +177,13 @@ fun WorkoutScreen(
                     onAddExercise = { name -> viewModel.addExercise(name) },
                     onAddSet = { exerciseId, kg, reps -> viewModel.addSet(exerciseId, kg, reps) },
                     onToggleSetCompleted = { ex, set -> viewModel.toggleSetCompleted(ex, set) },
-                    onUpdateRoutineSet = { ex, set, kg, reps, rpe ->
-                        viewModel.updateRoutineSet(ex, set, kg, reps, rpe)
+                    onUpdateRoutineSet = { ex, set, kg, reps ->
+                        viewModel.updateRoutineSet(ex, set, kg, reps)
                     },
                     onSwapExercise = { ex, exerciseId, name ->
                         viewModel.swapRoutineExercise(ex, exerciseId, name)
-                    }
+                    },
+                    onAddRoutineSet = { ex -> viewModel.addRoutineSet(ex) }
                 )
 
                 is WorkoutUiState.Paused -> SessionContent(
@@ -197,12 +200,13 @@ fun WorkoutScreen(
                     onAddExercise = { name -> viewModel.addExercise(name) },
                     onAddSet = { exerciseId, kg, reps -> viewModel.addSet(exerciseId, kg, reps) },
                     onToggleSetCompleted = { ex, set -> viewModel.toggleSetCompleted(ex, set) },
-                    onUpdateRoutineSet = { ex, set, kg, reps, rpe ->
-                        viewModel.updateRoutineSet(ex, set, kg, reps, rpe)
+                    onUpdateRoutineSet = { ex, set, kg, reps ->
+                        viewModel.updateRoutineSet(ex, set, kg, reps)
                     },
                     onSwapExercise = { ex, exerciseId, name ->
                         viewModel.swapRoutineExercise(ex, exerciseId, name)
-                    }
+                    },
+                    onAddRoutineSet = { ex -> viewModel.addRoutineSet(ex) }
                 )
 
                 is WorkoutUiState.Summary -> SummaryContent(
@@ -440,9 +444,10 @@ private fun SessionContent(
     onAddExercise: (String) -> Unit,
     onAddSet: (exerciseId: String, kg: Double, reps: Int) -> Unit,
     onToggleSetCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit = { _, _ -> },
-    onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int, rpe: Int?) -> Unit =
-        { _, _, _, _, _ -> },
-    onSwapExercise: (exerciseIndex: Int, exerciseId: String, name: String) -> Unit = { _, _, _ -> }
+    onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int) -> Unit =
+        { _, _, _, _ -> },
+    onSwapExercise: (exerciseIndex: Int, exerciseId: String, name: String) -> Unit = { _, _, _ -> },
+    onAddRoutineSet: (exerciseIndex: Int) -> Unit = { _ -> }
 ) {
     // Keep the display awake while a routine runs so rest windows or
     // between-lightning pulls don't dim the screen mid-workout.
@@ -483,7 +488,8 @@ private fun SessionContent(
                 unitSystem = unitSystem,
                 onToggleSetCompleted = onToggleSetCompleted,
                 onUpdateRoutineSet = onUpdateRoutineSet,
-                onSwapExercise = onSwapExercise
+                onSwapExercise = onSwapExercise,
+                onAddRoutineSet = onAddRoutineSet
             )
             type == WorkoutType.FITNESS -> SetMatrixEditor(
                 exercises = session.setMatrix,
@@ -659,9 +665,10 @@ private fun RoutineExecution(
     setMatrixError: String?,
     catalogExercises: List<ExerciseCatalogItem>,
     unitSystem: UnitSystem = UnitSystem.METRIC,
-    onToggleSetCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit,
-    onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int, rpe: Int?) -> Unit,
-    onSwapExercise: (exerciseIndex: Int, exerciseId: String, name: String) -> Unit
+onToggleSetCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit,
+    onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int) -> Unit,
+    onSwapExercise: (exerciseIndex: Int, exerciseId: String, name: String) -> Unit,
+    onAddRoutineSet: (exerciseIndex: Int) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -699,13 +706,15 @@ private fun RoutineExecution(
                     unitSystem = unitSystem,
                     onToggleSetCompleted = onToggleSetCompleted,
                     onUpdateRoutineSet = onUpdateRoutineSet,
-                    onSwapExercise = onSwapExercise
+                    onSwapExercise = onSwapExercise,
+                    onAddRoutineSet = onAddRoutineSet
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RoutineExerciseCard(
     exercise: StrengthExercise,
@@ -713,13 +722,14 @@ private fun RoutineExerciseCard(
     catalogExercises: List<ExerciseCatalogItem>,
     unitSystem: UnitSystem = UnitSystem.METRIC,
     onToggleSetCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit,
-    onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int, rpe: Int?) -> Unit,
-    onSwapExercise: (exerciseIndex: Int, exerciseId: String, name: String) -> Unit
+    onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int) -> Unit,
+    onSwapExercise: (exerciseIndex: Int, exerciseId: String, name: String) -> Unit,
+    onAddRoutineSet: (exerciseIndex: Int) -> Unit
 ) {
     var swapExpanded by remember(exercise.exerciseId) { mutableStateOf(false) }
     // The quick pad acts on the last set the user touched (focused a field),
-    // not blindly the first uncompleted one — otherwise typing RPE on Set 3
-    // and tapping +2.5 kg would silently bump Set 1.
+    // not blindly the first uncompleted one — otherwise typing weight/reps on
+    // Set 3 and tapping +1.25 kg would silently bump Set 1.
     var activeSet by remember(exercise.exerciseId) {
         mutableStateOf(exercise.sets.indexOfFirst { !it.completed }.coerceAtLeast(0))
     }
@@ -734,8 +744,7 @@ private fun RoutineExerciseCard(
             exerciseIndex,
             exercise.sets.indexOf(target),
             (target.kg + deltaKg).coerceAtLeast(0.0),
-            target.reps,
-            target.rpe
+            target.reps
         )
     }
     fun adjustReps(delta: Int) {
@@ -744,8 +753,7 @@ private fun RoutineExerciseCard(
             exerciseIndex,
             exercise.sets.indexOf(target),
             target.kg,
-            (target.reps + delta).coerceAtLeast(1),
-            target.rpe
+            (target.reps + delta).coerceAtLeast(1)
         )
     }
     Card(
@@ -766,6 +774,12 @@ private fun RoutineExerciseCard(
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.weight(1f)
                 )
+                TextButton(
+                    onClick = { onAddRoutineSet(exerciseIndex) },
+                    modifier = Modifier.testTag("routine_add_set_$exerciseIndex")
+                ) {
+                    Text("+ Set")
+                }
                 Box {
                     OutlinedButton(
                         onClick = { swapExpanded = true },
@@ -814,32 +828,35 @@ private fun RoutineExerciseCard(
                     onUpdateRoutineSet = onUpdateRoutineSet
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 OutlinedButton(
                     enabled = padEnabled,
                     onClick = { adjustReps(-1) },
-                    modifier = Modifier.weight(1f).testTag("routine_reps_minus")
+                    modifier = Modifier.testTag("routine_reps_minus")
                 ) {
                     Text("-1 rep", maxLines = 1)
                 }
                 OutlinedButton(
                     enabled = padEnabled,
                     onClick = { adjustWeight(-padStepWeightKg(unitSystem)) },
-                    modifier = Modifier.weight(1f).testTag("routine_weight_minus")
+                    modifier = Modifier.testTag("routine_weight_minus")
                 ) {
                     Text("-${padStepDisplay(unitSystem)}", maxLines = 1)
                 }
                 OutlinedButton(
                     enabled = padEnabled,
                     onClick = { adjustWeight(padStepWeightKg(unitSystem)) },
-                    modifier = Modifier.weight(1f).testTag("routine_weight_plus")
+                    modifier = Modifier.testTag("routine_weight_plus")
                 ) {
                     Text("+${padStepDisplay(unitSystem)}", maxLines = 1)
                 }
                 OutlinedButton(
                     enabled = padEnabled,
                     onClick = { adjustReps(1) },
-                    modifier = Modifier.weight(1f).testTag("routine_reps_plus")
+                    modifier = Modifier.testTag("routine_reps_plus")
                 ) {
                     Text("+1 rep", maxLines = 1)
                 }
@@ -848,13 +865,13 @@ private fun RoutineExerciseCard(
     }
 }
 
-/** Kilogram step for the quick pad: 2.5 kg or a 5 lb plate. */
+/** Kilogram step for the quick pad: 1.25 kg or a 5 lb plate. */
 private fun padStepWeightKg(unitSystem: UnitSystem): Double =
-    if (unitSystem == UnitSystem.IMPERIAL) UnitConverter.lbsToKg(5.0) else 2.5
+    if (unitSystem == UnitSystem.IMPERIAL) UnitConverter.lbsToKg(5.0) else 1.25
 
 /** Display label for the current pad step, in the selected unit system. */
 private fun padStepDisplay(unitSystem: UnitSystem): String =
-    if (unitSystem == UnitSystem.IMPERIAL) "5 lb" else "2.5 kg"
+    if (unitSystem == UnitSystem.IMPERIAL) "5 lb" else "1.25 kg"
 
 @Composable
 private fun RoutineSetRow(
@@ -863,33 +880,27 @@ private fun RoutineSetRow(
     set: StrengthSet,
     onSetActivated: (setIndex: Int) -> Unit,
     onToggleCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit,
-    onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int, rpe: Int?) -> Unit
+    onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int) -> Unit
 ) {
     // Each field keeps its own text state so typing stays smooth; the row
     // re-seeds it from the persisted set only while unfocused (e.g. after a
     // quick-pad tap), and pushes every valid edit straight to the ViewModel.
     var kgFocused by remember { mutableStateOf(false) }
     var repsFocused by remember { mutableStateOf(false) }
-    var rpeFocused by remember { mutableStateOf(false) }
     var kgValue by remember { mutableStateOf(TextFieldValue(UnitConverter.formatDouble(set.kg))) }
     var repsValue by remember { mutableStateOf(TextFieldValue(set.reps.toString())) }
-    var rpeValue by remember { mutableStateOf(TextFieldValue(set.rpe?.toString() ?: "")) }
 
-    fun commit(kg: Double, reps: Int, rpe: Int?) {
-        onUpdateRoutineSet(exerciseIndex, setIndex, kg, reps, rpe)
+    fun commit(kg: Double, reps: Int) {
+        onUpdateRoutineSet(exerciseIndex, setIndex, kg, reps)
     }
     fun currentKg(): Double? = kgValue.text.replace(',', '.').toDoubleOrNull()?.takeIf { it > 0 }
     fun currentReps(): Int? = repsValue.text.toIntOrNull()?.takeIf { it >= 1 }
-    fun currentRpe(): Int? = rpeValue.text.toIntOrNull()?.takeIf { it in 1..10 }
 
     LaunchedEffect(set.kg) {
         if (!kgFocused) kgValue = TextFieldValue(UnitConverter.formatDouble(set.kg))
     }
     LaunchedEffect(set.reps) {
         if (!repsFocused) repsValue = TextFieldValue(set.reps.toString())
-    }
-    LaunchedEffect(set.rpe) {
-        if (!rpeFocused) rpeValue = TextFieldValue(set.rpe?.toString() ?: "")
     }
 
     Row(
@@ -906,7 +917,7 @@ private fun RoutineSetRow(
             value = kgValue,
             onValueChange = {
                 kgValue = it
-                currentKg()?.let { kg -> commit(kg, repsValue.text.toIntOrNull() ?: set.reps, currentRpe()) }
+                currentKg()?.let { kg -> commit(kg, repsValue.text.toIntOrNull() ?: set.reps) }
             },
             label = { Text("kg") },
             singleLine = true,
@@ -923,7 +934,7 @@ private fun RoutineSetRow(
             value = repsValue,
             onValueChange = {
                 repsValue = it
-                currentReps()?.let { reps -> commit(currentKg() ?: set.kg, reps, currentRpe()) }
+                currentReps()?.let { reps -> commit(currentKg() ?: set.kg, reps) }
             },
             label = { Text("reps") },
             singleLine = true,
@@ -935,23 +946,6 @@ private fun RoutineSetRow(
                     if (it.isFocused) onSetActivated(setIndex)
                 }
                 .testTag("routine_set_reps_${exerciseIndex}_${setIndex}")
-        )
-        OutlinedTextField(
-            value = rpeValue,
-            onValueChange = {
-                rpeValue = it
-                currentRpe()?.let { rpe -> commit(currentKg() ?: set.kg, repsValue.text.toIntOrNull() ?: set.reps, rpe) }
-            },
-            label = { Text("RPE") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier
-                .weight(1f)
-                .onFocusChanged {
-                    rpeFocused = it.isFocused
-                    if (it.isFocused) onSetActivated(setIndex)
-                }
-                .testTag("routine_set_rpe_${exerciseIndex}_${setIndex}")
         )
         Checkbox(
             checked = set.completed,

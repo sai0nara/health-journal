@@ -170,33 +170,29 @@ class RoutineExecutionScreenTest {
             .assertEditableText("60")
         composeTestRule.onNodeWithTag("routine_set_reps_0_0")
             .assertEditableText("5")
-        composeTestRule.onNodeWithTag("routine_set_rpe_0_0").assertExists()
+        composeTestRule.onNodeWithTag("routine_set_rpe_0_0").assertDoesNotExist()
         composeTestRule.onNodeWithTag("routine_set_done_0_0").assertIsDisplayed()
         composeTestRule.onNodeWithTag("routine_set_done_0_2").assertIsDisplayed()
         composeTestRule.onNodeWithTag("routine_swap_0").assertExists()
     }
 
     @Test
-    fun routineSet_editWeightRepsAndRpe_persists() {
+    fun routineSet_editWeightAndReps_persists() {
         openRoutine()
 
         composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextClearance()
         composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextInput("65")
         composeTestRule.onNodeWithTag("routine_set_reps_0_0").performTextClearance()
         composeTestRule.onNodeWithTag("routine_set_reps_0_0").performTextInput("6")
-        composeTestRule.onNodeWithTag("routine_set_rpe_0_0").performTextInput("8")
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithTag("routine_set_kg_0_0")
             .assertEditableText("65")
         composeTestRule.onNodeWithTag("routine_set_reps_0_0")
             .assertEditableText("6")
-        composeTestRule.onNodeWithTag("routine_set_rpe_0_0")
-            .assertEditableText("8")
         val matrix = persistedMatrix()
         assertEquals(65.0, matrix.single().sets[0].kg, 0.0)
         assertEquals(6, matrix.single().sets[0].reps)
-        assertEquals(8, matrix.single().sets[0].rpe)
     }
 
     @Test
@@ -240,7 +236,8 @@ class RoutineExecutionScreenTest {
     fun routineQuickPad_actsOnLastEditedSet_notFirstUncompleted() {
         openRoutine()
 
-        composeTestRule.onNodeWithTag("routine_set_rpe_0_1").performTextInput("8")
+        composeTestRule.onNodeWithTag("routine_set_reps_0_1").performClick()
+        composeTestRule.onNodeWithTag("routine_set_reps_0_1").performTextInput("5")
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
@@ -248,11 +245,11 @@ class RoutineExecutionScreenTest {
 
         val matrix = persistedMatrix()
         assertEquals(60.0, matrix.single().sets[0].kg, 0.0)
-        assertEquals(62.5, matrix.single().sets[1].kg, 0.0)
+        assertEquals(61.25, matrix.single().sets[1].kg, 0.0)
         composeTestRule.onNodeWithTag("routine_set_kg_0_0")
             .assertEditableText("60")
         composeTestRule.onNodeWithTag("routine_set_kg_0_1")
-            .assertEditableText("62.5")
+            .assertEditableText("61.25")
     }
 
     @Test
@@ -262,7 +259,7 @@ class RoutineExecutionScreenTest {
         composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("routine_set_kg_0_0")
-            .assertEditableText("62.5")
+            .assertEditableText("61.25")
 
         composeTestRule.onNodeWithTag("routine_weight_minus").performClick()
         composeTestRule.waitForIdle()
@@ -276,6 +273,55 @@ class RoutineExecutionScreenTest {
         composeTestRule.onNodeWithTag("routine_reps_minus").performClick()
         composeTestRule.waitForIdle()
         assertEquals(5, persistedMatrix().single().sets[0].reps)
+    }
+
+    @Test
+    fun routineQuickPad_metricStepIsOnePointTwoFiveKg() {
+        openRoutine()
+
+        composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
+        composeTestRule.waitForIdle()
+
+        // Four 1.25kg taps make a clean 5kg jump from the 60kg default.
+        composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
+        composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
+        composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("65")
+    }
+
+    @Test
+    fun routineSwap_stopsRestTimer() {
+        openRoutine()
+
+        composeTestRule.onNodeWithTag("routine_set_done_0_0").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("workout_rest_timer").assertIsDisplayed()
+
+        composeTestRule.onNodeWithTag("routine_swap_0").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Barbell Bench Press").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("workout_rest_timer").assertDoesNotExist()
+    }
+
+    @Test
+    fun routineAddSet_appendsExtraPlannedSet() {
+        openRoutine()
+
+        composeTestRule.onNodeWithTag("routine_add_set_0").performClick()
+        composeTestRule.waitForIdle()
+
+        val matrix = persistedMatrix()
+        assertEquals(4, matrix.single().sets.size)
+        assertEquals(4, matrix.single().targetSets)
+        val added = matrix.single().sets[3]
+        assertEquals(60.0, added.kg, 0.0)
+        assertEquals(5, added.reps)
+        composeTestRule.onNodeWithTag("routine_set_label_0_3").assertTextEquals("Set 4")
     }
 
     @Test

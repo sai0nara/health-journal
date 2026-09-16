@@ -86,21 +86,46 @@ class MainActivity : ComponentActivity() {
                             onExportClick = { navController.navigate("export") },
                             onMeasurementsClick = { navController.navigate("measurements") },
                             onPersonalCardClick = { navController.navigate("personal_card") },
-                            onWorkoutClick = { navController.navigate("workout") }
+                            onWorkoutClick = { navController.navigate("workout") },
+                            onSettingsClick = { navController.navigate("settings") }
+                        )
+                    }
+                    composable("settings") {
+                        com.example.healthjournal.ui.screens.SettingsScreen(
+                            onBack = { navController.popBackStack() }
                         )
                     }
                     composable("workout") {
                         val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+                        val vibrator = androidx.compose.runtime.remember {
+                            getSystemService(android.content.Context.VIBRATOR_SERVICE)
+                                as? android.os.Vibrator
+                        }
                         val workoutViewModelFactory = androidx.compose.runtime.remember {
                             com.example.healthjournal.viewmodel.WorkoutViewModelFactory(
                                 repository = workoutRepository,
                                 healthSource = workoutHealthSource,
                                 journalRepository = journalRepository,
                                 onHaptic = { kind ->
-                                    // Strong confirm tick for session control events.
-                                    haptic.performHapticFeedback(
-                                        androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress
-                                    )
+                                    // Routine milestones vibrate via the system
+                                    // vibrator so the athlete feels them against
+                                    // the bar; session control ticks use the
+                                    // strong Compose confirm tick instead.
+                                    when (kind) {
+                                        com.example.healthjournal.viewmodel.WorkoutHaptic.SET_COMPLETE,
+                                        com.example.healthjournal.viewmodel.WorkoutHaptic.EXERCISE_COMPLETE,
+                                        com.example.healthjournal.viewmodel.WorkoutHaptic.REST_ENDED -> {
+                                            vibrator?.vibrate(
+                                                android.os.VibrationEffect.createOneShot(
+                                                    if (kind == com.example.healthjournal.viewmodel.WorkoutHaptic.REST_ENDED) 200L else 80L,
+                                                    android.os.VibrationEffect.DEFAULT_AMPLITUDE
+                                                )
+                                            )
+                                        }
+                                        else -> haptic.performHapticFeedback(
+                                            androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress
+                                        )
+                                    }
                                 },
                                 presetRepository = com.example.healthjournal.data.PresetRepository(
                                     database.workoutPresetDao()

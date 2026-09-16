@@ -12,3 +12,11 @@ Status: `FIXED` = addressed and covered by an automated test; `OPEN` = not yet a
 8. After user swaps exercise, Sets should reset to default values — `FIXED` (`swapRoutineExercise` resets sets to planned defaults; test `swapRoutineExercise_resetsSetsToPlannedDefaults`).
 9. No haptic on Rest period ended — `FIXED` (`WorkoutHaptic.REST_ENDED`; test `restTimer_crossingZero_emitsRestEndedHaptic`).
 10. If user unchecks checkbox, rest timer doesn't stop — `FIXED` (uncheck clears `restSeconds`; test `toggleSetCompleted_uncheckStopsRestTimer`).
+
+11. User checks a checkbox, Rest timer started. If user swap to alternative excercise with 'Swap' button, rest timer still be present. — `FIXED` (`swapRoutineExercise` clears `restSeconds`; tests `swapRoutineExercise_stopsRestTimer` unit + `routineSwap_stopsRestTimer` UI).
+12. Usual weight add for metric system should be devided on 1.25kg, not 2. If user want's to add 5kg it is easy - tap 1.25 4 times. — `FIXED` (`padStepWeightKg` metric step 1.25; tests `routineQuickPad_metricStepIsOnePointTwoFiveKg` + `routineQuickPad_weightAndRepsAdjust`).
+13. On narrow screen the is no 'kg' or 'rep' visible on buttons. — `FIXED` (pad uses `FlowRow` so the four buttons wrap instead of truncating; labels keep `maxLines = 1`).
+14. RPE field is redundant. Could be removed. — `FIXED` (RPE field removed from routine set rows and from `updateRoutineSet`; `StrengthSet.rpe` kept in the domain model for stored-session compatibility).
+15. There is no General Settings to set the unit system — `FIXED` (`SettingsScreen` with metric/imperial selector via `UnitSettings`, entry from the History overflow menu, `settings` nav route).
+16. While user do preset excercises it would be nice to have button to add additional set to excercise. — `FIXED` (`+ Set` button on each routine exercise card appends a planned set; tests `addRoutineSet_appendsPlannedSetAndIncrementsTargets` unit + `routineAddSet_appendsExtraPlannedSet` UI).
+17. Instead haptic use vibration at the and of rest cycle and set — `FIXED` (system `Vibrator` with distinct `VibrationEffect` patterns for rest-end (200 ms) and set/exercise-complete (80 ms); `VIBRATE` permission added).
