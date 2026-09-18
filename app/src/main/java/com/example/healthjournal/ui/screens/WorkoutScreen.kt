@@ -475,7 +475,10 @@ private fun SessionContent(
         }
         val type = WorkoutType.fromName(session.type)
         val isRoutine = session.setMatrix?.any { it.isPlanned } == true
-        when {
+        // The content area takes the remaining height so an over-long routine
+        // scrolls internally instead of clipping the action row underneath it.
+        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            when {
             type == WorkoutType.HIIT -> IntervalControls(
                 intervalState = session.intervalState,
                 onAdvanceInterval = onAdvanceInterval
@@ -499,6 +502,7 @@ private fun SessionContent(
                 onAddSet = onAddSet
             )
             else -> Unit
+            }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = onPauseResume, modifier = Modifier.weight(1f)) {
@@ -823,6 +827,11 @@ private fun RoutineExerciseCard(
                     exerciseIndex = exerciseIndex,
                     setIndex = setIndex,
                     set = set,
+                    // A set can only be completed once every earlier set in the
+                    // exercise is done; the checkbox is disabled until then.
+                    canComplete = exercise.sets
+                        .take(setIndex)
+                        .all { it.completed },
                     onSetActivated = { activeSet = setIndex },
                     onToggleCompleted = onToggleSetCompleted,
                     onUpdateRoutineSet = onUpdateRoutineSet
@@ -878,15 +887,17 @@ private fun RoutineSetRow(
     exerciseIndex: Int,
     setIndex: Int,
     set: StrengthSet,
+    canComplete: Boolean,
     onSetActivated: (setIndex: Int) -> Unit,
     onToggleCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit,
     onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int) -> Unit
 ) {
     // Each field keeps its own text state so typing stays smooth; the row
-    // re-seeds it from the persisted set only while unfocused (e.g. after a
-    // quick-pad tap), and pushes every valid edit straight to the ViewModel.
-    var kgFocused by remember { mutableStateOf(false) }
-    var repsFocused by remember { mutableStateOf(false) }
+    // re-seeds it from the persisted set whenever an external change (quick-
+    // pad tap) drifts the displayed text from the set value, and pushes every
+    // valid edit straight to the ViewModel. Reseeding only happens when the
+    // text differs, so a cursor sitting in the field still updates on pad
+    // taps without clobbering a keystroke that already mirrored the value.
     var kgValue by remember { mutableStateOf(TextFieldValue(UnitConverter.formatDouble(set.kg))) }
     var repsValue by remember { mutableStateOf(TextFieldValue(set.reps.toString())) }
 
@@ -897,10 +908,22 @@ private fun RoutineSetRow(
     fun currentReps(): Int? = repsValue.text.toIntOrNull()?.takeIf { it >= 1 }
 
     LaunchedEffect(set.kg) {
-        if (!kgFocused) kgValue = TextFieldValue(UnitConverter.formatDouble(set.kg))
+        val formatted = UnitConverter.formatDouble(set.kg)
+        if (kgValue.text != formatted) {
+            kgValue = TextFieldValue(
+                formatted,
+                selection = TextRange(formatted.length)
+            )
+        }
     }
     LaunchedEffect(set.reps) {
-        if (!repsFocused) repsValue = TextFieldValue(set.reps.toString())
+        val formatted = set.reps.toString()
+        if (repsValue.text != formatted) {
+            repsValue = TextFieldValue(
+                formatted,
+                selection = TextRange(formatted.length)
+            )
+        }
     }
 
     Row(
@@ -925,7 +948,6 @@ private fun RoutineSetRow(
             modifier = Modifier
                 .weight(1f)
                 .onFocusChanged {
-                    kgFocused = it.isFocused
                     if (it.isFocused) onSetActivated(setIndex)
                 }
                 .testTag("routine_set_kg_${exerciseIndex}_${setIndex}")
@@ -942,13 +964,13 @@ private fun RoutineSetRow(
             modifier = Modifier
                 .weight(1f)
                 .onFocusChanged {
-                    repsFocused = it.isFocused
                     if (it.isFocused) onSetActivated(setIndex)
                 }
                 .testTag("routine_set_reps_${exerciseIndex}_${setIndex}")
         )
         Checkbox(
             checked = set.completed,
+            enabled = canComplete,
             onCheckedChange = {
                 onSetActivated(setIndex)
                 onToggleCompleted(exerciseIndex, setIndex)

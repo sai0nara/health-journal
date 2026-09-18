@@ -2,6 +2,8 @@ package com.example.healthjournal.ui.screens
 
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -220,6 +222,39 @@ class RoutineExecutionScreenTest {
     }
 
     @Test
+    fun routineSet_cannotCheckSetWhilePreviousIsPending() {
+        openRoutine()
+
+        composeTestRule.onNodeWithTag("routine_set_done_0_1").performClick()
+        composeTestRule.waitForIdle()
+
+        // The skipped earlier set stays pending and the later set cannot complete.
+        assertFalse(persistedMatrix().single().sets[1].completed)
+        assertFalse(persistedMatrix().single().sets[0].completed)
+        assertFalse(haptics.contains(WorkoutHaptic.SET_COMPLETE))
+    }
+
+    @Test
+    fun routineSet_checkingBoxDisabledWhilePreviousIsPending_preventsClick() {
+        openRoutine()
+
+        // Later sets' checkboxes are disabled until every earlier set is done.
+        composeTestRule.onNodeWithTag("routine_set_done_0_1").assertIsNotEnabled()
+        composeTestRule.onNodeWithTag("routine_set_done_0_2").assertIsNotEnabled()
+
+        // Completing Set 1 alone only unlocks Set 2.
+        composeTestRule.onNodeWithTag("routine_set_done_0_0").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("routine_set_done_0_1").assertIsEnabled()
+        composeTestRule.onNodeWithTag("routine_set_done_0_2").assertIsNotEnabled()
+
+        // Once the earlier set is complete the later checkbox re-enables.
+        composeTestRule.onNodeWithTag("routine_set_done_0_1").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("routine_set_done_0_2").assertIsEnabled()
+    }
+
+    @Test
     fun routineRestTimer_countsDownWhileResting() {
         openRoutine()
         composeTestRule.onNodeWithTag("routine_set_done_0_0").performClick()
@@ -253,7 +288,31 @@ class RoutineExecutionScreenTest {
     }
 
     @Test
-    fun routineQuickPad_weightAndRepsAdjust() {
+    fun routineQuickPad_actsWhileFieldFocused_updatesDisplayedValue() {
+        openRoutine()
+
+        // Put the cursor in the weight field of Set 1, then nudge via the pad.
+        composeTestRule.onNodeWithTag("routine_set_kg_0_1").performClick()
+        composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
+        composeTestRule.waitForIdle()
+
+        val matrix = persistedMatrix()
+        assertEquals(61.25, matrix.single().sets[1].kg, 0.0)
+        composeTestRule.onNodeWithTag("routine_set_kg_0_1")
+            .assertEditableText("61.25")
+
+        // Same for the reps field while focused.
+        composeTestRule.onNodeWithTag("routine_set_reps_0_1").performClick()
+        composeTestRule.onNodeWithTag("routine_reps_plus").performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(6, persistedMatrix().single().sets[1].reps)
+        composeTestRule.onNodeWithTag("routine_set_reps_0_1")
+            .assertEditableText("6")
+    }
+
+    @Test
+    fun routineQuickPad_actsWhileFieldFocused_weightAndRepsAdjust() {
         openRoutine()
 
         composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
@@ -322,6 +381,22 @@ class RoutineExecutionScreenTest {
         assertEquals(60.0, added.kg, 0.0)
         assertEquals(5, added.reps)
         composeTestRule.onNodeWithTag("routine_set_label_0_3").assertTextEquals("Set 4")
+    }
+
+    @Test
+    fun routineManySets_finishButtonStaysReachable() {
+        openRoutine()
+
+        // Push the routine well past the first screenful of sets so the
+        // scrollable area must give way rather than clip the CTA row.
+        repeat(5) {
+            composeTestRule.onNodeWithTag("routine_add_set_0").performClick()
+            composeTestRule.waitForIdle()
+        }
+        assertEquals(8, persistedMatrix().single().sets.size)
+
+        composeTestRule.onNodeWithText("Finish").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Pause").assertIsDisplayed()
     }
 
     @Test

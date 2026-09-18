@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class, WorkoutPreset::class, ExerciseCatalogItem::class], version = 17, exportSchema = true)
+@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class, WorkoutPreset::class, ExerciseCatalogItem::class], version = 18, exportSchema = true)
 @androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
@@ -256,6 +256,17 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        // v17 -> v18: allow a routine session to remember which preset it came
+        // from, so its history/journal card can name the routine instead of
+        // listing a bare tonnage figure.
+        val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE `workout_sessions` ADD COLUMN `routineName` TEXT"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -267,7 +278,8 @@ abstract class JournalDatabase : RoomDatabase() {
                     MIGRATION_4_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10,
                     MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
                     MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
-                    MIGRATION_16_17
+                    MIGRATION_16_17,
+                    MIGRATION_17_18
                 ).build()
                 INSTANCE = instance
                 instance

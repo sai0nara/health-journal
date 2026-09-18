@@ -28,6 +28,7 @@
 - [x] Task: Write failing Compose UI tests: exercise cards, set matrix fields (Weight/Reps/RPE/completion), automatic rest timer countdown, haptic calls on set/exercise completion, exercise dropdown, custom numeric quick-increment pad (+2.5 kg / +5 lb) [red] (6ce1d44)
 - [x] Task: Implement execution UI (M3, keyed lazy lists, keep-screen-on flag during active routine); green UI tests on device
 - [x] Task: Conductor - User Manual Verification 'Routine Execution' (Protocol in workflow.md) — 17 defects found and fixed: done/pad/RPE/swap/uncheck haptics (b6e53a8), then rest-timer swap, 1.25kg metric step, FlowRow pad, RPE removal, General Settings, add-set button, real vibration (work to follow)
+- [x] Task: Defect-fix batch #18-22 (findings from second manual-verification pass): Finish button reachable with 8+ sets (weighted content area), sequential set-completion guard (checkbox disabled + VM rejects), swap resets to catalog default plan via `defaultPlanFor`, pad updates fields even while focused, history card shows routine name + exercises + sets + weight (schema 17→18 `routineName`) — unit/UI/migration tests green on device
 
 ## Phase 5: Weight Analytics + Alternative Conversion (Vico overlay)
 - [ ] Task: Document Vico charting in tech-stack.md (deviation note) BEFORE chart code; add dependency

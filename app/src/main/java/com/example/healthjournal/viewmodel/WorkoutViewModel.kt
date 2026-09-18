@@ -12,6 +12,7 @@ import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.data.local.WorkoutStatus
+import com.example.healthjournal.data.local.defaultPlanFor
 import com.example.healthjournal.domain.CalorieEstimator
 import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.StrengthSet
@@ -348,7 +349,8 @@ class WorkoutViewModel(
                 type = WorkoutType.FITNESS.name,
                 status = WorkoutStatus.ACTIVE.name,
                 startTimestamp = clock(),
-                setMatrix = matrix
+                setMatrix = matrix,
+                routineName = preset.name
             )
             lastTickMillis = clock()
             repository.saveSession(session)
@@ -373,8 +375,16 @@ class WorkoutViewModel(
         val exercise = matrix.getOrNull(exerciseIndex) ?: return
         if (!exercise.isPlanned) return
         val set = exercise.sets.getOrNull(setIndex) ?: return
+        // Sets must be completed in order: a set cannot be checked while an
+        // earlier set in the same exercise is still pending, so a skipped set
+        // blocks the ones after it.
+        val hasPendingPrevious = (0 until setIndex).any { !exercise.sets[it].completed }
+        val newCompleted = !set.completed
+        if (newCompleted && hasPendingPrevious) {
+            _uiState.value = current.copy(setMatrixError = "Complete prior sets first")
+            return
+        }
         viewModelScope.launch(dispatcher) {
-            val newCompleted = !set.completed
             val updatedSets = exercise.sets.mapIndexed { i, s ->
                 if (i == setIndex) s.copy(completed = newCompleted) else s
             }
@@ -472,11 +482,14 @@ class WorkoutViewModel(
         val exercise = matrix.getOrNull(exerciseIndex) ?: return
         if (!exercise.isPlanned) return
         viewModelScope.launch(dispatcher) {
-            val targetSets = exercise.targetSets ?: exercise.sets.size
+            // Reset to the catalog default plan for the swapped-in movement
+            // rather than reusing the old exercise's targets.
+            val defaults = defaultPlanFor(exerciseId)
+            val targetSets = defaults.sets
             val resets = (0 until targetSets).map {
                 StrengthSet(
-                    kg = exercise.targetWeightKg ?: 20.0,
-                    reps = exercise.targetReps ?: 10,
+                    kg = defaults.weightKg,
+                    reps = defaults.reps,
                     rpe = null,
                     completed = false
                 )
@@ -484,7 +497,11 @@ class WorkoutViewModel(
             val swapped = exercise.copy(
                 name = name,
                 exerciseId = exerciseId,
-                sets = resets
+                sets = resets,
+                targetSets = targetSets,
+                targetReps = defaults.reps,
+                targetWeightKg = defaults.weightKg,
+                restSeconds = defaults.restSeconds
             )
             val updatedMatrix = matrix.mapIndexed { i, ex ->
                 if (i == exerciseIndex) swapped else ex
@@ -684,11 +701,25 @@ class WorkoutViewModel(
         }
         val base = "Workout: $typeLabel, $minutesText, $caloriesText"
         val details = buildList {
-            session.setMatrix
-                ?.takeIf { it.isNotEmpty() }
-                ?.let { add("Tonnage: ${formatCompact(TonnageCalculator.tonnageKg(it))} kg") }
-            session.intervalState?.let {
-                if (it.intervals > 0) add("Rounds: ${it.rounds} · Intervals: ${it.intervals}")
+            val matrix = session.setMatrix
+            if (matrix != null && matrix.any { it.isPlanned }) {
+                session.routineName?.let { add(it) }
+                matrix.forEach { exercise ->
+                    val weight = exercise.targetWeightKg
+                        ?: exercise.sets.firstOrNull()?.kg
+                        ?: 0.0
+                    val sets = exercise.targetSets ?: exercise.sets.size
+                    add(
+                        "${exercise.name}: $sets sets · ${formatCompact(weight)} kg"
+                    )
+                }
+            } else {
+                matrix
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { add("Tonnage: ${formatCompact(TonnageCalculator.tonnageKg(it))} kg") }
+                session.intervalState?.let {
+                    if (it.intervals > 0) add("Rounds: ${it.rounds} · Intervals: ${it.intervals}")
+                }
             }
         }
         val withDetails = if (details.isEmpty()) base else (listOf(base) + details).joinToString("\n")

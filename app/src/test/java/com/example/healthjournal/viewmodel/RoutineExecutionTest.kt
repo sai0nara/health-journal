@@ -166,6 +166,30 @@ class RoutineExecutionTest {
     }
 
     @Test
+    fun startPreset_recordsRoutineNameOnSession() = runTest {
+        val vm = startRoutineFor()
+
+        assertEquals("Leg Day", activeState(vm).session.routineName)
+        val stored = dao.getSessionById(activeState(vm).session.session_id)!!
+        assertEquals("Leg Day", stored.routineName)
+    }
+
+    @Test
+    fun finishSession_routine_historyCardNamesRoutineAndExercises() = runTest {
+        val vm = startRoutineFor()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { journalRepository.insert(withArg { entry ->
+            assertTrue(entry.description.contains("Workout: Fitness"))
+            assertTrue(entry.description.contains("Leg Day"))
+            assertTrue(entry.description.contains("Barbell Squat"))
+            assertTrue(entry.description.contains("3 sets"))
+        }) }
+    }
+
+    @Test
     fun startPreset_withUnfinishedSession_forcesRecovery() = runTest {
         val first = startActiveSessionCooldown()
         val sessionId = activeState(first).session.session_id
@@ -274,6 +298,35 @@ class RoutineExecutionTest {
     }
 
     @Test
+    fun toggleSetCompleted_skippedPreviousSet_isIgnored() = runTest {
+        val vm = startRoutineFor()
+
+        vm.toggleSetCompleted(exerciseIndex = 0, setIndex = 1)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val active = activeState(vm)
+        val sets = active.session.setMatrix!!.single().sets
+        assertFalse(sets[1].completed)
+        assertFalse(sets[0].completed)
+        assertEquals(0, active.restSeconds)
+        assertFalse(haptics.contains(WorkoutHaptic.SET_COMPLETE))
+    }
+
+    @Test
+    fun toggleSetCompleted_previousSetsCompleted_allowsCompletingCurrent() = runTest {
+        val vm = startRoutineFor()
+
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.toggleSetCompleted(0, 1)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val sets = activeState(vm).session.setMatrix!!.single().sets
+        assertTrue(sets[0].completed)
+        assertTrue(sets[1].completed)
+    }
+
+    @Test
     fun updateRoutineSet_editsWeightAndReps() = runTest {
         val vm = startRoutineFor()
 
@@ -301,7 +354,7 @@ class RoutineExecutionTest {
     }
 
     @Test
-    fun swapRoutineExercise_resetsSetsToPlannedDefaults() = runTest {
+    fun swapRoutineExercise_resetsSetsToCatalogDefaults() = runTest {
         val vm = startRoutineFor()
         vm.updateRoutineSet(0, 0, 100.0, 6)
         vm.toggleSetCompleted(0, 0)
@@ -314,11 +367,13 @@ class RoutineExecutionTest {
         val exercise = active.session.setMatrix!!.single()
         assertEquals(pressItem.name, exercise.name)
         assertEquals(pressItem.id, exercise.exerciseId)
+        // After swap the exercise adopts the catalog default plan for the new
+        // movement: Barbell Bench Press defaults to 3×5 @ 30 kg, rest 120s.
         assertEquals(3, exercise.targetSets)
-        assertEquals(90, exercise.restSeconds)
+        assertEquals(120, exercise.restSeconds)
         assertEquals(3, exercise.sets.size)
         assertTrue(exercise.sets.all { !it.completed && it.rpe == null })
-        assertTrue(exercise.sets.all { it.kg == 60.0 && it.reps == 5 })
+        assertTrue(exercise.sets.all { it.kg == 30.0 && it.reps == 5 })
     }
 
     @Test
@@ -427,7 +482,9 @@ class RoutineExecutionTest {
             healthSource.storedRecords().single().exerciseType
         )
         coVerify { journalRepository.insert(withArg { entry ->
-            assertTrue(entry.description.contains("Tonnage: 500 kg"))
+            assertTrue(entry.description.contains("Leg Day"))
+            assertTrue(entry.description.contains("Barbell Squat"))
+            assertTrue(entry.description.contains("3 sets"))
         }) }
     }
 

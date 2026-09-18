@@ -200,6 +200,48 @@ class MigrationTest {
     }
 
     @Test
+    fun migrate17To18_AddsRoutineNameColumnAndPreservesWorkoutData() {
+        helper.createDatabase("$dbName-17-18", 17).apply {
+            execSQL(
+                "INSERT INTO workout_sessions (session_id, type, status, startTimestamp, elapsedSeconds, setMatrix, notes, lastModified) " +
+                    "VALUES ('migrated_ws_17_18', 'FITNESS', 'ACTIVE', 1000, 0, '[{\"name\":\"Squat\",\"sets\":[]}]', 'Before 17 to 18', 1000)"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-17-18",
+            18,
+            true,
+            JournalDatabase.MIGRATION_17_18
+        )
+
+        db.query("PRAGMA table_info(workout_sessions)").use { cursor ->
+            val columns = buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                }
+            }
+            org.junit.Assert.assertTrue("routineName column should be added", "routineName" in columns)
+            org.junit.Assert.assertTrue("setMatrix should survive", "setMatrix" in columns)
+        }
+
+        db.query("SELECT notes FROM workout_sessions WHERE session_id = 'migrated_ws_17_18'").use { cursor ->
+            org.junit.Assert.assertTrue("Previously inserted row lost", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Before 17 to 18", cursor.getString(0))
+        }
+
+        db.execSQL(
+            "INSERT INTO workout_sessions (session_id, type, status, startTimestamp, elapsedSeconds, setMatrix, routineName, notes, lastModified) " +
+                "VALUES ('ws_with_routine', 'FITNESS', 'ACTIVE', 2000, 0, '[{\"name\":\"Squat\",\"sets\":[]}]', 'Leg Day', '', 2000)"
+        )
+        db.query("SELECT routineName FROM workout_sessions WHERE session_id = 'ws_with_routine'").use { cursor ->
+            org.junit.Assert.assertTrue("routineName should be readable", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Leg Day", cursor.getString(0))
+        }
+    }
+
+    @Test
     fun migrate13To14_DropsOrphanedWorkoutSyncColumns() {
         // A real shipped-early v13 database carries isSynced and syncStatus on
         // workout_sessions; the exported 13.json snapshot only knows the clean
