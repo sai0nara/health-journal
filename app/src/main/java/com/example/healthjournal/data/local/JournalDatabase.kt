@@ -29,7 +29,7 @@ abstract class JournalDatabase : RoomDatabase() {
         private var INSTANCE: JournalDatabase? = null
 
         /** Current Room database schema version; single-sourced for restore validation. */
-        const val CURRENT_SCHEMA_VERSION: Int = 17
+        const val CURRENT_SCHEMA_VERSION: Int = 18
 
         // v1 -> v2: add isSynced
         val MIGRATION_1_2 = object : Migration(1, 2) {
