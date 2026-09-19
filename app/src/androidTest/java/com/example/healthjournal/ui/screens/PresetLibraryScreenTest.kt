@@ -184,6 +184,26 @@ class PresetLibraryScreenTest {
         (viewModel.uiState.value as PresetUiState.Editing).exercises
 
     @Test
+    fun presetFields_nonNumericWeight_isIgnoredWithoutCrash() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Squat")
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("exercise_search_result").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_field_weight").performTextClearance()
+        composeTestRule.onNodeWithTag("preset_field_weight").performTextInput("abc")
+        composeTestRule.waitForIdle()
+
+        // Non-numeric input is silently dropped at the field (toDoubleOrNull
+        // fails), leaving the last valid weight in the draft — no crash.
+        assertEquals(40.0, selectedDraft().single().defaultWeightKg, 0.0)
+    }
+
+    @Test
     fun create_validPreset_savesAndBacksToList() {
         openScreen()
         composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
@@ -238,5 +258,73 @@ class PresetLibraryScreenTest {
 
         composeTestRule.onNodeWithTag("preset_library_list").assertExists()
         composeTestRule.onNodeWithText("Leg Day").assertDoesNotExist()
+    }
+
+    @Test
+    fun exerciseSearch_caseInsensitiveQuery_findsMatch() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("bEnCh")
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Bench Press").assertExists()
+    }
+
+    @Test
+    fun exerciseSearch_noMatch_showsEmptyResultsWithoutCrash() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("zzz")
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_result").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Bench Press").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("preset_name_field").assertExists()
+    }
+
+    @Test
+    fun exerciseSearch_blankQuery_showsNoResults() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Be")
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextClearance()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_result").assertDoesNotExist()
+    }
+
+    @Test
+    fun exerciseSearch_sqlInjectionQuery_neverLeaksOrCrashes() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("' OR '1'='1")
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_result").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Bench Press").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Barbell Squat").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("preset_name_field").assertExists()
+    }
+
+    @Test
+    fun exerciseSearch_unicodeQuery_isSafe() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("💪belle")
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("exercise_search_result").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("preset_name_field").assertExists()
     }
 }

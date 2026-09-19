@@ -242,6 +242,97 @@ class MigrationTest {
     }
 
     @Test
+    fun migrate16To18_Chained_AddsRoutineNameAndPreservesWorkoutData() {
+        helper.createDatabase("$dbName-16-18", 16).apply {
+            execSQL(
+                "INSERT INTO workout_sessions (session_id, type, status, startTimestamp, elapsedSeconds, setMatrix, notes, lastModified) " +
+                    "VALUES ('migrated_ws_16_18', 'FITNESS', 'ACTIVE', 1000, 0, '[{\"name\":\"Squat\",\"sets\":[]}]', 'Before 16 to 18', 1000)"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-16-18",
+            18,
+            true,
+            JournalDatabase.MIGRATION_16_17,
+            JournalDatabase.MIGRATION_17_18
+        )
+
+        db.query("PRAGMA table_info(workout_sessions)").use { cursor ->
+            val columns = buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                }
+            }
+            org.junit.Assert.assertTrue("routineName column should be added", "routineName" in columns)
+            org.junit.Assert.assertTrue("setMatrix should survive", "setMatrix" in columns)
+        }
+
+        db.query("SELECT notes FROM workout_sessions WHERE session_id = 'migrated_ws_16_18'").use { cursor ->
+            org.junit.Assert.assertTrue("Previously inserted row lost", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Before 16 to 18", cursor.getString(0))
+        }
+    }
+
+    @Test
+    fun migrate16To18_EmptyDatabase_OpensCleanWithRoutineNameColumn() {
+        helper.createDatabase("$dbName-16-18-empty", 16).apply {
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-16-18-empty",
+            18,
+            true,
+            JournalDatabase.MIGRATION_16_17,
+            JournalDatabase.MIGRATION_17_18
+        )
+
+        db.query("PRAGMA table_info(workout_sessions)").use { cursor ->
+            val columns = buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                }
+            }
+            org.junit.Assert.assertTrue("routineName column should be added", "routineName" in columns)
+        }
+
+        db.query("SELECT COUNT(*) FROM workout_sessions").use { cursor ->
+            org.junit.Assert.assertTrue(cursor.moveToFirst())
+            org.junit.Assert.assertEquals(0, cursor.getInt(0))
+        }
+    }
+
+    @Test
+    fun migrate17To18_EmptyDatabase_OpensCleanWithRoutineNameColumn() {
+        helper.createDatabase("$dbName-17-18-empty", 17).apply {
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-17-18-empty",
+            18,
+            true,
+            JournalDatabase.MIGRATION_17_18
+        )
+
+        db.query("PRAGMA table_info(workout_sessions)").use { cursor ->
+            val columns = buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                }
+            }
+            org.junit.Assert.assertTrue("routineName column should be added", "routineName" in columns)
+        }
+
+        db.query("SELECT COUNT(*) FROM workout_sessions").use { cursor ->
+            org.junit.Assert.assertTrue(cursor.moveToFirst())
+            org.junit.Assert.assertEquals(0, cursor.getInt(0))
+        }
+    }
+
+    @Test
     fun migrate13To14_DropsOrphanedWorkoutSyncColumns() {
         // A real shipped-early v13 database carries isSynced and syncStatus on
         // workout_sessions; the exported 13.json snapshot only knows the clean

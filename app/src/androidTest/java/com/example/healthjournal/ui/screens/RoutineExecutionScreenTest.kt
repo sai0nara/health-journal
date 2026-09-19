@@ -15,10 +15,14 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.text.AnnotatedString
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.PresetRepository
 import com.example.healthjournal.data.WorkoutRepository
 import com.example.healthjournal.data.local.ExerciseCatalogItem
+import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.domain.PresetExercise
 import com.example.healthjournal.domain.ScheduledDay
@@ -91,6 +95,9 @@ class RoutineExecutionScreenTest {
         journalRepository = mockk(relaxed = true)
         coEvery { journalRepository.insert(any()) } returns Unit
         haptics.clear()
+        // The quick pad reads the persisted unit preference; tests assume the
+        // default metric step unless a test explicitly switches to imperial.
+        UnitSettings.write(InstrumentationRegistry.getInstrumentation().targetContext, UnitSystem.METRIC)
         viewModel = buildViewModel()
     }
 
@@ -352,6 +359,28 @@ class RoutineExecutionScreenTest {
     }
 
     @Test
+    fun routineQuickPad_rapidTaps_applyEveryIncrementWithoutLostUpdates() {
+        openRoutine()
+
+        // Anchor the set at 20.0kg, then fire five + taps with no idle between.
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextClearance()
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextInput("20")
+        composeTestRule.waitForIdle()
+        assertEquals(20.0, persistedMatrix().single().sets[0].kg, 0.0)
+
+        repeat(5) {
+            composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
+        }
+        composeTestRule.waitForIdle()
+
+        // 20.0 + 5 x 1.25 = 26.25; every tap must land, and no duplicate rows.
+        assertEquals(20.0 + 5 * 1.25, persistedMatrix().single().sets[0].kg, 0.0)
+        assertEquals(1, persistedMatrix().size)
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("26.25")
+    }
+
+    @Test
     fun routineSwap_stopsRestTimer() {
         openRoutine()
 
@@ -411,5 +440,105 @@ class RoutineExecutionScreenTest {
         composeTestRule.onNodeWithText("Barbell Bench Press").assertExists()
         composeTestRule.onNodeWithText("Barbell Squat").assertDoesNotExist()
         assertEquals("Barbell Bench Press", persistedMatrix().single().name)
+    }
+
+    @Test
+    fun countdown_showsGetReady_andIsNotSkippable() {
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                WorkoutScreen(viewModel = viewModel, onBack = {}, onPresetsClick = {})
+            }
+        }
+        composeTestRule.waitForIdle()
+        viewModel.startPreset(legDay.id)
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("workout_countdown").assertExists()
+        composeTestRule.onNodeWithText("Get ready").assertExists()
+        // No skip/cancel affordances: the countdown runs to zero on its own.
+        composeTestRule.onNodeWithText("Skip", useUnmergedTree = true).assertDoesNotExist()
+        composeTestRule.onNodeWithText("Cancel", useUnmergedTree = true).assertDoesNotExist()
+
+        viewModel.advanceTime(WorkoutViewModel.COUNTDOWN_SECONDS.toLong())
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("routine_exercise_0").assertExists()
+    }
+
+    @Test
+    fun routineQuickPad_focusedFieldAtRepsOne_decrementIsNoOp() {
+        openRoutine()
+
+        composeTestRule.onNodeWithTag("routine_set_reps_0_0").performClick()
+        composeTestRule.onNodeWithTag("routine_set_reps_0_0").performTextClearance()
+        composeTestRule.onNodeWithTag("routine_set_reps_0_0").performTextInput("1")
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("routine_reps_minus").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("routine_set_reps_0_0")
+            .assertEditableText("1")
+        assertEquals(1, persistedMatrix().single().sets[0].reps)
+        composeTestRule.onNodeWithTag("set_matrix_error").assertDoesNotExist()
+    }
+
+    @Test
+    fun routineQuickPad_unfocusedFieldAtRepsOne_decrementIsNoOp() {
+        openRoutine()
+
+        // Seed the reps floor without ever focusing a field; the pad still
+        // targets the first uncompleted set and its decrement is a no-op.
+        viewModel.updateRoutineSet(0, 0, 60.0, 1)
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("routine_reps_minus").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("routine_set_reps_0_0")
+            .assertEditableText("1")
+        assertEquals(1, persistedMatrix().single().sets[0].reps)
+        composeTestRule.onNodeWithTag("set_matrix_error").assertDoesNotExist()
+    }
+
+    @Test
+    fun routineQuickPad_imperialStepIsFivePounds() {
+        UnitSettings.write(InstrumentationRegistry.getInstrumentation().targetContext, UnitSystem.IMPERIAL)
+        openRoutine()
+
+        composeTestRule.onNodeWithText("+5 lb").assertExists()
+
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextClearance()
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextInput("20")
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
+        composeTestRule.waitForIdle()
+
+        // +5 lb maps to a 2.27 kg pad step on the stored kg set row.
+        val expected = 20.0 + UnitConverter.lbsToKg(5.0)
+        assertEquals(expected, persistedMatrix().single().sets[0].kg, 0.0)
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText(UnitConverter.formatDouble(expected))
+    }
+
+    @Test
+    fun routineQuickPad_weightBelowLowerBound_showsInlineErrorAndKeepsValue() {
+        openRoutine()
+
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextClearance()
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextInput("1.25")
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("routine_weight_minus").performClick()
+        composeTestRule.waitForIdle()
+
+        // A decrement that would cross zero is rejected inline: value and
+        // stored row both stay at 1.25 kg.
+        composeTestRule.onNodeWithTag("set_matrix_error").assertExists()
+        composeTestRule.onNodeWithText("Weight must be greater than zero").assertExists()
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("1.25")
+        assertEquals(1.25, persistedMatrix().single().sets[0].kg, 0.0)
     }
 }

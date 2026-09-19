@@ -35,6 +35,13 @@ class CalculateOneRepMaxUseCaseTest {
     }
 
     @Test
+    fun epley_lowerBoundaryOneKgTwoReps_isOnePoint0667() {
+        // The lowest legal Epley input pair still evaluates the fraction:
+        // 1 × (1 + 2/30) = 1.0667.
+        assertEquals(1.0667, useCase.estimateOneRepMax(weightKg = 1.0, reps = 2), 0.01)
+    }
+
+    @Test
     fun zeroWeight_throwsIllegalArgument() {
         assertThrows(IllegalArgumentException::class.java) {
             useCase.estimateOneRepMax(weightKg = 0.0, reps = 10)

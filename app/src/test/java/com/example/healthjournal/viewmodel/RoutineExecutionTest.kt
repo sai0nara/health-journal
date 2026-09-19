@@ -7,11 +7,13 @@ import com.example.healthjournal.data.local.ExerciseCatalogItem
 import com.example.healthjournal.data.local.FakeExerciseCatalogDao
 import com.example.healthjournal.data.local.FakeWorkoutPresetDao
 import com.example.healthjournal.data.local.FakeWorkoutSessionDao
+import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.data.local.WorkoutStatus
 import com.example.healthjournal.domain.PresetExercise
 import com.example.healthjournal.domain.ScheduledDay
+import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.StrengthSet
 import com.example.healthjournal.domain.WorkoutType
 import com.example.healthjournal.health.FakeWorkoutHealthDataSource
@@ -21,6 +23,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -489,6 +492,80 @@ class RoutineExecutionTest {
     }
 
     @Test
+    fun finishSession_routine_whilePaused_completesAndJournals() = runTest {
+        val vm = startRoutineFor()
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.pauseSession()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.uiState.value is WorkoutUiState.Paused)
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val summary = vm.uiState.value as WorkoutUiState.Summary
+        assertEquals(WorkoutStatus.COMPLETED.name, summary.session.status)
+        coVerify { journalRepository.insert(withArg { entry ->
+            assertTrue(entry.description.contains("Leg Day"))
+        }) }
+        assertEquals(
+            HealthExerciseType.STRENGTH_TRAINING,
+            healthSource.storedRecords().single().exerciseType
+        )
+    }
+
+    @Test
+    fun finishSession_routine_healthWriteThrows_stillCompletesUnsynced() = runTest {
+        val offline = FakeWorkoutHealthDataSource()
+        offline.writeFailure = RuntimeException("no connection")
+        with(presetDao) {
+            insertAll(listOf(legDayPreset))
+        }
+        with(catalogDao) {
+            insertAll(listOf(squatItem, pressItem))
+        }
+        val vm = newViewModel(health = offline)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.startPreset(legDayPreset.id)
+        dispatcher.scheduler.advanceUntilIdle()
+        while (vm.uiState.value is WorkoutUiState.Countdown) {
+            vm.advanceTime(1)
+            dispatcher.scheduler.advanceUntilIdle()
+        }
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.advanceTime(600)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val summary = vm.uiState.value as WorkoutUiState.Summary
+        assertEquals(false, summary.healthSynced)
+        assertTrue(offline.storedRecords().isEmpty())
+        coVerify { journalRepository.insert(withArg { entry ->
+            assertTrue(entry.description.contains("Leg Day"))
+        }) }
+    }
+
+    @Test
+    fun finishSession_routine_doubleTap_writesExactlyOneJournalEntry() = runTest {
+        val vm = startRoutineFor()
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.advanceTime(600)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { journalRepository.insert(any()) }
+        assertEquals(1, healthSource.storedRecords().size)
+    }
+
+    @Test
     fun restTimer_dozeCatchesUp_duringRoutine() = runTest {
         var wall = 10_000L
         val vm = newViewModel(clock = { wall })
@@ -510,6 +587,238 @@ class RoutineExecutionTest {
         vm.advanceTime(1)
         dispatcher.scheduler.advanceUntilIdle()
 
+        assertEquals(0, activeState(vm).restSeconds)
+    }
+
+    @Test
+    fun startPreset_missingPreset_surfacesErrorWithoutStartingSession() = runTest {
+        with(catalogDao) { insertAll(listOf(squatItem, pressItem)) }
+        val vm = newViewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.startPreset("does-not-exist")
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value as WorkoutUiState.Error
+        assertEquals("Preset not found", state.message)
+        assertTrue(dao.getAllSessions().first().isEmpty())
+
+        vm.dismissError()
+        assertTrue(vm.uiState.value is WorkoutUiState.Idle)
+    }
+
+    @Test
+    fun startPreset_unknownOrZeroSetExercises_areSkipped() = runTest {
+        val mixedDay = WorkoutPreset(
+            id = "p2",
+            name = "Mixed Day",
+            scheduledDay = ScheduledDay.ANY.name,
+            exercises = listOf(
+                PresetExercise("barbell-squat", 3, 5, 60.0, 90),
+                PresetExercise("no-such-exercise", 3, 5, 60.0, 90),
+                PresetExercise("barbell-bench-press", 0, 6, 65.0, 120)
+            ),
+            lastModified = 1_700_000_000_000L
+        )
+        with(presetDao) { insertAll(listOf(mixedDay)) }
+        with(catalogDao) { insertAll(listOf(squatItem, pressItem)) }
+        val vm = newViewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.startPreset("p2")
+        dispatcher.scheduler.advanceUntilIdle()
+        while (vm.uiState.value is WorkoutUiState.Countdown) {
+            vm.advanceTime(1)
+            dispatcher.scheduler.advanceUntilIdle()
+        }
+
+        // Unknown exercises (no catalog row) and zero-target-set plans are
+        // omitted; the matrix holds exactly the resolvable movements.
+        val matrix = activeState(vm).session.setMatrix!!
+        assertEquals(1, matrix.size)
+        assertEquals("Barbell Squat", matrix.single().name)
+        assertTrue(matrix.single().isPlanned)
+    }
+
+    @Test
+    fun startPreset_allUnresolvable_stillOpensEmptyRoutine() = runTest {
+        val mysteryDay = WorkoutPreset(
+            id = "p3",
+            name = "Mystery Day",
+            scheduledDay = ScheduledDay.ANY.name,
+            exercises = listOf(
+                PresetExercise("ghost-lift", 3, 5, 60.0, 90),
+                PresetExercise("phantom-press", 2, 8, 40.0, 90)
+            ),
+            lastModified = 1_700_000_000_000L
+        )
+        with(presetDao) { insertAll(listOf(mysteryDay)) }
+        with(catalogDao) { insertAll(listOf(squatItem, pressItem)) }
+        val vm = newViewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.startPreset("p3")
+        dispatcher.scheduler.advanceUntilIdle()
+        while (vm.uiState.value is WorkoutUiState.Countdown) {
+            vm.advanceTime(1)
+            dispatcher.scheduler.advanceUntilIdle()
+        }
+
+        val active = activeState(vm)
+        assertTrue(vm.uiState.value is WorkoutUiState.Active)
+        assertTrue(active.session.setMatrix.orEmpty().isEmpty())
+        assertEquals("Mystery Day", active.session.routineName)
+    }
+
+    @Test
+    fun startPreset_doubleTap_createsExactlyOneSessionWithoutDuplicates() = runTest {
+        with(presetDao) { insertAll(listOf(legDayPreset)) }
+        with(catalogDao) { insertAll(listOf(squatItem, pressItem)) }
+        val vm = newViewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.startPreset(legDayPreset.id)
+        vm.startPreset(legDayPreset.id)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        // A double-submit must never fork a second session row or duplicate
+        // the planned matrix: the store keeps a single session.
+        val sessions = dao.getAllSessions().first()
+        assertEquals(1, sessions.size)
+        assertEquals(3, sessions.single().setMatrix!!.single().sets.size)
+    }
+
+    @Test
+    fun pauseSession_freezesMutationsUntilResume() = runTest {
+        val vm = startRoutineFor()
+        vm.pauseSession()
+        dispatcher.scheduler.advanceUntilIdle()
+        val sessionId = (vm.uiState.value as WorkoutUiState.Paused).session.session_id
+
+        // While frozen the routine-seeded mutations are accepted by the state
+        // machine but must not touch the stored matrix or fire haptics.
+        vm.updateRoutineSet(0, 0, 99.0, 9)
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(vm.uiState.value is WorkoutUiState.Paused)
+        val stored = dao.getSessionById(sessionId)!!
+        assertEquals(WorkoutStatus.PAUSED.name, stored.status)
+        assertEquals(60.0, stored.setMatrix!!.single().sets[0].kg, 0.0)
+        assertEquals(5, stored.setMatrix!!.single().sets[0].reps)
+        assertFalse(stored.setMatrix!!.single().sets[0].completed)
+        assertFalse(haptics.contains(WorkoutHaptic.SET_COMPLETE))
+
+        // The frozen session does not accumulate elapsed time while paused.
+        vm.advanceTime(30)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(0, (vm.uiState.value as WorkoutUiState.Paused).session.elapsedSeconds)
+    }
+
+    @Test
+    fun finishSession_fromRecoveryRequired_isNoOp() = runTest {
+        val first = startRoutineFor()
+        val sessionId = activeState(first).session.session_id
+        first.pauseSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val recovered = newViewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(recovered.uiState.value is WorkoutUiState.RecoveryRequired)
+        val before = dao.getSessionById(sessionId)!!
+
+        recovered.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        // A recovery prompt must be resolved first; Finish is a no-op there.
+        assertTrue(recovered.uiState.value is WorkoutUiState.RecoveryRequired)
+        assertEquals(before, dao.getSessionById(sessionId))
+        coVerify(exactly = 0) { journalRepository.insert(any<JournalEntry>()) }
+    }
+
+    @Test
+    fun swapRoutineExercise_unknownExercise_fallsBackToGenericDefaults() = runTest {
+        val vm = startRoutineFor()
+
+        vm.swapRoutineExercise(0, "mystery-movement", "Mystery Movement")
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val exercise = activeState(vm).session.setMatrix!!.single()
+        assertEquals("Mystery Movement", exercise.name)
+        assertEquals("mystery-movement", exercise.exerciseId)
+        assertEquals(3, exercise.targetSets)
+        assertEquals(10, exercise.targetReps)
+        assertEquals(20.0, exercise.targetWeightKg!!, 0.0)
+        assertEquals(90, exercise.restSeconds)
+        assertEquals(3, exercise.sets.size)
+        assertTrue(exercise.sets.all { !it.completed && it.kg == 20.0 && it.reps == 10 })
+    }
+
+    @Test
+    fun finishSession_plannedMatrixWithoutRoutineName_omitsNameLine() = runTest {
+        val legacy = WorkoutSession(
+            type = WorkoutType.FITNESS.name,
+            status = WorkoutStatus.ACTIVE.name,
+            startTimestamp = 1_700_000_000_000L,
+            setMatrix = listOf(
+                StrengthExercise(
+                    name = "Barbell Squat",
+                    sets = List(3) { StrengthSet(kg = 60.0, reps = 5) },
+                    targetSets = 3,
+                    targetReps = 5,
+                    targetWeightKg = 60.0,
+                    restSeconds = 90,
+                    exerciseId = "barbell-squat"
+                )
+            ),
+            routineName = null
+        )
+        dao.insertAll(listOf(legacy))
+        val vm = newViewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.uiState.value is WorkoutUiState.RecoveryRequired)
+        vm.resumeRecovery()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        // Pre-routine-name sessions carry a planned matrix but no routine
+        // name: the exercise line renders and no blank/null name line appears.
+        coVerify { journalRepository.insert(withArg { entry ->
+            assertTrue(entry.description.contains("Workout: Fitness"))
+            assertTrue(entry.description.contains("Barbell Squat: 3 sets"))
+            assertFalse(entry.description.contains("null"))
+        }) }
+    }
+
+    @Test
+    fun restTimer_springForwardPastMidnight_catchesUpWithoutGoingNegative() = runTest {
+        var wall = 1_700_000_000_000L
+        val vm = newViewModel(clock = { wall })
+        with(presetDao) { insertAll(listOf(legDayPreset)) }
+        with(catalogDao) { insertAll(listOf(squatItem, pressItem)) }
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.startPreset(legDayPreset.id)
+        dispatcher.scheduler.advanceUntilIdle()
+        while (vm.uiState.value is WorkoutUiState.Countdown) {
+            vm.advanceTime(1)
+            dispatcher.scheduler.advanceUntilIdle()
+        }
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(90, activeState(vm).restSeconds)
+
+        // A spring-forward DST jump (01:59 -> 03:00) shifts the wall clock an
+        // hour mid-rest; the next tick catches the timer up to zero and the
+        // countdown never drifts negative afterwards.
+        wall += 3_600_000L
+        vm.advanceTime(1)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, activeState(vm).restSeconds)
+        assertTrue(haptics.contains(WorkoutHaptic.REST_ENDED))
+
+        vm.advanceTime(5)
+        dispatcher.scheduler.advanceUntilIdle()
         assertEquals(0, activeState(vm).restSeconds)
     }
 }

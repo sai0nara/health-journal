@@ -202,6 +202,32 @@ class PresetViewModelTest {
     }
 
     @Test
+    fun addExercise_withNegativeRest_showsInlineError_andDoesNotAppend() = runTest {
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+
+        vm.addExercise(benchPress.copy(restSeconds = -1))
+
+        val state = vm.uiState.value as PresetUiState.Editing
+        assertEquals(ValidatePreset.ERROR_REST_NON_NEGATIVE, state.exerciseError)
+        assertTrue(state.exercises.isEmpty())
+    }
+
+    @Test
+    fun addExercise_withNegativeWeight_showsInlineError_andDoesNotAppend() = runTest {
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+
+        vm.addExercise(benchPress.copy(defaultWeightKg = -0.1))
+
+        val state = vm.uiState.value as PresetUiState.Editing
+        assertEquals(ValidatePreset.ERROR_WEIGHT_POSITIVE, state.exerciseError)
+        assertTrue(state.exercises.isEmpty())
+    }
+
+    @Test
     fun addExercise_appendsAndClearsPriorExerciseError() = runTest {
         val vm = viewModel()
         dispatcher.scheduler.advanceUntilIdle()
@@ -369,5 +395,103 @@ class PresetViewModelTest {
         dispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, vm.catalog.value.size)
+    }
+
+    @Test
+    fun createWithMinimalValidBoundaries_persistsExactValues() = runTest {
+        val minimal = PresetExercise(
+            exerciseId = "bench-press",
+            targetSets = 1,
+            defaultReps = 1,
+            defaultWeightKg = 0.1,
+            restSeconds = 0
+        )
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+        vm.updateName("x")
+        vm.addExercise(minimal)
+        vm.addExercise(minimal.copy(exerciseId = "squat"))
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(vm.uiState.value is PresetUiState.Library)
+        val saved = presetDao.visiblePresets().let { presets ->
+            assertEquals(1, presets.size)
+            presets.single()
+        }
+        assertEquals("x", saved.name)
+        assertEquals(
+            listOf(minimal, minimal.copy(exerciseId = "squat")),
+            saved.exercises
+        )
+    }
+
+    @Test
+    fun createWithBoundaryPlusOne_persistsExactValues() = runTest {
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+        vm.updateName("xy")
+        vm.addExercise(
+            benchPress.copy(targetSets = 2, defaultReps = 2, defaultWeightKg = 1.0, restSeconds = 1)
+        )
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val saved = presetDao.visiblePresets().single()
+        assertEquals("xy", saved.name)
+        assertEquals(
+            benchPress.copy(targetSets = 2, defaultReps = 2, defaultWeightKg = 1.0, restSeconds = 1),
+            saved.exercises.single()
+        )
+    }
+
+    @Test
+    fun createWithLongMultibyteName_persistsExactString() = runTest {
+        // 120 UTF-16 code units mixing CJK with an emoji, as baselines the
+        // serial's long multi-byte preset-name bound: the whole string must
+        // survive save/load byte-for-byte and never trip the blank-name
+        // validator.
+        val longName = "深蹲举重💪".repeat(18) + "深蹲举重".repeat(3)
+        assertEquals(120, longName.length)
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+        vm.updateName(longName)
+        vm.addExercise(benchPress)
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(vm.uiState.value is PresetUiState.Library)
+        assertEquals(longName, presetDao.visiblePresets().single().name)
+        assertEquals(listOf(benchPress), presetDao.visiblePresets().single().exercises)
+    }
+
+    @Test
+    fun scheduledDayLabel_roundTripsThroughEdit() = runTest {
+        val createVm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        createVm.openCreate()
+        createVm.updateName("Leg Day")
+        createVm.addExercise(benchPress)
+        createVm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val saved = presetDao.visiblePresets().single()
+        assertEquals(ScheduledDay.ANY.name, saved.scheduledDay)
+
+        val editVm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        editVm.openEdit(saved.id)
+        dispatcher.scheduler.advanceUntilIdle()
+        editVm.updateScheduledDay(ScheduledDay.MONDAY)
+        editVm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val updated = presetDao.visiblePresets().single()
+        assertEquals(saved.id, updated.id)
+        assertEquals(ScheduledDay.MONDAY.name, updated.scheduledDay)
+        assertEquals(listOf(benchPress), updated.exercises)
     }
 }
