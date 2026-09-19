@@ -4,11 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.healthjournal.data.JournalRepository
+import com.example.healthjournal.data.local.ExerciseCatalogSeeder
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.ui.screens.AddEntryScreen
 import com.example.healthjournal.ui.screens.ArchiveScreen
@@ -20,6 +22,7 @@ import com.example.healthjournal.viewmodel.JournalViewModelFactory
 import com.example.healthjournal.sync.SyncManager
 import com.example.healthjournal.export.ExportViewModel
 import com.example.healthjournal.ui.screens.ExportScreen
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,6 +30,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val database = JournalDatabase.getDatabase(this)
+        lifecycleScope.launch {
+            ExerciseCatalogSeeder.seed(database.exerciseCatalogDao())
+        }
         val journalRepository = JournalRepository(database.journalDao())
         val measurementRepository = com.example.healthjournal.data.BodyMeasurementRepository(
             database.bodyMeasurementDao()
@@ -52,7 +58,12 @@ class MainActivity : ComponentActivity() {
         )
         val exportViewModel = ExportViewModel(application, journalRepository, fullBackupUseCase)
         val restoreViewModel = com.example.healthjournal.export.RestoreViewModel(application)
-        val personalCardViewModelFactory = com.example.healthjournal.viewmodel.PersonalCardViewModelFactory(personalCardRepository)
+        val personalCardViewModelFactory = com.example.healthjournal.viewmodel.PersonalCardViewModelFactory(
+            personalCardRepository,
+            persistUnitSystem = { unitSystem ->
+                com.example.healthjournal.data.local.UnitSettings.write(this, unitSystem)
+            }
+        )
         val workoutRepository = com.example.healthjournal.data.WorkoutRepository(database.workoutSessionDao())
         val workoutHealthSource = com.example.healthjournal.health.HealthConnectWorkoutDataSource(this)
 
@@ -75,28 +86,74 @@ class MainActivity : ComponentActivity() {
                             onExportClick = { navController.navigate("export") },
                             onMeasurementsClick = { navController.navigate("measurements") },
                             onPersonalCardClick = { navController.navigate("personal_card") },
-                            onWorkoutClick = { navController.navigate("workout") }
+                            onWorkoutClick = { navController.navigate("workout") },
+                            onSettingsClick = { navController.navigate("settings") }
+                        )
+                    }
+                    composable("settings") {
+                        com.example.healthjournal.ui.screens.SettingsScreen(
+                            onBack = { navController.popBackStack() }
                         )
                     }
                     composable("workout") {
                         val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+                        val vibrator = androidx.compose.runtime.remember {
+                            getSystemService(android.content.Context.VIBRATOR_SERVICE)
+                                as? android.os.Vibrator
+                        }
                         val workoutViewModelFactory = androidx.compose.runtime.remember {
                             com.example.healthjournal.viewmodel.WorkoutViewModelFactory(
                                 repository = workoutRepository,
                                 healthSource = workoutHealthSource,
                                 journalRepository = journalRepository,
                                 onHaptic = { kind ->
-                                    // Strong confirm tick for session control events.
-                                    haptic.performHapticFeedback(
-                                        androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress
-                                    )
-                                }
+                                    // Routine milestones vibrate via the system
+                                    // vibrator so the athlete feels them against
+                                    // the bar; session control ticks use the
+                                    // strong Compose confirm tick instead.
+                                    when (kind) {
+                                        com.example.healthjournal.viewmodel.WorkoutHaptic.SET_COMPLETE,
+                                        com.example.healthjournal.viewmodel.WorkoutHaptic.EXERCISE_COMPLETE,
+                                        com.example.healthjournal.viewmodel.WorkoutHaptic.REST_ENDED -> {
+                                            vibrator?.vibrate(
+                                                android.os.VibrationEffect.createOneShot(
+                                                    if (kind == com.example.healthjournal.viewmodel.WorkoutHaptic.REST_ENDED) 200L else 80L,
+                                                    android.os.VibrationEffect.DEFAULT_AMPLITUDE
+                                                )
+                                            )
+                                        }
+                                        else -> haptic.performHapticFeedback(
+                                            androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress
+                                        )
+                                    }
+                                },
+                                presetRepository = com.example.healthjournal.data.PresetRepository(
+                                    database.workoutPresetDao()
+                                ),
+                                catalogDao = database.exerciseCatalogDao()
                             )
                         }
                         val workoutViewModel: com.example.healthjournal.viewmodel.WorkoutViewModel =
                             viewModel(factory = workoutViewModelFactory)
                         com.example.healthjournal.ui.screens.WorkoutScreen(
                             viewModel = workoutViewModel,
+                            onBack = { navController.popBackStack() },
+                            onPresetsClick = { navController.navigate("presets") }
+                        )
+                    }
+                    composable("presets") {
+                        val presetFactory = androidx.compose.runtime.remember {
+                            com.example.healthjournal.viewmodel.PresetViewModelFactory(
+                                repository = com.example.healthjournal.data.PresetRepository(
+                                    database.workoutPresetDao()
+                                ),
+                                catalogDao = database.exerciseCatalogDao()
+                            )
+                        }
+                        val presetViewModel: com.example.healthjournal.viewmodel.PresetViewModel =
+                            androidx.lifecycle.viewmodel.compose.viewModel(factory = presetFactory)
+                        com.example.healthjournal.ui.screens.PresetLibraryScreen(
+                            viewModel = presetViewModel,
                             onBack = { navController.popBackStack() }
                         )
                     }

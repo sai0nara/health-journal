@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-09-10
+Last updated: 2026-09-18
 
 ## What lives here
 
@@ -27,6 +27,13 @@ session, and the summary:
   "Next interval" button; the Fitness screen shows the set-matrix editor
   (add exercise, per-exercise weight/reps and "Add set") plus the between-sets rest
   timer; the rest rely on the elapsed-time timer and pause.
+- **Preset routine execution** — starting a preset builds a planned set matrix
+  (planned targets + catalog defaults per exercise); each set row edits
+  weight/reps and checks off completion. Sets must complete in order (a skipped
+  set blocks the ones after it), the +/- quick-increment pad acts on the last
+  focused set even while its field is focused, swapping takes the swapped-in
+  movement's catalog default plan, and the routine's preset name is stored on the
+  session for its history/journal card.
 - **Summary** — elapsed time and calories, plus Fitness tonnage and HIIT
   rounds/intervals, with the finished session also journaled.
 - **Manual log** — logging a past workout, with per-type extras (laps for Swimming,

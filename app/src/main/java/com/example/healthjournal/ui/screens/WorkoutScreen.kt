@@ -1,7 +1,10 @@
 package com.example.healthjournal.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,12 +16,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +38,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,6 +47,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
@@ -46,9 +57,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.R
+import com.example.healthjournal.data.local.ExerciseCatalogItem
 import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
+import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.domain.StrengthExercise
+import com.example.healthjournal.domain.StrengthSet
 import com.example.healthjournal.domain.ValidateWorkout
 import com.example.healthjournal.domain.WorkoutIntervalSession
 import com.example.healthjournal.domain.WorkoutType
@@ -75,11 +91,15 @@ import java.time.format.ResolverStyle
 @Composable
 fun WorkoutScreen(
     viewModel: WorkoutViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onPresetsClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val recentSessions by viewModel.recentSessions.collectAsState()
+    val presets by viewModel.presets.collectAsState()
+    val catalogExercises by viewModel.catalogExercises.collectAsState()
     var manualLogType by remember { mutableStateOf<WorkoutType?>(null) }
+    val unitSystem = UnitSettings.read(LocalContext.current)
 
     val state = uiState
     val session = when (state) {
@@ -125,7 +145,10 @@ fun WorkoutScreen(
                         val type = WorkoutType.fromName(it.type)
                         "${type?.label ?: it.type} · ${formatDate(it.startTimestamp)}"
                     },
-                    onSelectType = { viewModel.selectType(it) }
+                    presets = presets,
+                    onSelectType = { viewModel.selectType(it) },
+                    onStartRoutine = { presetId -> viewModel.startPreset(presetId) },
+                    onPresetsClick = onPresetsClick
                 )
 
                 is WorkoutUiState.Configuring -> ConfiguringContent(
@@ -143,25 +166,47 @@ fun WorkoutScreen(
                 is WorkoutUiState.Active -> SessionContent(
                     session = state.session,
                     paused = false,
+                    keepScreenOn = state.keepScreenOn,
                     restSeconds = state.restSeconds,
                     setMatrixError = state.setMatrixError,
+                    catalogExercises = catalogExercises,
+                    unitSystem = unitSystem,
                     onPauseResume = { viewModel.pauseSession() },
                     onFinish = { viewModel.finishSession() },
                     onAdvanceInterval = { viewModel.advanceInterval() },
                     onAddExercise = { name -> viewModel.addExercise(name) },
-                    onAddSet = { exerciseId, kg, reps -> viewModel.addSet(exerciseId, kg, reps) }
+                    onAddSet = { exerciseId, kg, reps -> viewModel.addSet(exerciseId, kg, reps) },
+                    onToggleSetCompleted = { ex, set -> viewModel.toggleSetCompleted(ex, set) },
+                    onUpdateRoutineSet = { ex, set, kg, reps ->
+                        viewModel.updateRoutineSet(ex, set, kg, reps)
+                    },
+                    onSwapExercise = { ex, exerciseId, name ->
+                        viewModel.swapRoutineExercise(ex, exerciseId, name)
+                    },
+                    onAddRoutineSet = { ex -> viewModel.addRoutineSet(ex) }
                 )
 
                 is WorkoutUiState.Paused -> SessionContent(
                     session = state.session,
                     paused = true,
+                    keepScreenOn = false,
                     restSeconds = 0,
                     setMatrixError = null,
+                    catalogExercises = catalogExercises,
+                    unitSystem = unitSystem,
                     onPauseResume = { viewModel.resumeSession() },
                     onFinish = { viewModel.finishSession() },
                     onAdvanceInterval = { viewModel.advanceInterval() },
                     onAddExercise = { name -> viewModel.addExercise(name) },
-                    onAddSet = { exerciseId, kg, reps -> viewModel.addSet(exerciseId, kg, reps) }
+                    onAddSet = { exerciseId, kg, reps -> viewModel.addSet(exerciseId, kg, reps) },
+                    onToggleSetCompleted = { ex, set -> viewModel.toggleSetCompleted(ex, set) },
+                    onUpdateRoutineSet = { ex, set, kg, reps ->
+                        viewModel.updateRoutineSet(ex, set, kg, reps)
+                    },
+                    onSwapExercise = { ex, exerciseId, name ->
+                        viewModel.swapRoutineExercise(ex, exerciseId, name)
+                    },
+                    onAddRoutineSet = { ex -> viewModel.addRoutineSet(ex) }
                 )
 
                 is WorkoutUiState.Summary -> SummaryContent(
@@ -177,7 +222,10 @@ fun WorkoutScreen(
                 is WorkoutUiState.RecoveryRequired -> {
                     IdleContent(
                         recentLabels = emptyList(),
-                        onSelectType = { viewModel.selectType(it) }
+                        presets = presets,
+                        onSelectType = { viewModel.selectType(it) },
+                        onStartRoutine = { presetId -> viewModel.startPreset(presetId) },
+                        onPresetsClick = onPresetsClick
                     )
                     AlertDialog(
                         onDismissRequest = { viewModel.discardRecovery() },
@@ -199,7 +247,10 @@ fun WorkoutScreen(
                 is WorkoutUiState.Error -> {
                     IdleContent(
                         recentLabels = emptyList(),
-                        onSelectType = { viewModel.selectType(it) }
+                        presets = presets,
+                        onSelectType = { viewModel.selectType(it) },
+                        onStartRoutine = { presetId -> viewModel.startPreset(presetId) },
+                        onPresetsClick = onPresetsClick
                     )
                     AlertDialog(
                         onDismissRequest = { viewModel.dismissError() },
@@ -231,7 +282,10 @@ fun WorkoutScreen(
 @Composable
 private fun IdleContent(
     recentLabels: List<String>,
-    onSelectType: (WorkoutType) -> Unit
+    presets: List<WorkoutPreset>,
+    onSelectType: (WorkoutType) -> Unit,
+    onStartRoutine: (presetId: String) -> Unit,
+    onPresetsClick: () -> Unit
 ) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -248,6 +302,49 @@ private fun IdleContent(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(type.label)
+            }
+        }
+        item {
+            Button(
+                onClick = onPresetsClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("presets_entry")
+            ) {
+                Text("Presets")
+            }
+        }
+        if (presets.isNotEmpty()) {
+            item {
+                Text(
+                    "Routines",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+            items(presets, key = { it.id }) { preset ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(preset.name, style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                text = "${preset.exercises.size} exercises",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Button(
+                            onClick = { onStartRoutine(preset.id) },
+                            modifier = Modifier.testTag("routine_start_${preset.id}")
+                        ) {
+                            Text("Start routine")
+                        }
+                    }
+                }
             }
         }
         if (recentLabels.isNotEmpty()) {
@@ -336,14 +433,33 @@ private fun CountdownContent(secondsRemaining: Int) {
 private fun SessionContent(
     session: WorkoutSession,
     paused: Boolean,
+    keepScreenOn: Boolean,
     restSeconds: Int,
     setMatrixError: String?,
+    catalogExercises: List<ExerciseCatalogItem>,
+    unitSystem: UnitSystem = UnitSystem.METRIC,
     onPauseResume: () -> Unit,
     onFinish: () -> Unit,
     onAdvanceInterval: () -> Unit,
     onAddExercise: (String) -> Unit,
-    onAddSet: (exerciseId: String, kg: Double, reps: Int) -> Unit
+    onAddSet: (exerciseId: String, kg: Double, reps: Int) -> Unit,
+    onToggleSetCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit = { _, _ -> },
+    onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int) -> Unit =
+        { _, _, _, _ -> },
+    onSwapExercise: (exerciseIndex: Int, exerciseId: String, name: String) -> Unit = { _, _, _ -> },
+    onAddRoutineSet: (exerciseIndex: Int) -> Unit = { _ -> }
 ) {
+    // Keep the display awake while a routine runs so rest windows or
+    // between-lightning pulls don't dim the screen mid-workout.
+    val view = LocalView.current
+    DisposableEffect(keepScreenOn) {
+        if (keepScreenOn) {
+            view.keepScreenOn = true
+            onDispose { view.keepScreenOn = false }
+        } else {
+            onDispose { }
+        }
+    }
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -358,12 +474,27 @@ private fun SessionContent(
             Text("Paused", style = MaterialTheme.typography.titleMedium)
         }
         val type = WorkoutType.fromName(session.type)
-        when (type) {
-            WorkoutType.HIIT -> IntervalControls(
+        val isRoutine = session.setMatrix?.any { it.isPlanned } == true
+        // The content area takes the remaining height so an over-long routine
+        // scrolls internally instead of clipping the action row underneath it.
+        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            when {
+            type == WorkoutType.HIIT -> IntervalControls(
                 intervalState = session.intervalState,
                 onAdvanceInterval = onAdvanceInterval
             )
-            WorkoutType.FITNESS -> SetMatrixEditor(
+            type == WorkoutType.FITNESS && isRoutine -> RoutineExecution(
+                exercises = session.setMatrix.orEmpty(),
+                restSeconds = restSeconds,
+                setMatrixError = setMatrixError,
+                catalogExercises = catalogExercises,
+                unitSystem = unitSystem,
+                onToggleSetCompleted = onToggleSetCompleted,
+                onUpdateRoutineSet = onUpdateRoutineSet,
+                onSwapExercise = onSwapExercise,
+                onAddRoutineSet = onAddRoutineSet
+            )
+            type == WorkoutType.FITNESS -> SetMatrixEditor(
                 exercises = session.setMatrix,
                 restSeconds = restSeconds,
                 setMatrixError = setMatrixError,
@@ -371,6 +502,7 @@ private fun SessionContent(
                 onAddSet = onAddSet
             )
             else -> Unit
+            }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = onPauseResume, modifier = Modifier.weight(1f)) {
@@ -527,6 +659,324 @@ private fun SetMatrixEditor(
                 Text("Add exercise")
             }
         }
+    }
+}
+
+@Composable
+private fun RoutineExecution(
+    exercises: List<StrengthExercise>,
+    restSeconds: Int,
+    setMatrixError: String?,
+    catalogExercises: List<ExerciseCatalogItem>,
+    unitSystem: UnitSystem = UnitSystem.METRIC,
+onToggleSetCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit,
+    onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int) -> Unit,
+    onSwapExercise: (exerciseIndex: Int, exerciseId: String, name: String) -> Unit,
+    onAddRoutineSet: (exerciseIndex: Int) -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (restSeconds > 0) {
+            item {
+                Text(
+                    text = "Rest ${formatElapsed(restSeconds.toLong())}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.testTag("workout_rest_timer")
+                )
+            }
+        }
+        setMatrixError?.let {
+            item {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag("set_matrix_error")
+                )
+            }
+        }
+        if (exercises.isEmpty()) {
+            item { Text("No exercises yet", style = MaterialTheme.typography.bodyMedium) }
+        }
+        exercises.forEachIndexed { exerciseIndex, exercise ->
+            item(key = exercise.id) {
+                RoutineExerciseCard(
+                    exercise = exercise,
+                    exerciseIndex = exerciseIndex,
+                    catalogExercises = catalogExercises,
+                    unitSystem = unitSystem,
+                    onToggleSetCompleted = onToggleSetCompleted,
+                    onUpdateRoutineSet = onUpdateRoutineSet,
+                    onSwapExercise = onSwapExercise,
+                    onAddRoutineSet = onAddRoutineSet
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun RoutineExerciseCard(
+    exercise: StrengthExercise,
+    exerciseIndex: Int,
+    catalogExercises: List<ExerciseCatalogItem>,
+    unitSystem: UnitSystem = UnitSystem.METRIC,
+    onToggleSetCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit,
+    onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int) -> Unit,
+    onSwapExercise: (exerciseIndex: Int, exerciseId: String, name: String) -> Unit,
+    onAddRoutineSet: (exerciseIndex: Int) -> Unit
+) {
+    var swapExpanded by remember(exercise.exerciseId) { mutableStateOf(false) }
+    // The quick pad acts on the last set the user touched (focused a field),
+    // not blindly the first uncompleted one — otherwise typing weight/reps on
+    // Set 3 and tapping +1.25 kg would silently bump Set 1.
+    var activeSet by remember(exercise.exerciseId) {
+        mutableStateOf(exercise.sets.indexOfFirst { !it.completed }.coerceAtLeast(0))
+    }
+    val padSet = exercise.sets
+        .getOrNull(activeSet)
+        ?.takeIf { !it.completed }
+        ?: exercise.sets.firstOrNull { !it.completed }
+    val padEnabled = padSet != null
+    fun adjustWeight(deltaKg: Double) {
+        val target = padSet ?: return
+        onUpdateRoutineSet(
+            exerciseIndex,
+            exercise.sets.indexOf(target),
+            (target.kg + deltaKg).coerceAtLeast(0.0),
+            target.reps
+        )
+    }
+    fun adjustReps(delta: Int) {
+        val target = padSet ?: return
+        onUpdateRoutineSet(
+            exerciseIndex,
+            exercise.sets.indexOf(target),
+            target.kg,
+            (target.reps + delta).coerceAtLeast(1)
+        )
+    }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("routine_exercise_$exerciseIndex")
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = exercise.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f)
+                )
+                TextButton(
+                    onClick = { onAddRoutineSet(exerciseIndex) },
+                    modifier = Modifier.testTag("routine_add_set_$exerciseIndex")
+                ) {
+                    Text("+ Set")
+                }
+                Box {
+                    OutlinedButton(
+                        onClick = { swapExpanded = true },
+                        modifier = Modifier.testTag("routine_swap_$exerciseIndex")
+                    ) {
+                        Text("Swap")
+                    }
+                    DropdownMenu(
+                        expanded = swapExpanded,
+                        onDismissRequest = { swapExpanded = false },
+                        modifier = Modifier.testTag("routine_swap_menu_$exerciseIndex")
+                    ) {
+                        catalogExercises.forEach { item ->
+                            DropdownMenuItem(
+                                text = { Text(item.name) },
+                                onClick = {
+                                    if (item.id != exercise.exerciseId) {
+                                        onSwapExercise(exerciseIndex, item.id, item.name)
+                                    }
+                                    swapExpanded = false
+                                },
+                                leadingIcon = {
+                                    if (item.id == exercise.exerciseId) {
+                                        Icon(Icons.Default.Check, contentDescription = null)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            Text(
+                text = "${exercise.targetSets} x ${exercise.targetReps} @ " +
+                    "${UnitConverter.formatDouble(exercise.targetWeightKg ?: 0.0)} kg · " +
+                    "Rest ${exercise.restSeconds}s",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            exercise.sets.forEachIndexed { setIndex, set ->
+                RoutineSetRow(
+                    exerciseIndex = exerciseIndex,
+                    setIndex = setIndex,
+                    set = set,
+                    // A set can only be completed once every earlier set in the
+                    // exercise is done; the checkbox is disabled until then.
+                    canComplete = exercise.sets
+                        .take(setIndex)
+                        .all { it.completed },
+                    onSetActivated = { activeSet = setIndex },
+                    onToggleCompleted = onToggleSetCompleted,
+                    onUpdateRoutineSet = onUpdateRoutineSet
+                )
+            }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    enabled = padEnabled,
+                    onClick = { adjustReps(-1) },
+                    modifier = Modifier.testTag("routine_reps_minus")
+                ) {
+                    Text("-1 rep", maxLines = 1)
+                }
+                OutlinedButton(
+                    enabled = padEnabled,
+                    onClick = { adjustWeight(-padStepWeightKg(unitSystem)) },
+                    modifier = Modifier.testTag("routine_weight_minus")
+                ) {
+                    Text("-${padStepDisplay(unitSystem)}", maxLines = 1)
+                }
+                OutlinedButton(
+                    enabled = padEnabled,
+                    onClick = { adjustWeight(padStepWeightKg(unitSystem)) },
+                    modifier = Modifier.testTag("routine_weight_plus")
+                ) {
+                    Text("+${padStepDisplay(unitSystem)}", maxLines = 1)
+                }
+                OutlinedButton(
+                    enabled = padEnabled,
+                    onClick = { adjustReps(1) },
+                    modifier = Modifier.testTag("routine_reps_plus")
+                ) {
+                    Text("+1 rep", maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+/** Kilogram step for the quick pad: 1.25 kg or a 5 lb plate. */
+private fun padStepWeightKg(unitSystem: UnitSystem): Double =
+    if (unitSystem == UnitSystem.IMPERIAL) UnitConverter.lbsToKg(5.0) else 1.25
+
+/** Display label for the current pad step, in the selected unit system. */
+private fun padStepDisplay(unitSystem: UnitSystem): String =
+    if (unitSystem == UnitSystem.IMPERIAL) "5 lb" else "1.25 kg"
+
+@Composable
+private fun RoutineSetRow(
+    exerciseIndex: Int,
+    setIndex: Int,
+    set: StrengthSet,
+    canComplete: Boolean,
+    onSetActivated: (setIndex: Int) -> Unit,
+    onToggleCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit,
+    onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int) -> Unit
+) {
+    // Each field keeps its own text state so typing stays smooth; the row
+    // re-seeds it from the persisted set whenever an external change (quick-
+    // pad tap) drifts the displayed text from the set value, and pushes every
+    // valid edit straight to the ViewModel. Reseeding only happens when the
+    // text differs, so a cursor sitting in the field still updates on pad
+    // taps without clobbering a keystroke that already mirrored the value.
+    var kgValue by remember { mutableStateOf(TextFieldValue(UnitConverter.formatDouble(set.kg))) }
+    var repsValue by remember { mutableStateOf(TextFieldValue(set.reps.toString())) }
+
+    fun commit(kg: Double, reps: Int) {
+        onUpdateRoutineSet(exerciseIndex, setIndex, kg, reps)
+    }
+    fun currentKg(): Double? = kgValue.text.replace(',', '.').toDoubleOrNull()?.takeIf { it > 0 }
+    fun currentReps(): Int? = repsValue.text.toIntOrNull()?.takeIf { it >= 1 }
+
+    LaunchedEffect(set.kg) {
+        val formatted = UnitConverter.formatDouble(set.kg)
+        if (kgValue.text != formatted) {
+            kgValue = TextFieldValue(
+                formatted,
+                selection = TextRange(formatted.length)
+            )
+        }
+    }
+    LaunchedEffect(set.reps) {
+        val formatted = set.reps.toString()
+        if (repsValue.text != formatted) {
+            repsValue = TextFieldValue(
+                formatted,
+                selection = TextRange(formatted.length)
+            )
+        }
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "Set ${setIndex + 1}",
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.testTag("routine_set_label_${exerciseIndex}_${setIndex}")
+        )
+        OutlinedTextField(
+            value = kgValue,
+            onValueChange = {
+                kgValue = it
+                currentKg()?.let { kg -> commit(kg, repsValue.text.toIntOrNull() ?: set.reps) }
+            },
+            label = { Text("kg") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier
+                .weight(1f)
+                .onFocusChanged {
+                    if (it.isFocused) onSetActivated(setIndex)
+                }
+                .testTag("routine_set_kg_${exerciseIndex}_${setIndex}")
+        )
+        OutlinedTextField(
+            value = repsValue,
+            onValueChange = {
+                repsValue = it
+                currentReps()?.let { reps -> commit(currentKg() ?: set.kg, reps) }
+            },
+            label = { Text("reps") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier
+                .weight(1f)
+                .onFocusChanged {
+                    if (it.isFocused) onSetActivated(setIndex)
+                }
+                .testTag("routine_set_reps_${exerciseIndex}_${setIndex}")
+        )
+        Checkbox(
+            checked = set.completed,
+            enabled = canComplete,
+            onCheckedChange = {
+                onSetActivated(setIndex)
+                onToggleCompleted(exerciseIndex, setIndex)
+            },
+            modifier = Modifier.testTag("routine_set_done_${exerciseIndex}_${setIndex}")
+        )
     }
 }
 

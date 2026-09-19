@@ -61,7 +61,8 @@ fun HistoryScreen(
     onExportClick: () -> Unit,
     onMeasurementsClick: () -> Unit = {},
     onWorkoutClick: () -> Unit = {},
-    onPersonalCardClick: () -> Unit = {}
+    onPersonalCardClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {}
 ) {
     val entries by viewModel.allEntries.collectAsState()
     val isAscending by viewModel.isAscending.collectAsState()
@@ -171,6 +172,11 @@ fun HistoryScreen(
                             text = { Text("Workouts") },
                             onClick = { showOverflow = false; onWorkoutClick() },
                             leadingIcon = { Icon(Icons.Default.FitnessCenter, contentDescription = null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Settings") },
+                            onClick = { showOverflow = false; onSettingsClick() },
+                            leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
                         )
                         DropdownMenuItem(
                             text = { Text("Sort order") },

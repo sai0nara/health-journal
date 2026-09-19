@@ -29,5 +29,7 @@ data class WorkoutSession(
     val setMatrix: List<StrengthExercise>? = null,
     /** Manual-interval phase tracker (HIIT), persisted for crash recovery. */
     val intervalState: WorkoutIntervalSession? = null,
+    /** Preset name a routine session was started from, shown on its history card. */
+    val routineName: String? = null,
     val lastModified: Long = startTimestamp
 )

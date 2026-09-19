@@ -1,0 +1,8 @@
+{
+  "track_id": "workout_presets_20260914",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-09-14T11:01:17Z",
+  "updated_at": "2026-09-14T11:01:17Z",
+  "description": "Workout Presets & Progressive Overload: day-based preset library with a searchable exercise catalog, preset-driven routine execution (sets, reps, RPE, completion, auto rest timer, haptics, screen-awake), weight analytics (Vico trend charts, Epley 1-RM), and alternative-exercise weight conversion from historical 1RM ratios; replaces the v2 manual set-matrix flow; adds schema 16 to 17."
+}

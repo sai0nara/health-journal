@@ -2,7 +2,7 @@
 
 > The Room persistence layer: entities, DAOs, converters, and the repositories that own local reads and writes.
 
-Last updated: 2026-09-10
+Last updated: 2026-09-18
 
 ## What lives here
 
@@ -19,11 +19,12 @@ from the UI layer.
 `WorkoutSession` rows carry the session lifecycle (status, timestamps, elapsed
 seconds, calories) plus two structured payloads: the strength **set matrix** and the
 HIIT **interval state**, both of which `JournalTypeConverters` serializes to JSON for
-Room's Gson columns. The schema is at version 16, added incrementally via the
+Room's Gson columns. The schema is at version 18, added incrementally via the
 versioned migrations in `JournalDatabase.kt` (13→14 drops orphaned sync columns,
-14→15 adds the set matrix, 15→16 adds the interval state); the exported JSON schema
-lives under `app/schemas/`. These payloads are what the session engine restores on
-crash recovery (see [[viewmodel-layer]]).
+14→15 adds the set matrix, 15→16 adds the interval state, 16→17 adds workout presets
+and the exercise catalog, 17→18 adds routineName to workout sessions); the exported
+JSON schema lives under `app/schemas/`. These payloads are what the session engine
+restores on crash recovery (see [[viewmodel-layer]]).
 
 ## Key components
 

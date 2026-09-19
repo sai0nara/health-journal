@@ -54,7 +54,7 @@ class WorkoutScreenTest {
     private fun openScreen() {
         composeTestRule.setContent {
             HealthJournalTheme {
-                WorkoutScreen(viewModel = viewModel, onBack = {})
+                WorkoutScreen(viewModel = viewModel, onBack = {}, onPresetsClick = {})
             }
         }
         composeTestRule.waitForIdle()

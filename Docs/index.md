@@ -7,7 +7,7 @@
 > Cross-references between documents use backticked paths, not wikilinks,
 > because the same feature slug exists in three directories.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-18
 
 ## Features
 
@@ -42,3 +42,6 @@ Last updated: 2026-09-02
 - `Docs/tests/personal-card.md` — tests
 - `Docs/tests/photos-media.md` — tests
 - `Docs/tests/restore-from-backup.md` — tests
+- `Docs/prd/workout-presets.md` — PRD
+- `Docs/psd/workout-presets.md` — PSD
+- `Docs/tests/workout-presets.md` — tests
