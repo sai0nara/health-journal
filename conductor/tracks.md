@@ -43,7 +43,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Unit Conversion (metric/imperial display layer)**
+- [x] **Track: Unit Conversion (metric/imperial display layer)**
 *Link: [./tracks/unit_conversion_20260921/](./tracks/unit_conversion_20260921/)*
 
 
