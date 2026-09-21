@@ -10,7 +10,7 @@
     - [ ] Write failing VM tests: imperial input persists metric; render converts stored metric
     - [ ] Implement entry render/parse via shared converter + `UnitSettings`
     - [ ] Write UI tests for imperial entry round trip; run green in isolation
-- [ ] Task: Charts + goals convert (Red/Green/Refactor + UI)
+- [x] Task: Charts + goals convert (Red/Green/Refactor + UI) (475e939)
     - [ ] Write failing tests: goal line renders converted; goal editor imperial input stores metric
     - [ ] Implement chart/goal render + goal editor parse
     - [ ] Write UI tests for converted chart + goal edit; run green in isolation
