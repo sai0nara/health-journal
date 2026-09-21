@@ -1,6 +1,6 @@
 # Track unit_conversion_20260921 — Implementation Plan
 
-## Phase 1: Body measurements conversion
+## Phase 1: Body measurements conversion [checkpoint: 4a4839a]
 
 - [x] Task: Shared ft/in + imperial helpers (Red/Green/Refactor) (d1c81fc)
     - [ ] Write failing unit tests for ft+in parse/format and imperial measurement format/parse helpers
