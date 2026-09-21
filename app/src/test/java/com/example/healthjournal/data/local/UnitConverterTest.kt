@@ -79,4 +79,73 @@ class UnitConverterTest {
         val result = UnitConverter.parseInput("70", UnitSystem.IMPERIAL, isHeight = true)
         assertEquals(177.8, result!!, 0.1)
     }
+
+    @Test
+    fun `cmToFeetInches splits 177_8cm into 5ft 10in`() {
+        val result = UnitConverter.cmToFeetInches(177.8)
+        assertEquals(5, result.feet)
+        assertEquals(10.0, result.inches, 0.001)
+    }
+
+    @Test
+    fun `cmToFeetInches rounds sub-inch remainder to one decimal`() {
+        val result = UnitConverter.cmToFeetInches(180.0)
+        assertEquals(5, result.feet)
+        assertEquals(10.9, result.inches, 0.001)
+    }
+
+    @Test
+    fun `feetInchesToCm combines 5ft 10in into 177_8cm`() {
+        assertEquals(177.8, UnitConverter.feetInchesToCm(5, 10.0), 0.001)
+    }
+
+    @Test
+    fun `feetInches round trip stays within display rounding`() {
+        val split = UnitConverter.cmToFeetInches(180.0)
+        assertEquals(180.1, UnitConverter.feetInchesToCm(split.feet, split.inches), 0.001)
+    }
+
+    @Test
+    fun `formatMeasurement imperial weight shows lbs`() {
+        assertEquals("154.3", UnitConverter.formatMeasurement(70.0, UnitSystem.IMPERIAL, isWeight = true))
+    }
+
+    @Test
+    fun `formatMeasurement imperial length shows inches`() {
+        assertEquals("39.4", UnitConverter.formatMeasurement(100.0, UnitSystem.IMPERIAL, isWeight = false))
+    }
+
+    @Test
+    fun `formatMeasurement metric passes value through`() {
+        assertEquals("70", UnitConverter.formatMeasurement(70.0, UnitSystem.METRIC, isWeight = true))
+        assertEquals("100", UnitConverter.formatMeasurement(100.0, UnitSystem.METRIC, isWeight = false))
+    }
+
+    @Test
+    fun `formatMeasurement null returns blank`() {
+        assertEquals("", UnitConverter.formatMeasurement(null, UnitSystem.IMPERIAL, isWeight = true))
+    }
+
+    @Test
+    fun `parseMeasurement imperial weight converts to kg`() {
+        // 154.3 lb × 0.45359237 = 69.9893 → 69.99: the 1-decimal display
+        // rounding costs a hundredth of a kilo on the round trip.
+        assertEquals(69.99, UnitConverter.parseMeasurement("154.3", UnitSystem.IMPERIAL, isWeight = true)!!, 0.001)
+    }
+
+    @Test
+    fun `parseMeasurement imperial length converts to cm`() {
+        assertEquals(100.1, UnitConverter.parseMeasurement("39.4", UnitSystem.IMPERIAL, isWeight = false)!!, 0.001)
+    }
+
+    @Test
+    fun `parseMeasurement metric rounds to two decimals`() {
+        assertEquals(70.57, UnitConverter.parseMeasurement("70.567", UnitSystem.METRIC, isWeight = true)!!, 0.001)
+    }
+
+    @Test
+    fun `parseMeasurement blank or non-numeric returns null`() {
+        assertNull(UnitConverter.parseMeasurement("", UnitSystem.IMPERIAL, isWeight = true))
+        assertNull(UnitConverter.parseMeasurement("abc", UnitSystem.METRIC, isWeight = false))
+    }
 }
