@@ -4,22 +4,22 @@
 > the JVM unit level, plus the sheet and screen behaviors (including light/dark)
 > at the instrumented level.
 
-Last updated: 2026-09-10
+Last updated: 2026-09-21
 
 ## Automated coverage
 
 | Stack | Test file | Scope |
 |---|---|---|
-| JVM unit | `app/src/test/java/com/example/healthjournal/domain/ValidateMeasurementsTest.kt` | format/negative/bounds, partial, at-least-one |
-| JVM unit | `app/src/test/java/com/example/healthjournal/domain/GoalValidatorTest.kt` | goal rules + caps + labels |
+| JVM unit | `app/src/test/java/com/example/healthjournal/domain/ValidateMeasurementsTest.kt` | format/negative/bounds, partial, at-least-one, imperial validation |
+| JVM unit | `app/src/test/java/com/example/healthjournal/domain/GoalValidatorTest.kt` | goal rules + caps + labels, imperial goals |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/MeasurementFormattersTest.kt` | summaries + trend projection |
-| JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/BodyMeasurementViewModelTest.kt` | form state, canSave, future-date, justSaved, undo |
+| JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/BodyMeasurementViewModelTest.kt` | form state, canSave, future-date, justSaved, undo, imperial entry + unit toggle |
 | JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/BodyAnalyticsViewModelTest.kt` | tab/series/goal projection |
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/BodyMeasurementRepositoryTest.kt` | persistence + tombstone ordering |
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/GoalsRepositoryTest.kt` | goal upsert/clear |
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/local/BodyMeasurementEntryTest.kt` | entity defaults/partial |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/MeasurementEntrySheetTest.kt` | sheet render, partial save, errors, future-date, date picker |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/MeasurementScreenTest.kt` | empty/newest/chart/delete-undo/goals/tabs/light-dark |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/MeasurementEntrySheetTest.kt` | sheet render, partial save, errors, future-date, date picker, imperial entry |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/MeasurementScreenTest.kt` | empty/newest/chart/delete-undo/goals/tabs/light-dark, imperial history/chart/goal sheet |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/BodyMeasurementDaoTest.kt` | Room roundtrip/order/pending |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/GoalDaoTest.kt` | goal DAO |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/MigrationTest.kt` | `body_measurements`/`goals` table migrations |
@@ -38,12 +38,16 @@ Last updated: 2026-09-10
 | T-8 | AC-4 | Goal clear/invalid | clear action / over-bound goal | cleared / validation error |
 | T-9 | AC-5 | Sync payload/merge | measurement rows | LWW merge + tombstone payload round-trip |
 | T-10 | AC-5 | Newest-first list | measurements inserted | list newest-first; cloud/local icons |
+| T-11 | AC-2 | Imperial validation | lb/in input over metric caps | display-unit cap messages; save disabled |
+| T-12 | AC-1 | Imperial entry round trip | lb/in entry saved | metric stored; history renders lb/in |
+| T-13 | AC-4 | Imperial chart + goal | goal set in lb | converted line/label; metric target stored |
 
 ## Manual checks
 
 - Decimal keyboard and `ImeAction.Next` across the seven fields.
 - Light and dark rendering of the sheet, screen, and chart.
 - Chart auto-scaling with and without a goal, and with a flat series.
+- Unit toggle mid-draft preserves typed values; imperial/metric round trip.
 
 ## Cross-references
 
