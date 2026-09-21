@@ -11,11 +11,13 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthjournal.data.BodyMeasurementRepository
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.util.FakeJournalViewModel
 import com.example.healthjournal.viewmodel.BodyMeasurementViewModel
-import io.mockk.coVerify
-import io.mockk.mockk
+import io.mockk.*
 import io.qameta.allure.android.rules.ScreenshotRule
 import io.qameta.allure.kotlin.Feature
 import io.qameta.allure.kotlin.Step
@@ -213,6 +215,45 @@ class MeasurementEntrySheetTest {
 
         step("Verify the sheet shows the selected calendar date without off-by-one shift") {
             composeTestRule.onNodeWithText(expectedSheetLabel).assertExists()
+        }
+    }
+
+    @Test
+    fun imperialEntry_convertsToMetricOnSave() {
+        UnitSettings.write(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            UnitSystem.IMPERIAL
+        )
+        try {
+            openSheet()
+
+            step("Verify imperial field labels") {
+                composeTestRule.onNodeWithText("Weight (lb)").assertExists()
+                composeTestRule.onNodeWithText("Waist (in)").assertExists()
+            }
+
+            step("Enter weight in lb and save") {
+                composeTestRule.onNodeWithTag("bm_field_WEIGHT").performTextInput("154.3")
+                composeTestRule.waitForIdle()
+                composeTestRule.onNodeWithTag("bm_save").assertIsEnabled()
+                androidx.test.espresso.Espresso.closeSoftKeyboard()
+                composeTestRule.waitForIdle()
+                composeTestRule.onNodeWithTag("bm_save").performClick()
+            }
+
+            step("Verify metric kg persisted and sheet dismissed") {
+                coVerify(timeout = 5000) {
+                    measurementRepository.insert(
+                        match { it.weight_kg == 69.99 }
+                    )
+                }
+                composeTestRule.onNodeWithTag("bm_field_WEIGHT").assertDoesNotExist()
+            }
+        } finally {
+            UnitSettings.write(
+                InstrumentationRegistry.getInstrumentation().targetContext,
+                UnitSystem.METRIC
+            )
         }
     }
 }

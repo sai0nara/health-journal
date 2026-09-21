@@ -1,5 +1,6 @@
 package com.example.healthjournal.domain
 
+import com.example.healthjournal.data.local.UnitSystem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -140,5 +141,72 @@ class ValidateMeasurementsTest {
         assertTrue(
             ValidateMeasurements.hasAtLeastOneMeasurement(raw(MeasurementField.WEIGHT to "abc"))
         )
+    }
+
+    @Test
+    fun imperialValidEntry_producesNoErrors() {
+        // 154.3 lb → 69.99 kg; 33.5 in → 85.1 cm: both within metric caps.
+        val errors = ValidateMeasurements.validate(
+            raw(MeasurementField.WEIGHT to "154.3", MeasurementField.WAIST to "33.5"),
+            UnitSystem.IMPERIAL
+        )
+
+        assertTrue(errors.isEmpty())
+    }
+
+    @Test
+    fun imperialWeightAboveCap_reportsLbMaxError() {
+        val errors = ValidateMeasurements.validate(
+            raw(MeasurementField.WEIGHT to "2000"),
+            UnitSystem.IMPERIAL
+        )
+
+        assertEquals(
+            ValidateMeasurements.maxExceededMessage(MeasurementField.WEIGHT, UnitSystem.IMPERIAL),
+            errors[MeasurementField.WEIGHT]
+        )
+    }
+
+    @Test
+    fun imperialGirthAboveCap_reportsInchMaxError() {
+        val errors = ValidateMeasurements.validate(
+            raw(MeasurementField.WAIST to "79"),
+            UnitSystem.IMPERIAL
+        )
+
+        assertEquals(
+            ValidateMeasurements.maxExceededMessage(MeasurementField.WAIST, UnitSystem.IMPERIAL),
+            errors[MeasurementField.WAIST]
+        )
+    }
+
+    @Test
+    fun imperialNegative_reportsNegativeError() {
+        val errors = ValidateMeasurements.validate(
+            raw(MeasurementField.WAIST to "-5"),
+            UnitSystem.IMPERIAL
+        )
+
+        assertEquals(ValidateMeasurements.ERROR_NEGATIVE, errors[MeasurementField.WAIST])
+    }
+
+    @Test
+    fun imperialMalformed_reportsInvalidFormat() {
+        val errors = ValidateMeasurements.validate(
+            raw(MeasurementField.WEIGHT to "abc"),
+            UnitSystem.IMPERIAL
+        )
+
+        assertEquals(ValidateMeasurements.ERROR_INVALID_FORMAT, errors[MeasurementField.WEIGHT])
+    }
+
+    @Test
+    fun imperialCommaDecimal_parsesLikeMetric() {
+        val errors = ValidateMeasurements.validate(
+            raw(MeasurementField.WEIGHT to "154,3"),
+            UnitSystem.IMPERIAL
+        )
+
+        assertTrue(errors.isEmpty())
     }
 }

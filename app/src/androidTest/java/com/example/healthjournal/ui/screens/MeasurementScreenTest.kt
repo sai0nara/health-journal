@@ -2,9 +2,12 @@ package com.example.healthjournal.ui.screens
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthjournal.data.BodyMeasurementRepository
 import com.example.healthjournal.data.GoalsRepository
 import com.example.healthjournal.data.local.BodyMeasurementEntry
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.viewmodel.BodyAnalyticsViewModel
 import com.example.healthjournal.viewmodel.BodyMeasurementViewModel
 import io.mockk.*
@@ -440,6 +443,37 @@ class MeasurementScreenTest {
                 .assertExists()
                 .assertTextEquals("Too large (max 500 kg)")
             io.mockk.coVerify(exactly = 0) { ctx.goalsDao.upsertGoal(any()) }
+        }
+    }
+
+    @Test
+    fun imperialHistory_rendersConvertedUnits() {
+        UnitSettings.write(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            UnitSystem.IMPERIAL
+        )
+        try {
+            step("Open Measurements screen with a metric record") {
+                setScreen(
+                    listOf(
+                        BodyMeasurementEntry(
+                            timestamp = 1_000L,
+                            weight_kg = 70.0,
+                            waist_cm = 85.0
+                        )
+                    )
+                )
+            }
+
+            step("Verify stored metric renders as lb/in") {
+                composeTestRule.onNodeWithText("154.3 lb").assertExists()
+                composeTestRule.onNodeWithText("Waist 33.5 in").assertExists()
+            }
+        } finally {
+            UnitSettings.write(
+                InstrumentationRegistry.getInstrumentation().targetContext,
+                UnitSystem.METRIC
+            )
         }
     }
 }

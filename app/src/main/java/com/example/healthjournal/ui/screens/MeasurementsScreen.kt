@@ -48,15 +48,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.data.local.BodyMeasurementEntry
+import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.GoalValidator
 import com.example.healthjournal.domain.MeasurementField
-import com.example.healthjournal.domain.formatMeasurement
 import com.example.healthjournal.domain.toParamTrend
 import com.example.healthjournal.domain.valueFor
 import com.example.healthjournal.ui.components.GoalSheet
@@ -81,6 +84,7 @@ fun MeasurementsScreen(
 ) {
     val entries by viewModel.entries.collectAsState()
     val analyticsState by analyticsViewModel.uiState.collectAsState()
+    val measurementState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
@@ -92,6 +96,12 @@ fun MeasurementsScreen(
         snapshotFlow { pagerState.currentPage }.collect { page ->
             analyticsViewModel.onTabSelected(MeasurementField.entries[page])
         }
+    }
+
+    // History cards render in the global display units.
+    val prefUnits = UnitSettings.read(LocalContext.current)
+    LaunchedEffect(prefUnits) {
+        viewModel.onUnitSystemChanged(prefUnits)
     }
 
     var sheetField by remember { mutableStateOf<MeasurementField?>(null) }
@@ -206,6 +216,7 @@ fun MeasurementsScreen(
                         MeasurementCard(
                             entry = entry,
                             dateLabel = dateFormat.format(Date(entry.timestamp)),
+                            unitSystem = measurementState.unitSystem,
                             onDelete = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 viewModel.deleteEntry(entry.entry_id)
@@ -270,6 +281,7 @@ private fun ChartHeader(
 private fun MeasurementCard(
     entry: BodyMeasurementEntry,
     dateLabel: String,
+    unitSystem: UnitSystem,
     onDelete: () -> Unit
 ) {
     val circumferenceParams = MeasurementField.entries
@@ -277,6 +289,8 @@ private fun MeasurementCard(
         .mapNotNull { field ->
             entry.valueFor(field)?.let { field.label to it }
         }
+    val weightUnit = if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg"
+    val lengthUnit = if (unitSystem == UnitSystem.IMPERIAL) "in" else "cm"
 
     OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -294,7 +308,7 @@ private fun MeasurementCard(
             Column(modifier = Modifier.weight(1f)) {
                 if (entry.weight_kg != null) {
                     Text(
-                        text = "${entry.weight_kg.formatMeasurement()} kg",
+                        text = "${UnitConverter.formatMeasurement(entry.weight_kg, unitSystem, isWeight = true)} $weightUnit",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -307,7 +321,7 @@ private fun MeasurementCard(
                     ) {
                         circumferenceParams.forEach { (label, value) ->
                             Text(
-                                text = "$label ${value.formatMeasurement()} cm",
+                                text = "$label ${UnitConverter.formatMeasurement(value, unitSystem, isWeight = false)} $lengthUnit",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
