@@ -425,7 +425,9 @@ class PersonalCardViewModelTest {
 
         viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
 
-        assertEquals("70", currentState().draftHeightText)
+        // Imperial height splits into ft+in fields; weight stays decimal lb.
+        assertEquals("5", currentState().draftHeightFeet)
+        assertEquals("10", currentState().draftHeightInches)
         assertEquals("165.3", currentState().draftWeightText)
     }
 
@@ -481,6 +483,57 @@ class PersonalCardViewModelTest {
 
         assertEquals(UnitSystem.IMPERIAL, currentState().unitSystem)
         assertTrue(currentState().validation.height is ValidationResult.Valid)
+    }
+
+    @Test
+    fun imperialHeightFeetInches_parsesToCm() = runTest {
+        seedCard(PersonalCard())
+
+        viewModel.startEditing()
+        viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
+        viewModel.onHeightFeetChanged("5")
+        viewModel.onHeightInchesChanged("10")
+
+        assertEquals(177.8, currentState().draftDemographics.heightCm!!, 0.001)
+    }
+
+    @Test
+    fun onUnitSystemChanged_seedsFeetInchesTexts() = runTest {
+        seedCard(
+            PersonalCard(
+                demographics = Demographics(heightCm = 177.8)
+            )
+        )
+
+        viewModel.startEditing()
+        viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
+
+        assertEquals("5", currentState().draftHeightFeet)
+        assertEquals("10", currentState().draftHeightInches)
+    }
+
+    @Test
+    fun heightFeetInches_partialEntry_leavesHeightUnset() = runTest {
+        seedCard(PersonalCard())
+
+        viewModel.startEditing()
+        viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
+        viewModel.onHeightFeetChanged("5")
+
+        assertNull(currentState().draftDemographics.heightCm)
+    }
+
+    @Test
+    fun heightFeetInches_backToMetric_restoresSingleText() = runTest {
+        seedCard(PersonalCard())
+
+        viewModel.startEditing()
+        viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
+        viewModel.onHeightFeetChanged("5")
+        viewModel.onHeightInchesChanged("10")
+        viewModel.onUnitSystemChanged(UnitSystem.METRIC)
+
+        assertEquals("177.8", currentState().draftHeightText)
     }
 
     private fun assertNull(value: Any?) {
