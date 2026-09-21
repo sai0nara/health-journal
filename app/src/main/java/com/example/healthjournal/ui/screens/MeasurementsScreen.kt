@@ -109,6 +109,7 @@ fun MeasurementsScreen(
         GoalSheet(
             field = field,
             initialTarget = analyticsState.goalTargets[field.name],
+            unitSystem = measurementState.unitSystem,
             onSave = { target ->
                 analyticsViewModel.saveGoal(field, target)
                 sheetField = null
@@ -152,11 +153,29 @@ fun MeasurementsScreen(
                 val field = MeasurementField.entries[page]
                 val pageSeries = remember(entries, field) { entries.toParamTrend(field) }
                 val goalTarget = analyticsState.goalTargets[field.name]
+                val unitSystem = measurementState.unitSystem
+                val isWeight = field == MeasurementField.WEIGHT
+                // Charts plot display units; storage stays canonical metric.
+                val displaySeries = remember(pageSeries, unitSystem, field) {
+                    if (unitSystem == UnitSystem.IMPERIAL) {
+                        pageSeries.map { (time, value) ->
+                            time to if (isWeight) UnitConverter.kgToLbs(value)
+                            else UnitConverter.cmToInches(value)
+                        }
+                    } else pageSeries
+                }
+                val displayGoal = remember(goalTarget, unitSystem, field) {
+                    goalTarget?.let {
+                        if (unitSystem == UnitSystem.IMPERIAL) {
+                            if (isWeight) UnitConverter.kgToLbs(it) else UnitConverter.cmToInches(it)
+                        } else it
+                    }
+                }
 
                 // Column wrapper: header and chart must stack, not overlap
                 // in the pager page's Box scope.
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    ChartHeader(field, goalTarget) { sheetField = field }
+                    ChartHeader(field, goalTarget, unitSystem) { sheetField = field }
 
                     if (pageSeries.isEmpty()) {
                         Box(
@@ -175,9 +194,9 @@ fun MeasurementsScreen(
                         }
                     } else {
                         ParamTrendChart(
-                            series = pageSeries,
-                            goalTarget = goalTarget,
-                            unitLabel = GoalValidator.unitLabel(field),
+                            series = displaySeries,
+                            goalTarget = displayGoal,
+                            unitLabel = GoalValidator.unitLabel(field, unitSystem),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(160.dp)
@@ -244,6 +263,7 @@ fun MeasurementsScreen(
 private fun ChartHeader(
     field: MeasurementField,
     goalTarget: Double?,
+    unitSystem: UnitSystem,
     onSetGoal: () -> Unit
 ) {
     Row(
@@ -255,7 +275,10 @@ private fun ChartHeader(
     ) {
         Text(
             text = if (goalTarget != null) {
-                "${field.label} · Goal ${goalTarget} ${GoalValidator.unitLabel(field)}"
+                val isWeight = field == MeasurementField.WEIGHT
+                "${field.label} · Goal ${
+                    UnitConverter.formatMeasurement(goalTarget, unitSystem, isWeight)
+                } ${GoalValidator.unitLabel(field, unitSystem)}"
             } else {
                 field.label
             },

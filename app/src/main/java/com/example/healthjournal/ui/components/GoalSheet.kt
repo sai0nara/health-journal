@@ -32,6 +32,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.domain.GoalValidator
 import com.example.healthjournal.domain.MeasurementField
+import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.UnitSystem
 
 /**
  * Bottom-sheet dialog for setting or clearing a parameter's goal target.
@@ -44,16 +46,18 @@ import com.example.healthjournal.domain.MeasurementField
 fun GoalSheet(
     field: MeasurementField,
     initialTarget: Double?,
+    unitSystem: UnitSystem = UnitSystem.METRIC,
     onSave: (Double) -> Unit,
     onClear: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val prefill = remember(field, initialTarget) {
+    val isWeight = field == MeasurementField.WEIGHT
+    val prefill = remember(field, initialTarget, unitSystem) {
         initialTarget?.let { target ->
-            if (target % 1.0 == 0.0) target.toLong().toString() else target.toString()
+            UnitConverter.formatMeasurement(target, unitSystem, isWeight)
         }.orEmpty()
     }
-    var rawText by remember(field, initialTarget) { mutableStateOf(prefill) }
+    var rawText by remember(field, initialTarget, unitSystem) { mutableStateOf(prefill) }
     var error by remember(field) { mutableStateOf<String?>(null) }
     val haptic = LocalHapticFeedback.current
 
@@ -86,7 +90,7 @@ fun GoalSheet(
                     rawText = it
                     error = null
                 },
-                label = { Text("Target (${GoalValidator.unitLabel(field)})") },
+                label = { Text("Target (${GoalValidator.unitLabel(field, unitSystem)})") },
                 isError = error != null,
                 supportingText = {
                     if (error != null) {
@@ -123,10 +127,11 @@ fun GoalSheet(
 
                 Button(
                     onClick = {
-                        val validationError = GoalValidator.validate(field, rawText)
+                        val validationError = GoalValidator.validate(field, rawText, unitSystem)
                         if (validationError == null) {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onSave(rawText.trim().toDouble())
+                            // Validation passed, so the metric parse cannot fail.
+                            GoalValidator.parseGoal(field, rawText, unitSystem)?.let(onSave)
                         } else {
                             error = validationError
                         }
