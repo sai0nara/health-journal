@@ -16,7 +16,7 @@
     - [ ] Write UI tests for converted chart + goal edit; run green in isolation
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
-## Phase 2: Workout weights conversion
+## Phase 2: Workout weights conversion [checkpoint: 89e53e4]
 
 - [x] Task: Routine set rows + headers + tonnage convert (Red/Green/Refactor + UI) (d793d07)
     - [ ] Write failing tests: imperial render of set rows/headers/tonnage; input parses to kg
