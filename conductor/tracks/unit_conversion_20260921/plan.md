@@ -34,7 +34,7 @@
     - [ ] Write failing UI/VM tests: summary rows match editor unit choice
     - [ ] Replace hardcoded metric display with converter-driven render
     - [ ] Run UI tests green in isolation
-- [ ] Task: Journal vitals display converts (Red/Green/Refactor + UI)
+- [x] Task: Journal vitals display converts (Red/Green/Refactor + UI) (ce76d8b)
     - [ ] Write failing tests: stored metric vitals render in preferred units
     - [ ] Implement vitals render conversion
     - [ ] Run UI tests green in isolation
