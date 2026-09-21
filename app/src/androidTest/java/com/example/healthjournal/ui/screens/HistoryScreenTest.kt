@@ -2,8 +2,11 @@ package com.example.healthjournal.ui.screens
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.AttachmentData
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import com.example.healthjournal.ui.theme.HealthJournalTheme
 import io.qameta.allure.android.allureScreenshot
@@ -239,6 +242,59 @@ class HistoryScreenTest {
             // unless we update it. But we can verify if the method was called if we tracked it.
             // For now, testing the UI interaction is the primary goal.
             composeTestRule.onNodeWithText("Test Swipe").assertExists()
+        }
+    }
+
+    @Test
+    fun testHistoryScreen_vitalsRenderIdenticallyInBothUnitSystems() {
+        // Journal vitals (BP mmHg, bpm, hours) are unit-invariant: no metric/
+        // imperial conversion applies, so both preferences render identical text.
+        val entries = listOf(
+            JournalEntry(
+                description = "Checkup",
+                bp_systolic = 120.0,
+                bp_diastolic = 80.0,
+                heart_rate_avg = 65,
+                sleep_hours = 7.5f
+            )
+        )
+        try {
+            viewModel.allEntries.value = entries
+
+            step("Render the entry once") {
+                composeTestRule.setContent {
+                    HealthJournalTheme {
+                        HistoryScreen(
+                            viewModel = viewModel,
+                            measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
+                            onAddEntryClick = {},
+                            onEntryClick = {},
+                            onArchiveClick = {},
+                            onExportClick = {}
+                        )
+                    }
+                }
+                composeTestRule.waitForIdle()
+            }
+
+            for (system in listOf(UnitSystem.METRIC, UnitSystem.IMPERIAL)) {
+                UnitSettings.write(
+                    InstrumentationRegistry.getInstrumentation().targetContext,
+                    system
+                )
+
+                step("Verify identical vitals text under $system") {
+                    composeTestRule.waitForIdle()
+                    composeTestRule.onNodeWithText("120/80").assertExists()
+                    composeTestRule.onNodeWithText("65").assertExists()
+                    composeTestRule.onNodeWithText("7.5h").assertExists()
+                }
+            }
+        } finally {
+            UnitSettings.write(
+                InstrumentationRegistry.getInstrumentation().targetContext,
+                UnitSystem.METRIC
+            )
         }
     }
 }
