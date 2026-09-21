@@ -40,10 +40,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.data.local.ExerciseCatalogItem
+import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.defaultPlanFor
 import com.example.healthjournal.domain.PresetExercise
@@ -104,6 +108,7 @@ fun PresetLibraryScreen(
             is PresetUiState.Editing -> EditingContent(
                 state = state,
                 catalog = catalog,
+                unitSystem = UnitSettings.read(LocalContext.current),
                 onUpdateName = { viewModel.updateName(it) },
                 onUpdateDay = { viewModel.updateScheduledDay(it) },
                 onAddExercise = { viewModel.addExercise(it) },
@@ -208,6 +213,7 @@ private fun PresetCard(
 private fun EditingContent(
     state: PresetUiState.Editing,
     catalog: List<ExerciseCatalogItem>,
+    unitSystem: UnitSystem,
     onUpdateName: (String) -> Unit,
     onUpdateDay: (ScheduledDay) -> Unit,
     onAddExercise: (PresetExercise) -> Unit,
@@ -256,6 +262,7 @@ private fun EditingContent(
                 DraftExerciseRow(
                     exercise = exercise,
                     catalog = catalog,
+                    unitSystem = unitSystem,
                     onUpdate = { onUpdateExercise(idx, it) },
                     onRemove = { onRemoveExercise(idx) }
                 )
@@ -355,14 +362,22 @@ private fun ExerciseSearchDropdown(
 private fun DraftExerciseRow(
     exercise: PresetExercise,
     catalog: List<ExerciseCatalogItem>,
+    unitSystem: UnitSystem,
     onUpdate: (PresetExercise) -> Unit,
     onRemove: () -> Unit
 ) {
     val label = catalog.firstOrNull { it.id == exercise.exerciseId }?.name ?: exercise.exerciseId
+    // The weight field shows display units and parses back to canonical kg.
+    fun displayWeight(kg: Double): String =
+        UnitConverter.formatMeasurement(kg, unitSystem, isWeight = true)
     var setsValue by remember(exercise.exerciseId) { mutableStateOf(exercise.targetSets.toString()) }
     var repsValue by remember(exercise.exerciseId) { mutableStateOf(exercise.defaultReps.toString()) }
-    var weightValue by remember(exercise.exerciseId) { mutableStateOf(exercise.defaultWeightKg.toString()) }
+    var weightValue by remember(exercise.exerciseId) { mutableStateOf(displayWeight(exercise.defaultWeightKg)) }
     var restValue by remember(exercise.exerciseId) { mutableStateOf(exercise.restSeconds.toString()) }
+    LaunchedEffect(exercise.defaultWeightKg, unitSystem) {
+        val formatted = displayWeight(exercise.defaultWeightKg)
+        if (weightValue != formatted) weightValue = formatted
+    }
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
@@ -381,9 +396,14 @@ private fun DraftExerciseRow(
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PresetField(Strings.WEIGHT, weightValue, Modifier.weight(1f).testTag("preset_field_weight")) {
+            PresetField(
+                if (unitSystem == UnitSystem.IMPERIAL) "Weight lb" else Strings.WEIGHT,
+                weightValue,
+                Modifier.weight(1f).testTag("preset_field_weight")
+            ) {
                 weightValue = it
-                it.toDoubleOrNull()?.let { v -> onUpdate(exercise.copy(defaultWeightKg = v)) }
+                UnitConverter.parseMeasurement(it, unitSystem, isWeight = true)
+                    ?.let { kg -> onUpdate(exercise.copy(defaultWeightKg = kg)) }
             }
             PresetField(Strings.REST, restValue, Modifier.weight(1f).testTag("preset_field_rest")) {
                 restValue = it
