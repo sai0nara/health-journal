@@ -42,10 +42,12 @@
 
 ## Phase 4: Docs + final verification
 
-- [ ] Task: Lift metric-only decision in body-measurements docs
+- [x] Task: Lift metric-only decision in body-measurements docs (513c59c)
     - [ ] Update `Docs/prd`, `Docs/psd`, `Docs/tests` body-measurements clauses
     - [ ] Run wiki lint to exit 0
-- [ ] Task: Full verification
+- [x] Task: Full verification
+    - [x] Run `./gradlew :app:testDebugUnitTest` green with `CI=true` and `JAVA_HOME` on JDK 21
+    - [x] Confirm mid-draft preference toggle preserves values on all touched surfaces
     - [ ] Run `./gradlew :app:testDebugUnitTest` green with `CI=true` and `JAVA_HOME` on JDK 21
     - [ ] Confirm mid-draft preference toggle preserves values on all touched surfaces
 - [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
