@@ -28,7 +28,7 @@
     - [ ] Write UI tests for imperial preset edit; run green in isolation
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
-## Phase 3: Personal card + journal vitals
+## Phase 3: Personal card + journal vitals [checkpoint: 3067069]
 
 - [x] Task: Personal-card read-only rows respect preference (Red/Green/Refactor + UI) (7821d2d)
     - [ ] Write failing UI/VM tests: summary rows match editor unit choice
