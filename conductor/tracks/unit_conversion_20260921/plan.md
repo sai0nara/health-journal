@@ -22,7 +22,7 @@
     - [ ] Write failing tests: imperial render of set rows/headers/tonnage; input parses to kg
     - [ ] Implement render/parse via shared converter (replace hardcoded kg labels)
     - [ ] Write UI tests for imperial routine run; run green in isolation
-- [ ] Task: Preset editor converts (Red/Green/Refactor + UI)
+- [x] Task: Preset editor converts (Red/Green/Refactor + UI) (9f16ffb)
     - [ ] Write failing tests: preset defaults render/parse in preferred units
     - [ ] Implement preset editor render/parse
     - [ ] Write UI tests for imperial preset edit; run green in isolation
