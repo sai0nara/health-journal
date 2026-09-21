@@ -40,7 +40,7 @@
     - [ ] Run UI tests green in isolation
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
 
-## Phase 4: Docs + final verification
+## Phase 4: Docs + final verification [checkpoint: 46d3f58]
 
 - [x] Task: Lift metric-only decision in body-measurements docs (513c59c)
     - [ ] Update `Docs/prd`, `Docs/psd`, `Docs/tests` body-measurements clauses
