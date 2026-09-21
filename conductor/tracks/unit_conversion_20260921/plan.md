@@ -30,7 +30,7 @@
 
 ## Phase 3: Personal card + journal vitals
 
-- [ ] Task: Personal-card read-only rows respect preference (Red/Green/Refactor + UI)
+- [x] Task: Personal-card read-only rows respect preference (Red/Green/Refactor + UI) (7821d2d)
     - [ ] Write failing UI/VM tests: summary rows match editor unit choice
     - [ ] Replace hardcoded metric display with converter-driven render
     - [ ] Run UI tests green in isolation
