@@ -2,7 +2,7 @@
 
 ## Phase 1: Body measurements conversion
 
-- [ ] Task: Shared ft/in + imperial helpers (Red/Green/Refactor)
+- [x] Task: Shared ft/in + imperial helpers (Red/Green/Refactor) (d1c81fc)
     - [ ] Write failing unit tests for ft+in parse/format and imperial measurement format/parse helpers
     - [ ] Implement helpers alongside `UnitConverter`
     - [ ] Refactor for clarity; rerun unit tests green
