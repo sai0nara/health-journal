@@ -41,4 +41,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [~] **Track: Workout Presets & Progressive Overload**
   *Link: [./tracks/workout_presets_20260914/](./tracks/workout_presets_20260914/)*
 
+---
+
+- [ ] **Track: Unit Conversion (metric/imperial display layer)**
+*Link: [./tracks/unit_conversion_20260921/](./tracks/unit_conversion_20260921/)*
+
 
