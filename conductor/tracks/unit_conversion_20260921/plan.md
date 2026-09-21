@@ -6,7 +6,7 @@
     - [ ] Write failing unit tests for ft+in parse/format and imperial measurement format/parse helpers
     - [ ] Implement helpers alongside `UnitConverter`
     - [ ] Refactor for clarity; rerun unit tests green
-- [ ] Task: Measurement entry converts (Red/Green/Refactor + UI)
+- [x] Task: Measurement entry converts (Red/Green/Refactor + UI) (d3e3c22)
     - [ ] Write failing VM tests: imperial input persists metric; render converts stored metric
     - [ ] Implement entry render/parse via shared converter + `UnitSettings`
     - [ ] Write UI tests for imperial entry round trip; run green in isolation
