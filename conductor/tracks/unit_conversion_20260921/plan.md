@@ -18,7 +18,7 @@
 
 ## Phase 2: Workout weights conversion
 
-- [ ] Task: Routine set rows + headers + tonnage convert (Red/Green/Refactor + UI)
+- [x] Task: Routine set rows + headers + tonnage convert (Red/Green/Refactor + UI) (d793d07)
     - [ ] Write failing tests: imperial render of set rows/headers/tonnage; input parses to kg
     - [ ] Implement render/parse via shared converter (replace hardcoded kg labels)
     - [ ] Write UI tests for imperial routine run; run green in isolation
