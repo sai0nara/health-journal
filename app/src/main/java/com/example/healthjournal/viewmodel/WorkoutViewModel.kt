@@ -706,7 +706,13 @@ class WorkoutViewModel(
             if (matrix != null && matrix.any { it.isPlanned }) {
                 session.routineName?.let { add(it) }
                 matrix.forEach { exercise ->
-                    val weight = exercise.targetWeightKg
+                    // Performed weight: the peak of the completed sets, so
+                    // raised weights show up on the card. Falls back to the
+                    // planned target when nothing was completed.
+                    val weight = exercise.sets
+                        .filter { it.completed }
+                        .maxOfOrNull { it.kg }
+                        ?: exercise.targetWeightKg
                         ?: exercise.sets.firstOrNull()?.kg
                         ?: 0.0
                     val sets = exercise.targetSets ?: exercise.sets.size

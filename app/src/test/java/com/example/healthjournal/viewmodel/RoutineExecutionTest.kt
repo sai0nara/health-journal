@@ -199,8 +199,24 @@ class RoutineExecutionTest {
         vm.finishSession()
         dispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { journalRepository.insert(withArg { entry ->
+coVerify { journalRepository.insert(withArg { entry ->
             assertTrue(entry.description.contains("60 kg (132.3 lb)"))
+        }) }
+    }
+
+    @Test
+    fun finishSession_routine_historyCardShowsPerformedWeight() = runTest {
+        val vm = startRoutineFor()
+        vm.updateRoutineSet(0, 0, 100.0, 5)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { journalRepository.insert(withArg { entry ->
+            assertTrue(entry.description.contains("100 kg (220.5 lb)"))
         }) }
     }
 

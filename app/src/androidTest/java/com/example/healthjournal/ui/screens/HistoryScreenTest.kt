@@ -329,4 +329,36 @@ class HistoryScreenTest {
             ).assertExists()
         }
     }
+
+    @Test
+    fun testHistoryScreen_rendersPerformedHistoryLine() {
+        val entries = listOf(
+            JournalEntry(description = "Barbell Squat: 3 sets · 100 kg (220.5 lb)")
+        )
+
+        step("Open History with a performed-weight routine line") {
+            viewModel.allEntries.value = entries
+
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
+                        onAddEntryClick = {},
+                        onEntryClick = {},
+                        onArchiveClick = {},
+                        onExportClick = {}
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify the performed line renders") {
+            composeTestRule.onNodeWithText(
+                "Barbell Squat: 3 sets · 100 kg (220.5 lb)",
+                substring = true
+            ).assertExists()
+        }
+    }
 }
