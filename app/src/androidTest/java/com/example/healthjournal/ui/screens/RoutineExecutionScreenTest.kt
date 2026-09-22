@@ -602,4 +602,14 @@ class RoutineExecutionScreenTest {
 
         assertEquals(UnitConverter.lbsToKg(99999.0), persistedMatrix().single().sets[0].kg, 0.0)
     }
+
+    @Test
+    fun routineHeader_showsDualUnits() {
+        openRoutine()
+
+        composeTestRule.onNodeWithText(
+            "3 x 5 @ 60 kg (132.3 lb)",
+            substring = true
+        ).assertExists()
+    }
 }

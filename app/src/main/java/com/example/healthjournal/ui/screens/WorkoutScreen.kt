@@ -830,8 +830,7 @@ private fun RoutineExerciseCard(
             }
             Text(
                 text = "${exercise.targetSets} x ${exercise.targetReps} @ " +
-                    "${UnitConverter.formatMeasurement(exercise.targetWeightKg ?: 0.0, unitSystem, isWeight = true)} " +
-                    "${if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg"} · " +
+                    "${dualWeight(exercise.targetWeightKg ?: 0.0)} · " +
                     "Rest ${exercise.restSeconds}s",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -896,6 +895,10 @@ private fun padStepWeightKg(unitSystem: UnitSystem): Double =
 /** Display label for the current pad step, in the selected unit system. */
 private fun padStepDisplay(unitSystem: UnitSystem): String =
     if (unitSystem == UnitSystem.IMPERIAL) "5 lb" else "1.25 kg"
+
+/** Dual-unit weight rendering, metric primary: `60 kg (132.3 lb)`. */
+private fun dualWeight(weightKg: Double): String =
+    "${UnitConverter.formatDouble(weightKg)} kg (${UnitConverter.formatDouble(UnitConverter.kgToLbs(weightKg))} lb)"
 
 @Composable
 private fun RoutineSetRow(
