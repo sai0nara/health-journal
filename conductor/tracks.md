@@ -36,13 +36,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Body Measurements Tracking**
   *Link: [./tracks/body_measurements_20260821/](./tracks/body_measurements_20260821/)*
 
----
-
-- [~] **Track: Workout Presets & Progressive Overload**
-  *Link: [./tracks/workout_presets_20260914/](./tracks/workout_presets_20260914/)*
-
----
-
 - [x] **Track: Unit Conversion (metric/imperial display layer)**
 *Link: [./tracks/unit_conversion_20260921/](./tracks/unit_conversion_20260921/)*
 
