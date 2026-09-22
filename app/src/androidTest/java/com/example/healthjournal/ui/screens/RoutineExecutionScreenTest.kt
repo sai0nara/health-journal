@@ -580,4 +580,26 @@ class RoutineExecutionScreenTest {
         // One 60 kg × 5 set = 300 kg = 661.4 lb of tonnage.
         composeTestRule.onNodeWithText("Tonnage: 661.4 lb").assertExists()
     }
+
+    @Test
+    fun routineSetRow_imperialInvalidEdit_keepsStoredValueWithoutCrash() {
+        UnitSettings.write(InstrumentationRegistry.getInstrumentation().targetContext, UnitSystem.IMPERIAL)
+        openRoutine()
+
+        // Malformed text never commits: the stored row is untouched, no crash.
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextClearance()
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextInput("abc")
+        composeTestRule.waitForIdle()
+
+        assertEquals(60.0, persistedMatrix().single().sets[0].kg, 0.0)
+        composeTestRule.onNodeWithTag("set_matrix_error").assertDoesNotExist()
+
+        // The routine path carries no upper cap: a huge-but-wellformed value
+        // commits as-is (documenting the implemented contract).
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextClearance()
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextInput("99999")
+        composeTestRule.waitForIdle()
+
+        assertEquals(UnitConverter.lbsToKg(99999.0), persistedMatrix().single().sets[0].kg, 0.0)
+    }
 }

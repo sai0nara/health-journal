@@ -375,4 +375,16 @@ class BodyMeasurementViewModelTest {
 
         assertEquals("70", viewModel.uiState.value.rawValues[MeasurementField.WEIGHT])
     }
+
+    @Test
+    fun onSaveClicked_doubleSubmit_writesExactlyOnce() = runTest {
+        set(MeasurementField.WAIST, "85")
+
+        viewModel.onSaveClicked()
+        viewModel.onSaveClicked()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.insert(any()) }
+        assertTrue(currentState().justSaved)
+    }
 }

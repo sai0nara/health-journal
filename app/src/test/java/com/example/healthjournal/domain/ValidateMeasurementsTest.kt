@@ -209,4 +209,20 @@ class ValidateMeasurementsTest {
 
         assertTrue(errors.isEmpty())
     }
+
+    @Test
+    fun imperialMalformedAndInjection_blockedWithoutCrash() {
+        val errors = ValidateMeasurements.validate(
+            raw(
+                MeasurementField.WEIGHT to "1; DROP TABLE",
+                MeasurementField.WAIST to "７０．５",
+                MeasurementField.CHEST to "abc"
+            ),
+            UnitSystem.IMPERIAL
+        )
+
+        assertEquals(ValidateMeasurements.ERROR_INVALID_FORMAT, errors[MeasurementField.WEIGHT])
+        assertEquals(ValidateMeasurements.ERROR_INVALID_FORMAT, errors[MeasurementField.WAIST])
+        assertEquals(ValidateMeasurements.ERROR_INVALID_FORMAT, errors[MeasurementField.CHEST])
+    }
 }

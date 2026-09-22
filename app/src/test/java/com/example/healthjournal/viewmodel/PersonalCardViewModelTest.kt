@@ -536,6 +536,41 @@ class PersonalCardViewModelTest {
         assertEquals("177.8", currentState().draftHeightText)
     }
 
+    @Test
+    fun imperialHeightMalformedComponents_leaveHeightUnset() = runTest {
+        seedCard(PersonalCard())
+
+        viewModel.startEditing()
+        viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
+        viewModel.onHeightFeetChanged("abc")
+        viewModel.onHeightInchesChanged("７")
+
+        assertNull(currentState().draftDemographics.heightCm)
+        assertTrue(currentState().validation.height is ValidationResult.Valid)
+    }
+
+    @Test
+    fun imperialHeightOutOfRange_blocked() = runTest {
+        seedCard(PersonalCard())
+
+        viewModel.startEditing()
+        viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
+
+        // Inches alone cannot resolve without feet: unset, no crash.
+        viewModel.onHeightInchesChanged("99")
+        assertNull(currentState().draftDemographics.heightCm)
+
+        // 5 ft 13 in resolves arithmetically (73 in = 185.4 cm) and validates.
+        viewModel.onHeightFeetChanged("5")
+        viewModel.onHeightInchesChanged("13")
+        assertEquals(185.4, currentState().draftDemographics.heightCm!!, 0.01)
+        assertTrue(currentState().validation.height is ValidationResult.Valid)
+
+        // 5 ft 99 in = 403.9 cm exceeds the height cap: save blocked.
+        viewModel.onHeightInchesChanged("99")
+        assertTrue(currentState().validation.height is ValidationResult.Invalid)
+    }
+
     private fun assertNull(value: Any?) {
         org.junit.Assert.assertNull(value)
     }
