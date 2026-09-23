@@ -361,4 +361,39 @@ class HistoryScreenTest {
             ).assertExists()
         }
     }
+
+    @Test
+    fun testHistoryScreen_rendersPerSetBreakdown() {
+        val entries = listOf(
+            JournalEntry(
+                description = "Barbell Squat: 3 sets · " +
+                    "Set 1 40 kg (88.2 lb), Set 2 45 kg (99.2 lb), Set 3 45 kg (99.2 lb)"
+            )
+        )
+
+        step("Open History with a per-set breakdown line") {
+            viewModel.allEntries.value = entries
+
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
+                        onAddEntryClick = {},
+                        onEntryClick = {},
+                        onArchiveClick = {},
+                        onExportClick = {}
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify the per-set breakdown renders") {
+            composeTestRule.onNodeWithText(
+                "Set 1 40 kg (88.2 lb), Set 2 45 kg (99.2 lb), Set 3 45 kg (99.2 lb)",
+                substring = true
+            ).assertExists()
+        }
+    }
 }
