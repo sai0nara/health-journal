@@ -852,10 +852,10 @@ private fun RoutineExerciseCard(
             Text(
                 text = stringResource(
                     R.string.workout_routine_target,
-                    exercise.targetSets,
-                    exercise.targetReps,
+                    exercise.targetSets?.toString() ?: "null",
+                    exercise.targetReps?.toString() ?: "null",
                     dualWeight(exercise.targetWeightKg ?: 0.0),
-                    exercise.restSeconds
+                    exercise.restSeconds?.toString() ?: "null"
                 ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant

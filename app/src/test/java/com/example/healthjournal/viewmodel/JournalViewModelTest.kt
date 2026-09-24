@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.example.healthjournal.R
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
@@ -65,6 +66,34 @@ class JournalViewModelTest {
         every { sessionManager.getUserEmail() } returns "test@example.com"
         every { application.applicationContext } returns application
         every { application.getString(any()) } returns "test_client_id"
+        // Mirror the real English in values/strings.xml: the ViewModel must
+        // select the right key per state, and unit tests assert the resolved
+        // English end to end (no Robolectric, so resources are stubbed here).
+        val syncEnglish = mapOf(
+            R.string.sync_status_syncing to "Syncing...",
+            R.string.sync_status_queued to "Sync Queued",
+            R.string.sync_status_retrying to "Retrying Sync...",
+            R.string.sync_status_synced to "Synced",
+            R.string.sync_status_failed to "Sync Failed",
+            R.string.sync_status_cancelled to "Sync Cancelled",
+            R.string.sync_status_reauth to "Re-authorization required",
+            R.string.sync_status_authenticated to "Authenticated & Authorized",
+            R.string.sync_status_requested to "Sync Requested",
+            R.string.sync_toast_syncing_drive to "Syncing with Google Drive...",
+            R.string.sync_toast_drive_auth to "Drive Authorization Successful!",
+            R.string.sync_toast_signed_out to "Signed out successfully"
+        )
+        syncEnglish.forEach { (key, text) -> every { application.getString(key) } returns text }
+        val syncFormats = mapOf(
+            R.string.sync_toast_failed_format to "Sync failed: %1\$s",
+            R.string.sync_toast_signed_in_format to "Signed in as %1\$s",
+            R.string.sync_toast_sign_in_failed_format to "Sign-in failed: %1\$s"
+        )
+        syncFormats.forEach { (key, template) ->
+            every { application.getString(key, *anyVararg()) } answers {
+                String.format(template, *it.invocation.args.drop(1).toTypedArray())
+            }
+        }
         
         coEvery { repository.allEntries } returns flowOf(emptyList())
         coEvery { repository.archivedEntries } returns flowOf(emptyList())

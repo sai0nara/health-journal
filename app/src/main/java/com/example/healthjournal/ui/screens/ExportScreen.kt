@@ -14,7 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.healthjournal.R
 import com.example.healthjournal.export.ExportState
 import com.example.healthjournal.export.ExportViewModel
 import com.example.healthjournal.export.RestoreViewModel
@@ -60,7 +62,7 @@ fun ExportScreen(
                 putExtra(Intent.EXTRA_STREAM, state.fileUri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(Intent.createChooser(shareIntent, "Share Exported Data"))
+            context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.export_share_title)))
             viewModel.resetState()
         }
     }
@@ -68,10 +70,10 @@ fun ExportScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Export Data") },
+                title = { Text(stringResource(R.string.export_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back_label))
                     }
                 }
             )
@@ -82,12 +84,12 @@ fun ExportScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("Export") }
+                    text = { Text(stringResource(R.string.export_tab_export)) }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("Restore") }
+                    text = { Text(stringResource(R.string.export_tab_restore)) }
                 )
             }
             if (selectedTab == 0) {
@@ -99,7 +101,7 @@ fun ExportScreen(
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     Text(
-                        text = "Choose the date range and format for your export.",
+                        text = stringResource(R.string.export_intro),
                         style = MaterialTheme.typography.bodyLarge
                     )
 
@@ -113,11 +115,11 @@ fun ExportScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
-                                Text("Start Date", style = MaterialTheme.typography.labelMedium)
+                                Text(stringResource(R.string.export_start_date), style = MaterialTheme.typography.labelMedium)
                                 Text(sdf.format(Date(startDate)), style = MaterialTheme.typography.bodyLarge)
                             }
                             IconButton(onClick = { showStartDatePicker = true }) {
-                                Icon(Icons.Default.CalendarToday, contentDescription = "Select Start Date")
+                                Icon(Icons.Default.CalendarToday, contentDescription = stringResource(R.string.export_cd_select_start))
                             }
                         }
 
@@ -127,11 +129,11 @@ fun ExportScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
-                                Text("End Date", style = MaterialTheme.typography.labelMedium)
+                                Text(stringResource(R.string.export_end_date), style = MaterialTheme.typography.labelMedium)
                                 Text(sdf.format(Date(endDate)), style = MaterialTheme.typography.bodyLarge)
                             }
                             IconButton(onClick = { showEndDatePicker = true }) {
-                                Icon(Icons.Default.CalendarToday, contentDescription = "Select End Date")
+                                Icon(Icons.Default.CalendarToday, contentDescription = stringResource(R.string.export_cd_select_end))
                             }
                         }
                     }
@@ -140,7 +142,7 @@ fun ExportScreen(
                 // ZIP always exports a full backup; make that explicit instead of hiding a date range
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "ZIP exports your full backup (all history, measurements, and media) regardless of date range.",
+                        text = stringResource(R.string.export_zip_note),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(16.dp)
@@ -150,7 +152,7 @@ fun ExportScreen(
 
             // Format Selection
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Export Format", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.export_format_title), style = MaterialTheme.typography.titleMedium)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
@@ -160,7 +162,7 @@ fun ExportScreen(
                         onClick = { selectedFormat = "PDF" },
                         modifier = Modifier.testTag("format_pdf")
                     )
-                    Text("PDF (Medical Report)", modifier = Modifier.padding(start = 8.dp))
+                    Text(stringResource(R.string.export_format_pdf), modifier = Modifier.padding(start = 8.dp))
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -171,7 +173,7 @@ fun ExportScreen(
                         onClick = { selectedFormat = "ZIP" },
                         modifier = Modifier.testTag("format_zip")
                     )
-                    Text("ZIP (Raw Data & Media)", modifier = Modifier.padding(start = 8.dp))
+                    Text(stringResource(R.string.export_format_zip), modifier = Modifier.padding(start = 8.dp))
                 }
             }
 
@@ -187,13 +189,13 @@ fun ExportScreen(
                             onCheckedChange = { encryptBackup = it },
                             modifier = Modifier.testTag("encrypt_backup")
                         )
-                        Text("Encrypt backup", modifier = Modifier.padding(start = 8.dp))
+                        Text(stringResource(R.string.export_encrypt_backup), modifier = Modifier.padding(start = 8.dp))
                     }
                     if (encryptBackup) {
                         OutlinedTextField(
                             value = passphrase,
                             onValueChange = { passphrase = it },
-                            label = { Text("Enter passphrase") },
+                            label = { Text(stringResource(R.string.export_passphrase_label)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -224,7 +226,7 @@ fun ExportScreen(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = exportState !is ExportState.Generating
                 ) {
-                    Text("Generate Export")
+                    Text(stringResource(R.string.export_generate))
                 }
             }
 
@@ -250,7 +252,7 @@ fun ExportScreen(
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { startDate = it }
                     showStartDatePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.action_ok)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -265,7 +267,7 @@ fun ExportScreen(
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { endDate = it }
                     showEndDatePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.action_ok)) }
             }
         ) {
             DatePicker(state = datePickerState)

@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.example.healthjournal.R
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
@@ -186,18 +187,19 @@ class JournalViewModel(
                 fun WorkInfo?.authRequired(): Boolean =
                     this?.progress?.getBoolean(SyncWorker.KEY_AUTH_REQUIRED, false) == true
 
+                val app = getApplication<Application>()
                 val status: String? = when {
-                    manual?.state == WorkInfo.State.RUNNING -> "Syncing..."
+                    manual?.state == WorkInfo.State.RUNNING -> app.getString(R.string.sync_status_syncing)
                     manual?.state == WorkInfo.State.ENQUEUED ->
-                        if (manual.authRequired()) "Re-authorization required"
-                        else if (manual.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
-                    manual?.state == WorkInfo.State.SUCCEEDED -> "Synced"
-                    manual?.state == WorkInfo.State.FAILED -> "Sync Failed"
-                    manual?.state == WorkInfo.State.CANCELLED -> "Sync Cancelled"
-                    periodic?.state == WorkInfo.State.RUNNING -> "Syncing..."
+                        if (manual.authRequired()) app.getString(R.string.sync_status_reauth)
+                        else if (manual.runAttemptCount > 0) app.getString(R.string.sync_status_retrying) else app.getString(R.string.sync_status_queued)
+                    manual?.state == WorkInfo.State.SUCCEEDED -> app.getString(R.string.sync_status_synced)
+                    manual?.state == WorkInfo.State.FAILED -> app.getString(R.string.sync_status_failed)
+                    manual?.state == WorkInfo.State.CANCELLED -> app.getString(R.string.sync_status_cancelled)
+                    periodic?.state == WorkInfo.State.RUNNING -> app.getString(R.string.sync_status_syncing)
                     periodic?.state == WorkInfo.State.ENQUEUED ->
-                        if (periodic.authRequired()) "Re-authorization required"
-                        else if (periodic.runAttemptCount > 0) "Retrying Sync..." else "Sync Queued"
+                        if (periodic.authRequired()) app.getString(R.string.sync_status_reauth)
+                        else if (periodic.runAttemptCount > 0) app.getString(R.string.sync_status_retrying) else app.getString(R.string.sync_status_queued)
                     else -> null
                 }
 
@@ -208,7 +210,7 @@ class JournalViewModel(
                 }
 
                 val failedMessage = if (manual?.state == WorkInfo.State.FAILED) {
-                    manual.outputData.getString("error_message") ?: "Sync Failed"
+                    manual.outputData.getString("error_message") ?: app.getString(R.string.sync_status_failed)
                 } else null
 
                 Triple(status, manualActive, failedMessage)
@@ -219,7 +221,7 @@ class JournalViewModel(
                     if (!failureToastShown) {
                         failureToastShown = true
                         viewModelScope.launch(Dispatchers.Main) {
-                            android.widget.Toast.makeText(getApplication(), "Sync failed: $failedMessage", android.widget.Toast.LENGTH_LONG).show()
+                            android.widget.Toast.makeText(getApplication(), getApplication<Application>().getString(R.string.sync_toast_failed_format, failedMessage), android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
                 } else {
@@ -303,14 +305,14 @@ class JournalViewModel(
                 _isUserSignedIn.value = true
                 
                 withContext(Dispatchers.Main) {
-                    android.widget.Toast.makeText(getApplication(), "Signed in as ${credential.id}", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(getApplication(), getApplication<Application>().getString(R.string.sync_toast_signed_in_format, credential.id), android.widget.Toast.LENGTH_SHORT).show()
                 }
 
                 requestDriveAuth(onResolutionRequired)
             } catch (e: Exception) {
                 Log.e(TAG, "Sign in failed", e)
                 withContext(Dispatchers.Main) {
-                    android.widget.Toast.makeText(getApplication(), "Sign-in failed: ${e.localizedMessage}", android.widget.Toast.LENGTH_LONG).show()
+                    android.widget.Toast.makeText(getApplication(), getApplication<Application>().getString(R.string.sync_toast_sign_in_failed_format, e.localizedMessage), android.widget.Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -327,9 +329,9 @@ class JournalViewModel(
             },
             onSuccess = { _ ->
                 Log.d(TAG, "Drive authorization successful")
-                _syncStatus.value = "Authenticated & Authorized"
+                _syncStatus.value = getApplication<Application>().getString(R.string.sync_status_authenticated)
                 viewModelScope.launch(Dispatchers.Main) {
-                    android.widget.Toast.makeText(getApplication(), "Drive Authorization Successful!", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(getApplication(), getApplication<Application>().getString(R.string.sync_toast_drive_auth), android.widget.Toast.LENGTH_SHORT).show()
                 }
                 syncNow()
             }
@@ -340,8 +342,8 @@ class JournalViewModel(
         val email = sessionManager.getUserEmail() ?: return
         Log.d(TAG, "Sync now triggered for $email")
         SyncManager.triggerManualSync(getApplication())
-        _syncStatus.value = "Sync Requested"
-        android.widget.Toast.makeText(getApplication(), "Syncing with Google Drive...", android.widget.Toast.LENGTH_SHORT).show()
+        _syncStatus.value = getApplication<Application>().getString(R.string.sync_status_requested)
+        android.widget.Toast.makeText(getApplication(), getApplication<Application>().getString(R.string.sync_toast_syncing_drive), android.widget.Toast.LENGTH_SHORT).show()
     }
 
     override fun signOut() {
@@ -351,7 +353,7 @@ class JournalViewModel(
             sessionManager.clearSession()
             _isUserSignedIn.value = false
             _syncStatus.value = null
-            android.widget.Toast.makeText(getApplication(), "Signed out successfully", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(getApplication(), getApplication<Application>().getString(R.string.sync_toast_signed_out), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 

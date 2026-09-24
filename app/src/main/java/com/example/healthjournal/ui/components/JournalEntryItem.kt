@@ -17,11 +17,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.healthjournal.R
 import com.example.healthjournal.data.local.JournalEntry
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichText
@@ -65,7 +67,7 @@ fun JournalEntryItem(
                     if (entry.lastModified > entry.timestamp + 60000) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "(Edited)",
+                            text = stringResource(R.string.entry_edited),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.ExtraLight,
                             color = MaterialTheme.colorScheme.outline
@@ -97,7 +99,7 @@ fun JournalEntryItem(
                         modifier = Modifier.height(32.dp).testTag("show_more_button")
                     ) {
                         Text(
-                            text = if (isExpanded) "Show Less" else "Show More",
+                            text = if (isExpanded) stringResource(R.string.entry_show_less) else stringResource(R.string.entry_show_more),
                             style = MaterialTheme.typography.labelMedium
                         )
                         Icon(
@@ -140,7 +142,7 @@ fun JournalEntryItem(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${entry.attachments?.size ?: 0} attachment(s)",
+                            text = stringResource(R.string.entry_attachments_format, entry.attachments?.size ?: 0),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -172,14 +174,14 @@ fun JournalEntryItem(
             if (entry.isSynced == true) {
                 Icon(
                     Icons.Default.CloudDone,
-                    contentDescription = "Cloud Synced",
+                    contentDescription = stringResource(R.string.common_cd_synced),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
             } else {
                 Icon(
                     Icons.Default.CloudSync,
-                    contentDescription = "Local Only",
+                    contentDescription = stringResource(R.string.common_cd_local),
                     tint = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.size(20.dp)
                 )
