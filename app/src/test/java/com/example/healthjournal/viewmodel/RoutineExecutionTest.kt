@@ -221,6 +221,34 @@ coVerify { journalRepository.insert(withArg { entry ->
     }
 
     @Test
+    fun finishSession_routine_historyCardShowsPerSetBreakdown() = runTest {
+        val vm = startRoutineFor()
+        vm.updateRoutineSet(0, 0, 40.0, 5)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.updateRoutineSet(0, 1, 45.0, 5)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.updateRoutineSet(0, 2, 45.0, 5)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.toggleSetCompleted(0, 1)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.toggleSetCompleted(0, 2)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { journalRepository.insert(withArg { entry ->
+            assertTrue(
+                entry.description.contains(
+                    "Set 1 40 kg (88.2 lb), Set 2 45 kg (99.2 lb), Set 3 45 kg (99.2 lb)"
+                )
+            )
+        }) }
+    }
+
+    @Test
     fun startPreset_withUnfinishedSession_forcesRecovery() = runTest {
         val first = startActiveSessionCooldown()
         val sessionId = activeState(first).session.session_id

@@ -2,22 +2,25 @@
 
 > A singleton `personal_card` Room row backed by a draft-style ViewModel holds
 > demographics, medical profile, medical history, and emergency contacts; a
-> metric/imperial unit toggle converts height and weight while typing, a
-> validator gates Save, and the card syncs to Drive as a last-write-wins
-> snapshot and rides the full backup/restore flow.
+> metric/imperial unit toggle converts height and weight while typing (ft+in
+> split entry in imperial), read-only rows follow the preference, a validator
+> gates Save, and the card syncs to Drive as a last-write-wins snapshot and
+> rides the full backup/restore flow.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-22
 
 ## Overview
 
 The Personal Card is a single-entity profile. The ViewModel keeps two copies of
 the model — the saved originals and editable drafts — so edit mode can be
 cancelled without loss. Height and weight are entered as text with a unit-system
-toggle; `UnitConverter` converts between metric and imperial for display and
-parses input back to metric for storage. A `DemographicsValidator` combines
-three use cases (date of birth, height, weight); Save is enabled only when all
-three pass. The singleton row rides the shared Drive sync snapshot pipeline and
-is included in full backup and restore.
+toggle; metric height takes decimal cm while imperial height splits into ft+in
+fields parsed back to metric. `UnitConverter` converts between metric and
+imperial for display and parses input back to metric for storage; read-only
+rows render in the preferred units and the preference persists across launches.
+A `DemographicsValidator` combines three use cases (date of birth, height,
+weight); Save is enabled only when all three pass. The singleton row rides the
+shared Drive sync snapshot pipeline and is included in full backup and restore.
 
 ## Architecture
 
@@ -27,6 +30,10 @@ is included in full backup and restore.
   is always at most one card (`@Insert` with `REPLACE` conflict).
 - Draft/edit model: `PersonalCardUiState` holds saved originals + draft copies;
   `saveChanges` copies drafts to saved and marks the row dirty.
+- Split imperial height state: feet/inches draft texts parse back to metric cm;
+  partial entry leaves height unset; toggling re-seeds both shapes without loss.
+- Preference load: the saved unit system seeds initial ViewModel state, so
+  relaunch opens directly in the preferred units.
 - Drive sync uses the shared snapshot pipeline with a dedicated `personal_card.json`
   file and last-write-wins merge (local keeps only if strictly newer).
 
@@ -47,7 +54,7 @@ display-time preference only.
 ## Data flow
 
 1. User opens the card from the History screen profile button.
-2. ViewModel loads the single row and populates saved + draft copies.
+2. ViewModel loads the single row, the saved unit preference, and populates saved + draft copies.
 3. User taps Edit; the draft fields become editable with the current unit system.
 4. Keystrokes update drafts; height/weight text is sanitized and converted to
    metric; the validator re-runs and drives the Save enablement.
@@ -79,6 +86,7 @@ display-time preference only.
 | Future date of birth | invalid; blocks save |
 | Age over the upper bound | invalid; blocks save |
 | Height/weight out of range (metric or imperial) | invalid; blocks save |
+| Partial ft/in entry | height stays unset; valid (fields optional) |
 | Imperial input | converted to metric for storage; re-formatted on toggle |
 | Empty cloud list vs non-empty local | local wins (protects against stale cloud) |
 | Email/rapid double-save | `isSaving` guard prevents duplicate writes |

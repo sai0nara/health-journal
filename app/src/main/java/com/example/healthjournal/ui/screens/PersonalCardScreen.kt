@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.text.KeyboardOptions
@@ -67,6 +69,7 @@ import com.example.healthjournal.data.local.MedicalHistory
 import com.example.healthjournal.data.local.MedicalProfile
 import com.example.healthjournal.data.local.MedicationEntry
 import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.UnitSettings
 import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.validation.DemographicsValidationResult
 import com.example.healthjournal.domain.validation.ValidationResult
@@ -79,6 +82,16 @@ fun PersonalCardScreen(
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    // The card holds its own unit state but the global Settings preference is
+    // the source of truth: re-sync on appear so a Settings change made
+    // elsewhere is never stranded on a stale system.
+    val globalUnits = UnitSettings.read(LocalContext.current)
+    LaunchedEffect(globalUnits) {
+        if (viewModel.uiState.value.unitSystem != globalUnits) {
+            viewModel.onUnitSystemChanged(globalUnits)
+        }
+    }
 
     Scaffold(
         topBar = {

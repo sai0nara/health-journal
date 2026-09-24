@@ -10,6 +10,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -611,5 +612,25 @@ class RoutineExecutionScreenTest {
             "3 x 5 @ 60 kg (132.3 lb)",
             substring = true
         ).assertExists()
+    }
+
+    @Test
+    fun routineRestTimer_staysVisibleWhileScrolledDown() {
+        openRoutine()
+
+        // Grow past one screenful, then complete the first set.
+        repeat(5) {
+            composeTestRule.onNodeWithTag("routine_add_set_0").performClick()
+            composeTestRule.waitForIdle()
+        }
+        composeTestRule.onNodeWithTag("routine_set_done_0_0").performClick()
+        composeTestRule.waitForIdle()
+
+        // Scroll to the bottom: the rest timer must stay visible, pinned
+        // above the scrollable list instead of scrolling away with it.
+        composeTestRule.onNodeWithTag("routine_set_label_0_7").performScrollTo()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("workout_rest_timer").assertIsDisplayed()
     }
 }

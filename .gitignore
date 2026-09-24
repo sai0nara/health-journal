@@ -66,4 +66,13 @@ Thumbs.db
 .mtj.tmp/
 *.app_token
 
+# QA pipeline artifacts (local-only test models/suites)
+qa-artifacts/
+
+# OpenCode local config (agent skills, plugins, sessions)
+.opencode/
+
+# Superpowers local plans and reports
+.superpowers/
+
 
