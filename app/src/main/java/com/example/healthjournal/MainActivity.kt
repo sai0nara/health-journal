@@ -62,7 +62,8 @@ class MainActivity : ComponentActivity() {
             personalCardRepository,
             persistUnitSystem = { unitSystem ->
                 com.example.healthjournal.data.local.UnitSettings.write(this, unitSystem)
-            }
+            },
+            initialUnitSystem = com.example.healthjournal.data.local.UnitSettings.read(this)
         )
         val workoutRepository = com.example.healthjournal.data.WorkoutRepository(database.workoutSessionDao())
         val workoutHealthSource = com.example.healthjournal.health.HealthConnectWorkoutDataSource(this)

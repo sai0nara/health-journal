@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -515,11 +516,12 @@ class RoutineExecutionScreenTest {
         composeTestRule.onNodeWithTag("routine_weight_plus").performClick()
         composeTestRule.waitForIdle()
 
-        // +5 lb maps to a 2.27 kg pad step on the stored kg set row.
-        val expected = 20.0 + UnitConverter.lbsToKg(5.0)
+        // Rows display lb now: anchoring "20" means 20 lb, and one + tap
+        // lands on 25 lb while storage stays canonical kg.
+        val expected = UnitConverter.lbsToKg(20.0) + UnitConverter.lbsToKg(5.0)
         assertEquals(expected, persistedMatrix().single().sets[0].kg, 0.0)
         composeTestRule.onNodeWithTag("routine_set_kg_0_0")
-            .assertEditableText(UnitConverter.formatDouble(expected))
+            .assertEditableText("25")
     }
 
     @Test
@@ -540,5 +542,74 @@ class RoutineExecutionScreenTest {
         composeTestRule.onNodeWithTag("routine_set_kg_0_0")
             .assertEditableText("1.25")
         assertEquals(1.25, persistedMatrix().single().sets[0].kg, 0.0)
+    }
+
+    @Test
+    fun routineSetRows_imperialShowLbAndParseToKg() {
+        UnitSettings.write(InstrumentationRegistry.getInstrumentation().targetContext, UnitSystem.IMPERIAL)
+        openRoutine()
+
+        // 60 kg renders as 132.3 lb with an lb label.
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("132.3")
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertTextContains("lb", substring = true)
+
+        // Typing lb parses back to canonical kg storage.
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextClearance()
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextInput("135")
+        composeTestRule.waitForIdle()
+
+        assertEquals(61.23, persistedMatrix().single().sets[0].kg, 0.0)
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("135")
+    }
+
+    @Test
+    fun routineHeaderAndTonnage_imperialShowLb() {
+        UnitSettings.write(InstrumentationRegistry.getInstrumentation().targetContext, UnitSystem.IMPERIAL)
+        openRoutine()
+
+        composeTestRule.onNodeWithText("132.3 lb", substring = true).assertExists()
+
+        composeTestRule.onNodeWithTag("routine_set_done_0_0").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Finish").performClick()
+        composeTestRule.waitForIdle()
+
+        // One 60 kg × 5 set = 300 kg = 661.4 lb of tonnage.
+        composeTestRule.onNodeWithText("Tonnage: 661.4 lb").assertExists()
+    }
+
+    @Test
+    fun routineSetRow_imperialInvalidEdit_keepsStoredValueWithoutCrash() {
+        UnitSettings.write(InstrumentationRegistry.getInstrumentation().targetContext, UnitSystem.IMPERIAL)
+        openRoutine()
+
+        // Malformed text never commits: the stored row is untouched, no crash.
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextClearance()
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextInput("abc")
+        composeTestRule.waitForIdle()
+
+        assertEquals(60.0, persistedMatrix().single().sets[0].kg, 0.0)
+        composeTestRule.onNodeWithTag("set_matrix_error").assertDoesNotExist()
+
+        // The routine path carries no upper cap: a huge-but-wellformed value
+        // commits as-is (documenting the implemented contract).
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextClearance()
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextInput("99999")
+        composeTestRule.waitForIdle()
+
+        assertEquals(UnitConverter.lbsToKg(99999.0), persistedMatrix().single().sets[0].kg, 0.0)
+    }
+
+    @Test
+    fun routineHeader_showsDualUnits() {
+        openRoutine()
+
+        composeTestRule.onNodeWithText(
+            "3 x 5 @ 60 kg (132.3 lb)",
+            substring = true
+        ).assertExists()
     }
 }

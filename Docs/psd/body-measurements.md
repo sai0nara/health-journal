@@ -1,11 +1,12 @@
 # Body Measurements — Product Specification
 
-> A ViewModel-held capture sheet with per-field validation writes a metric-only
-> measurement row; an analytics ViewModel projects per-parameter trend series and
-> goals to a dependency-free chart, and both rows and goals sync as Drive
-> snapshots with tombstone + last-write-wins merge.
+> A ViewModel-held capture sheet with per-field validation writes a
+> metric-stored measurement row from display-unit input; an analytics
+> ViewModel projects per-parameter trend series and goals to a
+> dependency-free chart, and both rows and goals sync as Drive snapshots
+> with tombstone + last-write-wins merge.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-21
 
 ## Overview
 
@@ -24,8 +25,10 @@ a tombstone-first path.
   or any field error blocks save and resets via a `justSaved` signal.
 - `BodyAnalyticsViewModel` combines the measurement feed and goals into a
   per-parameter ascending series for the chart.
-- Measurementvalues are stored metric-only; the `UnitSystem`/`UnitConverter`
-  imperial support is used only by the Personal Card demographics, not here.
+- Measurement values are stored canonical metric; capture, history cards,
+  charts, goal lines, and the goal editor render and parse display units
+  through the shared converter driven by the global unit preference, with
+  validation in display units and no-loss re-render on toggle.
 - Chart is a pure Compose `Canvas`: auto min/max including the goal target,
   flat-series guard, dashed goal line, translucent fill.
 
@@ -33,9 +36,10 @@ a tombstone-first path.
 
 1. Secondary FAB on History opens the sheet; or the top bar opens the
    measurements screen.
-2. User enters values; each keystroke validates; save is enabled only when
-   `canSave` (no errors, ≥1 value, not future, not already saving).
-3. Save maps text to metric `Double?` columns, stamps pending-sync, persists the
+2. User enters values in display units; each keystroke validates in display
+   units; save is enabled only when `canSave` (no errors, ≥1 value, not
+   future, not already saving).
+3. Save maps display-unit text to canonical metric `Double?` columns, stamps pending-sync, persists the
    row as `BodyMeasurementEntry`, and resets the form.
 4. The analytics feed + goals project the active tab's series into the chart.
 5. Delete writes a tombstone then removes the row; Undo re-inserts it.
@@ -64,6 +68,7 @@ a tombstone-first path.
 | Negative / malformed | field error; save blocked |
 | Future timestamp | block + inline alert; save blocked |
 | No values | save disabled (at-least-one) |
+| Unit toggle mid-draft | drafts re-render through the shared converter; stored values unchanged |
 | Flat series | chart guards divide-by-zero |
 | Delete then undo | undo re-inserts the row from a retained snapshot |
 

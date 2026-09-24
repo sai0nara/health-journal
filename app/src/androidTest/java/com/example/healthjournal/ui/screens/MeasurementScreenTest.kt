@@ -2,9 +2,12 @@ package com.example.healthjournal.ui.screens
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthjournal.data.BodyMeasurementRepository
 import com.example.healthjournal.data.GoalsRepository
 import com.example.healthjournal.data.local.BodyMeasurementEntry
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.viewmodel.BodyAnalyticsViewModel
 import com.example.healthjournal.viewmodel.BodyMeasurementViewModel
 import io.mockk.*
@@ -435,11 +438,116 @@ class MeasurementScreenTest {
             composeTestRule.onNodeWithTag("bm_goal_save").performClick()
         }
 
-        step("Inline error appears and save is blocked") {
+step("Inline error appears and save is blocked") {
             composeTestRule.onNodeWithTag("bm_goal_error", useUnmergedTree = true)
                 .assertExists()
                 .assertTextEquals("Too large (max 500 kg)")
             io.mockk.coVerify(exactly = 0) { ctx.goalsDao.upsertGoal(any()) }
+        }
+    }
+
+    @Test
+    fun imperialChart_rendersConvertedGoalLine() {
+        UnitSettings.write(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            UnitSystem.IMPERIAL
+        )
+        try {
+            val ctx = setScreen(
+                listOf(BodyMeasurementEntry(entry_id = "e1", timestamp = 1_000L, weight_kg = 70.0))
+            )
+            ctx.goalsFlow.value = listOf(
+                com.example.healthjournal.data.local.GoalEntity("WEIGHT", 70.0, 1L)
+            )
+
+            step("Verify stored 70 kg goal renders as lb on header and chart") {
+                composeTestRule.waitUntil(5_000) {
+                    composeTestRule.onAllNodesWithText("Weight · Goal 154.3 lb")
+                        .fetchSemanticsNodes().isNotEmpty()
+                }
+                composeTestRule.onNodeWithText("Weight · Goal 154.3 lb").assertExists()
+                composeTestRule.onNodeWithText("Goal 154.3 lb").assertExists()
+            }
+        } finally {
+            UnitSettings.write(
+                InstrumentationRegistry.getInstrumentation().targetContext,
+                UnitSystem.METRIC
+            )
+        }
+    }
+
+    @Test
+    fun imperialGoalSheet_savesMetricTarget() {
+        UnitSettings.write(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            UnitSystem.IMPERIAL
+        )
+        try {
+            val ctx = setScreen(
+                listOf(BodyMeasurementEntry(entry_id = "e1", timestamp = 1_000L, weight_kg = 80.0))
+            )
+
+            step("Open the Set Goal sheet in imperial mode") {
+                composeTestRule.waitUntil(5_000) {
+                    composeTestRule.onAllNodesWithTag("bm_set_goal")
+                        .fetchSemanticsNodes().isNotEmpty()
+                }
+                composeTestRule.onNodeWithTag("bm_set_goal").performClick()
+            }
+
+            step("Sheet is pre-filled with the converted goal and lb label") {
+                composeTestRule.onNodeWithText("Target (lb)").assertExists()
+            }
+
+            step("Saving an lb value persists the metric target via repository") {
+                composeTestRule.onNodeWithTag("bm_goal_input").performTextClearance()
+                composeTestRule.onNodeWithTag("bm_goal_input").performTextInput("154.3")
+                composeTestRule.onNodeWithTag("bm_goal_save").performClick()
+                io.mockk.coVerify {
+                    ctx.goalsDao.upsertGoal(
+                        match {
+                            it.parameterId == "WEIGHT" &&
+                                kotlin.math.abs(it.target - 69.99) < 0.001
+                        }
+                    )
+                }
+            }
+        } finally {
+            UnitSettings.write(
+                InstrumentationRegistry.getInstrumentation().targetContext,
+                UnitSystem.METRIC
+            )
+        }
+    }
+
+    @Test
+    fun imperialHistory_rendersConvertedUnits() {
+        UnitSettings.write(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            UnitSystem.IMPERIAL
+        )
+        try {
+            step("Open Measurements screen with a metric record") {
+                setScreen(
+                    listOf(
+                        BodyMeasurementEntry(
+                            timestamp = 1_000L,
+                            weight_kg = 70.0,
+                            waist_cm = 85.0
+                        )
+                    )
+                )
+            }
+
+            step("Verify stored metric renders as lb/in") {
+                composeTestRule.onNodeWithText("154.3 lb").assertExists()
+                composeTestRule.onNodeWithText("Waist 33.5 in").assertExists()
+            }
+        } finally {
+            UnitSettings.write(
+                InstrumentationRegistry.getInstrumentation().targetContext,
+                UnitSystem.METRIC
+            )
         }
     }
 }

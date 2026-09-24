@@ -38,6 +38,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.UnitSettings
 import com.example.healthjournal.ui.components.AboutAppDialog
 import com.example.healthjournal.R
 import com.example.healthjournal.ui.components.MeasurementEntrySheet
@@ -102,6 +103,12 @@ fun HistoryScreen(
     val measurementViewModel: com.example.healthjournal.viewmodel.BodyMeasurementViewModel =
         viewModel(factory = measurementViewModelFactory)
     var showMeasurementSheet by remember { mutableStateOf(false) }
+
+    // Keep the capture sheet's display units on the global preference.
+    val measurementUnits = UnitSettings.read(context)
+    LaunchedEffect(measurementUnits) {
+        measurementViewModel.onUnitSystemChanged(measurementUnits)
+    }
 
     if (showAboutDialog) {
         AboutAppDialog(onDismiss = { showAboutDialog = false })

@@ -4,12 +4,13 @@
 > calf, bicep) with per-parameter trend charts, goals, and deletion undo, synced
 > to the cloud like the rest of the health data.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-21
 
 ## Overview
 
 A dedicated measurements screen lets a user log a dated set of body metrics
-(metric-only), see a per-parameter trend chart with an optional goal line, and
+in their preferred display units (metric or imperial, converted to canonical
+metric storage), see a per-parameter trend chart with an optional goal line, and
 review a chronological history. Each measurement set is stored locally and
 synced to Drive as its own snapshot. Validation enforces non-negative decimals
 within realistic bounds and rejects future dates; future-dated and over-bound
@@ -24,10 +25,11 @@ inputs are blocked before save.
 - Set, adjust, and clear a target goal per parameter.
 - Delete a measurement with undo.
 - Sync measurements and goals to Drive.
+- Render and accept measurements, charts, and goals in the preferred display
+  units per `Docs/prd/unit-conversion.md` (storage stays canonical metric).
 
 **Non-goals**
 
-- Imperial units (metric kg/cm only for body measurements).
 - Height, BMI, or blood pressure in this feature (height/weight in the Personal
   Card demographics are separate).
 - In-place editing or dashboard widgets.
@@ -44,8 +46,9 @@ inputs are blocked before save.
 
 - FR-1: A speed-dial button opens the measurement entry sheet from the History
   screen.
-- FR-2: The sheet captures a timestamp and up to seven metric fields; partial
-  entries are allowed (at least one value required).
+- FR-2: The sheet captures a timestamp and up to seven fields; partial
+  entries are allowed (at least one value required). Fields render in the
+  preferred display units and parse back to canonical metric storage.
 - FR-3: Input uses a decimal keyboard and inline validation warnings.
 - FR-4: Validation blocks negative, malformed, over-bound, and future-dated
   values.
@@ -55,6 +58,62 @@ inputs are blocked before save.
   tab.
 - FR-7: Goals can be set/cleared per parameter and reflected on the chart.
 - FR-8: Measurements and goals sync to Drive via the existing sync pipeline.
+
+### Validation bounds (G1)
+
+Inclusive ranges enforced by
+`app/src/main/java/com/example/healthjournal/domain/ValidateMeasurements.kt`
+(`MAX_BOUNDS`, `value > maxFor(field)` blocks); boundary values at the cap are
+accepted. Capture allows zero; goals require strictly positive input per
+`app/src/main/java/com/example/healthjournal/domain/GoalValidator.kt`
+(`value <= 0.0` blocks).
+
+| Parameter | Unit | Capture range (inclusive) | Goal range |
+|---|---|---|---|
+| Weight | kg | [0, 500] | (0, 500] |
+| Chest | cm | [0, 200] | (0, 200] |
+| Waist | cm | [0, 200] | (0, 200] |
+| Glute | cm | [0, 200] | (0, 200] |
+| Thigh | cm | [0, 120] | (0, 120] |
+| Calf | cm | [0, 75] | (0, 75] |
+| Bicep | cm | [0, 75] | (0, 75] |
+
+Step size: none (continuous decimal). Input is free decimal text accepting `.`
+or `,` as the separator, parsed to display-unit `Double` and stored as
+canonical metric; toggling the unit system re-renders drafts through the
+shared converter without loss, and display strips trailing zeros per
+`app/src/main/java/com/example/healthjournal/domain/MeasurementFormatters.kt`.
+There is no quantized step to normalize to.
+
+### Sync determinism (G8)
+
+- Clock source: `System.currentTimeMillis()` wall-clock millis. Capture stamps
+  `timestamp`/`lastModified` at save in
+  `app/src/main/java/com/example/healthjournal/viewmodel/BodyMeasurementViewModel.kt`;
+  goal writes stamp `lastModified` at set in
+  `app/src/main/java/com/example/healthjournal/data/GoalsRepository.kt`; edits
+  re-stamp via `markEntryDirty`.
+- Merge key and tie-break per
+  `app/src/main/java/com/example/healthjournal/sync/SyncMerge.kt`:
+  measurements merge per `entry_id`, goals per `parameterId`; the strictly newer
+  `lastModified` wins and cloud wins ties (`local.lastModified > cloud.lastModified`
+  keeps local, otherwise cloud). Tombstones remove a copy only when
+  `deletedAt >= lastModified` (see `Docs/prd/drive-sync.md` FR-4, AC-2).
+
+### Literal strings, English locale (G10)
+
+Single-locale (en) literals; no per-locale table exists. Date row format is the
+only locale-sensitive rendering (`EEE, d MMM yyyy` in the device locale).
+
+| String | Owner |
+|---|---|
+| `Invalid decimal format` | `ERROR_INVALID_FORMAT` in `app/src/main/java/com/example/healthjournal/domain/ValidateMeasurements.kt` |
+| `Cannot be negative` | `ERROR_NEGATIVE` in `app/src/main/java/com/example/healthjournal/domain/ValidateMeasurements.kt` |
+| `Too large (max 500 kg)` for weight; `Too large (max {200\|120\|75} cm)` for girths (metric; imperial shows converted bounds with `lb`/`in`) | `maxExceededMessage` in `app/src/main/java/com/example/healthjournal/domain/ValidateMeasurements.kt` |
+| `Future dates cannot be saved` | `ERROR_FUTURE_DATE` in `app/src/main/java/com/example/healthjournal/viewmodel/BodyMeasurementViewModel.kt` |
+| `Enter a goal value` | `ERROR_REQUIRED` in `app/src/main/java/com/example/healthjournal/domain/GoalValidator.kt` |
+| `Body measurements`, `Save measurements`, `Close measurements sheet`, `Pick measurement date` | `app/src/main/java/com/example/healthjournal/ui/components/MeasurementEntrySheet.kt` |
+| `{Label} goal`, `Target ({kg\|cm\|lb\|in})`, `Clear`, `Save`, `Close goal sheet` | `app/src/main/java/com/example/healthjournal/ui/components/GoalSheet.kt` |
 
 ## Non-functional requirements
 
@@ -73,11 +132,11 @@ inputs are blocked before save.
 
 ## Out of scope
 
-- Imperial units and unit-system preference for body measurements.
 - Health Connect write-back.
 
 ## Cross-references
 
+- `Docs/prd/unit-conversion.md` — display-unit conversion across surfaces.
 - `Docs/prd/drive-sync.md` — sync of measurements/goals.
 - [[data-layer]] — the measurement/goal entities and DAO.
 - [[ui-layer]] — the measurements screen and sheets.

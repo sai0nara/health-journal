@@ -16,10 +16,8 @@ import io.mockk.*
 import io.qameta.allure.android.rules.ScreenshotRule
 import io.qameta.allure.kotlin.Feature
 import io.qameta.allure.kotlin.Step
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.setMain
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -38,7 +36,10 @@ class PersonalCardScreenTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
+        // NOTE: no Dispatchers.setMain here — hijacking Main breaks the
+        // Compose test rule's frame clock (host activity never resumes and
+        // every test times out idle). The ViewModel already takes
+        // testDispatcher explicitly as its ioDispatcher.
     }
 
     private fun setScreen(card: PersonalCard? = null) {
@@ -114,8 +115,8 @@ class PersonalCardScreenTest {
 
         step("Verify medical profile is displayed") {
             composeTestRule.onNodeWithText("O+").assertExists()
-            composeTestRule.onNodeWithText("Penicillin").assertExists()
-            composeTestRule.onNodeWithText("Peanuts").assertExists()
+            composeTestRule.onNodeWithText("Penicillin", substring = true).assertExists()
+            composeTestRule.onNodeWithText("Peanuts", substring = true).assertExists()
             composeTestRule.onNodeWithText("Aspirin 81mg - Daily").assertExists()
         }
     }
@@ -236,7 +237,9 @@ class PersonalCardScreenTest {
             composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
         }
 
-        step("Click add emergency contact button") {
+        step("Scroll to emergency contacts and open the add-contact dialog") {
+            composeTestRule.onNodeWithTag("personal_card_list")
+                .performScrollToNode(hasTestTag("emergency_contacts_title"))
             composeTestRule.onNodeWithContentDescription("Add emergency contact").performClick()
         }
 
@@ -272,7 +275,7 @@ class PersonalCardScreenTest {
 
         step("Verify existing data is shown in fields") {
             composeTestRule.onNodeWithText("O+").assertExists()
-            composeTestRule.onNodeWithText("Peanuts").assertExists()
+            composeTestRule.onNodeWithText("Peanuts", substring = true).assertExists()
         }
     }
 
@@ -335,25 +338,96 @@ class PersonalCardScreenTest {
         step("Verify Add Allergy dialog has localized cancel button") {
             composeTestRule.onNodeWithContentDescription("Add allergy").performClick()
             composeTestRule.onNodeWithText("Add Allergy").assertExists()
-            composeTestRule.onNodeWithText("Cancel").assertExists()
-            composeTestRule.onNodeWithText("Cancel").performClick()
+            composeTestRule.onNode(hasText("Cancel") and hasAnySibling(hasText("Add")))
+                .assertExists()
+            composeTestRule.onNode(hasText("Cancel") and hasAnySibling(hasText("Add")))
+                .performClick()
         }
 
         step("Verify Add Medication dialog has localized cancel button") {
             composeTestRule.onNodeWithContentDescription("Add medication").performClick()
             composeTestRule.onNodeWithText("Add Medication").assertExists()
-            composeTestRule.onNodeWithText("Cancel").assertExists()
-            composeTestRule.onNodeWithText("Cancel").performClick()
+            composeTestRule.onNode(hasText("Cancel") and hasAnySibling(hasText("Add")))
+                .assertExists()
+            composeTestRule.onNode(hasText("Cancel") and hasAnySibling(hasText("Add")))
+                .performClick()
         }
 
         step("Verify Add Emergency Contact dialog has localized cancel button") {
+            composeTestRule.onNodeWithTag("personal_card_list")
+                .performScrollToNode(hasTestTag("emergency_contacts_title"))
             composeTestRule.onNodeWithContentDescription("Add emergency contact").performClick()
             composeTestRule.onNodeWithText("Add Emergency Contact").assertExists()
-            composeTestRule.onNodeWithText("Cancel").assertExists()
+            composeTestRule.onNode(hasText("Cancel") and hasAnySibling(hasText("Add")))
+                .assertExists()
         }
     }
 
     private fun step(description: String, block: () -> Unit) {
         io.qameta.allure.kotlin.Allure.step(description) { block() }
+    }
+
+    @Test
+    fun demographicsCard_imperialShowsConvertedRows() {
+        step("Open Personal Card with metric demographics") {
+            setScreen(
+                PersonalCard(
+                    demographics = Demographics(
+                        fullName = "John Doe",
+                        heightCm = 180.0,
+                        weightKg = 80.0
+                    )
+                )
+            )
+        }
+
+        step("Enter edit mode and switch to imperial") {
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+            composeTestRule.onNodeWithText("Metric (kg/cm)").performClick()
+            composeTestRule.onNodeWithText("Imperial (lbs/in)").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Cancel back to view mode") {
+            composeTestRule.onNodeWithText("Cancel").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify stored metric renders as in/lbs") {
+            composeTestRule.onNodeWithText("70.9 in").assertExists()
+            composeTestRule.onNodeWithText("176.4 lbs").assertExists()
+        }
+    }
+
+    @Test
+    fun heightEntry_imperialFeetInches_savesCm() {
+        step("Open Personal Card and enter edit mode in imperial") {
+            setScreen(PersonalCard())
+            composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+            composeTestRule.onNodeWithText("Metric (kg/cm)").performClick()
+            composeTestRule.onNodeWithText("Imperial (lbs/in)").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Split ft/in fields replace the single inches field") {
+            composeTestRule.onNodeWithTag("personal_height_feet").assertExists()
+            composeTestRule.onNodeWithTag("personal_height_inches").assertExists()
+        }
+
+        step("Enter 5 ft 10 in and save") {
+            composeTestRule.onNodeWithTag("personal_height_feet").performTextInput("5")
+            composeTestRule.onNodeWithTag("personal_height_inches").performTextInput("10")
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithText("Save").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify metric cm persisted") {
+            io.mockk.coVerify {
+                repository.insertOrUpdate(
+                    match { it.demographics.heightCm == 177.8 }
+                )
+            }
+        }
     }
 }

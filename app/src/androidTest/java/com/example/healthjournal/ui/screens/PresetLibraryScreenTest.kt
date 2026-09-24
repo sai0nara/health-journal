@@ -1,6 +1,8 @@
 package com.example.healthjournal.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -9,8 +11,12 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.hasText
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthjournal.data.PresetRepository
 import com.example.healthjournal.data.local.ExerciseCatalogItem
+import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.domain.ScheduledDay
 import com.example.healthjournal.ui.theme.HealthJournalTheme
@@ -18,6 +24,7 @@ import com.example.healthjournal.util.FakeExerciseCatalogDao
 import com.example.healthjournal.util.FakeWorkoutPresetDao
 import com.example.healthjournal.viewmodel.PresetUiState
 import com.example.healthjournal.viewmodel.PresetViewModel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -326,5 +333,47 @@ class PresetLibraryScreenTest {
 
         composeTestRule.onNodeWithTag("exercise_search_result").assertDoesNotExist()
         composeTestRule.onNodeWithTag("preset_name_field").assertExists()
+    }
+
+    @Test
+    fun presetEditor_imperialWeightShowsLbAndSavesKg() {
+        UnitSettings.write(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            UnitSystem.IMPERIAL
+        )
+        try {
+            openScreen()
+            composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+            composeTestRule.waitForIdle()
+
+            composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Squat")
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithTag("exercise_search_result").performClick()
+            composeTestRule.waitForIdle()
+
+            // The 40 kg squat default renders as 88.2 lb with an lb label.
+            composeTestRule.onNodeWithTag("preset_field_weight").assertTextContains("88.2", substring = true)
+            composeTestRule.onNodeWithText("Weight lb").assertExists()
+
+            // Typing lb persists canonical kg.
+            composeTestRule.onNodeWithTag("preset_name_field").performTextInput("Leg Day")
+            composeTestRule.onNodeWithTag("preset_field_weight").performTextClearance()
+            composeTestRule.onNodeWithTag("preset_field_weight").performTextInput("90")
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithText("Save Preset").performClick()
+            composeTestRule.waitForIdle()
+
+            val saved = runBlocking { repository.presets.first() }.single()
+            assertEquals(
+                UnitConverter.lbsToKg(90.0),
+                saved.exercises.single().defaultWeightKg,
+                0.0
+            )
+        } finally {
+            UnitSettings.write(
+                InstrumentationRegistry.getInstrumentation().targetContext,
+                UnitSystem.METRIC
+            )
+        }
     }
 }

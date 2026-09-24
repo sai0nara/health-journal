@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.MeasurementField
 import com.example.healthjournal.domain.UtcToLocalDate
 import com.example.healthjournal.viewmodel.BodyMeasurementViewModel
@@ -114,10 +115,15 @@ fun MeasurementEntrySheet(
             }
 
             MeasurementField.entries.forEach { field ->
+                val unit = if (state.unitSystem == UnitSystem.IMPERIAL) {
+                    if (field == MeasurementField.WEIGHT) "lb" else "in"
+                } else {
+                    if (field == MeasurementField.WEIGHT) "kg" else "cm"
+                }
                 OutlinedTextField(
                     value = state.rawValues[field].orEmpty(),
                     onValueChange = { viewModel.onFieldChanged(field, it) },
-                    label = { Text(field.label) },
+                    label = { Text("${field.label} ($unit)") },
                     isError = state.fieldErrors.containsKey(field),
                     supportingText = state.fieldErrors[field]?.let { message ->
                         { Text(message) }

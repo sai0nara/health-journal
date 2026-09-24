@@ -9,6 +9,7 @@ import com.example.healthjournal.data.WorkoutRepository
 import com.example.healthjournal.data.local.ExerciseCatalogDao
 import com.example.healthjournal.data.local.ExerciseCatalogItem
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.UnitConverter
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.data.local.WorkoutStatus
@@ -705,12 +706,18 @@ class WorkoutViewModel(
             if (matrix != null && matrix.any { it.isPlanned }) {
                 session.routineName?.let { add(it) }
                 matrix.forEach { exercise ->
-                    val weight = exercise.targetWeightKg
+                    // Performed weight: the peak of the completed sets, so
+                    // raised weights show up on the card. Falls back to the
+                    // planned target when nothing was completed.
+                    val weight = exercise.sets
+                        .filter { it.completed }
+                        .maxOfOrNull { it.kg }
+                        ?: exercise.targetWeightKg
                         ?: exercise.sets.firstOrNull()?.kg
                         ?: 0.0
                     val sets = exercise.targetSets ?: exercise.sets.size
                     add(
-                        "${exercise.name}: $sets sets · ${formatCompact(weight)} kg"
+                        "${exercise.name}: $sets sets · ${dualWeight(weight)}"
                     )
                 }
             } else {
@@ -725,6 +732,13 @@ class WorkoutViewModel(
         val withDetails = if (details.isEmpty()) base else (listOf(base) + details).joinToString("\n")
         return if (session.notes.isNotBlank()) "$withDetails\n${session.notes}" else withDetails
     }
+
+    /**
+     * Dual-unit weight rendering, metric primary: `60 kg (132.3 lb)`.
+     * Shown in both preferences so history reads the same everywhere.
+     */
+    private fun dualWeight(weightKg: Double): String =
+        "${formatCompact(weightKg)} kg (${formatCompact(UnitConverter.kgToLbs(weightKg))} lb)"
 
     companion object {
         /** Session rows are rewritten on these elapsed-second boundaries. */

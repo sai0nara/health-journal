@@ -47,6 +47,8 @@
     <string name="label_phone_number">Phone Number</string>
     <string name="format_cm_value">%1$s cm</string>
     <string name="format_kg_value">%1$s kg</string>
+    <string name="format_in_value">%1$s in</string>
+    <string name="format_lb_value">%1$s lbs</string>
 
     <string name="label_full_name">Full Name</string>
     <string name="label_dob_edit">Date of Birth (YYYY-MM-DD)</string>

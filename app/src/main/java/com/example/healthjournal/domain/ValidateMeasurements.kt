@@ -1,5 +1,8 @@
 package com.example.healthjournal.domain
 
+import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.UnitSystem
+
 enum class MeasurementField(val label: String) {
     WEIGHT("Weight"),
     CHEST("Chest"),
@@ -32,11 +35,23 @@ object ValidateMeasurements {
 
     /** Inline error copy for values above the field's cap. */
     fun maxExceededMessage(field: MeasurementField): String =
-        if (field == MeasurementField.WEIGHT) {
-            "Too large (max ${maxFor(field).toLong()} kg)"
-        } else {
-            "Too large (max ${maxFor(field).toLong()} cm)"
+        maxExceededMessage(field, UnitSystem.METRIC)
+
+    /** Cap message in display units: imperial shows converted bounds. */
+    fun maxExceededMessage(field: MeasurementField, unitSystem: UnitSystem): String {
+        if (unitSystem == UnitSystem.METRIC) {
+            return if (field == MeasurementField.WEIGHT) {
+                "Too large (max ${maxFor(field).toLong()} kg)"
+            } else {
+                "Too large (max ${maxFor(field).toLong()} cm)"
+            }
         }
+        return if (field == MeasurementField.WEIGHT) {
+            "Too large (max ${UnitConverter.formatDouble(UnitConverter.kgToLbs(maxFor(field)))} lb)"
+        } else {
+            "Too large (max ${UnitConverter.formatDouble(UnitConverter.cmToInches(maxFor(field)))} in)"
+        }
+    }
 
     /**
      * Validates raw text-field input per measurement field. Blank fields are
@@ -44,22 +59,41 @@ object ValidateMeasurements {
      * a non-negative decimal within its sanity bound. Returns a map of
      * field -> inline error message; an empty map means all input is valid.
      */
-    fun validate(rawValues: Map<MeasurementField, String>): Map<MeasurementField, String> {
+    fun validate(rawValues: Map<MeasurementField, String>): Map<MeasurementField, String> =
+        validate(rawValues, UnitSystem.METRIC)
+
+    /**
+     * Unit-aware validation: display-unit input is parsed back to canonical
+     * metric storage before the metric sanity bounds apply, so imperial
+     * entries validate against the same caps with display-unit messages.
+     */
+    fun validate(
+        rawValues: Map<MeasurementField, String>,
+        unitSystem: UnitSystem
+    ): Map<MeasurementField, String> {
         val errors = linkedMapOf<MeasurementField, String>()
         rawValues.forEach { (field, raw) ->
             val text = raw.trim()
             if (text.isEmpty()) return@forEach
 
-            val value = parseDecimal(text)
+            val value = parseMetric(text, field, unitSystem)
             when {
                 value == null -> errors[field] = ERROR_INVALID_FORMAT
                 value < 0.0 -> errors[field] = ERROR_NEGATIVE
                 value > maxFor(field) ->
-                    errors[field] = maxExceededMessage(field)
+                    errors[field] = maxExceededMessage(field, unitSystem)
             }
         }
         return errors
     }
+
+    /** Parses display-unit text to canonical metric, accepting ',' decimals. */
+    fun parseMetric(text: String, field: MeasurementField, unitSystem: UnitSystem): Double? =
+        UnitConverter.parseMeasurement(
+            text.trim().replace(',', '.'),
+            unitSystem,
+            isWeight = field == MeasurementField.WEIGHT
+        )
 
     /**
      * Presence check independent of validity: true when at least one field

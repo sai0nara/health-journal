@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.healthjournal.data.BodyMeasurementRepository
 import com.example.healthjournal.data.local.BodyMeasurementEntry
+import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.MeasurementField
 import com.example.healthjournal.domain.ValidateMeasurements
 import kotlinx.coroutines.CoroutineDispatcher
@@ -27,16 +29,19 @@ data class BodyMeasurementUiState(
     val timestampError: String? = null,
     val canSave: Boolean = false,
     val isSaving: Boolean = false,
+    /** Display unit system for entry labels; storage stays canonical metric. */
+    val unitSystem: UnitSystem = UnitSystem.METRIC,
     /** One-shot flag consumed by the UI (haptic + dismiss), reset via [BodyMeasurementViewModel.onSavedHandled]. */
     val justSaved: Boolean = false
 )
 
 class BodyMeasurementViewModel(
     private val repository: BodyMeasurementRepository,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    unitSystem: UnitSystem = UnitSystem.METRIC
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(BodyMeasurementUiState())
+    private val _uiState = MutableStateFlow(BodyMeasurementUiState(unitSystem = unitSystem))
     val uiState: StateFlow<BodyMeasurementUiState> = _uiState.asStateFlow()
 
     companion object {
@@ -87,12 +92,40 @@ class BodyMeasurementViewModel(
     fun onFieldChanged(field: MeasurementField, text: String) {
         _uiState.update { current ->
             val rawValues = current.rawValues + (field to text)
-            val fieldErrors = ValidateMeasurements.validate(rawValues)
+            val fieldErrors = ValidateMeasurements.validate(rawValues, current.unitSystem)
             current.copy(
                 rawValues = rawValues,
                 fieldErrors = fieldErrors,
                 timestampError = futureDateError(current.timestamp),
                 canSave = deriveCanSave(fieldErrors, rawValues, current.timestamp)
+            )
+        }
+    }
+
+    /**
+     * Switches the entry display units, converting any in-progress draft text
+     * through the shared converter (parse in the old system, format in the
+     * new one) so toggling never loses typed values. Blanks stay blank.
+     */
+    fun onUnitSystemChanged(unitSystem: UnitSystem) {
+        _uiState.update { current ->
+            if (current.unitSystem == unitSystem) return@update current
+            val converted = current.rawValues.mapValues { (field, raw) ->
+                val metric = ValidateMeasurements.parseMetric(raw, field, current.unitSystem)
+                if (metric == null) raw
+                else UnitConverter.formatMeasurement(
+                    metric,
+                    unitSystem,
+                    isWeight = field == MeasurementField.WEIGHT
+                )
+            }
+            val fieldErrors = ValidateMeasurements.validate(converted, unitSystem)
+            current.copy(
+                rawValues = converted,
+                fieldErrors = fieldErrors,
+                timestampError = futureDateError(current.timestamp),
+                canSave = deriveCanSave(fieldErrors, converted, current.timestamp),
+                unitSystem = unitSystem
             )
         }
     }
@@ -159,7 +192,7 @@ class BodyMeasurementViewModel(
         rawValues[field]
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
-            ?.let { ValidateMeasurements.parseDecimal(it) }
+            ?.let { ValidateMeasurements.parseMetric(it, field, unitSystem) }
 }
 
 class BodyMeasurementViewModelFactory(

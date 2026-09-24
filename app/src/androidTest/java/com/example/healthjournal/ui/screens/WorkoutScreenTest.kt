@@ -9,8 +9,12 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.WorkoutRepository
+import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.WorkoutType
 import com.example.healthjournal.util.FakeWorkoutHealthDataSource
 import com.example.healthjournal.util.FakeWorkoutSessionDao
@@ -23,6 +27,7 @@ import com.example.healthjournal.viewmodel.WorkoutViewModel
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -457,5 +462,36 @@ class WorkoutScreenTest {
 
         composeTestRule.onNodeWithTag("manual_laps_field").assertDoesNotExist()
         composeTestRule.onNodeWithTag("manual_movements_field").assertDoesNotExist()
+    }
+
+    @Test
+    fun fitnessActive_imperialWeightInput_parsesToKg() {
+        UnitSettings.write(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            UnitSystem.IMPERIAL
+        )
+        try {
+            startActiveSession(WorkoutType.FITNESS, "30")
+
+            composeTestRule.onNodeWithTag("exercise_name_field").performTextInput("Squat")
+            composeTestRule.onNodeWithText("Add exercise").performClick()
+            composeTestRule.waitForIdle()
+
+            // Manual add-set field takes display weight units: 150 lb → 68.04 kg stored.
+            composeTestRule.onNodeWithText("lb").assertExists()
+            composeTestRule.onNodeWithTag("set_kg_field_0").performTextInput("150")
+            composeTestRule.onNodeWithTag("set_reps_field_0").performTextInput("10")
+            composeTestRule.onNodeWithTag("add_set_button_0").performClick()
+            composeTestRule.waitForIdle()
+
+            val expected = UnitConverter.lbsToKg(150.0)
+            assertEquals(68.04, expected, 0.0)
+            composeTestRule.onNodeWithText("150 lb × 10 reps").assertExists()
+        } finally {
+            UnitSettings.write(
+                InstrumentationRegistry.getInstrumentation().targetContext,
+                UnitSystem.METRIC
+            )
+        }
     }
 }

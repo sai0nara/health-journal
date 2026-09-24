@@ -216,6 +216,7 @@ fun WorkoutScreen(
                     tonnageKg = state.tonnageKg,
                     intervalRounds = state.intervalRounds,
                     intervalIntervals = state.intervalIntervals,
+                    unitSystem = unitSystem,
                     onDone = { viewModel.closeSummary() }
                 )
 
@@ -498,6 +499,7 @@ private fun SessionContent(
                 exercises = session.setMatrix,
                 restSeconds = restSeconds,
                 setMatrixError = setMatrixError,
+                unitSystem = unitSystem,
                 onAddExercise = onAddExercise,
                 onAddSet = onAddSet
             )
@@ -547,6 +549,7 @@ private fun SetMatrixEditor(
     exercises: List<StrengthExercise>?,
     restSeconds: Int,
     setMatrixError: String?,
+    unitSystem: UnitSystem = UnitSystem.METRIC,
     onAddExercise: (String) -> Unit,
     onAddSet: (exerciseId: String, kg: Double, reps: Int) -> Unit
 ) {
@@ -590,8 +593,13 @@ private fun SetMatrixEditor(
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(exercise.name, style = MaterialTheme.typography.titleSmall)
                     exercise.sets.forEach { set ->
+                        val displayKg = if (unitSystem == UnitSystem.IMPERIAL) {
+                            UnitConverter.kgToLbs(set.kg)
+                        } else {
+                            set.kg
+                        }
                         Text(
-                            "${formatCompact(set.kg)} kg × ${set.reps} reps",
+                            "${formatCompact(displayKg)} ${if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg"} × ${set.reps} reps",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -601,7 +609,7 @@ private fun SetMatrixEditor(
                             OutlinedTextField(
                                 value = exerciseKg,
                                 onValueChange = { exerciseKg = it },
-                                label = { Text("kg") },
+                                label = { Text(if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg") },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier
@@ -620,9 +628,14 @@ private fun SetMatrixEditor(
                             )
                             Button(
                                 onClick = {
+                                    val enteredKg = exerciseKg.replace(',', '.').toDoubleOrNull() ?: 0.0
                                     onAddSet(
                                         exercise.id,
-                                        exerciseKg.replace(',', '.').toDoubleOrNull() ?: 0.0,
+                                        if (unitSystem == UnitSystem.IMPERIAL) {
+                                            UnitConverter.lbsToKg(enteredKg)
+                                        } else {
+                                            enteredKg
+                                        },
                                         exerciseReps.toIntOrNull() ?: 0
                                     )
                                 },
@@ -817,7 +830,7 @@ private fun RoutineExerciseCard(
             }
             Text(
                 text = "${exercise.targetSets} x ${exercise.targetReps} @ " +
-                    "${UnitConverter.formatDouble(exercise.targetWeightKg ?: 0.0)} kg · " +
+                    "${dualWeight(exercise.targetWeightKg ?: 0.0)} · " +
                     "Rest ${exercise.restSeconds}s",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -832,6 +845,7 @@ private fun RoutineExerciseCard(
                     canComplete = exercise.sets
                         .take(setIndex)
                         .all { it.completed },
+                    unitSystem = unitSystem,
                     onSetActivated = { activeSet = setIndex },
                     onToggleCompleted = onToggleSetCompleted,
                     onUpdateRoutineSet = onUpdateRoutineSet
@@ -882,12 +896,17 @@ private fun padStepWeightKg(unitSystem: UnitSystem): Double =
 private fun padStepDisplay(unitSystem: UnitSystem): String =
     if (unitSystem == UnitSystem.IMPERIAL) "5 lb" else "1.25 kg"
 
+/** Dual-unit weight rendering, metric primary: `60 kg (132.3 lb)`. */
+private fun dualWeight(weightKg: Double): String =
+    "${UnitConverter.formatDouble(weightKg)} kg (${UnitConverter.formatDouble(UnitConverter.kgToLbs(weightKg))} lb)"
+
 @Composable
 private fun RoutineSetRow(
     exerciseIndex: Int,
     setIndex: Int,
     set: StrengthSet,
     canComplete: Boolean,
+    unitSystem: UnitSystem = UnitSystem.METRIC,
     onSetActivated: (setIndex: Int) -> Unit,
     onToggleCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit,
     onUpdateRoutineSet: (exerciseIndex: Int, setIndex: Int, kg: Double, reps: Int) -> Unit
@@ -898,17 +917,24 @@ private fun RoutineSetRow(
     // valid edit straight to the ViewModel. Reseeding only happens when the
     // text differs, so a cursor sitting in the field still updates on pad
     // taps without clobbering a keystroke that already mirrored the value.
-    var kgValue by remember { mutableStateOf(TextFieldValue(UnitConverter.formatDouble(set.kg))) }
+    // The weight field shows display units and parses back to canonical kg.
+    fun displayKg(kg: Double): String =
+        UnitConverter.formatMeasurement(kg, unitSystem, isWeight = true)
+    fun parseKg(text: String): Double? {
+        val value = text.replace(',', '.').toDoubleOrNull()?.takeIf { it > 0 } ?: return null
+        return if (unitSystem == UnitSystem.IMPERIAL) UnitConverter.lbsToKg(value) else value
+    }
+    var kgValue by remember { mutableStateOf(TextFieldValue(displayKg(set.kg))) }
     var repsValue by remember { mutableStateOf(TextFieldValue(set.reps.toString())) }
 
     fun commit(kg: Double, reps: Int) {
         onUpdateRoutineSet(exerciseIndex, setIndex, kg, reps)
     }
-    fun currentKg(): Double? = kgValue.text.replace(',', '.').toDoubleOrNull()?.takeIf { it > 0 }
+    fun currentKg(): Double? = parseKg(kgValue.text)
     fun currentReps(): Int? = repsValue.text.toIntOrNull()?.takeIf { it >= 1 }
 
-    LaunchedEffect(set.kg) {
-        val formatted = UnitConverter.formatDouble(set.kg)
+    LaunchedEffect(set.kg, unitSystem) {
+        val formatted = displayKg(set.kg)
         if (kgValue.text != formatted) {
             kgValue = TextFieldValue(
                 formatted,
@@ -942,7 +968,7 @@ private fun RoutineSetRow(
                 kgValue = it
                 currentKg()?.let { kg -> commit(kg, repsValue.text.toIntOrNull() ?: set.reps) }
             },
-            label = { Text("kg") },
+            label = { Text(if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier
@@ -988,6 +1014,7 @@ private fun SummaryContent(
     tonnageKg: Double?,
     intervalRounds: Int,
     intervalIntervals: Int,
+    unitSystem: UnitSystem = UnitSystem.METRIC,
     onDone: () -> Unit
 ) {
     Column(
@@ -1002,8 +1029,9 @@ private fun SummaryContent(
         )
         Text(formatElapsed(elapsedSeconds), style = MaterialTheme.typography.titleMedium)
         tonnageKg?.let {
+            val display = if (unitSystem == UnitSystem.IMPERIAL) UnitConverter.kgToLbs(it) else it
             Text(
-                "Tonnage: ${formatCompact(it)} kg",
+                "Tonnage: ${formatCompact(display)} ${if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg"}",
                 style = MaterialTheme.typography.titleMedium
             )
         }

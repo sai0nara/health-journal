@@ -1,5 +1,6 @@
 package com.example.healthjournal.domain
 
+import com.example.healthjournal.data.local.UnitSystem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -107,5 +108,61 @@ class GoalValidatorTest {
             .forEach { field ->
                 assertEquals("cm", GoalValidator.unitLabel(field))
             }
+    }
+
+    @Test
+    fun unitLabels_mapImperialPerParameter() {
+        assertEquals("lb", GoalValidator.unitLabel(MeasurementField.WEIGHT, UnitSystem.IMPERIAL))
+        MeasurementField.entries
+            .filter { it != MeasurementField.WEIGHT }
+            .forEach { field ->
+                assertEquals("in", GoalValidator.unitLabel(field, UnitSystem.IMPERIAL))
+            }
+    }
+
+    @Test
+    fun imperialWeightGoal_validatesAndParsesToKg() {
+        assertNull(GoalValidator.validate(MeasurementField.WEIGHT, "154.3", UnitSystem.IMPERIAL))
+        assertEquals(
+            69.99,
+            GoalValidator.parseGoal(MeasurementField.WEIGHT, "154.3", UnitSystem.IMPERIAL)!!,
+            0.001
+        )
+    }
+
+    @Test
+    fun imperialGirthGoal_validatesAndParsesToCm() {
+        assertNull(GoalValidator.validate(MeasurementField.WAIST, "33.5", UnitSystem.IMPERIAL))
+        assertEquals(
+            85.1,
+            GoalValidator.parseGoal(MeasurementField.WAIST, "33.5", UnitSystem.IMPERIAL)!!,
+            0.001
+        )
+    }
+
+    @Test
+    fun imperialOverCap_reportsDisplayUnitError() {
+        assertEquals(
+            ValidateMeasurements.maxExceededMessage(MeasurementField.WEIGHT, UnitSystem.IMPERIAL),
+            GoalValidator.validate(MeasurementField.WEIGHT, "2000", UnitSystem.IMPERIAL)
+        )
+    }
+
+    @Test
+    fun imperialBlankMalformedAndNonPositive_matchMetricSemantics() {
+        assertEquals(
+            GoalValidator.ERROR_REQUIRED,
+            GoalValidator.validate(MeasurementField.WEIGHT, "   ", UnitSystem.IMPERIAL)
+        )
+        assertEquals(
+            ValidateMeasurements.ERROR_INVALID_FORMAT,
+            GoalValidator.validate(MeasurementField.WEIGHT, "abc", UnitSystem.IMPERIAL)
+        )
+        assertEquals(
+            ValidateMeasurements.ERROR_NEGATIVE,
+            GoalValidator.validate(MeasurementField.WAIST, "0", UnitSystem.IMPERIAL)
+        )
+        assertNull(GoalValidator.parseGoal(MeasurementField.WEIGHT, "abc", UnitSystem.IMPERIAL))
+        assertNull(GoalValidator.parseGoal(MeasurementField.WEIGHT, "", UnitSystem.IMPERIAL))
     }
 }

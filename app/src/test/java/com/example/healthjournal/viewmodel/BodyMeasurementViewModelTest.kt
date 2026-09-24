@@ -2,6 +2,7 @@ package com.example.healthjournal.viewmodel
 
 import com.example.healthjournal.data.BodyMeasurementRepository
 import com.example.healthjournal.data.local.BodyMeasurementEntry
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.MeasurementField
 import com.example.healthjournal.domain.ValidateMeasurements
 import io.mockk.coEvery
@@ -311,5 +312,79 @@ class BodyMeasurementViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 0) { repository.insert(any()) }
+    }
+
+    private fun imperialViewModel() =
+        BodyMeasurementViewModel(repository, testDispatcher, UnitSystem.IMPERIAL)
+
+    @Test
+    fun imperialWeightInput_persistsMetricKg() = runTest {
+        viewModel = imperialViewModel()
+        viewModel.onFieldChanged(MeasurementField.WEIGHT, "154.3")
+
+        viewModel.onSaveClicked()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify {
+            repository.insert(match { it.weight_kg == 69.99 })
+        }
+    }
+
+    @Test
+    fun imperialLengthInput_persistsMetricCm() = runTest {
+        viewModel = imperialViewModel()
+        viewModel.onFieldChanged(MeasurementField.WAIST, "33.5")
+
+        viewModel.onSaveClicked()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify {
+            repository.insert(match { it.waist_cm == 85.1 })
+        }
+    }
+
+    @Test
+    fun imperialOverMax_surfacesDisplayUnitError() {
+        viewModel = imperialViewModel()
+        viewModel.onFieldChanged(MeasurementField.WEIGHT, "2000")
+
+        assertEquals(
+            ValidateMeasurements.maxExceededMessage(MeasurementField.WEIGHT, UnitSystem.IMPERIAL),
+            viewModel.uiState.value.fieldErrors[MeasurementField.WEIGHT]
+        )
+    }
+
+    @Test
+    fun onUnitSystemChanged_convertsDraftTextWithoutLoss() {
+        set(MeasurementField.WEIGHT, "70")
+
+        viewModel.onUnitSystemChanged(UnitSystem.IMPERIAL)
+
+        assertEquals("154.3", viewModel.uiState.value.rawValues[MeasurementField.WEIGHT])
+
+        viewModel.onUnitSystemChanged(UnitSystem.METRIC)
+
+        assertEquals("69.99", viewModel.uiState.value.rawValues[MeasurementField.WEIGHT])
+    }
+
+    @Test
+    fun onUnitSystemChanged_sameSystem_leavesDraftUntouched() {
+        set(MeasurementField.WEIGHT, "70")
+
+        viewModel.onUnitSystemChanged(UnitSystem.METRIC)
+
+        assertEquals("70", viewModel.uiState.value.rawValues[MeasurementField.WEIGHT])
+    }
+
+    @Test
+    fun onSaveClicked_doubleSubmit_writesExactlyOnce() = runTest {
+        set(MeasurementField.WAIST, "85")
+
+        viewModel.onSaveClicked()
+        viewModel.onSaveClicked()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.insert(any()) }
+        assertTrue(currentState().justSaved)
     }
 }

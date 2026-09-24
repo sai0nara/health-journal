@@ -144,6 +144,8 @@ fun PersonalCardScreen(
                             demographics = uiState.draftDemographics,
                             dateOfBirthValue = uiState.draftDateOfBirthValue,
                             heightText = uiState.draftHeightText,
+                            heightFeet = uiState.draftHeightFeet,
+                            heightInches = uiState.draftHeightInches,
                             weightText = uiState.draftWeightText,
                             validation = uiState.validation,
                             unitSystem = uiState.unitSystem,
@@ -152,12 +154,17 @@ fun PersonalCardScreen(
                             onDateOfBirthSelected = viewModel::onDateOfBirthSelected,
                             onSexChanged = viewModel::onSexChanged,
                             onHeightChanged = viewModel::onHeightChanged,
+                            onHeightFeetChanged = viewModel::onHeightFeetChanged,
+                            onHeightInchesChanged = viewModel::onHeightInchesChanged,
                             onWeightChanged = viewModel::onWeightChanged,
                             onRaceEthnicityChanged = viewModel::onRaceEthnicityChanged,
                             onUnitSystemChanged = viewModel::onUnitSystemChanged
                         )
                     } else {
-                        DemographicsCard(demographics = uiState.demographics)
+                        DemographicsCard(
+                            demographics = uiState.demographics,
+                            unitSystem = uiState.unitSystem
+                        )
                     }
                 }
                 item {
@@ -210,7 +217,7 @@ fun PersonalCardScreen(
 // ==================== VIEW MODE CARDS ====================
 
 @Composable
-private fun DemographicsCard(demographics: Demographics) {
+private fun DemographicsCard(demographics: Demographics, unitSystem: UnitSystem) {
     OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.outlinedCardColors(
@@ -240,8 +247,32 @@ private fun DemographicsCard(demographics: Demographics) {
                 InfoRow(label = stringResource(R.string.label_name), value = demographics.fullName)
                 InfoRow(label = stringResource(R.string.label_date_of_birth), value = demographics.dateOfBirth)
                 InfoRow(label = stringResource(R.string.label_sex), value = demographics.sex)
-                InfoRow(label = stringResource(R.string.label_height), value = demographics.heightCm?.let { stringResource(R.string.format_cm_value, UnitConverter.formatDouble(it)) } ?: "")
-                InfoRow(label = stringResource(R.string.label_weight), value = demographics.weightKg?.let { stringResource(R.string.format_kg_value, UnitConverter.formatDouble(it)) } ?: "")
+                InfoRow(
+                    label = stringResource(R.string.label_height),
+                    value = demographics.heightCm?.let {
+                        if (unitSystem == UnitSystem.IMPERIAL) {
+                            stringResource(
+                                R.string.format_in_value,
+                                UnitConverter.formatDouble(UnitConverter.cmToInches(it))
+                            )
+                        } else {
+                            stringResource(R.string.format_cm_value, UnitConverter.formatDouble(it))
+                        }
+                    } ?: ""
+                )
+                InfoRow(
+                    label = stringResource(R.string.label_weight),
+                    value = demographics.weightKg?.let {
+                        if (unitSystem == UnitSystem.IMPERIAL) {
+                            stringResource(
+                                R.string.format_lb_value,
+                                UnitConverter.formatDouble(UnitConverter.kgToLbs(it))
+                            )
+                        } else {
+                            stringResource(R.string.format_kg_value, UnitConverter.formatDouble(it))
+                        }
+                    } ?: ""
+                )
                 InfoRow(label = stringResource(R.string.label_race_ethnicity), value = demographics.raceEthnicity)
             }
         }
@@ -505,6 +536,8 @@ private fun DemographicsEditCard(
     demographics: Demographics,
     dateOfBirthValue: TextFieldValue,
     heightText: String,
+    heightFeet: String,
+    heightInches: String,
     weightText: String,
     validation: DemographicsValidationResult,
     unitSystem: UnitSystem,
@@ -513,6 +546,8 @@ private fun DemographicsEditCard(
     onDateOfBirthSelected: (String) -> Unit,
     onSexChanged: (String) -> Unit,
     onHeightChanged: (String) -> Unit,
+    onHeightFeetChanged: (String) -> Unit,
+    onHeightInchesChanged: (String) -> Unit,
     onWeightChanged: (String) -> Unit,
     onRaceEthnicityChanged: (String) -> Unit,
     onUnitSystemChanged: (UnitSystem) -> Unit
@@ -612,25 +647,59 @@ private fun DemographicsEditCard(
                     .semantics { contentDescription = sexContentDescription }
             )
 
-            // Height with unit conversion
+            // Height with unit conversion: metric takes decimal cm, imperial
+            // splits into ft + in fields backed by the shared converter.
             val heightUnit = stringResource(if (unitSystem == UnitSystem.METRIC) R.string.height_unit_cm else R.string.height_unit_in)
-            val heightContentDescription = stringResource(R.string.cd_height, heightUnit, heightText)
-            OutlinedTextField(
-                value = heightText,
-                onValueChange = onHeightChanged,
-                label = { Text(stringResource(R.string.label_height_with_unit, heightUnit)) },
-                isError = validation.height is ValidationResult.Invalid,
-                supportingText = if (validation.height is ValidationResult.Invalid) {
-                    { Text(stringResource(validation.height.errorResId, *validation.height.formatArgs.toTypedArray())) }
-                } else null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics { contentDescription = heightContentDescription },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Decimal,
-                    imeAction = ImeAction.Next
+            if (unitSystem == UnitSystem.IMPERIAL) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = heightFeet,
+                        onValueChange = onHeightFeetChanged,
+                        label = { Text(stringResource(R.string.label_height_with_unit, "ft")) },
+                        isError = validation.height is ValidationResult.Invalid,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("personal_height_feet")
+                    )
+                    OutlinedTextField(
+                        value = heightInches,
+                        onValueChange = onHeightInchesChanged,
+                        label = { Text(stringResource(R.string.label_height_with_unit, heightUnit)) },
+                        isError = validation.height is ValidationResult.Invalid,
+                        supportingText = if (validation.height is ValidationResult.Invalid) {
+                            { Text(stringResource(validation.height.errorResId, *validation.height.formatArgs.toTypedArray())) }
+                        } else null,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Next
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("personal_height_inches")
+                    )
+                }
+            } else {
+                val heightContentDescription = stringResource(R.string.cd_height, heightUnit, heightText)
+                OutlinedTextField(
+                    value = heightText,
+                    onValueChange = onHeightChanged,
+                    label = { Text(stringResource(R.string.label_height_with_unit, heightUnit)) },
+                    isError = validation.height is ValidationResult.Invalid,
+                    supportingText = if (validation.height is ValidationResult.Invalid) {
+                        { Text(stringResource(validation.height.errorResId, *validation.height.formatArgs.toTypedArray())) }
+                    } else null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { contentDescription = heightContentDescription },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = ImeAction.Next
+                    )
                 )
-            )
+            }
 
             // Weight with unit conversion
             val weightUnit = stringResource(if (unitSystem == UnitSystem.METRIC) R.string.weight_unit_kg else R.string.weight_unit_lbs)
@@ -1081,7 +1150,8 @@ private fun EmergencyContactsEditCard(
                 Text(
                     text = stringResource(R.string.emergency_contacts_title),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.testTag("emergency_contacts_title")
                 )
                 IconButton(onClick = { showAddContactDialog = true }) {
                     Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_emergency_contact))

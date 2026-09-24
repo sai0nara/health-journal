@@ -48,15 +48,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.data.local.BodyMeasurementEntry
+import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.GoalValidator
 import com.example.healthjournal.domain.MeasurementField
-import com.example.healthjournal.domain.formatMeasurement
 import com.example.healthjournal.domain.toParamTrend
 import com.example.healthjournal.domain.valueFor
 import com.example.healthjournal.ui.components.GoalSheet
@@ -81,6 +84,7 @@ fun MeasurementsScreen(
 ) {
     val entries by viewModel.entries.collectAsState()
     val analyticsState by analyticsViewModel.uiState.collectAsState()
+    val measurementState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
@@ -94,11 +98,18 @@ fun MeasurementsScreen(
         }
     }
 
+    // History cards render in the global display units.
+    val prefUnits = UnitSettings.read(LocalContext.current)
+    LaunchedEffect(prefUnits) {
+        viewModel.onUnitSystemChanged(prefUnits)
+    }
+
     var sheetField by remember { mutableStateOf<MeasurementField?>(null) }
     sheetField?.let { field ->
         GoalSheet(
             field = field,
             initialTarget = analyticsState.goalTargets[field.name],
+            unitSystem = measurementState.unitSystem,
             onSave = { target ->
                 analyticsViewModel.saveGoal(field, target)
                 sheetField = null
@@ -142,11 +153,29 @@ fun MeasurementsScreen(
                 val field = MeasurementField.entries[page]
                 val pageSeries = remember(entries, field) { entries.toParamTrend(field) }
                 val goalTarget = analyticsState.goalTargets[field.name]
+                val unitSystem = measurementState.unitSystem
+                val isWeight = field == MeasurementField.WEIGHT
+                // Charts plot display units; storage stays canonical metric.
+                val displaySeries = remember(pageSeries, unitSystem, field) {
+                    if (unitSystem == UnitSystem.IMPERIAL) {
+                        pageSeries.map { (time, value) ->
+                            time to if (isWeight) UnitConverter.kgToLbs(value)
+                            else UnitConverter.cmToInches(value)
+                        }
+                    } else pageSeries
+                }
+                val displayGoal = remember(goalTarget, unitSystem, field) {
+                    goalTarget?.let {
+                        if (unitSystem == UnitSystem.IMPERIAL) {
+                            if (isWeight) UnitConverter.kgToLbs(it) else UnitConverter.cmToInches(it)
+                        } else it
+                    }
+                }
 
                 // Column wrapper: header and chart must stack, not overlap
                 // in the pager page's Box scope.
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    ChartHeader(field, goalTarget) { sheetField = field }
+                    ChartHeader(field, goalTarget, unitSystem) { sheetField = field }
 
                     if (pageSeries.isEmpty()) {
                         Box(
@@ -165,9 +194,9 @@ fun MeasurementsScreen(
                         }
                     } else {
                         ParamTrendChart(
-                            series = pageSeries,
-                            goalTarget = goalTarget,
-                            unitLabel = GoalValidator.unitLabel(field),
+                            series = displaySeries,
+                            goalTarget = displayGoal,
+                            unitLabel = GoalValidator.unitLabel(field, unitSystem),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(160.dp)
@@ -206,6 +235,7 @@ fun MeasurementsScreen(
                         MeasurementCard(
                             entry = entry,
                             dateLabel = dateFormat.format(Date(entry.timestamp)),
+                            unitSystem = measurementState.unitSystem,
                             onDelete = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 viewModel.deleteEntry(entry.entry_id)
@@ -233,6 +263,7 @@ fun MeasurementsScreen(
 private fun ChartHeader(
     field: MeasurementField,
     goalTarget: Double?,
+    unitSystem: UnitSystem,
     onSetGoal: () -> Unit
 ) {
     Row(
@@ -244,7 +275,10 @@ private fun ChartHeader(
     ) {
         Text(
             text = if (goalTarget != null) {
-                "${field.label} · Goal ${goalTarget} ${GoalValidator.unitLabel(field)}"
+                val isWeight = field == MeasurementField.WEIGHT
+                "${field.label} · Goal ${
+                    UnitConverter.formatMeasurement(goalTarget, unitSystem, isWeight)
+                } ${GoalValidator.unitLabel(field, unitSystem)}"
             } else {
                 field.label
             },
@@ -270,6 +304,7 @@ private fun ChartHeader(
 private fun MeasurementCard(
     entry: BodyMeasurementEntry,
     dateLabel: String,
+    unitSystem: UnitSystem,
     onDelete: () -> Unit
 ) {
     val circumferenceParams = MeasurementField.entries
@@ -277,6 +312,8 @@ private fun MeasurementCard(
         .mapNotNull { field ->
             entry.valueFor(field)?.let { field.label to it }
         }
+    val weightUnit = if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg"
+    val lengthUnit = if (unitSystem == UnitSystem.IMPERIAL) "in" else "cm"
 
     OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -294,7 +331,7 @@ private fun MeasurementCard(
             Column(modifier = Modifier.weight(1f)) {
                 if (entry.weight_kg != null) {
                     Text(
-                        text = "${entry.weight_kg.formatMeasurement()} kg",
+                        text = "${UnitConverter.formatMeasurement(entry.weight_kg, unitSystem, isWeight = true)} $weightUnit",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -307,7 +344,7 @@ private fun MeasurementCard(
                     ) {
                         circumferenceParams.forEach { (label, value) ->
                             Text(
-                                text = "$label ${value.formatMeasurement()} cm",
+                                text = "$label ${UnitConverter.formatMeasurement(value, unitSystem, isWeight = false)} $lengthUnit",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }

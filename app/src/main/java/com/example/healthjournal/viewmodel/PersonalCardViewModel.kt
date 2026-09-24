@@ -41,6 +41,9 @@ data class PersonalCardUiState(
     val draftEmergencyContacts: EmergencyContacts = EmergencyContacts(),
     val draftDateOfBirthValue: TextFieldValue = TextFieldValue(""),
     val draftHeightText: String = "",
+    /** Split imperial height entry (ft + in); single-field text stays metric-only. */
+    val draftHeightFeet: String = "",
+    val draftHeightInches: String = "",
     val draftWeightText: String = "",
     val validation: DemographicsValidationResult = DemographicsValidationResult()
 )
@@ -48,19 +51,38 @@ data class PersonalCardUiState(
 class PersonalCardViewModel(
     private val repository: PersonalCardRepository,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val persistUnitSystem: (UnitSystem) -> Unit = {}
+    private val persistUnitSystem: (UnitSystem) -> Unit = {},
+    initialUnitSystem: UnitSystem = UnitSystem.METRIC
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(PersonalCardUiState())
+    private val _uiState = MutableStateFlow(PersonalCardUiState(unitSystem = initialUnitSystem))
     val uiState: StateFlow<PersonalCardUiState> = _uiState.asStateFlow()
 
-    private val demographicsValidator = DemographicsValidator()
+private val demographicsValidator = DemographicsValidator()
+
+    /**
+     * Seeds the height entry texts for [unitSystem]: a single decimal text in
+     * metric mode, split ft/in texts in imperial mode (blank when unset).
+     */
+    private fun heightEntryTexts(heightCm: Double?, unitSystem: UnitSystem): Triple<String, String, String> =
+        if (unitSystem == UnitSystem.IMPERIAL && heightCm != null) {
+            val split = UnitConverter.cmToFeetInches(heightCm)
+            Triple("", split.feet.toString(), UnitConverter.formatDouble(split.inches))
+        } else {
+            Triple(
+                UnitConverter.formatForDisplay(heightCm, UnitSystem.METRIC, isHeight = true),
+                "",
+                ""
+            )
+        }
 
     init {
         viewModelScope.launch(ioDispatcher) {
             repository.getPersonalCard().collect { card ->
                 if (card != null) {
                     _uiState.update {
+                        val (heightText, feet, inches) =
+                            heightEntryTexts(card.demographics.heightCm, it.unitSystem)
                         it.copy(
                             demographics = card.demographics,
                             medicalProfile = card.medicalProfile,
@@ -74,11 +96,11 @@ class PersonalCardViewModel(
                                 card.demographics.dateOfBirth,
                                 TextRange(card.demographics.dateOfBirth.length)
                             ),
-                            draftHeightText = UnitConverter.formatForDisplay(
-                                card.demographics.heightCm, UnitSystem.METRIC, isHeight = true
-                            ),
+                            draftHeightText = heightText,
+                            draftHeightFeet = feet,
+                            draftHeightInches = inches,
                             draftWeightText = UnitConverter.formatForDisplay(
-                                card.demographics.weightKg, UnitSystem.METRIC, isHeight = false
+                                card.demographics.weightKg, it.unitSystem, isHeight = false
                             ),
                             isLoading = false
                         )
@@ -92,6 +114,8 @@ class PersonalCardViewModel(
 
     fun startEditing() {
         _uiState.update { state ->
+            val (heightText, feet, inches) =
+                heightEntryTexts(state.demographics.heightCm, state.unitSystem)
             state.copy(
                 isEditing = true,
                 draftDemographics = state.demographics,
@@ -102,9 +126,9 @@ class PersonalCardViewModel(
                     state.demographics.dateOfBirth,
                     TextRange(state.demographics.dateOfBirth.length)
                 ),
-                draftHeightText = UnitConverter.formatForDisplay(
-                    state.demographics.heightCm, state.unitSystem, isHeight = true
-                ),
+                draftHeightText = heightText,
+                draftHeightFeet = feet,
+                draftHeightInches = inches,
                 draftWeightText = UnitConverter.formatForDisplay(
                     state.demographics.weightKg, state.unitSystem, isHeight = false
                 )
@@ -115,6 +139,8 @@ class PersonalCardViewModel(
 
     fun cancelEditing() {
         _uiState.update { state ->
+            val (heightText, feet, inches) =
+                heightEntryTexts(state.demographics.heightCm, state.unitSystem)
             state.copy(
                 isEditing = false,
                 draftDemographics = state.demographics,
@@ -125,9 +151,9 @@ class PersonalCardViewModel(
                     state.demographics.dateOfBirth,
                     TextRange(state.demographics.dateOfBirth.length)
                 ),
-                draftHeightText = UnitConverter.formatForDisplay(
-                    state.demographics.heightCm, state.unitSystem, isHeight = true
-                ),
+                draftHeightText = heightText,
+                draftHeightFeet = feet,
+                draftHeightInches = inches,
                 draftWeightText = UnitConverter.formatForDisplay(
                     state.demographics.weightKg, state.unitSystem, isHeight = false
                 )
@@ -239,11 +265,13 @@ class PersonalCardViewModel(
 
     fun onUnitSystemChanged(unitSystem: UnitSystem) {
         _uiState.update {
+            val (heightText, feet, inches) =
+                heightEntryTexts(it.draftDemographics.heightCm, unitSystem)
             it.copy(
                 unitSystem = unitSystem,
-                draftHeightText = UnitConverter.formatForDisplay(
-                    it.draftDemographics.heightCm, unitSystem, isHeight = true
-                ),
+                draftHeightText = heightText,
+                draftHeightFeet = feet,
+                draftHeightInches = inches,
                 draftWeightText = UnitConverter.formatForDisplay(
                     it.draftDemographics.weightKg, unitSystem, isHeight = false
                 )
@@ -251,6 +279,43 @@ class PersonalCardViewModel(
         }
         validateDraft()
         persistUnitSystem(unitSystem)
+    }
+
+    /**
+     * Split imperial height entry: feet carries whole feet, inches the
+     * remainder; both present parse back to canonical cm, anything partial
+     * leaves height unset (matching the optional-field semantics).
+     */
+    fun onHeightFeetChanged(value: String) {
+        val feetText = value.filter { it.isDigit() }
+        _uiState.update {
+            it.copy(
+                draftHeightFeet = feetText,
+                draftDemographics = it.draftDemographics.copy(
+                    heightCm = feetInchesHeightCm(feetText, it.draftHeightInches)
+                )
+            )
+        }
+        validateDraft()
+    }
+
+    fun onHeightInchesChanged(value: String) {
+        val inchesText = UnitConverter.sanitizeDecimalInput(value)
+        _uiState.update {
+            it.copy(
+                draftHeightInches = inchesText,
+                draftDemographics = it.draftDemographics.copy(
+                    heightCm = feetInchesHeightCm(it.draftHeightFeet, inchesText)
+                )
+            )
+        }
+        validateDraft()
+    }
+
+    private fun feetInchesHeightCm(feetText: String, inchesText: String): Double? {
+        val feet = feetText.toIntOrNull() ?: return null
+        val inches = inchesText.toDoubleOrNull() ?: return null
+        return UnitConverter.feetInchesToCm(feet, inches)
     }
 
     private fun validateDraft() {
@@ -388,14 +453,16 @@ class PersonalCardViewModel(
 
 class PersonalCardViewModelFactory(
     private val repository: PersonalCardRepository,
-    private val persistUnitSystem: (UnitSystem) -> Unit = {}
+    private val persistUnitSystem: (UnitSystem) -> Unit = {},
+    private val initialUnitSystem: UnitSystem = UnitSystem.METRIC
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PersonalCardViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return PersonalCardViewModel(
                 repository = repository,
-                persistUnitSystem = persistUnitSystem
+                persistUnitSystem = persistUnitSystem,
+                initialUnitSystem = initialUnitSystem
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

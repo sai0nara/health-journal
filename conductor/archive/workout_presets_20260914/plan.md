@@ -45,3 +45,6 @@
 ## Phase 7: End-to-End Verification + Review Fixes
 - [ ] Task: End-to-end JVM + instrumented pass; manual verification of all 3 user flows (A: preset build, B: routine execute, C: analytics/convert) on device; checkpoint commits per phase per workflow
 - [ ] Task: Code review of changes; apply suggestions; record SHA (protocol in workflow.md)
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions 04a7811
