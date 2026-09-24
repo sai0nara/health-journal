@@ -1,6 +1,6 @@
 # Track russian_localization_20260924 — Implementation Plan
 
-## Phase 1: Failing checks + string externalization
+## Phase 1: Failing checks + string externalization [checkpoint: 701b7b9]
 
 - [x] Task: Write failing localization checks (Red) [d30b3eb]
     - [ ] JVM test: values-ru key parity vs values/strings.xml (fails: no values-ru)
