@@ -4,21 +4,21 @@
 > unit conversion at the JVM unit level, plus the card screen and DAO behaviour
 > at the instrumented level.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-22
 
 ## Automated coverage
 
 | Stack | Test file | Scope |
 |---|---|---|
-| JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/PersonalCardViewModelTest.kt` | initial state, edit/save/cancel flow, field handlers, unit toggle, validation wiring |
+| JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/PersonalCardViewModelTest.kt` | initial state, edit/save/cancel flow, field handlers, unit toggle, validation wiring, ft/in entry, split-text seeding, preference load |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/validation/DemographicsValidatorTest.kt` | orchestrator: empty/valid/invalid per field |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/validation/ValidateDateOfBirthUseCaseTest.kt` | blank, past, future, age bound, format |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/validation/ValidateHeightUseCaseTest.kt` | metric/imperial in-range and out-of-range |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/validation/ValidateWeightUseCaseTest.kt` | metric/imperial in-range and out-of-range |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/validation/ValidationResultTest.kt` | Valid/Invalid shape |
-| JVM unit | `app/src/test/java/com/example/healthjournal/data/local/UnitConverterTest.kt` | conversion, formatting, input parse, sanitize |
+| JVM unit | `app/src/test/java/com/example/healthjournal/data/local/UnitConverterTest.kt` | conversion, formatting, input parse, sanitize, ft/in helpers |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/PersonalCardDaoTest.kt` | singleton upsert, reads, delete, sync status, dirty, complex-field round-trip |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/PersonalCardScreenTest.kt` | empty states, section display, edit/cancel/save, dialogs, unit toggle, save gating |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/PersonalCardScreenTest.kt` | empty states, section display, edit/cancel/save, dialogs, unit toggle, save gating, converted rows, ft/in save |
 
 ## Test cases
 
@@ -34,6 +34,9 @@ Last updated: 2026-09-02
 | T-8 | AC-5 | Sync payload/merge | card changed + cloud | last-write-wins merge; payload round-trip |
 | T-9 | AC-6 | Backup/restore | full backup + restore | card present in ZIP; restored locally |
 | T-10 | AC-5 | Singleton guarantee | multiple inserts | always one `personal_card` row |
+| T-11 | AC-7 | ft+in height save | imperial ft/in entry | metric cm persisted; same split redisplays |
+| T-12 | AC-3 | Converted read-only rows | saved height/weight, imperial preference | rows show in/lbs |
+| T-13 | AC-3 | Relaunch restores preference | imperial saved, cold start | card opens directly in imperial |
 
 ## Manual checks
 
@@ -41,6 +44,7 @@ Last updated: 2026-09-02
 - Decimal keyboard and auto-dash `yyyy-MM-dd` input with cursor preservation.
 - Add/remove dialogs for allergies, medications, reactions, history, contacts.
 - Light and dark rendering of the card and its dialogs.
+- ft+in entry round trip and relaunch-in-imperial behaviour.
 
 ## Cross-references
 

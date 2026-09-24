@@ -1,10 +1,11 @@
 # Personal Card — Product Requirements
 
 > A single, standardized medical profile screen that consolidates demographics,
-> medical profile, medical history, and emergency contacts, with metric/imperial
-> unit support and save-blocking validation, synced to the cloud.
+> medical profile, medical history, and emergency contacts, with automatic
+> metric/imperial conversion both ways as settings change, and save-blocking
+> validation, synced to the cloud.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-22
 
 ## Overview
 
@@ -17,8 +18,10 @@ locally (Room table `personal_card`) and synced to Drive as its own snapshot,
 so the profile is available across devices and survives backup/restore.
 
 Height and weight support a metric/imperial unit toggle with inline validation;
-the Date of Birth, height, and weight are validated together, and the Save
-button is disabled while any is invalid.
+imperial height entry splits into ft+in fields; read-only rows follow the
+preference; the preference persists across launches. The Date of Birth,
+height, and weight are validated together, and the Save button is disabled
+while any is invalid.
 
 ## Goals / Non-goals
 
@@ -27,6 +30,9 @@ button is disabled while any is invalid.
 - Record a consolidated medical profile: demographics, medical profile, medical
   history, and emergency contacts.
 - Support metric/imperial height and weight entry with conversion while typing.
+- Convert height/weight automatically both ways as the unit setting changes,
+  including ft+in height entry, converted read-only rows, and preference
+  persistence across launches.
 - Validate date of birth (not future, age within range), height, and weight,
   and block save on any invalid field.
 - Edit in a draft edit-mode and cancel without persisting changes.
@@ -54,7 +60,9 @@ button is disabled while any is invalid.
 - FR-3: Each section is editable in a draft edit-mode with view-mode and
   add/remove dialogs for list fields.
 - FR-4: Height and weight have a metric/imperial unit toggle that converts the
-  displayed values.
+  displayed values. Imperial height entry splits into ft+in fields parsed back
+  to metric; read-only rows render in the preferred units; the preference is
+  persisted and restored at launch.
 - FR-5: Save is disabled while Date of Birth, height, or weight is invalid.
 - FR-6: Saving persists the card locally and marks it pending-sync.
 - FR-7: The card syncs to Drive as a singleton snapshot and merges last-write-wins.
@@ -72,10 +80,11 @@ button is disabled while any is invalid.
 - AC-2: An invalid date of birth, height, or weight disables Save with inline
   guidance.
 - AC-3: Switching the unit system converts height/weight display without losing
-  the entered metric value.
+  the entered metric value; relaunching restores the saved preference.
 - AC-4: Cancelling edit mode discards draft changes.
 - AC-5: The card converges across devices via Drive sync.
 - AC-6: The card is present in a backup ZIP and restored on restore.
+- AC-7: A ft+in height entry stores metric cm and redisplays the same split.
 
 ## Out of scope
 

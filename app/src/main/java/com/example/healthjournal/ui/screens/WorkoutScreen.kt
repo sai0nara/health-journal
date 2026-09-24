@@ -687,45 +687,47 @@ onToggleSetCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit,
     onSwapExercise: (exerciseIndex: Int, exerciseId: String, name: String) -> Unit,
     onAddRoutineSet: (exerciseIndex: Int) -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    // The rest timer stays pinned above the scrollable list so it remains
+    // visible no matter how far down the routine has been scrolled.
+    Column(modifier = Modifier.fillMaxWidth()) {
         if (restSeconds > 0) {
-            item {
-                Text(
-                    text = "Rest ${formatElapsed(restSeconds.toLong())}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.testTag("workout_rest_timer")
-                )
+            Text(
+                text = "Rest ${formatElapsed(restSeconds.toLong())}",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.testTag("workout_rest_timer")
+            )
+        }
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            setMatrixError?.let {
+                item {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.testTag("set_matrix_error")
+                    )
+                }
             }
-        }
-        setMatrixError?.let {
-            item {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.testTag("set_matrix_error")
-                )
+            if (exercises.isEmpty()) {
+                item { Text("No exercises yet", style = MaterialTheme.typography.bodyMedium) }
             }
-        }
-        if (exercises.isEmpty()) {
-            item { Text("No exercises yet", style = MaterialTheme.typography.bodyMedium) }
-        }
-        exercises.forEachIndexed { exerciseIndex, exercise ->
-            item(key = exercise.id) {
-                RoutineExerciseCard(
-                    exercise = exercise,
-                    exerciseIndex = exerciseIndex,
-                    catalogExercises = catalogExercises,
-                    unitSystem = unitSystem,
-                    onToggleSetCompleted = onToggleSetCompleted,
-                    onUpdateRoutineSet = onUpdateRoutineSet,
-                    onSwapExercise = onSwapExercise,
-                    onAddRoutineSet = onAddRoutineSet
-                )
+            exercises.forEachIndexed { exerciseIndex, exercise ->
+                item(key = exercise.id) {
+                    RoutineExerciseCard(
+                        exercise = exercise,
+                        exerciseIndex = exerciseIndex,
+                        catalogExercises = catalogExercises,
+                        unitSystem = unitSystem,
+                        onToggleSetCompleted = onToggleSetCompleted,
+                        onUpdateRoutineSet = onUpdateRoutineSet,
+                        onSwapExercise = onSwapExercise,
+                        onAddRoutineSet = onAddRoutineSet
+                    )
+                }
             }
         }
     }

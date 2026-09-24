@@ -1,0 +1,1 @@
+1. In routine preset add more than one excercise. Start a routine. Scroll down to second excercise, finish first set. Rest timer not displayed since it bounded to the first excersise. Need it to be bounded to the top of the screen
