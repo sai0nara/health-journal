@@ -128,7 +128,7 @@ fun WorkoutScreen(
                         )
                     }
                 },
-                title = { Text("Workouts") }
+                title = { Text(stringResource(R.string.workout_title)) }
             )
         }
     ) { padding ->
@@ -143,7 +143,11 @@ fun WorkoutScreen(
                 is WorkoutUiState.Idle -> IdleContent(
                     recentLabels = recentSessions.map {
                         val type = WorkoutType.fromName(it.type)
-                        "${type?.label ?: it.type} · ${formatDate(it.startTimestamp)}"
+                        stringResource(
+                            R.string.workout_recent_item,
+                            type?.label ?: it.type,
+                            formatDate(it.startTimestamp)
+                        )
                     },
                     presets = presets,
                     onSelectType = { viewModel.selectType(it) },
@@ -230,16 +234,16 @@ fun WorkoutScreen(
                     )
                     AlertDialog(
                         onDismissRequest = { viewModel.discardRecovery() },
-                        title = { Text("Unfinished Workout") },
-                        text = { Text("A previous session did not finish. Resume it or discard it.") },
+                        title = { Text(stringResource(R.string.workout_recovery_title)) },
+                        text = { Text(stringResource(R.string.workout_recovery_text)) },
                         confirmButton = {
                             TextButton(onClick = { viewModel.resumeRecovery() }) {
-                                Text("Resume")
+                                Text(stringResource(R.string.workout_resume))
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = { viewModel.discardRecovery() }) {
-                                Text("Discard")
+                                Text(stringResource(R.string.workout_discard))
                             }
                         }
                     )
@@ -255,11 +259,11 @@ fun WorkoutScreen(
                     )
                     AlertDialog(
                         onDismissRequest = { viewModel.dismissError() },
-                        title = { Text("Workout Error") },
+                        title = { Text(stringResource(R.string.workout_error_title)) },
                         text = { Text(state.message) },
                         confirmButton = {
                             TextButton(onClick = { viewModel.dismissError() }) {
-                                Text("OK")
+                                Text(stringResource(R.string.action_ok))
                             }
                         }
                     )
@@ -295,7 +299,7 @@ private fun IdleContent(
             .testTag("workout_catalog")
     ) {
         item {
-            Text("Choose a workout", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.workout_choose), style = MaterialTheme.typography.titleMedium)
         }
         items(WorkoutType.entries) { type ->
             OutlinedButton(
@@ -312,13 +316,13 @@ private fun IdleContent(
                     .fillMaxWidth()
                     .testTag("presets_entry")
             ) {
-                Text("Presets")
+                Text(stringResource(R.string.workout_presets))
             }
         }
         if (presets.isNotEmpty()) {
             item {
                 Text(
-                    "Routines",
+                    stringResource(R.string.workout_routines),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -333,7 +337,7 @@ private fun IdleContent(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(preset.name, style = MaterialTheme.typography.titleSmall)
                             Text(
-                                text = "${preset.exercises.size} exercises",
+                                text = stringResource(R.string.workout_routine_count, preset.exercises.size),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -342,7 +346,7 @@ private fun IdleContent(
                             onClick = { onStartRoutine(preset.id) },
                             modifier = Modifier.testTag("routine_start_${preset.id}")
                         ) {
-                            Text("Start routine")
+                            Text(stringResource(R.string.workout_start_routine))
                         }
                     }
                 }
@@ -351,7 +355,7 @@ private fun IdleContent(
         if (recentLabels.isNotEmpty()) {
             item {
                 Text(
-                    "Recent",
+                    stringResource(R.string.workout_recent),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -378,7 +382,7 @@ private fun ConfiguringContent(
     onLogPast: () -> Unit
 ) {
     Text(
-        "Configure ${state.type.label}",
+        stringResource(R.string.workout_configure_title, state.type.label),
         style = MaterialTheme.typography.titleMedium
     )
     OutlinedTextField(
@@ -386,8 +390,10 @@ private fun ConfiguringContent(
         onValueChange = onTargetChange,
         label = {
             Text(
-                if (state.type.targetKind.supportsDistance) "Target distance (km)"
-                else "Target duration (min)"
+                stringResource(
+                    if (state.type.targetKind.supportsDistance) R.string.workout_target_distance
+                    else R.string.workout_target_duration
+                )
             )
         },
         supportingText = state.targetError?.let { { Text(it) } },
@@ -400,17 +406,17 @@ private fun ConfiguringContent(
     )
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(onClick = onBack) {
-            Text("Back")
+            Text(stringResource(R.string.action_back_label))
         }
         Button(onClick = onStart, modifier = Modifier.weight(1f)) {
-            Text("Start")
+            Text(stringResource(R.string.workout_start))
         }
     }
     OutlinedButton(
         onClick = onLogPast,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text("Log past ${state.type.label} instead")
+        Text(stringResource(R.string.workout_log_past_instead, state.type.label))
     }
 }
 
@@ -421,7 +427,7 @@ private fun CountdownContent(secondsRemaining: Int) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Get ready", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.workout_get_ready), style = MaterialTheme.typography.titleMedium)
         Text(
             text = secondsRemaining.toString(),
             style = MaterialTheme.typography.displayLarge,
@@ -472,7 +478,7 @@ private fun SessionContent(
             modifier = Modifier.testTag("workout_timer")
         )
         if (paused) {
-            Text("Paused", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.workout_paused), style = MaterialTheme.typography.titleMedium)
         }
         val type = WorkoutType.fromName(session.type)
         val isRoutine = session.setMatrix?.any { it.isPlanned } == true
@@ -508,10 +514,10 @@ private fun SessionContent(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = onPauseResume, modifier = Modifier.weight(1f)) {
-                Text(if (paused) "Resume" else "Pause")
+                Text(stringResource(if (paused) R.string.workout_resume else R.string.workout_pause))
             }
             Button(onClick = onFinish, modifier = Modifier.weight(1f)) {
-                Text("Finish")
+                Text(stringResource(R.string.workout_finish))
             }
         }
     }
@@ -529,17 +535,18 @@ private fun IntervalControls(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = tracker?.phase?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "Work",
+            text = tracker?.phase?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
+                ?: stringResource(R.string.workout_phase_work),
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.testTag("hiit_phase")
         )
         Text(
-            text = "Round ${tracker?.rounds ?: 0}",
+            text = stringResource(R.string.workout_round, tracker?.rounds ?: 0),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.testTag("hiit_rounds")
         )
         Button(onClick = onAdvanceInterval, modifier = Modifier.testTag("next_interval_button")) {
-            Text("Next interval")
+            Text(stringResource(R.string.workout_next_interval))
         }
     }
 }
@@ -564,7 +571,7 @@ private fun SetMatrixEditor(
     ) {
         if (restSeconds > 0) {
             Text(
-                text = "Rest ${formatElapsed(restSeconds.toLong())}",
+                text = stringResource(R.string.workout_rest_timer, formatElapsed(restSeconds.toLong())),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.testTag("workout_rest_timer")
@@ -581,7 +588,7 @@ private fun SetMatrixEditor(
 
         val list = exercises ?: emptyList()
         if (list.isEmpty()) {
-            Text("No exercises yet", style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.workout_no_exercises), style = MaterialTheme.typography.bodyMedium)
         }
         // Only the tapped card is "active"; the first present exercise is active
         // by default so a single-exercise workout shows its inputs immediately.
@@ -599,7 +606,12 @@ private fun SetMatrixEditor(
                             set.kg
                         }
                         Text(
-                            "${formatCompact(displayKg)} ${if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg"} × ${set.reps} reps",
+                            stringResource(
+                                R.string.workout_set_summary,
+                                formatCompact(displayKg),
+                                if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg",
+                                set.reps
+                            ),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -609,7 +621,14 @@ private fun SetMatrixEditor(
                             OutlinedTextField(
                                 value = exerciseKg,
                                 onValueChange = { exerciseKg = it },
-                                label = { Text(if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg") },
+                                label = {
+                                    Text(
+                                        stringResource(
+                                            if (unitSystem == UnitSystem.IMPERIAL) R.string.workout_unit_lb
+                                            else R.string.workout_unit_kg
+                                        )
+                                    )
+                                },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier
@@ -619,7 +638,7 @@ private fun SetMatrixEditor(
                             OutlinedTextField(
                                 value = exerciseReps,
                                 onValueChange = { exerciseReps = it },
-                                label = { Text("reps") },
+                                label = { Text(stringResource(R.string.workout_reps)) },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier
@@ -641,7 +660,7 @@ private fun SetMatrixEditor(
                                 },
                                 modifier = Modifier.testTag("add_set_button_$index")
                             ) {
-                                Text("Add set")
+                                Text(stringResource(R.string.workout_add_set))
                             }
                         }
                     }
@@ -656,7 +675,7 @@ private fun SetMatrixEditor(
             OutlinedTextField(
                 value = exerciseName,
                 onValueChange = { exerciseName = it },
-                label = { Text("Exercise name") },
+                label = { Text(stringResource(R.string.workout_exercise_name)) },
                 singleLine = true,
                 modifier = Modifier
                     .weight(1f)
@@ -669,7 +688,7 @@ private fun SetMatrixEditor(
                 },
                 modifier = Modifier.testTag("add_exercise_button")
             ) {
-                Text("Add exercise")
+                Text(stringResource(R.string.workout_add_exercise))
             }
         }
     }
@@ -692,7 +711,7 @@ onToggleSetCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit,
     Column(modifier = Modifier.fillMaxWidth()) {
         if (restSeconds > 0) {
             Text(
-                text = "Rest ${formatElapsed(restSeconds.toLong())}",
+                text = stringResource(R.string.workout_rest_timer, formatElapsed(restSeconds.toLong())),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.testTag("workout_rest_timer")
@@ -713,7 +732,7 @@ onToggleSetCompleted: (exerciseIndex: Int, setIndex: Int) -> Unit,
                 }
             }
             if (exercises.isEmpty()) {
-                item { Text("No exercises yet", style = MaterialTheme.typography.bodyMedium) }
+                item { Text(stringResource(R.string.workout_no_exercises), style = MaterialTheme.typography.bodyMedium) }
             }
             exercises.forEachIndexed { exerciseIndex, exercise ->
                 item(key = exercise.id) {
@@ -797,14 +816,14 @@ private fun RoutineExerciseCard(
                     onClick = { onAddRoutineSet(exerciseIndex) },
                     modifier = Modifier.testTag("routine_add_set_$exerciseIndex")
                 ) {
-                    Text("+ Set")
+                    Text(stringResource(R.string.workout_add_set_short))
                 }
                 Box {
                     OutlinedButton(
                         onClick = { swapExpanded = true },
                         modifier = Modifier.testTag("routine_swap_$exerciseIndex")
                     ) {
-                        Text("Swap")
+                        Text(stringResource(R.string.workout_swap))
                     }
                     DropdownMenu(
                         expanded = swapExpanded,
@@ -831,9 +850,13 @@ private fun RoutineExerciseCard(
                 }
             }
             Text(
-                text = "${exercise.targetSets} x ${exercise.targetReps} @ " +
-                    "${dualWeight(exercise.targetWeightKg ?: 0.0)} · " +
-                    "Rest ${exercise.restSeconds}s",
+                text = stringResource(
+                    R.string.workout_routine_target,
+                    exercise.targetSets,
+                    exercise.targetReps,
+                    dualWeight(exercise.targetWeightKg ?: 0.0),
+                    exercise.restSeconds
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -862,7 +885,7 @@ private fun RoutineExerciseCard(
                     onClick = { adjustReps(-1) },
                     modifier = Modifier.testTag("routine_reps_minus")
                 ) {
-                    Text("-1 rep", maxLines = 1)
+                    Text(stringResource(R.string.workout_reps_minus), maxLines = 1)
                 }
                 OutlinedButton(
                     enabled = padEnabled,
@@ -883,7 +906,7 @@ private fun RoutineExerciseCard(
                     onClick = { adjustReps(1) },
                     modifier = Modifier.testTag("routine_reps_plus")
                 ) {
-                    Text("+1 rep", maxLines = 1)
+                    Text(stringResource(R.string.workout_reps_plus), maxLines = 1)
                 }
             }
         }
@@ -960,7 +983,7 @@ private fun RoutineSetRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = "Set ${setIndex + 1}",
+            text = stringResource(R.string.workout_set_label, setIndex + 1),
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.testTag("routine_set_label_${exerciseIndex}_${setIndex}")
         )
@@ -970,7 +993,14 @@ private fun RoutineSetRow(
                 kgValue = it
                 currentKg()?.let { kg -> commit(kg, repsValue.text.toIntOrNull() ?: set.reps) }
             },
-            label = { Text(if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg") },
+            label = {
+                Text(
+                    stringResource(
+                        if (unitSystem == UnitSystem.IMPERIAL) R.string.workout_unit_lb
+                        else R.string.workout_unit_kg
+                    )
+                )
+            },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier
@@ -986,7 +1016,7 @@ private fun RoutineSetRow(
                 repsValue = it
                 currentReps()?.let { reps -> commit(currentKg() ?: set.kg, reps) }
             },
-            label = { Text("reps") },
+            label = { Text(stringResource(R.string.workout_reps)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier
@@ -1024,33 +1054,37 @@ private fun SummaryContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Workout Complete", style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.workout_complete_title), style = MaterialTheme.typography.headlineSmall)
         Text(
-            "${formatCompact(caloriesKcal)} kcal",
+            stringResource(R.string.workout_calories, formatCompact(caloriesKcal)),
             style = MaterialTheme.typography.displaySmall
         )
         Text(formatElapsed(elapsedSeconds), style = MaterialTheme.typography.titleMedium)
         tonnageKg?.let {
             val display = if (unitSystem == UnitSystem.IMPERIAL) UnitConverter.kgToLbs(it) else it
             Text(
-                "Tonnage: ${formatCompact(display)} ${if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg"}",
+                stringResource(
+                    R.string.workout_tonnage,
+                    formatCompact(display),
+                    if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg"
+                ),
                 style = MaterialTheme.typography.titleMedium
             )
         }
         if (intervalRounds > 0 || intervalIntervals > 0) {
             Text(
-                "Rounds: $intervalRounds · Intervals: $intervalIntervals",
+                stringResource(R.string.workout_rounds_intervals, intervalRounds, intervalIntervals),
                 style = MaterialTheme.typography.titleMedium
             )
         }
         Text(
-            if (healthSynced) "Synced to Health Connect" else "Saved locally",
+            stringResource(if (healthSynced) R.string.workout_synced else R.string.workout_saved_locally),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
-            Text("Done")
+            Text(stringResource(R.string.workout_done))
         }
     }
 }
@@ -1076,7 +1110,7 @@ private fun ManualLogDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Log Past ${initialType.label}") },
+        title = { Text(stringResource(R.string.workout_log_past_title, initialType.label)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -1087,7 +1121,7 @@ private fun ManualLogDialog(
                         duration = UnitConverter.sanitizeDecimalInput(it)
                         durationError = null
                     },
-                    label = { Text("Duration (min)") },
+                    label = { Text(stringResource(R.string.workout_duration_label)) },
                     supportingText = durationError?.let { { Text(it) } },
                     isError = durationError != null,
                     singleLine = true,
@@ -1102,7 +1136,7 @@ private fun ManualLogDialog(
                         calories = UnitConverter.sanitizeDecimalInput(it)
                         caloriesError = null
                     },
-                    label = { Text("Calories (optional)") },
+                    label = { Text(stringResource(R.string.workout_calories_label)) },
                     supportingText = caloriesError?.let { { Text(it) } },
                     isError = caloriesError != null,
                     singleLine = true,
@@ -1114,7 +1148,7 @@ private fun ManualLogDialog(
                 OutlinedTextField(
                     value = date,
                     onValueChange = { date = DateInputMask.mask(it); dateError = null },
-                    label = { Text("Date (YYYY-MM-DD, blank for today)") },
+                    label = { Text(stringResource(R.string.workout_date_label)) },
                     supportingText = (dateError as? ValidationResult.Invalid)?.let {
                         { Text(stringResource(it.errorResId)) }
                     },
@@ -1137,7 +1171,7 @@ private fun ManualLogDialog(
                     initialType == WorkoutType.SWIMMING -> OutlinedTextField(
                         value = laps,
                         onValueChange = { laps = UnitConverter.sanitizeDecimalInput(it) },
-                        label = { Text("Laps (optional)") },
+                        label = { Text(stringResource(R.string.workout_laps_label)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier
@@ -1147,7 +1181,7 @@ private fun ManualLogDialog(
                     initialType == WorkoutType.CALISTHENICS -> OutlinedTextField(
                         value = movements,
                         onValueChange = { movements = UnitConverter.sanitizeDecimalInput(it) },
-                        label = { Text("Movements (optional)") },
+                        label = { Text(stringResource(R.string.workout_movements_label)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier
@@ -1159,7 +1193,7 @@ private fun ManualLogDialog(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Notes (optional)") },
+                    label = { Text(stringResource(R.string.workout_notes_label)) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1202,12 +1236,12 @@ private fun ManualLogDialog(
                     )
                 }
             }) {
-                Text("Save")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
