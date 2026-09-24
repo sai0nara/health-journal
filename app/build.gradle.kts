@@ -1,30 +1,15 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.devtools.ksp")
+}
+
 import java.text.SimpleDateFormat
 import java.util.Date
 
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt")
-    id("io.qameta.allure")
-}
-
-fun calculateBuildTimestamp(): String {
+fun buildTimestamp(): String {
     val formatter = SimpleDateFormat("yyyyMMdd-HHmm")
     return formatter.format(Date())
-}
-
-val buildTimestamp = calculateBuildTimestamp()
-
-allure {
-    version.set("2.25.0")
-    adapter {
-        aspectjVersion.set("1.9.22")
-        frameworks {
-            junit4 {
-                enabled.set(true)
-            }
-        }
-    }
 }
 
 android {
@@ -38,7 +23,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField("String", "BUILD_TIMESTAMP", "\"$buildTimestamp\"")
+        buildConfigField("String", "BUILD_TIMESTAMP", "\"${buildTimestamp()}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // The Allure listener breaks Compose UI tests ("No compose hierarchies found").
@@ -64,9 +49,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-    kotlinOptions {
-        jvmTarget = "21"
-    }
     java {
         toolchain {
             languageVersion.set(JavaLanguageVersion.of(21))
@@ -75,21 +57,6 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
-    }
-
-    applicationVariants.all {
-        outputs.all {
-            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            val timestamp = buildTimestamp
-            val variantName = name // e.g. debug, release
-            val versionName = versionName ?: "unknown"
-            val baseName = "app-$variantName-v$versionName-$timestamp"
-            output.outputFileName = "$baseName.apk"
-        }
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
     }
     packaging {
         jniLibs {
@@ -106,29 +73,33 @@ android {
 
     sourceSets {
         getByName("androidTest") {
-            assets.srcDirs("$projectDir/schemas")
+            assets.srcDir("$projectDir/schemas")
         }
     }
 }
 
-kapt {
-    arguments {
-        arg("room.schemaLocation", "$projectDir/schemas")
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
 }
 
 tasks.register<Exec>("pullAllureResults") {
     group = "verification"
     description = "Pulls Allure results from the connected device"
-    commandLine("adb", "pull", "/sdcard/Download/allure-results/.", "${project.buildDir}/allure-results")
+    commandLine("adb", "pull", "/sdcard/Download/allure-results/.", layout.buildDirectory.dir("allure-results").get().asFile.absolutePath)
     doFirst {
-        val resultsDir = file("${project.buildDir}/allure-results")
+        val resultsDir = layout.buildDirectory.dir("allure-results").get().asFile
         if (!resultsDir.exists()) resultsDir.mkdirs()
     }
 }
 
 dependencies {
-    val room_version = "2.6.1"
+    val room_version = "2.7.1"
     val work_version = "2.9.0"
 
     implementation("androidx.core:core-ktx:1.13.1")
@@ -148,7 +119,7 @@ dependencies {
     // Room
     implementation("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:$room_version")
-    kapt("androidx.room:room-compiler:$room_version")
+    ksp("androidx.room:room-compiler:$room_version")
     androidTestImplementation("androidx.room:room-testing:$room_version")
 
     // Google Sign-In (Credential Manager)
