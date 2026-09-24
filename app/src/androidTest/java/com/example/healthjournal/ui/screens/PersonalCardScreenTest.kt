@@ -2,6 +2,7 @@ package com.example.healthjournal.ui.screens
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthjournal.data.PersonalCardRepository
 import com.example.healthjournal.data.local.BloodType
 import com.example.healthjournal.data.local.Demographics
@@ -11,6 +12,8 @@ import com.example.healthjournal.data.local.MedicalHistory
 import com.example.healthjournal.data.local.MedicalProfile
 import com.example.healthjournal.data.local.MedicationEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.viewmodel.PersonalCardViewModel
 import io.mockk.*
 import io.qameta.allure.android.rules.ScreenshotRule
@@ -42,15 +45,19 @@ class PersonalCardScreenTest {
         // testDispatcher explicitly as its ioDispatcher.
     }
 
-    private fun setScreen(card: PersonalCard? = null) {
+    private fun setScreen(
+        card: PersonalCard? = null,
+        viewModel: PersonalCardViewModel? = null
+    ) {
         every { repository.getPersonalCard() } returns MutableStateFlow(card)
         coEvery { repository.insertOrUpdate(any()) } returns Unit
         coEvery { repository.markEntryDirty() } returns Unit
-        val viewModel = PersonalCardViewModel(repository, ioDispatcher = testDispatcher)
+        val screenViewModel =
+            viewModel ?: PersonalCardViewModel(repository, ioDispatcher = testDispatcher)
         composeTestRule.setContent {
             com.example.healthjournal.ui.theme.HealthJournalTheme {
                 PersonalCardScreen(
-                    viewModel = viewModel,
+                    viewModel = screenViewModel,
                     onBack = {}
                 )
             }
@@ -428,6 +435,45 @@ class PersonalCardScreenTest {
                     match { it.demographics.heightCm == 177.8 }
                 )
             }
+        }
+    }
+
+    @Test
+    fun cardSyncsToGlobalPreferenceOnAppear() {
+        // VM left in imperial while the global Settings preference is metric:
+        // appearing must pull the card back to metric rows.
+        val card = PersonalCard(
+            demographics = Demographics(
+                fullName = "John Doe",
+                heightCm = 180.0,
+                weightKg = 75.0
+            )
+        )
+        UnitSettings.write(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            UnitSystem.METRIC
+        )
+        io.mockk.every { repository.getPersonalCard() } returns
+            kotlinx.coroutines.flow.MutableStateFlow(card)
+        val imperialVm = PersonalCardViewModel(
+            repository,
+            ioDispatcher = testDispatcher,
+            initialUnitSystem = UnitSystem.IMPERIAL
+        )
+        try {
+            step("Open card with stale imperial VM state") {
+                setScreen(card, viewModel = imperialVm)
+            }
+
+            step("Verify rows follow the global metric preference") {
+                composeTestRule.onNodeWithText("180 cm").assertExists()
+                composeTestRule.onNodeWithText("75 kg").assertExists()
+            }
+        } finally {
+            UnitSettings.write(
+                InstrumentationRegistry.getInstrumentation().targetContext,
+                UnitSystem.METRIC
+            )
         }
     }
 }
