@@ -2,7 +2,7 @@
 
 ## Phase 1: Failing checks + string externalization
 
-- [ ] Task: Write failing localization checks (Red)
+- [x] Task: Write failing localization checks (Red) [d30b3eb]
     - [ ] JVM test: values-ru key parity vs values/strings.xml (fails: no values-ru)
     - [ ] JVM test: scan of ui/ composables for user-facing Text literals (fails: literals present)
     - [ ] Run both; confirm red
