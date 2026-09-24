@@ -6,17 +6,26 @@ import java.io.File
 
 /**
  * Enforces the string-externalization rule: UI sources must never embed
- * user-facing text in `Text("...")` or `contentDescription = "..."` literals;
- * all such text must resolve via stringResource / pluralStringResource so the
- * Android resource system can substitute the Russian catalog on ru-RU
- * devices. Literals without letters (whitespace, pure symbols) are exempt.
+ * user-facing text in `Text("...")` (including multi-line), `placeholder`,
+ * `contentDescription`, `showSnackbar("...")`, or `Toast.makeText(..., "...")`
+ * literals; all such text must resolve via stringResource /
+ * pluralStringResource so the Android resource system can substitute the
+ * Russian catalog on ru-RU devices. Literals without letters (whitespace,
+ * pure symbols) and machine constants (status codes, routes, keys) are
+ * exempt. Display strings built inside ViewModels (sync status, Toast
+ * messages) are converted to resource IDs by hand following the existing
+ * validation `errorResId` pattern and verified by review + locale UI tests.
  * RED until every screen is externalized.
  */
 class HardcodedStringAuditTest {
 
-    private val textLiteral = Regex("""Text\(\s*"((?:[^"\\]|\\.)*)"""")
-    private val contentDescriptionLiteral =
-        Regex("""contentDescription\s*=\s*"((?:[^"\\]|\\.)*)"""")
+    private val carriers = listOf(
+        Regex("""Text\(\s*"((?:[^"\\]|\\.)*)""", RegexOption.DOT_MATCHES_ALL),
+        Regex("""placeholder\s*=\s*"((?:[^"\\]|\\.)*)"""),
+        Regex("""contentDescription\s*=\s*"((?:[^"\\]|\\.)*)"""),
+        Regex("""showSnackbar\(\s*"((?:[^"\\]|\\.)*)""", RegexOption.DOT_MATCHES_ALL),
+        Regex("""Toast\.makeText\(\s*[^,]+,\s*"((?:[^"\\]|\\.)*)""", RegexOption.DOT_MATCHES_ALL)
+    )
     private val interpolation = Regex("""\$\{[^}]*}|\$\w+""")
     private val hasLetter = Regex("""[A-Za-zА-Яа-яЁё]""")
 
@@ -42,22 +51,24 @@ class HardcodedStringAuditTest {
         mainDir.walkTopDown()
             .filter { it.isFile && it.extension == "kt" }
             .forEach { file ->
-                file.readLines().forEachIndexed { index, line ->
-                    val hits = textLiteral.findAll(line)
-                        .map { it.groupValues[1] } +
-                        contentDescriptionLiteral.findAll(line)
-                            .map { it.groupValues[1] }
-                    hits.filter(::isUserFacing).forEach { literal ->
-                        violations.add(
-                            "${file.relativeTo(mainDir)}:${index + 1}: \"$literal\""
-                        )
-                    }
+                val content = file.readText()
+                carriers.forEach { carrier ->
+                    carrier.findAll(content)
+                        .map { it.groupValues[1] to it.range.first }
+                        .filter { isUserFacing(it.first) }
+                        .forEach { (literal, offset) ->
+                            val line = content.substring(0, offset)
+                                .count { it == '\n' } + 1
+                            violations.add(
+                                "${file.relativeTo(mainDir)}:$line: \"$literal\""
+                            )
+                        }
                 }
             }
 
         assertTrue(
             "Hardcoded user-facing strings found - externalize to values/strings.xml:\n" +
-                violations.joinToString("\n"),
+                violations.sorted().joinToString("\n"),
             violations.isEmpty()
         )
     }
