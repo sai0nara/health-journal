@@ -145,7 +145,7 @@ fun WorkoutScreen(
                         val type = WorkoutType.fromName(it.type)
                         stringResource(
                             R.string.workout_recent_item,
-                            type?.label ?: it.type,
+                            type?.let { stringResource(it.labelRes) } ?: it.type,
                             formatDate(it.startTimestamp)
                         )
                     },
@@ -306,7 +306,7 @@ private fun IdleContent(
                 onClick = { onSelectType(type) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(type.label)
+                Text(stringResource(type.labelRes))
             }
         }
         item {
@@ -382,7 +382,7 @@ private fun ConfiguringContent(
     onLogPast: () -> Unit
 ) {
     Text(
-        stringResource(R.string.workout_configure_title, state.type.label),
+        stringResource(R.string.workout_configure_title, stringResource(state.type.labelRes)),
         style = MaterialTheme.typography.titleMedium
     )
     OutlinedTextField(
@@ -416,7 +416,7 @@ private fun ConfiguringContent(
         onClick = onLogPast,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text(stringResource(R.string.workout_log_past_instead, state.type.label))
+        Text(stringResource(R.string.workout_log_past_instead, stringResource(state.type.labelRes)))
     }
 }
 
@@ -1110,7 +1110,7 @@ private fun ManualLogDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.workout_log_past_title, initialType.label)) },
+        title = { Text(stringResource(R.string.workout_log_past_title, stringResource(initialType.labelRes))) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(

@@ -1,16 +1,18 @@
 package com.example.healthjournal.domain
 
+import androidx.annotation.StringRes
+import com.example.healthjournal.R
 import com.example.healthjournal.data.local.UnitConverter
 import com.example.healthjournal.data.local.UnitSystem
 
-enum class MeasurementField(val label: String) {
-    WEIGHT("Weight"),
-    CHEST("Chest"),
-    WAIST("Waist"),
-    GLUTE("Glute"),
-    THIGH("Thighs"),
-    CALF("Calves"),
-    BICEP("Biceps")
+enum class MeasurementField(val label: String, @StringRes val labelRes: Int) {
+    WEIGHT("Weight", R.string.field_weight),
+    CHEST("Chest", R.string.field_chest),
+    WAIST("Waist", R.string.field_waist),
+    GLUTE("Glute", R.string.field_glute),
+    THIGH("Thighs", R.string.field_thigh),
+    CALF("Calves", R.string.field_calf),
+    BICEP("Biceps", R.string.field_bicep)
 }
 
 object ValidateMeasurements {

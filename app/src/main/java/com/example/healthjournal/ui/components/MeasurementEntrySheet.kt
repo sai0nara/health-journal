@@ -125,7 +125,7 @@ fun MeasurementEntrySheet(
                 OutlinedTextField(
                     value = state.rawValues[field].orEmpty(),
                     onValueChange = { viewModel.onFieldChanged(field, it) },
-                    label = { Text(stringResource(R.string.measurements_field_label_format, field.label, unit)) },
+                    label = { Text(stringResource(R.string.measurements_field_label_format, stringResource(field.labelRes), unit)) },
                     isError = state.fieldErrors.containsKey(field),
                     supportingText = state.fieldErrors[field]?.let { message ->
                         { Text(message) }

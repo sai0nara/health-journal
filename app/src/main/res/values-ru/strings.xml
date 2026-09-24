@@ -359,4 +359,33 @@
     <string name="common_done">Готово</string>
     <string name="common_cd_synced">Синхронизировано с облаком</string>
     <string name="common_cd_local">Только локально</string>
+
+    <!-- Localizable taxonomy: workout types, measurement fields, schedule days.
+         The enum `label`/`name` values stay canonical English for persisted
+         data; UI resolves these keys via `labelRes`. -->
+    <string name="workout_type_run">Бег</string>
+    <string name="workout_type_fitness">Фитнес</string>
+    <string name="workout_type_yoga">Йога</string>
+    <string name="workout_type_hiit">HIIT</string>
+    <string name="workout_type_walking_hiking">Ходьба/хайкинг</string>
+    <string name="workout_type_cycling">Велоспорт</string>
+    <string name="workout_type_stretching">Растяжка</string>
+    <string name="workout_type_pilates">Пилатес</string>
+    <string name="workout_type_swimming">Плавание</string>
+    <string name="workout_type_calisthenics">Калистеника</string>
+    <string name="field_weight">Вес</string>
+    <string name="field_chest">Грудь</string>
+    <string name="field_waist">Талия</string>
+    <string name="field_glute">Ягодицы</string>
+    <string name="field_thigh">Бёдра</string>
+    <string name="field_calf">Икры</string>
+    <string name="field_bicep">Бицепс</string>
+    <string name="day_monday">Понедельник</string>
+    <string name="day_tuesday">Вторник</string>
+    <string name="day_wednesday">Среда</string>
+    <string name="day_thursday">Четверг</string>
+    <string name="day_friday">Пятница</string>
+    <string name="day_saturday">Суббота</string>
+    <string name="day_sunday">Воскресенье</string>
+    <string name="day_any">Любой день</string>
 </resources>

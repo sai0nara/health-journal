@@ -147,7 +147,7 @@ fun MeasurementsScreen(
                     Tab(
                         selected = analyticsState.selectedTab == field,
                         onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                        text = { Text(field.label) }
+                        text = { Text(stringResource(field.labelRes)) }
                     )
                 }
             }
@@ -189,7 +189,7 @@ fun MeasurementsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = stringResource(R.string.measurements_param_empty_format, field.label),
+                                text = stringResource(R.string.measurements_param_empty_format, stringResource(field.labelRes)),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.testTag("bm_param_empty_${field.name}")
@@ -281,12 +281,12 @@ private fun ChartHeader(
                 val isWeight = field == MeasurementField.WEIGHT
                 stringResource(
                     R.string.measurements_goal_header_format,
-                    field.label,
+                    stringResource(field.labelRes),
                     UnitConverter.formatMeasurement(goalTarget, unitSystem, isWeight),
                     GoalValidator.unitLabel(field, unitSystem)
                 )
             } else {
-                field.label
+                stringResource(field.labelRes)
             },
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold
@@ -294,7 +294,7 @@ private fun ChartHeader(
         IconButton(onClick = onSetGoal, modifier = Modifier.testTag("bm_set_goal")) {
             Icon(
                 Icons.Outlined.Flag,
-                contentDescription = stringResource(R.string.measurements_cd_set_goal_format, field.label),
+                contentDescription = stringResource(R.string.measurements_cd_set_goal_format, stringResource(field.labelRes)),
                 tint = if (goalTarget != null) {
                     MaterialTheme.colorScheme.primary
                 } else {
@@ -316,7 +316,7 @@ private fun MeasurementCard(
     val circumferenceParams = MeasurementField.entries
         .filter { it != MeasurementField.WEIGHT }
         .mapNotNull { field ->
-            entry.valueFor(field)?.let { field.label to it }
+            entry.valueFor(field)?.let { stringResource(field.labelRes) to it }
         }
     val weightUnit = if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg"
     val lengthUnit = if (unitSystem == UnitSystem.IMPERIAL) "in" else "cm"

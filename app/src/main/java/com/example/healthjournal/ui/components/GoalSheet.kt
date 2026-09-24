@@ -77,7 +77,7 @@ fun GoalSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(R.string.goal_title_format, field.label),
+                    text = stringResource(R.string.goal_title_format, stringResource(field.labelRes)),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )

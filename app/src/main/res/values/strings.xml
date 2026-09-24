@@ -359,4 +359,33 @@
     <string name="common_done">Done</string>
     <string name="common_cd_synced">Cloud Synced</string>
     <string name="common_cd_local">Local Only</string>
+
+    <!-- Localizable taxonomy: workout types, measurement fields, schedule days.
+         The enum `label`/`name` values stay canonical English for persisted
+         data; UI resolves these keys via `labelRes`. -->
+    <string name="workout_type_run">Run</string>
+    <string name="workout_type_fitness">Fitness</string>
+    <string name="workout_type_yoga">Yoga</string>
+    <string name="workout_type_hiit">HIIT</string>
+    <string name="workout_type_walking_hiking">Walking/Hiking</string>
+    <string name="workout_type_cycling">Cycling</string>
+    <string name="workout_type_stretching">Stretching</string>
+    <string name="workout_type_pilates">Pilates</string>
+    <string name="workout_type_swimming">Swimming</string>
+    <string name="workout_type_calisthenics">Calisthenics</string>
+    <string name="field_weight">Weight</string>
+    <string name="field_chest">Chest</string>
+    <string name="field_waist">Waist</string>
+    <string name="field_glute">Glute</string>
+    <string name="field_thigh">Thighs</string>
+    <string name="field_calf">Calves</string>
+    <string name="field_bicep">Biceps</string>
+    <string name="day_monday">Monday</string>
+    <string name="day_tuesday">Tuesday</string>
+    <string name="day_wednesday">Wednesday</string>
+    <string name="day_thursday">Thursday</string>
+    <string name="day_friday">Friday</string>
+    <string name="day_saturday">Saturday</string>
+    <string name="day_sunday">Sunday</string>
+    <string name="day_any">Any day</string>
 </resources>

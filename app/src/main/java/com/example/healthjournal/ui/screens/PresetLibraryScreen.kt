@@ -200,7 +200,15 @@ private fun PresetCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(preset.name, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    stringResource(R.string.preset_schedule_summary, preset.scheduledDay, preset.exercises.size),
+                    stringResource(
+                        R.string.preset_schedule_summary,
+                        runCatching {
+                            stringResource(
+                                ScheduledDay.valueOf(preset.scheduledDay).labelRes
+                            )
+                        }.getOrDefault(preset.scheduledDay),
+                        preset.exercises.size
+                    ),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -295,13 +303,13 @@ private fun DayDropdown(
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
         TextButton(onClick = { expanded = true }) {
-            Text(selectedDay.name)
+            Text(stringResource(selectedDay.labelRes))
             Icon(Icons.Default.ArrowDropDown, contentDescription = null)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             ScheduledDay.entries.forEach { day ->
                 DropdownMenuItem(
-                    text = { Text(day.name) },
+                    text = { Text(stringResource(day.labelRes)) },
                     onClick = {
                         onSelect(day)
                         expanded = false
