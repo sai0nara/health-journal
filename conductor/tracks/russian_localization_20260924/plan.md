@@ -6,10 +6,10 @@
     - [ ] JVM test: values-ru key parity vs values/strings.xml (fails: no values-ru)
     - [ ] JVM test: scan of ui/ composables for user-facing Text literals (fails: literals present)
     - [ ] Run both; confirm red
-- [ ] Task: Externalize History, Workout, Presets literals to values/strings.xml (Green)
+- [x] Task: Externalize History, Workout, Presets literals to values/strings.xml (Green) [c669ff2]
     - [ ] Replace literals with stringResource; keep English text identical
     - [ ] Rerun literal-scan test for touched screens; JVM suite green
-- [ ] Task: Externalize Export, Restore, Archive, Measurements, remaining screens + dialogs (Green)
+- [~] Task: Externalize Export, Restore, Archive, Measurements, remaining screens + dialogs (Green)
     - [ ] Same replace-and-verify per screen
     - [ ] Literal-scan test fully green; no English behavior change
 - [ ] Task: Refactor duplicated format patterns into shared string/plural keys
