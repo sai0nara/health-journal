@@ -9,11 +9,11 @@
 - [x] Task: Externalize History, Workout, Presets literals to values/strings.xml (Green) [c669ff2]
     - [ ] Replace literals with stringResource; keep English text identical
     - [ ] Rerun literal-scan test for touched screens; JVM suite green
-- [~] Task: Externalize Export, Restore, Archive, Measurements, remaining screens + dialogs (Green)
+- [x] Task: Externalize Export, Restore, Archive, Measurements, remaining screens + dialogs (Green) [83ceea7]
     - [ ] Same replace-and-verify per screen
     - [ ] Literal-scan test fully green; no English behavior change
-- [ ] Task: Refactor duplicated format patterns into shared string/plural keys
-    - [ ] Rerun JVM suite; still green
+- [x] Task: Refactor duplicated format patterns into shared string/plural keys [ef62e36]
+    - [x] Rerun JVM suite; still green
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Russian translation (blocked on user glossary)
