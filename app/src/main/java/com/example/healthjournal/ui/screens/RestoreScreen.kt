@@ -252,7 +252,7 @@ private fun RestoreSuccessContent(result: com.example.healthjournal.export.Resto
         }
         Spacer(modifier = Modifier.weight(1f))
         OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.restore_done))
+            Text(stringResource(R.string.common_done))
         }
     }
 }

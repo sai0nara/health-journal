@@ -133,7 +133,7 @@ fun PresetLibraryScreen(
                     viewModel.deletePreset(preset.id)
                     deleteTarget = null
                 }) {
-                    Text(stringResource(R.string.preset_delete_action))
+                    Text(stringResource(R.string.common_delete))
                 }
             },
             dismissButton = {

@@ -171,7 +171,6 @@
     <string name="workout_rounds_intervals">Rounds: %1$d · Intervals: %2$d</string>
     <string name="workout_synced">Synced to Health Connect</string>
     <string name="workout_saved_locally">Saved locally</string>
-    <string name="workout_done">Done</string>
     <string name="workout_log_past_title">Log Past %1$s</string>
     <string name="workout_duration_label">Duration (min)</string>
     <string name="workout_calories_label">Calories (optional)</string>
@@ -185,7 +184,6 @@
     <string name="preset_create">Create Preset</string>
     <string name="preset_delete_title">Delete Preset?</string>
     <string name="preset_delete_message">Delete \"%1$s\"? This cannot be undone.</string>
-    <string name="preset_delete_action">Delete</string>
     <string name="preset_empty">No presets yet</string>
     <string name="preset_schedule_summary">%1$s · %2$d exercises</string>
     <string name="preset_cd_delete">Delete preset</string>
@@ -246,7 +244,6 @@
     <string name="restore_meta_workouts">Workouts</string>
     <string name="restore_meta_media">Media files</string>
     <string name="restore_meta_total">Total records</string>
-    <string name="restore_done">Done</string>
     <string name="restore_failed_title">Restore Failed</string>
     <string name="restore_error_generic">An error occurred during the restore.</string>
     <string name="restore_choose_another">Choose Another Backup</string>
@@ -255,7 +252,6 @@
     <string name="archive_title">Archive</string>
     <string name="archive_delete_title">Delete Entries?</string>
     <string name="archive_delete_message">Are you sure you want to permanently delete %1$d selected entries? This cannot be undone.</string>
-    <string name="archive_delete_action">Delete</string>
     <string name="archive_snackbar_deleted">Entries deleted</string>
     <string name="archive_empty_title">Empty Archive?</string>
     <string name="archive_empty_body">Every entry in the archive will be permanently removed. This action is irreversible.</string>
@@ -359,6 +355,8 @@
     <!-- Common -->
     <string name="common_yes">Yes</string>
     <string name="common_no">No</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_done">Done</string>
     <string name="common_cd_synced">Cloud Synced</string>
     <string name="common_cd_local">Local Only</string>
 </resources>

@@ -80,7 +80,7 @@ fun ArchiveScreen(
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text(stringResource(R.string.archive_delete_action))
+                    Text(stringResource(R.string.common_delete))
                 }
             },
             dismissButton = {

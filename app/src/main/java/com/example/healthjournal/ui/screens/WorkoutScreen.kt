@@ -1084,7 +1084,7 @@ private fun SummaryContent(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.workout_done))
+            Text(stringResource(R.string.common_done))
         }
     }
 }
