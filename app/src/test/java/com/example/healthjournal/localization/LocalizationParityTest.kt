@@ -21,19 +21,27 @@ class LocalizationParityTest {
             ?: error("Could not locate app/src/main/res from ${System.getProperty("user.dir")}")
     }
 
-    private fun stringKeys(stringsXml: File): Set<String> {
+    private fun resourceKeys(stringsXml: File): Set<String> {
         val doc = DocumentBuilderFactory.newInstance()
             .newDocumentBuilder().parse(stringsXml)
-        val nodes = doc.getElementsByTagName("string")
-        return (0 until nodes.length)
-            .map { nodes.item(it).attributes.getNamedItem("name").nodeValue }
-            .toSet()
+        val names = mutableSetOf<String>()
+        doc.getElementsByTagName("string").let { nodes ->
+            for (i in 0 until nodes.length) {
+                names += nodes.item(i).attributes.getNamedItem("name").nodeValue
+            }
+        }
+        doc.getElementsByTagName("plurals").let { nodes ->
+            for (i in 0 until nodes.length) {
+                names += nodes.item(i).attributes.getNamedItem("name").nodeValue
+            }
+        }
+        return names
     }
 
     @Test
     fun russianCatalog_coversEveryDefaultKey() {
         val resDir = resolveResDir()
-        val defaultKeys = stringKeys(File(resDir, "values/strings.xml"))
+        val defaultKeys = resourceKeys(File(resDir, "values/strings.xml"))
 
         val russianXml = File(resDir, "values-ru/strings.xml")
         assertTrue(
@@ -41,7 +49,7 @@ class LocalizationParityTest {
             russianXml.isFile
         )
 
-        val missing = defaultKeys - stringKeys(russianXml)
+        val missing = defaultKeys - resourceKeys(russianXml)
         assertTrue(
             "Russian catalog is missing ${missing.size} keys:\n" +
                 missing.sorted().joinToString("\n"),

@@ -20,6 +20,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -149,7 +150,7 @@ fun ArchiveScreen(
             TopAppBar(
                 title = { 
                     if (isSelectionMode) {
-                        Text(stringResource(R.string.archive_selected_format, selectedIds.size))
+                        Text(pluralStringResource(R.plurals.archive_selected_format, selectedIds.size))
                     } else {
                         Text(stringResource(R.string.archive_title))
                     }

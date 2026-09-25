@@ -135,7 +135,6 @@
     <string name="workout_choose">Выберите тренировку</string>
     <string name="workout_presets">Пресеты</string>
     <string name="workout_routines">Программы</string>
-    <string name="workout_routine_count">Упражнений: %1$d</string>
     <string name="workout_start_routine">Начать программу</string>
     <string name="workout_recent">Недавние</string>
     <string name="workout_configure_title">Настройка: %1$s</string>
@@ -148,7 +147,6 @@
     <string name="workout_pause">Пауза</string>
     <string name="workout_finish">Завершить</string>
     <string name="workout_phase_work">Работа</string>
-    <string name="workout_round">Раунд %1$d</string>
     <string name="workout_next_interval">Следующий интервал</string>
     <string name="workout_rest_timer">Отдых %1$s</string>
     <string name="workout_no_exercises">Пока нет упражнений</string>
@@ -164,7 +162,6 @@
     <string name="workout_routine_target">%1$d x %2$d @ %3$s · Отдых %4$d с</string>
     <string name="workout_reps_minus">-1 повт.</string>
     <string name="workout_reps_plus">+1 повт.</string>
-    <string name="workout_set_label">Подход %1$d</string>
     <string name="workout_complete_title">Тренировка завершена</string>
     <string name="workout_calories">%1$s kcal</string>
     <string name="workout_tonnage">Тоннаж: %1$s %2$s</string>
@@ -259,7 +256,6 @@
     <string name="archive_keep_entries">Оставить мои записи</string>
     <string name="archive_snackbar_emptied">Архив очищен</string>
     <string name="archive_snackbar_restored">Записи восстановлены</string>
-    <string name="archive_selected_format">Выбрано: %1$d</string>
     <string name="archive_cd_restore">Восстановить выбранное</string>
     <string name="archive_cd_delete">Удалить выбранное</string>
     <string name="archive_cd_empty">Очистить архив</string>
@@ -311,7 +307,6 @@
     <string name="entry_edited">(Изменено)</string>
     <string name="entry_show_more">Показать больше</string>
     <string name="entry_show_less">Показать меньше</string>
-    <string name="entry_attachments_format">Вложений: %1$d</string>
 
     <!-- Goal -->
     <string name="goal_title_format">Цель: %1$s</string>
@@ -388,4 +383,32 @@
     <string name="day_saturday">Суббота</string>
     <string name="day_sunday">Воскресенье</string>
     <string name="day_any">Любой день</string>
+
+    <string name="pdf_report_title">Отчёт журнала здоровья</string>
+
+    <plurals name="workout_routine_count">
+        <item quantity="one">%1$d упражнение</item>
+        <item quantity="few">%1$d упражнения</item>
+        <item quantity="many">%1$d упражнений</item>
+    </plurals>
+    <plurals name="workout_round">
+        <item quantity="one">Раунд %1$d</item>
+        <item quantity="few">Раунда %1$d</item>
+        <item quantity="many">Раундов %1$d</item>
+    </plurals>
+    <plurals name="workout_set_label">
+        <item quantity="one">Подход %1$d</item>
+        <item quantity="few">Подхода %1$d</item>
+        <item quantity="many">Подходов %1$d</item>
+    </plurals>
+    <plurals name="archive_selected_format">
+        <item quantity="one">%1$d выделено</item>
+        <item quantity="few">%1$d выделено</item>
+        <item quantity="many">%1$d выделено</item>
+    </plurals>
+    <plurals name="entry_attachments_format">
+        <item quantity="one">%1$d вложение</item>
+        <item quantity="few">%1$d вложения</item>
+        <item quantity="many">%1$d вложений</item>
+    </plurals>
 </resources>

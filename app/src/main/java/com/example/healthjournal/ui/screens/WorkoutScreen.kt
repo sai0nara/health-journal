@@ -51,6 +51,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
@@ -337,7 +338,7 @@ private fun IdleContent(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(preset.name, style = MaterialTheme.typography.titleSmall)
                             Text(
-                                text = stringResource(R.string.workout_routine_count, preset.exercises.size),
+                                text = pluralStringResource(R.plurals.workout_routine_count, preset.exercises.size),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -541,7 +542,7 @@ private fun IntervalControls(
             modifier = Modifier.testTag("hiit_phase")
         )
         Text(
-            text = stringResource(R.string.workout_round, tracker?.rounds ?: 0),
+            text = pluralStringResource(R.plurals.workout_round, tracker?.rounds ?: 0),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.testTag("hiit_rounds")
         )
@@ -852,10 +853,10 @@ private fun RoutineExerciseCard(
             Text(
                 text = stringResource(
                     R.string.workout_routine_target,
-                    exercise.targetSets?.toString() ?: "null",
-                    exercise.targetReps?.toString() ?: "null",
+                    exercise.targetSets ?: 0,
+                    exercise.targetReps ?: 0,
                     dualWeight(exercise.targetWeightKg ?: 0.0),
-                    exercise.restSeconds?.toString() ?: "null"
+                    exercise.restSeconds ?: 0
                 ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -983,7 +984,7 @@ private fun RoutineSetRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = stringResource(R.string.workout_set_label, setIndex + 1),
+            text = pluralStringResource(R.plurals.workout_set_label, setIndex + 1),
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.testTag("routine_set_label_${exerciseIndex}_${setIndex}")
         )

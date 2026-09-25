@@ -135,7 +135,6 @@
     <string name="workout_choose">Choose a workout</string>
     <string name="workout_presets">Presets</string>
     <string name="workout_routines">Routines</string>
-    <string name="workout_routine_count">%1$d exercises</string>
     <string name="workout_start_routine">Start routine</string>
     <string name="workout_recent">Recent</string>
     <string name="workout_configure_title">Configure %1$s</string>
@@ -148,7 +147,7 @@
     <string name="workout_pause">Pause</string>
     <string name="workout_finish">Finish</string>
     <string name="workout_phase_work">Work</string>
-    <string name="workout_round">Round %1$d</string>
+    
     <string name="workout_next_interval">Next interval</string>
     <string name="workout_rest_timer">Rest %1$s</string>
     <string name="workout_no_exercises">No exercises yet</string>
@@ -164,7 +163,7 @@
     <string name="workout_routine_target">%1$d x %2$d @ %3$s · Rest %4$ds</string>
     <string name="workout_reps_minus">-1 rep</string>
     <string name="workout_reps_plus">+1 rep</string>
-    <string name="workout_set_label">Set %1$d</string>
+    
     <string name="workout_complete_title">Workout Complete</string>
     <string name="workout_calories">%1$s kcal</string>
     <string name="workout_tonnage">Tonnage: %1$s %2$s</string>
@@ -259,7 +258,6 @@
     <string name="archive_keep_entries">Keep My Entries</string>
     <string name="archive_snackbar_emptied">Archive emptied</string>
     <string name="archive_snackbar_restored">Entries restored</string>
-    <string name="archive_selected_format">%1$d Selected</string>
     <string name="archive_cd_restore">Restore Selected</string>
     <string name="archive_cd_delete">Delete Selected</string>
     <string name="archive_cd_empty">Empty Archive</string>
@@ -311,7 +309,6 @@
     <string name="entry_edited">(Edited)</string>
     <string name="entry_show_more">Show More</string>
     <string name="entry_show_less">Show Less</string>
-    <string name="entry_attachments_format">%1$d attachment(s)</string>
 
     <!-- Goal -->
     <string name="goal_title_format">%1$s goal</string>
@@ -388,4 +385,27 @@
     <string name="day_saturday">Saturday</string>
     <string name="day_sunday">Sunday</string>
     <string name="day_any">Any day</string>
+
+    <string name="pdf_report_title">Health Journal Report</string>
+
+    <plurals name="workout_routine_count">
+        <item quantity="one">%1$d exercise</item>
+        <item quantity="other">%1$d exercises</item>
+    </plurals>
+    <plurals name="workout_round">
+        <item quantity="one">Round %1$d</item>
+        <item quantity="other">Round %1$d</item>
+    </plurals>
+    <plurals name="workout_set_label">
+        <item quantity="one">Set %1$d</item>
+        <item quantity="other">Set %1$d</item>
+    </plurals>
+    <plurals name="archive_selected_format">
+        <item quantity="one">%1$d Selected</item>
+        <item quantity="other">%1$d Selected</item>
+    </plurals>
+    <plurals name="entry_attachments_format">
+        <item quantity="one">%1$d attachment</item>
+        <item quantity="other">%1$d attachments</item>
+    </plurals>
 </resources>
