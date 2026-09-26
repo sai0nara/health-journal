@@ -52,10 +52,10 @@ fun SettingsScreen(onBack: () -> Unit) {
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back_label))
                     }
                 },
-                title = { Text("Settings") }
+                title = { Text(stringResource(R.string.settings_title)) }
             )
         }
     ) { innerPadding ->
@@ -67,7 +67,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "General",
+                text = stringResource(R.string.settings_section_general),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
             )
@@ -115,8 +115,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Used by body measurements, the personal card, and the " +
-                    "workout quick-step pad.",
+                text = stringResource(R.string.settings_units_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -44,4 +44,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: History dual units + performed values**
 *Link: [./tracks/history_dual_units_20260922/](./tracks/history_dual_units_20260922/)*
 
+---
+
+- [ ] **Track: Russian language localization support**
+*Link: [./tracks/russian_localization_20260924/](./tracks/russian_localization_20260924/)*
+
 

@@ -1,18 +1,24 @@
 package com.example.healthjournal.domain
 
+import androidx.annotation.StringRes
+import com.example.healthjournal.R
+
 /**
  * Days a workout preset can be scheduled against; ANY means no fixed day.
  * A preset is a saved routine that drives the structured execution flow.
+ *
+ * Only [labelRes] is shown in UI; the persisted [name] stays canonical
+ * English so stored presets, backups, and sync payloads never change.
  */
-enum class ScheduledDay {
-    MONDAY,
-    TUESDAY,
-    WEDNESDAY,
-    THURSDAY,
-    FRIDAY,
-    SATURDAY,
-    SUNDAY,
-    ANY
+enum class ScheduledDay(@StringRes val labelRes: Int) {
+    MONDAY(R.string.day_monday),
+    TUESDAY(R.string.day_tuesday),
+    WEDNESDAY(R.string.day_wednesday),
+    THURSDAY(R.string.day_thursday),
+    FRIDAY(R.string.day_friday),
+    SATURDAY(R.string.day_saturday),
+    SUNDAY(R.string.day_sunday),
+    ANY(R.string.day_any)
 }
 
 /**

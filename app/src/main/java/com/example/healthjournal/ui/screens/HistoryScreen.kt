@@ -76,6 +76,8 @@ fun HistoryScreen(
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val entryArchivedMessage = stringResource(R.string.history_entry_archived)
+    val undoActionLabel = stringResource(R.string.history_undo)
     
     val authorizationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
@@ -130,7 +132,7 @@ fun HistoryScreen(
                 },
                 title = {
                     Text(
-                        "Health Journal",
+                        stringResource(R.string.history_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -145,19 +147,19 @@ fun HistoryScreen(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.measurements_chart),
-                            contentDescription = "View Measurements",
+                            contentDescription = stringResource(R.string.history_cd_measurements),
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                     IconButton(onClick = onExportClick) {
-                        Icon(Icons.Default.FileDownload, contentDescription = "Export Data")
+                        Icon(Icons.Default.FileDownload, contentDescription = stringResource(R.string.history_cd_export))
                     }
                     IconButton(
                         onClick = { showOverflow = true },
                         modifier = Modifier.testTag("overflow_menu")
                     ) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.history_cd_more))
                     }
                     DropdownMenu(
                         expanded = showOverflow,
@@ -165,33 +167,33 @@ fun HistoryScreen(
                     ) {
                         if (isUserSignedIn) {
                             DropdownMenuItem(
-                                text = { Text("Sync Now") },
+                                text = { Text(stringResource(R.string.history_menu_sync)) },
                                 onClick = { showOverflow = false; viewModel.syncNow() },
                                 leadingIcon = { Icon(Icons.Default.Sync, contentDescription = null) }
                             )
                         }
                         DropdownMenuItem(
-                            text = { Text("View Archive") },
+                                text = { Text(stringResource(R.string.history_menu_archive)) },
                             onClick = { showOverflow = false; onArchiveClick() },
                             leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("Workouts") },
+                                text = { Text(stringResource(R.string.history_menu_workouts)) },
                             onClick = { showOverflow = false; onWorkoutClick() },
                             leadingIcon = { Icon(Icons.Default.FitnessCenter, contentDescription = null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("Settings") },
+                                text = { Text(stringResource(R.string.history_menu_settings)) },
                             onClick = { showOverflow = false; onSettingsClick() },
                             leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("Sort order") },
+                                text = { Text(stringResource(R.string.history_menu_sort)) },
                             onClick = { showOverflow = false; viewModel.setSortOrder(!isAscending) },
                             leadingIcon = { Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("About App") },
+                                text = { Text(stringResource(R.string.history_menu_about)) },
                             onClick = { showOverflow = false; showAboutDialog = true },
                             leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }
                         )
@@ -207,10 +209,10 @@ fun HistoryScreen(
                 SmallFloatingActionButton(
                     onClick = { showMeasurementSheet = true }
                 ) {
-                    Icon(Icons.Default.Straighten, contentDescription = "Add body measurements")
+                    Icon(Icons.Default.Straighten, contentDescription = stringResource(R.string.history_cd_add_measurements))
                 }
                 FloatingActionButton(onClick = onAddEntryClick) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Entry")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.history_cd_add_entry))
                 }
             }
         }
@@ -220,7 +222,7 @@ fun HistoryScreen(
             SharedSearchBar(
                 query = searchQuery,
                 onQueryChanged = { viewModel.setSearchQuery(it) },
-                placeholder = "Search journal..."
+                placeholder = stringResource(R.string.history_search_placeholder)
             )
 
             TagSelectionRow(
@@ -252,7 +254,7 @@ fun HistoryScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                 ) {
-                    Text("Sign In")
+                    Text(stringResource(R.string.history_sign_in))
                 }
             }
 
@@ -267,7 +269,7 @@ fun HistoryScreen(
             ) {
                 if (entries.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No entries yet. Start by adding one!")
+                        Text(stringResource(R.string.history_empty))
                     }
                 } else {
                     LazyColumn(
@@ -281,8 +283,8 @@ fun HistoryScreen(
                                     viewModel.archiveEntry(entry.entry_id)
                                     scope.launch {
                                         val result = snackbarHostState.showSnackbar(
-                                            message = "Entry archived",
-                                            actionLabel = "Undo",
+                                            message = entryArchivedMessage,
+                                            actionLabel = undoActionLabel,
                                             duration = SnackbarDuration.Short
                                         )
                                         if (result == SnackbarResult.ActionPerformed) {
@@ -325,7 +327,7 @@ fun HistoryScreen(
             ) {
                 AsyncImage(
                     model = expandedImageUri,
-                    contentDescription = "Expanded Image",
+                    contentDescription = stringResource(R.string.history_cd_expanded_image),
                     modifier = Modifier.fillMaxWidth(),
                     contentScale = ContentScale.Fit
                 )
@@ -364,7 +366,7 @@ fun SwipeToArchiveWrapper(
             ) {
                 Icon(
                     Icons.Default.Archive,
-                    contentDescription = "Archive",
+                    contentDescription = stringResource(R.string.history_cd_archive),
                     tint = MaterialTheme.colorScheme.onErrorContainer
                 )
             }

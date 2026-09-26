@@ -26,10 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.healthjournal.R
 import com.example.healthjournal.domain.GoalValidator
 import com.example.healthjournal.domain.MeasurementField
 import com.example.healthjournal.data.local.UnitConverter
@@ -75,12 +77,12 @@ fun GoalSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${field.label} goal",
+                    text = stringResource(R.string.goal_title_format, stringResource(field.labelRes)),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close goal sheet")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.goal_cd_close))
                 }
             }
 
@@ -90,7 +92,7 @@ fun GoalSheet(
                     rawText = it
                     error = null
                 },
-                label = { Text("Target (${GoalValidator.unitLabel(field, unitSystem)})") },
+                label = { Text(stringResource(R.string.goal_target_label_format, GoalValidator.unitLabel(field, unitSystem))) },
                 isError = error != null,
                 supportingText = {
                     if (error != null) {
@@ -122,7 +124,7 @@ fun GoalSheet(
                     },
                     modifier = Modifier.testTag("bm_goal_clear")
                 ) {
-                    Text("Clear")
+                    Text(stringResource(R.string.goal_clear))
                 }
 
                 Button(
@@ -138,7 +140,7 @@ fun GoalSheet(
                     },
                     modifier = Modifier.weight(1f).testTag("bm_goal_save")
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.action_save))
                 }
             }
         }

@@ -17,12 +17,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import com.example.healthjournal.R
 import com.example.healthjournal.ui.components.JournalEntryItem
 import com.example.healthjournal.ui.components.SharedSearchBar
 import com.example.healthjournal.ui.components.TagSelectionRow
@@ -43,6 +47,7 @@ fun ArchiveScreen(
     var isSelectionMode by remember { mutableStateOf(false) }
     var expandedImageUri by remember { mutableStateOf<String?>(null) }
     val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -63,8 +68,8 @@ fun ArchiveScreen(
     if (showDeleteConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
-            title = { Text("Delete Entries?") },
-            text = { Text("Are you sure you want to permanently delete ${selectedIds.size} selected entries? This cannot be undone.") },
+            title = { Text(stringResource(R.string.archive_delete_title)) },
+            text = { Text(stringResource(R.string.archive_delete_message, selectedIds.size)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -72,16 +77,16 @@ fun ArchiveScreen(
                         selectedIds = emptySet()
                         isSelectionMode = false
                         showDeleteConfirmDialog = false
-                        scope.launch { snackbarHostState.showSnackbar("Entries deleted") }
+                        scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.archive_snackbar_deleted)) }
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Delete")
+                    Text(stringResource(R.string.common_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -106,12 +111,12 @@ fun ArchiveScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    "Empty Archive?",
+                    stringResource(R.string.archive_empty_title),
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "Every entry in the archive will be permanently removed. This action is irreversible.",
+                    stringResource(R.string.archive_empty_body),
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
@@ -120,19 +125,19 @@ fun ArchiveScreen(
                     onClick = {
                         viewModel.emptyArchive()
                         showEmptyArchiveSheet = false
-                        scope.launch { snackbarHostState.showSnackbar("Archive emptied") }
+                        scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.archive_snackbar_emptied)) }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Permanently Delete All")
+                    Text(stringResource(R.string.archive_empty_confirm))
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 TextButton(
                     onClick = { showEmptyArchiveSheet = false },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Keep My Entries")
+                    Text(stringResource(R.string.archive_keep_entries))
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }
@@ -145,9 +150,9 @@ fun ArchiveScreen(
             TopAppBar(
                 title = { 
                     if (isSelectionMode) {
-                        Text("${selectedIds.size} Selected")
+                        Text(pluralStringResource(R.plurals.archive_selected_format, selectedIds.size))
                     } else {
-                        Text("Archive")
+                        Text(stringResource(R.string.archive_title))
                     }
                 },
                 navigationIcon = {
@@ -161,7 +166,7 @@ fun ArchiveScreen(
                     }) {
                         Icon(
                             if (isSelectionMode) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack, 
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.action_back_label)
                         )
                     }
                 },
@@ -171,16 +176,16 @@ fun ArchiveScreen(
                             selectedIds.forEach { viewModel.restoreEntry(it) }
                             selectedIds = emptySet()
                             isSelectionMode = false
-                            scope.launch { snackbarHostState.showSnackbar("Entries restored") }
+                            scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.archive_snackbar_restored)) }
                         }) {
-                            Icon(Icons.Default.Restore, contentDescription = "Restore Selected")
+                            Icon(Icons.Default.Restore, contentDescription = stringResource(R.string.archive_cd_restore))
                         }
                         IconButton(onClick = { showDeleteConfirmDialog = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete Selected")
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.archive_cd_delete))
                         }
                     } else if (archivedEntries.isNotEmpty()) {
                         IconButton(onClick = { showEmptyArchiveSheet = true }) {
-                            Icon(Icons.Default.DeleteForever, contentDescription = "Empty Archive")
+                            Icon(Icons.Default.DeleteForever, contentDescription = stringResource(R.string.archive_cd_empty))
                         }
                     }
                 },
@@ -199,7 +204,7 @@ fun ArchiveScreen(
             SharedSearchBar(
                 query = searchQuery,
                 onQueryChanged = { viewModel.setArchiveSearchQuery(it) },
-                placeholder = "Search archive..."
+                placeholder = stringResource(R.string.archive_search_placeholder)
             )
 
             TagSelectionRow(
@@ -219,7 +224,7 @@ fun ArchiveScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "Your archive is clean.",
+                            stringResource(R.string.archive_empty_state),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.outline
                         )
@@ -287,7 +292,7 @@ fun ArchiveScreen(
             ) {
                 AsyncImage(
                     model = expandedImageUri,
-                    contentDescription = "Expanded Image",
+                    contentDescription = stringResource(R.string.history_cd_expanded_image),
                     modifier = Modifier.fillMaxWidth(),
                     contentScale = androidx.compose.ui.layout.ContentScale.Fit
                 )

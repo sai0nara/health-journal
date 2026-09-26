@@ -42,8 +42,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.healthjournal.R
 import com.example.healthjournal.data.local.ExerciseCatalogItem
 import com.example.healthjournal.data.local.UnitConverter
 import com.example.healthjournal.data.local.UnitSettings
@@ -78,18 +80,18 @@ fun PresetLibraryScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.action_back_label)
                         )
                     }
                 },
-                title = { Text("Presets") }
+                title = { Text(stringResource(R.string.preset_title)) }
             )
         },
         floatingActionButton = {
             if (uiState is PresetUiState.Library) {
                 ExtendedFloatingActionButton(
                     onClick = { viewModel.openCreate() },
-                    text = { Text("Create Preset") },
+                    text = { Text(stringResource(R.string.preset_create)) },
                     icon = { Icon(Icons.Default.Add, contentDescription = null) }
                 )
             }
@@ -124,19 +126,19 @@ fun PresetLibraryScreen(
     deleteTarget?.let { preset ->
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
-            title = { Text("Delete Preset?") },
-            text = { Text("Delete \"${preset.name}\"? This cannot be undone.") },
+            title = { Text(stringResource(R.string.preset_delete_title)) },
+            text = { Text(stringResource(R.string.preset_delete_message, preset.name)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deletePreset(preset.id)
                     deleteTarget = null
                 }) {
-                    Text("Delete")
+                    Text(stringResource(R.string.common_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { deleteTarget = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -158,7 +160,7 @@ private fun LibraryContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("No presets yet", style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.preset_empty), style = MaterialTheme.typography.bodyLarge)
         }
     } else {
         LazyColumn(
@@ -198,12 +200,20 @@ private fun PresetCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(preset.name, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "${preset.scheduledDay} · ${preset.exercises.size} exercises",
+                    stringResource(
+                        R.string.preset_schedule_summary,
+                        runCatching {
+                            stringResource(
+                                ScheduledDay.valueOf(preset.scheduledDay).labelRes
+                            )
+                        }.getOrDefault(preset.scheduledDay),
+                        preset.exercises.size
+                    ),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
             IconButton(onClick = onDelete, modifier = Modifier.testTag("preset_delete_${preset.id}")) {
-                Icon(Icons.Default.Close, contentDescription = "Delete preset")
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.preset_cd_delete))
             }
         }
     }
@@ -232,7 +242,7 @@ private fun EditingContent(
         OutlinedTextField(
             value = state.name,
             onValueChange = onUpdateName,
-            label = { Text("Preset name") },
+            label = { Text(stringResource(R.string.preset_name_label)) },
             supportingText = state.nameError?.let { { Text(it) } },
             isError = state.nameError != null,
             singleLine = true,
@@ -247,7 +257,7 @@ private fun EditingContent(
         if (state.exerciseError != null) {
             Text(state.exerciseError!!, color = MaterialTheme.colorScheme.error)
         }
-        Text("Exercises", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.preset_exercises_title), style = MaterialTheme.typography.titleSmall)
         ExerciseSearchDropdown(
             catalog = catalog,
             onAddExercise = onAddExercise
@@ -270,7 +280,7 @@ private fun EditingContent(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = onCancel) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
             OutlinedButton(
                 onClick = onSave,
@@ -278,7 +288,7 @@ private fun EditingContent(
                     .weight(1f)
                     .testTag("save_preset_button")
             ) {
-                Text("Save Preset")
+                Text(stringResource(R.string.preset_save))
             }
         }
     }
@@ -293,13 +303,13 @@ private fun DayDropdown(
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
         TextButton(onClick = { expanded = true }) {
-            Text(selectedDay.name)
+            Text(stringResource(selectedDay.labelRes))
             Icon(Icons.Default.ArrowDropDown, contentDescription = null)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             ScheduledDay.entries.forEach { day ->
                 DropdownMenuItem(
-                    text = { Text(day.name) },
+                    text = { Text(stringResource(day.labelRes)) },
                     onClick = {
                         onSelect(day)
                         expanded = false
@@ -323,7 +333,7 @@ private fun ExerciseSearchDropdown(
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
-            label = { Text("Search exercises") },
+            label = { Text(stringResource(R.string.preset_search_label)) },
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
@@ -382,22 +392,25 @@ private fun DraftExerciseRow(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
             IconButton(onClick = onRemove) {
-                Icon(Icons.Default.Close, contentDescription = "Remove exercise")
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.preset_cd_remove))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PresetField(Strings.SETS, setsValue, Modifier.weight(1f).testTag("preset_field_sets")) {
+            PresetField(stringResource(R.string.preset_sets), setsValue, Modifier.weight(1f).testTag("preset_field_sets")) {
                 setsValue = it
                 it.toIntOrNull()?.let { v -> onUpdate(exercise.copy(targetSets = v)) }
             }
-            PresetField(Strings.REPS, repsValue, Modifier.weight(1f).testTag("preset_field_reps")) {
+            PresetField(stringResource(R.string.preset_reps), repsValue, Modifier.weight(1f).testTag("preset_field_reps")) {
                 repsValue = it
                 it.toIntOrNull()?.let { v -> onUpdate(exercise.copy(defaultReps = v)) }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PresetField(
-                if (unitSystem == UnitSystem.IMPERIAL) "Weight lb" else Strings.WEIGHT,
+                stringResource(
+                    if (unitSystem == UnitSystem.IMPERIAL) R.string.preset_weight_lb
+                    else R.string.preset_weight_kg
+                ),
                 weightValue,
                 Modifier.weight(1f).testTag("preset_field_weight")
             ) {
@@ -405,19 +418,12 @@ private fun DraftExerciseRow(
                 UnitConverter.parseMeasurement(it, unitSystem, isWeight = true)
                     ?.let { kg -> onUpdate(exercise.copy(defaultWeightKg = kg)) }
             }
-            PresetField(Strings.REST, restValue, Modifier.weight(1f).testTag("preset_field_rest")) {
+            PresetField(stringResource(R.string.preset_rest), restValue, Modifier.weight(1f).testTag("preset_field_rest")) {
                 restValue = it
                 it.toIntOrNull()?.let { v -> onUpdate(exercise.copy(restSeconds = v)) }
             }
         }
     }
-}
-
-private object Strings {
-    const val SETS = "Sets"
-    const val REPS = "Reps"
-    const val WEIGHT = "Weight kg"
-    const val REST = "Rest s"
 }
 
 @Composable

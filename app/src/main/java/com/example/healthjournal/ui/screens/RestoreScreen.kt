@@ -31,8 +31,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.healthjournal.R
 import com.example.healthjournal.export.RestoreUiState
 import com.example.healthjournal.export.RestoreViewModel
 import java.text.SimpleDateFormat
@@ -70,8 +72,8 @@ fun RestoreScreen(viewModel: RestoreViewModel) {
 
         is RestoreUiState.PassphraseRequired -> {
             PassphraseDialog(
-                title = "Encrypted Backup",
-                confirmLabel = "Continue",
+                title = stringResource(R.string.restore_encrypted_title),
+                confirmLabel = stringResource(R.string.restore_continue),
                 onSubmit = { viewModel.submitPassphrase(it) },
                 onDismiss = { viewModel.reset() }
             )
@@ -85,8 +87,8 @@ fun RestoreScreen(viewModel: RestoreViewModel) {
         is RestoreUiState.Error -> {
             if (state.requestPassphrase) {
                 PassphraseDialog(
-                    title = "Wrong Passphrase",
-                    confirmLabel = "Retry",
+                    title = stringResource(R.string.restore_wrong_passphrase_title),
+                    confirmLabel = stringResource(R.string.restore_retry),
                     onSubmit = { viewModel.submitPassphrase(it) },
                     onDismiss = { viewModel.reset() }
                 )
@@ -109,23 +111,21 @@ private fun RestoreIdleContent(onSelectBackup: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = "Restore a full backup to replace all current data.",
+            text = stringResource(R.string.restore_intro),
             style = MaterialTheme.typography.bodyLarge
         )
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("What happens", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.restore_what_happens), style = MaterialTheme.typography.titleSmall)
                 Text(
-                    "All existing journal entries, measurements, goals, cards, and media " +
-                        "will be replaced by the contents of the backup. You can also restore a " +
-                        "password-protected (encrypted) backup.",
+                    stringResource(R.string.restore_what_happens_body),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
         Spacer(modifier = Modifier.weight(1f))
         Button(onClick = onSelectBackup, modifier = Modifier.fillMaxWidth()) {
-            Text("Select Backup File")
+            Text(stringResource(R.string.restore_select_backup))
         }
     }
 }
@@ -142,7 +142,7 @@ private fun BusyContent() {
         Spacer(modifier = Modifier.height(48.dp))
         CircularProgressIndicator()
         Text(
-            "Working on your backup...",
+            stringResource(R.string.restore_working),
             style = MaterialTheme.typography.bodyMedium
         )
     }
@@ -157,25 +157,27 @@ private fun RestoreConfirmationDialog(
     val formatter = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Confirm Restore") },
+        title = { Text(stringResource(R.string.restore_confirm_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "This will replace ALL current data with the contents of this backup. " +
-                        "This cannot be undone.",
+                    stringResource(R.string.restore_confirm_body),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 HorizontalDivider()
-                MetadataRow("Backup created", formatter.format(Date(state.backupTimestamp)))
-                MetadataRow("Backup schema", "v${state.schemaVersion}")
-                MetadataRow("Encrypted", if (state.isEncrypted) "Yes" else "No")
+                MetadataRow(stringResource(R.string.restore_meta_created), formatter.format(Date(state.backupTimestamp)))
+                MetadataRow(stringResource(R.string.restore_meta_schema), stringResource(R.string.restore_meta_schema_value, state.schemaVersion))
+                MetadataRow(
+                    stringResource(R.string.restore_meta_encrypted),
+                    stringResource(if (state.isEncrypted) R.string.common_yes else R.string.common_no)
+                )
             }
         },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Restore") }
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.restore_confirm_action)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }
@@ -194,13 +196,13 @@ private fun PassphraseDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "This backup is encrypted. Enter the passphrase used to create it.",
+                    stringResource(R.string.restore_passphrase_body),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 OutlinedTextField(
                     value = passphrase,
                     onValueChange = { passphrase = it },
-                    label = { Text("Passphrase") },
+                    label = { Text(stringResource(R.string.restore_passphrase_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -213,7 +215,7 @@ private fun PassphraseDialog(
             ) { Text(confirmLabel) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }
@@ -226,10 +228,9 @@ private fun RestoreSuccessContent(result: com.example.healthjournal.export.Resto
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Restore Complete", style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.restore_complete_title), style = MaterialTheme.typography.headlineSmall)
         Text(
-            "Your backup has been restored successfully. Restored data is being " +
-                "re-synced to the cloud.",
+            stringResource(R.string.restore_complete_body),
             style = MaterialTheme.typography.bodyLarge
         )
         Card(modifier = Modifier.fillMaxWidth()) {
@@ -239,19 +240,19 @@ private fun RestoreSuccessContent(result: com.example.healthjournal.export.Resto
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                MetadataRow("Journal entries", result.journalEntryCount.toString())
-                MetadataRow("Body measurements", result.bodyMeasurementCount.toString())
-                MetadataRow("Goals", result.goalCount.toString())
-                MetadataRow("Deleted entries", result.deletedEntryCount.toString())
-                MetadataRow("Tags", result.tagCount.toString())
-                MetadataRow("Workouts", result.workoutCount.toString())
-                MetadataRow("Media files", result.mediaFileCount.toString())
-                MetadataRow("Total records", result.totalRecords.toString())
+                MetadataRow(stringResource(R.string.restore_meta_journal), result.journalEntryCount.toString())
+                MetadataRow(stringResource(R.string.measurements_title), result.bodyMeasurementCount.toString())
+                MetadataRow(stringResource(R.string.restore_meta_goals), result.goalCount.toString())
+                MetadataRow(stringResource(R.string.restore_meta_deleted), result.deletedEntryCount.toString())
+                MetadataRow(stringResource(R.string.restore_meta_tags), result.tagCount.toString())
+                MetadataRow(stringResource(R.string.restore_meta_workouts), result.workoutCount.toString())
+                MetadataRow(stringResource(R.string.restore_meta_media), result.mediaFileCount.toString())
+                MetadataRow(stringResource(R.string.restore_meta_total), result.totalRecords.toString())
             }
         }
         Spacer(modifier = Modifier.weight(1f))
         OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
-            Text("Done")
+            Text(stringResource(R.string.common_done))
         }
     }
 }
@@ -264,11 +265,11 @@ private fun RestoreErrorContent(error: com.example.healthjournal.export.RestoreE
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Restore Failed", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.error)
-        Text(error.message ?: "An error occurred during the restore.", style = MaterialTheme.typography.bodyLarge)
+        Text(stringResource(R.string.restore_failed_title), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.error)
+        Text(error.message ?: stringResource(R.string.restore_error_generic), style = MaterialTheme.typography.bodyLarge)
         Spacer(modifier = Modifier.weight(1f))
         OutlinedButton(onClick = onRetry, modifier = Modifier.fillMaxWidth()) {
-            Text("Choose Another Backup")
+            Text(stringResource(R.string.restore_choose_another))
         }
     }
 }

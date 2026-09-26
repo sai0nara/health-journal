@@ -1,4 +1,5 @@
 package com.example.healthjournal.export
+import com.example.healthjournal.R
 
 import android.content.Context
 import android.net.Uri
@@ -37,7 +38,7 @@ class PdfExportUseCase(
 
         try {
             // Title
-            document.add(Paragraph("Health Journal Report")
+            document.add(Paragraph(context.getString(R.string.pdf_report_title))
                 .setBold()
                 .setFontSize(24f)
                 .setTextAlignment(TextAlignment.CENTER))

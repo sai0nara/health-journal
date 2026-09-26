@@ -6,7 +6,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.healthjournal.R
 import com.example.healthjournal.ui.components.EnrichmentPanel
 import com.example.healthjournal.ui.components.RichTextToolbar
 
@@ -16,10 +18,10 @@ fun ComponentPreviewScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Component Preview") },
+                title = { Text(stringResource(R.string.preview_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back_label))
                     }
                 }
             )
@@ -32,7 +34,7 @@ fun ComponentPreviewScreen(onBack: () -> Unit) {
                 .fillMaxSize()
         ) {
             Text(
-                text = "EnrichmentPanel Preview:",
+                text = stringResource(R.string.preview_enrichment),
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -46,7 +48,7 @@ fun ComponentPreviewScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "RichTextToolbar Preview:",
+                text = stringResource(R.string.preview_toolbar),
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )

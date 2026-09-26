@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Health Journal v1.0</string>
+    <string name="google_web_client_id">711442225372-va6du3n65splt5cf8pmng4b9h8flob5l.apps.googleusercontent.com</string>
+    <string name="error_invalid_date_format">Неверный формат даты</string>
+    <string name="error_date_in_future">Дата не может быть в будущем</string>
+    <string name="error_age_too_high">Возраст не может превышать 130 лет</string>
+    <string name="error_height_out_of_range">Рост должен быть от %1$s до %2$s</string>
+    <string name="error_weight_out_of_range">Вес должен быть от %1$s до %2$s</string>
+
+    <string name="personal_card_title">Личная карточка</string>
+    <string name="cd_open_personal_card">Открыть личную карточку</string>
+    <string name="cd_app_logo">Логотип Health Journal</string>
+    <string name="action_back">Назад</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="action_save">Сохранить</string>
+    <string name="action_edit">Редактировать личную карточку</string>
+    <string name="action_ok">ОК</string>
+    <string name="action_add">Добавить</string>
+    <string name="loading">Загрузка…</string>
+
+    <string name="demographics_title">Демографические данные</string>
+    <string name="medical_profile_title">Медицинский профиль</string>
+    <string name="medical_history_title">История болезни</string>
+    <string name="emergency_contacts_title">Экстренные контакты</string>
+
+    <string name="empty_demographics">Демографические данные пока не добавлены.</string>
+    <string name="empty_medical_profile">Медицинский профиль пока не заполнен.</string>
+    <string name="empty_medical_history">История болезни пока пуста.</string>
+    <string name="empty_emergency_contacts">Экстренные контакты пока не добавлены.</string>
+
+    <string name="label_name">Имя</string>
+    <string name="label_date_of_birth">Дата рождения</string>
+    <string name="label_sex">Пол</string>
+    <string name="label_height">Рост</string>
+    <string name="label_weight">Вес</string>
+    <string name="label_race_ethnicity">Раса/этническая принадлежность</string>
+    <string name="label_blood_type">Группа крови</string>
+    <string name="blood_type_none">Не указана</string>
+    <string name="label_allergies">Аллергии</string>
+    <string name="label_medications">Лекарства</string>
+    <string name="label_adverse_reactions">Нежелательные реакции</string>
+    <string name="label_hereditary_diseases">Наследственные заболевания</string>
+    <string name="label_chronic_conditions">Хронические заболевания</string>
+    <string name="label_surgical_history">Перенесённые операции</string>
+    <string name="label_relationship">Кем приходится</string>
+    <string name="label_phone_number">Номер телефона</string>
+    <string name="format_cm_value">%1$s cm</string>
+    <string name="format_kg_value">%1$s kg</string>
+    <string name="format_in_value">%1$s in</string>
+    <string name="format_lb_value">%1$s lbs</string>
+
+    <string name="label_full_name">Полное имя</string>
+    <string name="label_dob_edit">Дата рождения (YYYY-MM-DD)</string>
+    <string name="label_unit_system">Система единиц</string>
+    <string name="unit_system_metric">Метрическая (kg/cm)</string>
+    <string name="unit_system_imperial">Имперская (lbs/in)</string>
+    <string name="label_height_with_unit">Рост (%1$s)</string>
+    <string name="label_weight_with_unit">Вес (%1$s)</string>
+    <string name="height_unit_cm">cm</string>
+    <string name="height_unit_in">in</string>
+    <string name="weight_unit_kg">kg</string>
+    <string name="weight_unit_lbs">lbs</string>
+    <string name="select_date">Выбрать дату</string>
+
+    <string name="add_allergy">Добавить аллергию</string>
+    <string name="remove_allergy">Удалить аллергию</string>
+    <string name="add_medication">Добавить лекарство</string>
+    <string name="remove_medication">Удалить лекарство</string>
+    <string name="add_adverse_reaction">Добавить нежелательную реакцию</string>
+    <string name="remove_adverse_reaction">Удалить нежелательную реакцию</string>
+    <string name="add_hereditary_disease">Добавить наследственное заболевание</string>
+    <string name="remove_hereditary_disease">Удалить наследственное заболевание</string>
+    <string name="add_chronic_condition">Добавить хроническое заболевание</string>
+    <string name="remove_chronic_condition">Удалить хроническое заболевание</string>
+    <string name="add_surgical_procedure">Добавить операцию</string>
+    <string name="remove_surgical_procedure">Удалить операцию</string>
+    <string name="add_emergency_contact">Добавить экстренный контакт</string>
+    <string name="remove_contact">Удалить контакт</string>
+    <string name="medication_item">%1$s %2$s - %3$s</string>
+
+    <string name="dialog_add_allergy">Добавить аллергию</string>
+    <string name="dialog_add_medication">Добавить лекарство</string>
+    <string name="dialog_add_adverse_reaction">Добавить нежелательную реакцию</string>
+    <string name="dialog_add_hereditary_disease">Добавить наследственное заболевание</string>
+    <string name="dialog_add_chronic_condition">Добавить хроническое заболевание</string>
+    <string name="dialog_add_surgical_procedure">Добавить операцию</string>
+    <string name="dialog_add_emergency_contact">Добавить экстренный контакт</string>
+    <string name="label_allergy">Аллергия</string>
+    <string name="label_reaction">Реакция</string>
+    <string name="label_disease">Заболевание</string>
+    <string name="label_condition">Состояние</string>
+    <string name="label_procedure">Процедура (с датой, если известна)</string>
+    <string name="label_drug_name">Название препарата</string>
+    <string name="label_dosage">Дозировка (например, 500 мг)</string>
+    <string name="label_schedule">Схема приёма (например, дважды в день)</string>
+    <string name="label_purpose">Цель приёма (необязательно)</string>
+
+    <string name="cd_full_name">Полное имя: %1$s</string>
+    <string name="cd_sex">Пол: %1$s</string>
+    <string name="cd_race_ethnicity">Раса/этническая принадлежность: %1$s</string>
+    <string name="cd_height">Рост (%1$s): %2$s</string>
+    <string name="cd_weight">Вес (%1$s): %2$s</string>
+
+    <!-- History -->
+    <string name="history_title">Журнал здоровья</string>
+    <string name="history_menu_sync">Синхронизировать сейчас</string>
+    <string name="history_menu_archive">Показать архив</string>
+    <string name="history_menu_workouts">Тренировки</string>
+    <string name="history_menu_settings">Настройки</string>
+    <string name="history_menu_sort">Порядок сортировки</string>
+    <string name="history_menu_about">О приложении</string>
+    <string name="history_sign_in">Войти</string>
+    <string name="history_empty">Пока нет записей. Добавьте первую!</string>
+    <string name="history_entry_archived">Запись архивирована</string>
+    <string name="history_undo">Отменить</string>
+    <string name="history_search_placeholder">Поиск по журналу…</string>
+    <string name="history_cd_measurements">Показать измерения</string>
+    <string name="history_cd_export">Экспорт данных</string>
+    <string name="history_cd_more">Другие действия</string>
+    <string name="history_cd_add_measurements">Добавить измерения тела</string>
+    <string name="history_cd_add_entry">Добавить запись</string>
+    <string name="history_cd_expanded_image">Увеличенное изображение</string>
+    <string name="history_cd_archive">Архивировать</string>
+
+    <!-- Workout -->
+    <string name="action_back_label">Назад</string>
+    <string name="workout_title">Тренировки</string>
+    <string name="workout_recent_item">%1$s · %2$s</string>
+    <string name="workout_recovery_title">Незавершённая тренировка</string>
+    <string name="workout_recovery_text">Предыдущая тренировка не была завершена. Продолжите её или отмените.</string>
+    <string name="workout_resume">Продолжить</string>
+    <string name="workout_discard">Отменить</string>
+    <string name="workout_error_title">Ошибка тренировки</string>
+    <string name="workout_choose">Выберите тренировку</string>
+    <string name="workout_presets">Пресеты</string>
+    <string name="workout_routines">Программы</string>
+    <string name="workout_start_routine">Начать программу</string>
+    <string name="workout_recent">Недавние</string>
+    <string name="workout_configure_title">Настройка: %1$s</string>
+    <string name="workout_target_distance">Целевая дистанция (km)</string>
+    <string name="workout_target_duration">Целевая длительность (min)</string>
+    <string name="workout_start">Начать</string>
+    <string name="workout_log_past_instead">Записать прошедшую тренировку: %1$s</string>
+    <string name="workout_get_ready">Приготовьтесь</string>
+    <string name="workout_paused">Пауза</string>
+    <string name="workout_pause">Пауза</string>
+    <string name="workout_finish">Завершить</string>
+    <string name="workout_phase_work">Работа</string>
+    <string name="workout_next_interval">Следующий интервал</string>
+    <string name="workout_rest_timer">Отдых %1$s</string>
+    <string name="workout_no_exercises">Пока нет упражнений</string>
+    <string name="workout_set_summary">%1$s %2$s × %3$d повт.</string>
+    <string name="workout_unit_lb">lb</string>
+    <string name="workout_unit_kg">kg</string>
+    <string name="workout_reps">повт.</string>
+    <string name="workout_add_set">Добавить подход</string>
+    <string name="workout_exercise_name">Название упражнения</string>
+    <string name="workout_add_exercise">Добавить упражнение</string>
+    <string name="workout_add_set_short">+ Подход</string>
+    <string name="workout_swap">Заменить</string>
+    <string name="workout_routine_target">%1$d x %2$d @ %3$s · Отдых %4$d с</string>
+    <string name="workout_reps_minus">-1 повт.</string>
+    <string name="workout_reps_plus">+1 повт.</string>
+    <string name="workout_complete_title">Тренировка завершена</string>
+    <string name="workout_calories">%1$s kcal</string>
+    <string name="workout_tonnage">Тоннаж: %1$s %2$s</string>
+    <string name="workout_rounds_intervals">Раунды: %1$d · Интервалы: %2$d</string>
+    <string name="workout_synced">Синхронизировано с Health Connect</string>
+    <string name="workout_saved_locally">Сохранено локально</string>
+    <string name="workout_log_past_title">Записать прошедшую тренировку: %1$s</string>
+    <string name="workout_duration_label">Длительность (min)</string>
+    <string name="workout_calories_label">Калории (необязательно)</string>
+    <string name="workout_date_label">Дата (YYYY-MM-DD, пусто — сегодня)</string>
+    <string name="workout_laps_label">Круги (необязательно)</string>
+    <string name="workout_movements_label">Движения (необязательно)</string>
+    <string name="workout_notes_label">Заметки (необязательно)</string>
+
+    <!-- Presets -->
+    <string name="preset_title">Пресеты</string>
+    <string name="preset_create">Создать пресет</string>
+    <string name="preset_delete_title">Удалить пресет?</string>
+    <string name="preset_delete_message">Удалить \"%1$s\"? Это действие нельзя отменить.</string>
+    <string name="preset_empty">Пока нет пресетов</string>
+    <string name="preset_schedule_summary">%1$s · упражнений: %2$d</string>
+    <string name="preset_cd_delete">Удалить пресет</string>
+    <string name="preset_name_label">Название пресета</string>
+    <string name="preset_exercises_title">Упражнения</string>
+    <string name="preset_save">Сохранить пресет</string>
+    <string name="preset_search_label">Поиск упражнений</string>
+    <string name="preset_cd_remove">Удалить упражнение</string>
+    <string name="preset_sets">Подходы</string>
+    <string name="preset_reps">Повторения</string>
+    <string name="preset_weight_kg">Вес kg</string>
+    <string name="preset_weight_lb">Вес lb</string>
+    <string name="preset_rest">Отдых s</string>
+
+    <!-- Export -->
+    <string name="export_title">Экспорт данных</string>
+    <string name="export_tab_export">Экспорт</string>
+    <string name="export_tab_restore">Восстановление</string>
+    <string name="export_intro">Выберите диапазон дат и формат экспорта.</string>
+    <string name="export_start_date">Дата начала</string>
+    <string name="export_cd_select_start">Выбрать дату начала</string>
+    <string name="export_end_date">Дата окончания</string>
+    <string name="export_cd_select_end">Выбрать дату окончания</string>
+    <string name="export_zip_note">ZIP выгружает полную резервную копию (вся история, измерения и медиа) независимо от диапазона дат.</string>
+    <string name="export_format_title">Формат экспорта</string>
+    <string name="export_format_pdf">PDF (медицинский отчёт)</string>
+    <string name="export_format_zip">ZIP (данные и медиа)</string>
+    <string name="export_encrypt_backup">Зашифровать резервную копию</string>
+    <string name="export_passphrase_label">Введите парольную фразу</string>
+    <string name="export_generate">Создать экспорт</string>
+    <string name="export_share_title">Поделиться экспортированными данными</string>
+
+    <!-- Restore -->
+    <string name="restore_intro">Восстановите полную резервную копию, чтобы заменить все текущие данные.</string>
+    <string name="restore_what_happens">Что произойдёт</string>
+    <string name="restore_what_happens_body">Все существующие записи журнала, измерения, цели, карточки и медиа будут заменены содержимым резервной копии. Можно также восстановить защищённую паролем (зашифрованную) копию.</string>
+    <string name="restore_select_backup">Выбрать файл резервной копии</string>
+    <string name="restore_working">Обрабатываем вашу резервную копию…</string>
+    <string name="restore_confirm_title">Подтвердить восстановление</string>
+    <string name="restore_confirm_body">Это заменит ВСЕ текущие данные содержимым этой резервной копии. Это действие нельзя отменить.</string>
+    <string name="restore_meta_created">Резервная копия создана</string>
+    <string name="restore_meta_schema">Схема резервной копии</string>
+    <string name="restore_meta_schema_value">v%1$d</string>
+    <string name="restore_meta_encrypted">Зашифровано</string>
+    <string name="restore_confirm_action">Восстановить</string>
+    <string name="restore_encrypted_title">Зашифрованная резервная копия</string>
+    <string name="restore_continue">Продолжить</string>
+    <string name="restore_wrong_passphrase_title">Неверная парольная фраза</string>
+    <string name="restore_retry">Повторить</string>
+    <string name="restore_passphrase_body">Эта резервная копия зашифрована. Введите парольную фразу, использованную при её создании.</string>
+    <string name="restore_passphrase_label">Парольная фраза</string>
+    <string name="restore_complete_title">Восстановление завершено</string>
+    <string name="restore_complete_body">Ваша резервная копия успешно восстановлена. Восстановленные данные повторно синхронизируются с облаком.</string>
+    <string name="restore_meta_journal">Записи журнала</string>
+    <string name="restore_meta_goals">Цели</string>
+    <string name="restore_meta_deleted">Удалённые записи</string>
+    <string name="restore_meta_tags">Теги</string>
+    <string name="restore_meta_workouts">Тренировки</string>
+    <string name="restore_meta_media">Медиафайлы</string>
+    <string name="restore_meta_total">Всего записей</string>
+    <string name="restore_failed_title">Ошибка восстановления</string>
+    <string name="restore_error_generic">Во время восстановления произошла ошибка.</string>
+    <string name="restore_choose_another">Выбрать другую копию</string>
+
+    <!-- Archive -->
+    <string name="archive_title">Архив</string>
+    <string name="archive_delete_title">Удалить записи?</string>
+    <string name="archive_delete_message">Вы уверены, что хотите безвозвратно удалить выбранные записи (%1$d)? Это действие нельзя отменить.</string>
+    <string name="archive_snackbar_deleted">Записи удалены</string>
+    <string name="archive_empty_title">Очистить архив?</string>
+    <string name="archive_empty_body">Все записи в архиве будут удалены навсегда. Это действие необратимо.</string>
+    <string name="archive_empty_confirm">Удалить всё навсегда</string>
+    <string name="archive_keep_entries">Оставить мои записи</string>
+    <string name="archive_snackbar_emptied">Архив очищен</string>
+    <string name="archive_snackbar_restored">Записи восстановлены</string>
+    <string name="archive_cd_restore">Восстановить выбранное</string>
+    <string name="archive_cd_delete">Удалить выбранное</string>
+    <string name="archive_cd_empty">Очистить архив</string>
+    <string name="archive_search_placeholder">Поиск по архиву…</string>
+    <string name="archive_empty_state">Ваш архив пуст.</string>
+
+    <!-- Measurements -->
+    <string name="measurements_title">Измерения тела</string>
+    <string name="measurements_param_empty_format">Пока нет данных: %1$s</string>
+    <string name="measurements_empty_title">Пока нет измерений тела</string>
+    <string name="measurements_empty_hint">Нажмите кнопку с линейкой на экране журнала, чтобы записать первое измерение.</string>
+    <string name="measurements_snackbar_deleted">Измерение удалено</string>
+    <string name="measurements_goal_header_format">%1$s · Цель %2$s %3$s</string>
+    <string name="measurements_cd_set_goal_format">Задать цель: %1$s</string>
+    <string name="measurements_weight_value_format">%1$s %2$s</string>
+    <string name="measurements_param_value_format">%1$s %2$s %3$s</string>
+    <string name="measurements_cd_delete">Удалить измерение</string>
+    <string name="measurements_field_label_format">%1$s (%2$s)</string>
+    <string name="measurements_save">Сохранить измерения</string>
+    <string name="measurements_cd_close_sheet">Закрыть панель измерений</string>
+    <string name="measurements_cd_pick_date">Выбрать дату измерения</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_section_general">Общие</string>
+    <string name="settings_units_hint">Используется для измерений тела, личной карточки и панели быстрого ввода тренировки.</string>
+
+    <!-- Entry -->
+    <string name="entry_title_add">Добавить запись</string>
+    <string name="entry_title_edit">Редактировать запись</string>
+    <string name="entry_cd_unarchive">Восстановить из архива</string>
+    <string name="entry_link_title">Вставить ссылку</string>
+    <string name="entry_link_text_label">Отображаемый текст</string>
+    <string name="entry_link_url_label">URL</string>
+    <string name="entry_link_insert">Вставить</string>
+    <string name="entry_category">Категория</string>
+    <string name="entry_hint_feeling">Как вы себя чувствуете сегодня?</string>
+    <string name="entry_metric_bp">АД (мм рт. ст.)</string>
+    <string name="entry_metric_hr">Средний пульс</string>
+    <string name="entry_metric_sleep">Сон</string>
+    <string name="entry_photos">Фотографии</string>
+    <string name="entry_attachments">Вложения</string>
+    <string name="entry_cd_remove">Удалить</string>
+    <string name="entry_save">Сохранить запись</string>
+    <string name="entry_update">Обновить запись</string>
+    <string name="entry_toast_health_perm">Для синхронизации нужны разрешения на данные о здоровье</string>
+    <string name="entry_toast_health_unavailable">Health Connect недоступен на этом устройстве</string>
+    <string name="entry_toast_attachment_failed_format">Не удалось сохранить вложение: %1$s</string>
+    <string name="entry_edited">(Изменено)</string>
+    <string name="entry_show_more">Показать больше</string>
+    <string name="entry_show_less">Показать меньше</string>
+
+    <!-- Goal -->
+    <string name="goal_title_format">Цель: %1$s</string>
+    <string name="goal_cd_close">Закрыть панель цели</string>
+    <string name="goal_target_label_format">Целевое значение (%1$s)</string>
+    <string name="goal_clear">Очистить</string>
+
+    <!-- About -->
+    <string name="about_title">О приложении Health Journal</string>
+    <string name="about_body">Современный журнал здоровья для личных записей и отслеживания показателей здоровья.</string>
+    <string name="about_version_label">Версия:\u0020</string>
+    <string name="about_build_type_format">Тип сборки: %1$s</string>
+
+    <!-- Permissions -->
+    <string name="permissions_title">Доступ к данным о здоровье</string>
+    <string name="permissions_body">Приложению нужен доступ к вашим данным о здоровье для автоматического учёта шагов, пульса и длительности сна в записях журнала.</string>
+    <string name="permissions_close">Закрыть</string>
+
+    <!-- Component preview -->
+    <string name="preview_title">Предпросмотр компонентов</string>
+    <string name="preview_enrichment">Панель EnrichmentPanel:</string>
+    <string name="preview_toolbar">Панель RichTextToolbar:</string>
+
+    <!-- Sync -->
+    <string name="sync_status_syncing">Синхронизация…</string>
+    <string name="sync_status_queued">Синхронизация в очереди</string>
+    <string name="sync_status_retrying">Повторная синхронизация…</string>
+    <string name="sync_status_synced">Синхронизировано</string>
+    <string name="sync_status_failed">Ошибка синхронизации</string>
+    <string name="sync_status_cancelled">Синхронизация отменена</string>
+    <string name="sync_status_reauth">Требуется повторная авторизация</string>
+    <string name="sync_status_authenticated">Вход выполнен, доступ разрешён</string>
+    <string name="sync_status_requested">Синхронизация запрошена</string>
+    <string name="sync_toast_failed_format">Ошибка синхронизации: %1$s</string>
+    <string name="sync_toast_signed_in_format">Вы вошли как %1$s</string>
+    <string name="sync_toast_sign_in_failed_format">Не удалось войти: %1$s</string>
+    <string name="sync_toast_drive_auth">Авторизация Google Диска выполнена!</string>
+    <string name="sync_toast_syncing_drive">Синхронизация с Google Диском…</string>
+    <string name="sync_toast_signed_out">Вы успешно вышли</string>
+
+    <!-- Common -->
+    <string name="common_yes">Да</string>
+    <string name="common_no">Нет</string>
+    <string name="common_delete">Удалить</string>
+    <string name="common_done">Готово</string>
+    <string name="common_cd_synced">Синхронизировано с облаком</string>
+    <string name="common_cd_local">Только локально</string>
+
+    <!-- Localizable taxonomy: workout types, measurement fields, schedule days.
+         The enum `label`/`name` values stay canonical English for persisted
+         data; UI resolves these keys via `labelRes`. -->
+    <string name="workout_type_run">Бег</string>
+    <string name="workout_type_fitness">Фитнес</string>
+    <string name="workout_type_yoga">Йога</string>
+    <string name="workout_type_hiit">HIIT</string>
+    <string name="workout_type_walking_hiking">Ходьба/хайкинг</string>
+    <string name="workout_type_cycling">Велоспорт</string>
+    <string name="workout_type_stretching">Растяжка</string>
+    <string name="workout_type_pilates">Пилатес</string>
+    <string name="workout_type_swimming">Плавание</string>
+    <string name="workout_type_calisthenics">Калистеника</string>
+    <string name="field_weight">Вес</string>
+    <string name="field_chest">Грудь</string>
+    <string name="field_waist">Талия</string>
+    <string name="field_glute">Ягодицы</string>
+    <string name="field_thigh">Бёдра</string>
+    <string name="field_calf">Икры</string>
+    <string name="field_bicep">Бицепс</string>
+    <string name="day_monday">Понедельник</string>
+    <string name="day_tuesday">Вторник</string>
+    <string name="day_wednesday">Среда</string>
+    <string name="day_thursday">Четверг</string>
+    <string name="day_friday">Пятница</string>
+    <string name="day_saturday">Суббота</string>
+    <string name="day_sunday">Воскресенье</string>
+    <string name="day_any">Любой день</string>
+
+    <string name="pdf_report_title">Отчёт журнала здоровья</string>
+
+    <plurals name="workout_routine_count">
+        <item quantity="one">%1$d упражнение</item>
+        <item quantity="few">%1$d упражнения</item>
+        <item quantity="many">%1$d упражнений</item>
+    </plurals>
+    <plurals name="workout_round">
+        <item quantity="one">Раунд %1$d</item>
+        <item quantity="few">Раунда %1$d</item>
+        <item quantity="many">Раундов %1$d</item>
+    </plurals>
+    <plurals name="workout_set_label">
+        <item quantity="one">Подход %1$d</item>
+        <item quantity="few">Подхода %1$d</item>
+        <item quantity="many">Подходов %1$d</item>
+    </plurals>
+    <plurals name="archive_selected_format">
+        <item quantity="one">%1$d выделено</item>
+        <item quantity="few">%1$d выделено</item>
+        <item quantity="many">%1$d выделено</item>
+    </plurals>
+    <plurals name="entry_attachments_format">
+        <item quantity="one">%1$d вложение</item>
+        <item quantity="few">%1$d вложения</item>
+        <item quantity="many">%1$d вложений</item>
+    </plurals>
+</resources>

@@ -35,10 +35,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.healthjournal.R
 import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.MeasurementField
 import com.example.healthjournal.domain.UtcToLocalDate
@@ -86,12 +88,12 @@ fun MeasurementEntrySheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Body measurements",
+                    text = stringResource(R.string.measurements_title),
                     style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close measurements sheet")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.measurements_cd_close_sheet))
                 }
             }
 
@@ -102,7 +104,7 @@ fun MeasurementEntrySheet(
             ) {
                 Text(text = dateFormat.format(Date(state.timestamp)))
                 IconButton(onClick = { showDatePicker = true }) {
-                    Icon(Icons.Default.CalendarMonth, contentDescription = "Pick measurement date")
+                    Icon(Icons.Default.CalendarMonth, contentDescription = stringResource(R.string.measurements_cd_pick_date))
                 }
             }
 
@@ -123,7 +125,7 @@ fun MeasurementEntrySheet(
                 OutlinedTextField(
                     value = state.rawValues[field].orEmpty(),
                     onValueChange = { viewModel.onFieldChanged(field, it) },
-                    label = { Text("${field.label} ($unit)") },
+                    label = { Text(stringResource(R.string.measurements_field_label_format, stringResource(field.labelRes), unit)) },
                     isError = state.fieldErrors.containsKey(field),
                     supportingText = state.fieldErrors[field]?.let { message ->
                         { Text(message) }
@@ -146,7 +148,7 @@ fun MeasurementEntrySheet(
                     .fillMaxWidth()
                     .testTag("bm_save")
             ) {
-                Text("Save measurements")
+                Text(stringResource(R.string.measurements_save))
             }
         }
     }
@@ -163,10 +165,10 @@ fun MeasurementEntrySheet(
                         }
                         showDatePicker = false
                     }
-                ) { Text("OK") }
+                ) { Text(stringResource(R.string.action_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         ) {
             DatePicker(state = datePickerState)

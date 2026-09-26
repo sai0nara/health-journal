@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -30,6 +31,7 @@ import androidx.core.content.FileProvider
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import coil.compose.AsyncImage
+import com.example.healthjournal.R
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichText
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
@@ -80,19 +82,19 @@ fun AddEntryScreen(
     if (showLinkDialog) {
         AlertDialog(
             onDismissRequest = { showLinkDialog = false },
-            title = { Text("Insert Link") },
+            title = { Text(stringResource(R.string.entry_link_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = linkText,
                         onValueChange = { linkText = it },
-                        label = { Text("Text to display") },
+                        label = { Text(stringResource(R.string.entry_link_text_label)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = linkUrl,
                         onValueChange = { linkUrl = it },
-                        label = { Text("URL") },
+                        label = { Text(stringResource(R.string.entry_link_url_label)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -108,10 +110,10 @@ fun AddEntryScreen(
                     showLinkDialog = false
                     linkText = ""
                     linkUrl = ""
-                }) { Text("Insert") }
+                }) { Text(stringResource(R.string.entry_link_insert)) }
             },
             dismissButton = {
-                TextButton(onClick = { showLinkDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showLinkDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -142,7 +144,7 @@ fun AddEntryScreen(
             }
         } else {
             android.util.Log.w("AddEntryScreen", "Not all health permissions granted. Required: ${viewModel.healthPermissions}, Granted: $granted")
-            android.widget.Toast.makeText(context, "Health permissions required for sync", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, context.getString(R.string.entry_toast_health_perm), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -241,10 +243,10 @@ fun AddEntryScreen(
                         selectedTimestamp = calendar.timeInMillis
                     }
                     showDatePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.action_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -260,10 +262,10 @@ fun AddEntryScreen(
                     calendar.set(Calendar.MINUTE, timePickerState.minute)
                     selectedTimestamp = calendar.timeInMillis
                     showTimePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.action_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showTimePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             },
             text = {
                 TimePicker(state = timePickerState)
@@ -274,10 +276,10 @@ fun AddEntryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (entryId == null) "Add Entry" else "Edit Entry") },
+                title = { Text(if (entryId == null) stringResource(R.string.entry_title_add) else stringResource(R.string.entry_title_edit)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back_label))
                     }
                 },
                 actions = {
@@ -286,7 +288,7 @@ fun AddEntryScreen(
                             viewModel.restoreEntry(existingEntry!!.entry_id)
                             existingEntry = existingEntry?.copy(isArchived = false)
                         }) {
-                            Icon(Icons.Default.Restore, contentDescription = "Unarchive")
+                            Icon(Icons.Default.Restore, contentDescription = stringResource(R.string.entry_cd_unarchive))
                         }
                     }
                 }
@@ -346,7 +348,7 @@ fun AddEntryScreen(
                 }
 
                 if (!isReadOnly) {
-                    Text("Category", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.entry_category), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     TagSelectionRow(
                         selectedTags = entryTags,
                         onTagToggle = { tag ->
@@ -364,7 +366,7 @@ fun AddEntryScreen(
                     RichTextEditor(
                         state = richTextState,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp),
-                        label = { Text("How are you feeling today?") }
+                        label = { Text(stringResource(R.string.entry_hint_feeling)) }
                     )
                 } else {
                     RichText(
@@ -388,14 +390,14 @@ fun AddEntryScreen(
                             HealthMetricItem(
                                 icon = Icons.Default.MonitorHeart, 
                                 value = "${bpSystolic?.toInt()}/${bpDiastolic?.toInt()}", 
-                                label = "BP (mmHg)"
+                                label = stringResource(R.string.entry_metric_bp)
                             )
                         }
                         heartRate?.let {
-                            HealthMetricItem(icon = Icons.Default.Favorite, value = "$it", label = "Avg HR")
+                            HealthMetricItem(icon = Icons.Default.Favorite, value = "$it", label = stringResource(R.string.entry_metric_hr))
                         }
                         sleepHours?.let {
-                            HealthMetricItem(icon = Icons.Default.Bedtime, value = "%.1fh".format(it), label = "Sleep")
+                            HealthMetricItem(icon = Icons.Default.Bedtime, value = "%.1fh".format(it), label = stringResource(R.string.entry_metric_sleep))
                         }
                     }
                 }
@@ -403,7 +405,7 @@ fun AddEntryScreen(
 
             if (attachedPhotoUris.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Photos", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.entry_photos), style = MaterialTheme.typography.titleSmall)
                 Spacer(modifier = Modifier.height(8.dp))
                 androidx.compose.foundation.lazy.LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -427,7 +429,7 @@ fun AddEntryScreen(
                                     modifier = Modifier.align(Alignment.TopEnd).size(24.dp),
                                     colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                                 ) {
-                                    Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.entry_cd_remove), modifier = Modifier.size(16.dp))
                                 }
                             }
                         }
@@ -449,7 +451,7 @@ fun AddEntryScreen(
                     ) {
                         AsyncImage(
                             model = expandedImageUri,
-                            contentDescription = "Expanded Image",
+                            contentDescription = stringResource(R.string.history_cd_expanded_image),
                             modifier = Modifier.fillMaxWidth(),
                             contentScale = ContentScale.Fit
                         )
@@ -459,7 +461,7 @@ fun AddEntryScreen(
 
             if (attachedFiles.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Attachments", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.entry_attachments), style = MaterialTheme.typography.titleSmall)
                 Spacer(modifier = Modifier.height(8.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     attachedFiles.forEachIndexed { index, file ->
@@ -491,7 +493,7 @@ fun AddEntryScreen(
                                             onClick = { attachedFiles = attachedFiles.filterIndexed { i, _ -> i != index } },
                                             modifier = Modifier.size(24.dp)
                                         ) {
-                                            Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.entry_cd_remove), modifier = Modifier.size(16.dp))
                                         }
                                     }
                             }
@@ -511,7 +513,7 @@ fun AddEntryScreen(
                         scope.launch {
                             val availability = viewModel.checkHealthAvailability()
                             if (availability != HealthConnectClient.SDK_AVAILABLE) {
-                                android.widget.Toast.makeText(context, "Health Connect is not available on this device", android.widget.Toast.LENGTH_LONG).show()
+                                android.widget.Toast.makeText(context, context.getString(R.string.entry_toast_health_unavailable), android.widget.Toast.LENGTH_LONG).show()
                                 return@launch
                             }
 
@@ -561,7 +563,7 @@ fun AddEntryScreen(
                                 else {
                                     val persistentUri = viewModel.savePersistentFile(fileUri, false)
                                     if (persistentUri == null) {
-                                        android.widget.Toast.makeText(context, "Failed to save attachment: ${file.name}", android.widget.Toast.LENGTH_SHORT).show()
+                                        android.widget.Toast.makeText(context, context.getString(R.string.entry_toast_attachment_failed_format, file.name), android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                     file.copy(uri = persistentUri ?: "")
                                 }
@@ -602,7 +604,7 @@ fun AddEntryScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (entryId == null) "Save Entry" else "Update Entry")
+                Text(if (entryId == null) stringResource(R.string.entry_save) else stringResource(R.string.entry_update))
             }
                 }
             }

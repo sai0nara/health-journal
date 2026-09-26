@@ -101,4 +101,311 @@
     <string name="cd_race_ethnicity">Race/Ethnicity: %1$s</string>
     <string name="cd_height">Height (%1$s): %2$s</string>
     <string name="cd_weight">Weight (%1$s): %2$s</string>
+
+    <!-- History -->
+    <string name="history_title">Health Journal</string>
+    <string name="history_menu_sync">Sync Now</string>
+    <string name="history_menu_archive">View Archive</string>
+    <string name="history_menu_workouts">Workouts</string>
+    <string name="history_menu_settings">Settings</string>
+    <string name="history_menu_sort">Sort order</string>
+    <string name="history_menu_about">About App</string>
+    <string name="history_sign_in">Sign In</string>
+    <string name="history_empty">No entries yet. Start by adding one!</string>
+    <string name="history_entry_archived">Entry archived</string>
+    <string name="history_undo">Undo</string>
+    <string name="history_search_placeholder">Search journal...</string>
+    <string name="history_cd_measurements">View Measurements</string>
+    <string name="history_cd_export">Export Data</string>
+    <string name="history_cd_more">More options</string>
+    <string name="history_cd_add_measurements">Add body measurements</string>
+    <string name="history_cd_add_entry">Add Entry</string>
+    <string name="history_cd_expanded_image">Expanded Image</string>
+    <string name="history_cd_archive">Archive</string>
+
+    <!-- Workout -->
+    <string name="action_back_label">Back</string>
+    <string name="workout_title">Workouts</string>
+    <string name="workout_recent_item">%1$s · %2$s</string>
+    <string name="workout_recovery_title">Unfinished Workout</string>
+    <string name="workout_recovery_text">A previous session did not finish. Resume it or discard it.</string>
+    <string name="workout_resume">Resume</string>
+    <string name="workout_discard">Discard</string>
+    <string name="workout_error_title">Workout Error</string>
+    <string name="workout_choose">Choose a workout</string>
+    <string name="workout_presets">Presets</string>
+    <string name="workout_routines">Routines</string>
+    <string name="workout_start_routine">Start routine</string>
+    <string name="workout_recent">Recent</string>
+    <string name="workout_configure_title">Configure %1$s</string>
+    <string name="workout_target_distance">Target distance (km)</string>
+    <string name="workout_target_duration">Target duration (min)</string>
+    <string name="workout_start">Start</string>
+    <string name="workout_log_past_instead">Log past %1$s instead</string>
+    <string name="workout_get_ready">Get ready</string>
+    <string name="workout_paused">Paused</string>
+    <string name="workout_pause">Pause</string>
+    <string name="workout_finish">Finish</string>
+    <string name="workout_phase_work">Work</string>
+    
+    <string name="workout_next_interval">Next interval</string>
+    <string name="workout_rest_timer">Rest %1$s</string>
+    <string name="workout_no_exercises">No exercises yet</string>
+    <string name="workout_set_summary">%1$s %2$s × %3$d reps</string>
+    <string name="workout_unit_lb">lb</string>
+    <string name="workout_unit_kg">kg</string>
+    <string name="workout_reps">reps</string>
+    <string name="workout_add_set">Add set</string>
+    <string name="workout_exercise_name">Exercise name</string>
+    <string name="workout_add_exercise">Add exercise</string>
+    <string name="workout_add_set_short">+ Set</string>
+    <string name="workout_swap">Swap</string>
+    <string name="workout_routine_target">%1$d x %2$d @ %3$s · Rest %4$ds</string>
+    <string name="workout_reps_minus">-1 rep</string>
+    <string name="workout_reps_plus">+1 rep</string>
+    
+    <string name="workout_complete_title">Workout Complete</string>
+    <string name="workout_calories">%1$s kcal</string>
+    <string name="workout_tonnage">Tonnage: %1$s %2$s</string>
+    <string name="workout_rounds_intervals">Rounds: %1$d · Intervals: %2$d</string>
+    <string name="workout_synced">Synced to Health Connect</string>
+    <string name="workout_saved_locally">Saved locally</string>
+    <string name="workout_log_past_title">Log Past %1$s</string>
+    <string name="workout_duration_label">Duration (min)</string>
+    <string name="workout_calories_label">Calories (optional)</string>
+    <string name="workout_date_label">Date (YYYY-MM-DD, blank for today)</string>
+    <string name="workout_laps_label">Laps (optional)</string>
+    <string name="workout_movements_label">Movements (optional)</string>
+    <string name="workout_notes_label">Notes (optional)</string>
+
+    <!-- Presets -->
+    <string name="preset_title">Presets</string>
+    <string name="preset_create">Create Preset</string>
+    <string name="preset_delete_title">Delete Preset?</string>
+    <string name="preset_delete_message">Delete \"%1$s\"? This cannot be undone.</string>
+    <string name="preset_empty">No presets yet</string>
+    <string name="preset_schedule_summary">%1$s · %2$d exercises</string>
+    <string name="preset_cd_delete">Delete preset</string>
+    <string name="preset_name_label">Preset name</string>
+    <string name="preset_exercises_title">Exercises</string>
+    <string name="preset_save">Save Preset</string>
+    <string name="preset_search_label">Search exercises</string>
+    <string name="preset_cd_remove">Remove exercise</string>
+    <string name="preset_sets">Sets</string>
+    <string name="preset_reps">Reps</string>
+    <string name="preset_weight_kg">Weight kg</string>
+    <string name="preset_weight_lb">Weight lb</string>
+    <string name="preset_rest">Rest s</string>
+
+    <!-- Export -->
+    <string name="export_title">Export Data</string>
+    <string name="export_tab_export">Export</string>
+    <string name="export_tab_restore">Restore</string>
+    <string name="export_intro">Choose the date range and format for your export.</string>
+    <string name="export_start_date">Start Date</string>
+    <string name="export_cd_select_start">Select Start Date</string>
+    <string name="export_end_date">End Date</string>
+    <string name="export_cd_select_end">Select End Date</string>
+    <string name="export_zip_note">ZIP exports your full backup (all history, measurements, and media) regardless of date range.</string>
+    <string name="export_format_title">Export Format</string>
+    <string name="export_format_pdf">PDF (Medical Report)</string>
+    <string name="export_format_zip">ZIP (Raw Data &amp; Media)</string>
+    <string name="export_encrypt_backup">Encrypt backup</string>
+    <string name="export_passphrase_label">Enter passphrase</string>
+    <string name="export_generate">Generate Export</string>
+    <string name="export_share_title">Share Exported Data</string>
+
+    <!-- Restore -->
+    <string name="restore_intro">Restore a full backup to replace all current data.</string>
+    <string name="restore_what_happens">What happens</string>
+    <string name="restore_what_happens_body">All existing journal entries, measurements, goals, cards, and media will be replaced by the contents of the backup. You can also restore a password-protected (encrypted) backup.</string>
+    <string name="restore_select_backup">Select Backup File</string>
+    <string name="restore_working">Working on your backup...</string>
+    <string name="restore_confirm_title">Confirm Restore</string>
+    <string name="restore_confirm_body">This will replace ALL current data with the contents of this backup. This cannot be undone.</string>
+    <string name="restore_meta_created">Backup created</string>
+    <string name="restore_meta_schema">Backup schema</string>
+    <string name="restore_meta_schema_value">v%1$d</string>
+    <string name="restore_meta_encrypted">Encrypted</string>
+    <string name="restore_confirm_action">Restore</string>
+    <string name="restore_encrypted_title">Encrypted Backup</string>
+    <string name="restore_continue">Continue</string>
+    <string name="restore_wrong_passphrase_title">Wrong Passphrase</string>
+    <string name="restore_retry">Retry</string>
+    <string name="restore_passphrase_body">This backup is encrypted. Enter the passphrase used to create it.</string>
+    <string name="restore_passphrase_label">Passphrase</string>
+    <string name="restore_complete_title">Restore Complete</string>
+    <string name="restore_complete_body">Your backup has been restored successfully. Restored data is being re-synced to the cloud.</string>
+    <string name="restore_meta_journal">Journal entries</string>
+    <string name="restore_meta_goals">Goals</string>
+    <string name="restore_meta_deleted">Deleted entries</string>
+    <string name="restore_meta_tags">Tags</string>
+    <string name="restore_meta_workouts">Workouts</string>
+    <string name="restore_meta_media">Media files</string>
+    <string name="restore_meta_total">Total records</string>
+    <string name="restore_failed_title">Restore Failed</string>
+    <string name="restore_error_generic">An error occurred during the restore.</string>
+    <string name="restore_choose_another">Choose Another Backup</string>
+
+    <!-- Archive -->
+    <string name="archive_title">Archive</string>
+    <string name="archive_delete_title">Delete Entries?</string>
+    <string name="archive_delete_message">Are you sure you want to permanently delete %1$d selected entries? This cannot be undone.</string>
+    <string name="archive_snackbar_deleted">Entries deleted</string>
+    <string name="archive_empty_title">Empty Archive?</string>
+    <string name="archive_empty_body">Every entry in the archive will be permanently removed. This action is irreversible.</string>
+    <string name="archive_empty_confirm">Permanently Delete All</string>
+    <string name="archive_keep_entries">Keep My Entries</string>
+    <string name="archive_snackbar_emptied">Archive emptied</string>
+    <string name="archive_snackbar_restored">Entries restored</string>
+    <string name="archive_cd_restore">Restore Selected</string>
+    <string name="archive_cd_delete">Delete Selected</string>
+    <string name="archive_cd_empty">Empty Archive</string>
+    <string name="archive_search_placeholder">Search archive...</string>
+    <string name="archive_empty_state">Your archive is clean.</string>
+
+    <!-- Measurements -->
+    <string name="measurements_title">Body measurements</string>
+    <string name="measurements_param_empty_format">No %1$s data yet</string>
+    <string name="measurements_empty_title">No body measurements yet</string>
+    <string name="measurements_empty_hint">Tap the ruler button on the History screen to log your first entry.</string>
+    <string name="measurements_snackbar_deleted">Measurement deleted</string>
+    <string name="measurements_goal_header_format">%1$s · Goal %2$s %3$s</string>
+    <string name="measurements_cd_set_goal_format">Set %1$s goal</string>
+    <string name="measurements_weight_value_format">%1$s %2$s</string>
+    <string name="measurements_param_value_format">%1$s %2$s %3$s</string>
+    <string name="measurements_cd_delete">Delete measurement</string>
+    <string name="measurements_field_label_format">%1$s (%2$s)</string>
+    <string name="measurements_save">Save measurements</string>
+    <string name="measurements_cd_close_sheet">Close measurements sheet</string>
+    <string name="measurements_cd_pick_date">Pick measurement date</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_general">General</string>
+    <string name="settings_units_hint">Used by body measurements, the personal card, and the workout quick-step pad.</string>
+
+    <!-- Entry -->
+    <string name="entry_title_add">Add Entry</string>
+    <string name="entry_title_edit">Edit Entry</string>
+    <string name="entry_cd_unarchive">Unarchive</string>
+    <string name="entry_link_title">Insert Link</string>
+    <string name="entry_link_text_label">Text to display</string>
+    <string name="entry_link_url_label">URL</string>
+    <string name="entry_link_insert">Insert</string>
+    <string name="entry_category">Category</string>
+    <string name="entry_hint_feeling">How are you feeling today?</string>
+    <string name="entry_metric_bp">BP (mmHg)</string>
+    <string name="entry_metric_hr">Avg HR</string>
+    <string name="entry_metric_sleep">Sleep</string>
+    <string name="entry_photos">Photos</string>
+    <string name="entry_attachments">Attachments</string>
+    <string name="entry_cd_remove">Remove</string>
+    <string name="entry_save">Save Entry</string>
+    <string name="entry_update">Update Entry</string>
+    <string name="entry_toast_health_perm">Health permissions required for sync</string>
+    <string name="entry_toast_health_unavailable">Health Connect is not available on this device</string>
+    <string name="entry_toast_attachment_failed_format">Failed to save attachment: %1$s</string>
+    <string name="entry_edited">(Edited)</string>
+    <string name="entry_show_more">Show More</string>
+    <string name="entry_show_less">Show Less</string>
+
+    <!-- Goal -->
+    <string name="goal_title_format">%1$s goal</string>
+    <string name="goal_cd_close">Close goal sheet</string>
+    <string name="goal_target_label_format">Target (%1$s)</string>
+    <string name="goal_clear">Clear</string>
+
+    <!-- About -->
+    <string name="about_title">About Health Journal</string>
+    <string name="about_body">A modern health journal for personal event logging and health metric tracking.</string>
+    <string name="about_version_label">Version:\u0020</string>
+    <string name="about_build_type_format">Build Type: %1$s</string>
+
+    <!-- Permissions -->
+    <string name="permissions_title">Health Data Access</string>
+    <string name="permissions_body">This app requires access to your Health data to automatically track steps, heart rate, and sleep duration in your journal entries.</string>
+    <string name="permissions_close">Close</string>
+
+    <!-- Component preview -->
+    <string name="preview_title">Component Preview</string>
+    <string name="preview_enrichment">EnrichmentPanel Preview:</string>
+    <string name="preview_toolbar">RichTextToolbar Preview:</string>
+
+    <!-- Sync -->
+    <string name="sync_status_syncing">Syncing...</string>
+    <string name="sync_status_queued">Sync Queued</string>
+    <string name="sync_status_retrying">Retrying Sync...</string>
+    <string name="sync_status_synced">Synced</string>
+    <string name="sync_status_failed">Sync Failed</string>
+    <string name="sync_status_cancelled">Sync Cancelled</string>
+    <string name="sync_status_reauth">Re-authorization required</string>
+    <string name="sync_status_authenticated">Authenticated &amp; Authorized</string>
+    <string name="sync_status_requested">Sync Requested</string>
+    <string name="sync_toast_failed_format">Sync failed: %1$s</string>
+    <string name="sync_toast_signed_in_format">Signed in as %1$s</string>
+    <string name="sync_toast_sign_in_failed_format">Sign-in failed: %1$s</string>
+    <string name="sync_toast_drive_auth">Drive Authorization Successful!</string>
+    <string name="sync_toast_syncing_drive">Syncing with Google Drive...</string>
+    <string name="sync_toast_signed_out">Signed out successfully</string>
+
+    <!-- Common -->
+    <string name="common_yes">Yes</string>
+    <string name="common_no">No</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_done">Done</string>
+    <string name="common_cd_synced">Cloud Synced</string>
+    <string name="common_cd_local">Local Only</string>
+
+    <!-- Localizable taxonomy: workout types, measurement fields, schedule days.
+         The enum `label`/`name` values stay canonical English for persisted
+         data; UI resolves these keys via `labelRes`. -->
+    <string name="workout_type_run">Run</string>
+    <string name="workout_type_fitness">Fitness</string>
+    <string name="workout_type_yoga">Yoga</string>
+    <string name="workout_type_hiit">HIIT</string>
+    <string name="workout_type_walking_hiking">Walking/Hiking</string>
+    <string name="workout_type_cycling">Cycling</string>
+    <string name="workout_type_stretching">Stretching</string>
+    <string name="workout_type_pilates">Pilates</string>
+    <string name="workout_type_swimming">Swimming</string>
+    <string name="workout_type_calisthenics">Calisthenics</string>
+    <string name="field_weight">Weight</string>
+    <string name="field_chest">Chest</string>
+    <string name="field_waist">Waist</string>
+    <string name="field_glute">Glute</string>
+    <string name="field_thigh">Thighs</string>
+    <string name="field_calf">Calves</string>
+    <string name="field_bicep">Biceps</string>
+    <string name="day_monday">Monday</string>
+    <string name="day_tuesday">Tuesday</string>
+    <string name="day_wednesday">Wednesday</string>
+    <string name="day_thursday">Thursday</string>
+    <string name="day_friday">Friday</string>
+    <string name="day_saturday">Saturday</string>
+    <string name="day_sunday">Sunday</string>
+    <string name="day_any">Any day</string>
+
+    <string name="pdf_report_title">Health Journal Report</string>
+
+    <plurals name="workout_routine_count">
+        <item quantity="one">%1$d exercise</item>
+        <item quantity="other">%1$d exercises</item>
+    </plurals>
+    <plurals name="workout_round">
+        <item quantity="one">Round %1$d</item>
+        <item quantity="other">Round %1$d</item>
+    </plurals>
+    <plurals name="workout_set_label">
+        <item quantity="one">Set %1$d</item>
+        <item quantity="other">Set %1$d</item>
+    </plurals>
+    <plurals name="archive_selected_format">
+        <item quantity="one">%1$d Selected</item>
+        <item quantity="other">%1$d Selected</item>
+    </plurals>
+    <plurals name="entry_attachments_format">
+        <item quantity="one">%1$d attachment</item>
+        <item quantity="other">%1$d attachments</item>
+    </plurals>
 </resources>

@@ -52,8 +52,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.healthjournal.R
 import com.example.healthjournal.data.local.BodyMeasurementEntry
 import com.example.healthjournal.data.local.UnitConverter
 import com.example.healthjournal.data.local.UnitSettings
@@ -88,6 +90,7 @@ fun MeasurementsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     val dateFormat = remember { SimpleDateFormat("d MMM yyyy", Locale.getDefault()) }
     val pagerState = rememberPagerState(initialPage = 0) { MeasurementField.entries.size }
 
@@ -125,10 +128,10 @@ fun MeasurementsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Body measurements") },
+                title = { Text(stringResource(R.string.measurements_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 }
             )
@@ -144,7 +147,7 @@ fun MeasurementsScreen(
                     Tab(
                         selected = analyticsState.selectedTab == field,
                         onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                        text = { Text(field.label) }
+                        text = { Text(stringResource(field.labelRes)) }
                     )
                 }
             }
@@ -186,7 +189,7 @@ fun MeasurementsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "No ${field.label} data yet",
+                                text = stringResource(R.string.measurements_param_empty_format, stringResource(field.labelRes)),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.testTag("bm_param_empty_${field.name}")
@@ -214,12 +217,12 @@ fun MeasurementsScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "No body measurements yet",
+                            text = stringResource(R.string.measurements_empty_title),
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.testTag("bm_empty_state")
                         )
                         Text(
-                            text = "Tap the ruler button on the History screen to log your first entry.",
+                            text = stringResource(R.string.measurements_empty_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
@@ -241,8 +244,8 @@ fun MeasurementsScreen(
                                 viewModel.deleteEntry(entry.entry_id)
                                 scope.launch {
                                     val result = snackbarHostState.showSnackbar(
-                                        message = "Measurement deleted",
-                                        actionLabel = "Undo",
+                                        message = context.getString(R.string.measurements_snackbar_deleted),
+                                        actionLabel = context.getString(R.string.history_undo),
                                         duration = SnackbarDuration.Short
                                     )
                                     if (result == SnackbarResult.ActionPerformed) {
@@ -276,11 +279,14 @@ private fun ChartHeader(
         Text(
             text = if (goalTarget != null) {
                 val isWeight = field == MeasurementField.WEIGHT
-                "${field.label} · Goal ${
-                    UnitConverter.formatMeasurement(goalTarget, unitSystem, isWeight)
-                } ${GoalValidator.unitLabel(field, unitSystem)}"
+                stringResource(
+                    R.string.measurements_goal_header_format,
+                    stringResource(field.labelRes),
+                    UnitConverter.formatMeasurement(goalTarget, unitSystem, isWeight),
+                    GoalValidator.unitLabel(field, unitSystem)
+                )
             } else {
-                field.label
+                stringResource(field.labelRes)
             },
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold
@@ -288,7 +294,7 @@ private fun ChartHeader(
         IconButton(onClick = onSetGoal, modifier = Modifier.testTag("bm_set_goal")) {
             Icon(
                 Icons.Outlined.Flag,
-                contentDescription = "Set ${field.label} goal",
+                contentDescription = stringResource(R.string.measurements_cd_set_goal_format, stringResource(field.labelRes)),
                 tint = if (goalTarget != null) {
                     MaterialTheme.colorScheme.primary
                 } else {
@@ -310,7 +316,7 @@ private fun MeasurementCard(
     val circumferenceParams = MeasurementField.entries
         .filter { it != MeasurementField.WEIGHT }
         .mapNotNull { field ->
-            entry.valueFor(field)?.let { field.label to it }
+            entry.valueFor(field)?.let { stringResource(field.labelRes) to it }
         }
     val weightUnit = if (unitSystem == UnitSystem.IMPERIAL) "lb" else "kg"
     val lengthUnit = if (unitSystem == UnitSystem.IMPERIAL) "in" else "cm"
@@ -331,7 +337,11 @@ private fun MeasurementCard(
             Column(modifier = Modifier.weight(1f)) {
                 if (entry.weight_kg != null) {
                     Text(
-                        text = "${UnitConverter.formatMeasurement(entry.weight_kg, unitSystem, isWeight = true)} $weightUnit",
+                        text = stringResource(
+                            R.string.measurements_weight_value_format,
+                            UnitConverter.formatMeasurement(entry.weight_kg, unitSystem, isWeight = true),
+                            weightUnit
+                        ),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -344,7 +354,12 @@ private fun MeasurementCard(
                     ) {
                         circumferenceParams.forEach { (label, value) ->
                             Text(
-                                text = "$label ${UnitConverter.formatMeasurement(value, unitSystem, isWeight = false)} $lengthUnit",
+                                text = stringResource(
+                                    R.string.measurements_param_value_format,
+                                    label,
+                                    UnitConverter.formatMeasurement(value, unitSystem, isWeight = false),
+                                    lengthUnit
+                                ),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -362,14 +377,14 @@ private fun MeasurementCard(
                 if (entry.isSynced == true) {
                     Icon(
                         Icons.Default.CloudDone,
-                        contentDescription = "Cloud Synced",
+                        contentDescription = stringResource(R.string.common_cd_synced),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 } else {
                     Icon(
                         Icons.Default.CloudSync,
-                        contentDescription = "Local Only",
+                        contentDescription = stringResource(R.string.common_cd_local),
                         tint = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.size(20.dp)
                     )
@@ -377,7 +392,7 @@ private fun MeasurementCard(
                 IconButton(onClick = onDelete) {
                     Icon(
                         Icons.Default.DeleteOutline,
-                        contentDescription = "Delete measurement",
+                        contentDescription = stringResource(R.string.measurements_cd_delete),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
