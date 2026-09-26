@@ -143,7 +143,7 @@ fun JournalEntryItem(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = pluralStringResource(R.plurals.entry_attachments_format, entry.attachments?.size ?: 0),
+                            text = pluralStringResource(R.plurals.entry_attachments_format, entry.attachments?.size ?: 0, entry.attachments?.size ?: 0),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.secondary
                         )

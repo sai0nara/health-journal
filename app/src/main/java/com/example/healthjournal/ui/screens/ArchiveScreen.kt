@@ -150,7 +150,7 @@ fun ArchiveScreen(
             TopAppBar(
                 title = { 
                     if (isSelectionMode) {
-                        Text(pluralStringResource(R.plurals.archive_selected_format, selectedIds.size))
+                        Text(pluralStringResource(R.plurals.archive_selected_format, selectedIds.size, selectedIds.size))
                     } else {
                         Text(stringResource(R.string.archive_title))
                     }
