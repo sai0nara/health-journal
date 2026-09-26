@@ -3,18 +3,14 @@
 > The full app UI reads in Russian on Russian-locale devices: every
 > user-facing string externalized to resources with a complete `values-ru`
 > translation, Russian plural rules, and locale-aware dates and numbers.
-> **Planned, not yet built** — only the Personal Card and Settings screens
-> read from `values/strings.xml` today; the remaining screens use hard-coded
-> English literals and no `values-ru` directory exists.
-
-Last updated: 2026-09-24
-
-> **Status: PLANNED.** This PRD records the agreed requirements. The feature
-> has not been implemented: no `values-ru` resources exist, most screens still
-> embed English literals, and locale-aware formatting is not applied
-> consistently. It is documented up-front so the scope is captured before
-> work starts; the product specification and test cases are added when the
-> feature is built.
+>
+Last updated: 2026-09-26
+>
+> **Status: BUILT.** All functional requirements below are implemented: the
+> English catalog holds 342 strings plus 5 named plurals, `values-ru` covers
+> every key, taxonomy enums resolve through `labelRes`, and the PDF report
+> localizes. See `Docs/psd/russian-localization.md` for the design and
+> `Docs/tests/russian-localization.md` for the verification.
 
 ## Overview
 
@@ -103,7 +99,21 @@ never translated — only the app's own chrome is localized.
 
 ## Acceptance criteria
 
-(To be defined with the PSD when the feature is built.)
+- AC-1 (FR-1): `HardcodedStringAuditTest` is green — no user-facing literal
+  remains in `ui/` composables.
+- AC-2 (FR-2): `LocalizationParityTest` is green — `values-ru` covers 100%
+  of the default string and plural keys.
+- AC-3 (FR-3): on a `ru` device every screen, dialog, validation error, and
+  content description renders Russian; on any other locale the app renders
+  English exactly as before.
+- AC-4 (FR-4): count-driven wording uses `<plurals>` with `one`/`few`/`many`
+  (renders 1/2/5 correctly).
+- AC-5 (FR-5): user-visible dates and numbers format via the active locale;
+  machine-input patterns are unchanged.
+- AC-6 (FR-6): the PDF report renders in the active locale while entry text
+  and ZIP payloads stay byte-identical.
+- AC-7 (FR-7): parameterized strings keep argument order correct in Russian
+  word order; no format crash on any localized surface.
 
 ## Out of scope
 
