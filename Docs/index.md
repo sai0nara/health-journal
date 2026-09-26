@@ -12,7 +12,7 @@ Last updated: 2026-09-24
 ## Features
 
 - `Docs/prd/ai-insights.md` — planned
-- `Docs/prd/russian-localization.md` — planned
+- `Docs/prd/russian-localization.md` — PRD
 - `Docs/prd/unit-conversion.md` — PRD
 - `Docs/prd/body-measurements.md` — PRD
 - `Docs/prd/drive-sync.md` — PRD
@@ -34,6 +34,7 @@ Last updated: 2026-09-24
 - `Docs/psd/personal-card.md` — PSD
 - `Docs/psd/photos-media.md` — PSD
 - `Docs/psd/restore-from-backup.md` — PSD
+- `Docs/psd/russian-localization.md` — PSD
 - `Docs/psd/unit-conversion.md` — PSD
 - `Docs/tests/body-measurements.md` — tests
 - `Docs/tests/drive-sync.md` — tests
@@ -45,6 +46,7 @@ Last updated: 2026-09-24
 - `Docs/tests/personal-card.md` — tests
 - `Docs/tests/photos-media.md` — tests
 - `Docs/tests/restore-from-backup.md` — tests
+- `Docs/tests/russian-localization.md` — tests
 - `Docs/tests/unit-conversion.md` — tests
 - `Docs/prd/workout-presets.md` — PRD
 - `Docs/psd/workout-presets.md` — PSD
