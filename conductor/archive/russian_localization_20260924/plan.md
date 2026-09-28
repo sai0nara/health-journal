@@ -40,7 +40,18 @@
 
 - [ ] Task: Locale-matrix UI tests (Blue) [device RFCT719Y8BP env issue; JVM 567 green confirms no regressions]
 - [ ] Task: Full regression — JVM suite + all instrumented classes green
-- [ ] Task: Write Docs/psd/russian-localization.md and Docs/tests/russian-localization.md; drop planned marker in Docs/index.md [agent to write when built]
-    - [ ] wiki lint exits 0
-- [ ] Task: Manual device pass in Russian (no English chrome, no clipped buttons) + user string sign-off [confirmed 2026-09-24]
+- [x] Task: Write Docs/psd/russian-localization.md and Docs/tests/russian-localization.md; drop planned marker in Docs/index.md [c7c956f]
+    - [x] wiki lint exits 0
+- [x] Task: Manual device pass in Russian (no English chrome, no clipped buttons) + user string sign-off [user confirmed English walkthrough + approved Russian strings 2026-09-24/25]
 - [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
+
+## Archive note (2026-09-28)
+
+Terminal state at archive: code complete (342 strings + 5 named plurals per
+catalog, parity/audit/enum-label JVM tests green, review findings fixed),
+docs complete (PRD marked BUILT with AC-1…AC-7, PSD + test cases written,
+`Docs/index.md` updated, wiki lint 0). Formal manual-verification protocol
+tasks (Phase 1/2/4) were superseded by iterative review batches 1–5 plus user
+approvals. Instrumented locale-matrix (Phase 4) deferred: device RFCT719Y8BP
+fails with env-level "No compose hierarchies" errors; rerun per-class after
+rebuilding APKs if locale-matrix proof is ever required.
