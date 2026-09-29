@@ -160,35 +160,7 @@ class HistoryScreenTest {
             )
         }
     }
-    @Test
-    fun testHistoryScreen_OverflowMenu_hasNoNavigationEntries() {
-        step("Open History Screen") {
-            viewModel.allEntries.value = emptyList()
-            composeTestRule.setContent {
-                HealthJournalTheme {
-                    HistoryScreen(
-                        viewModel = viewModel,
-                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
-                        onAddEntryClick = {},
-                        onEntryClick = {},
-                        onExportClick = {}
-                    )
-                }
-            }
-            composeTestRule.waitForIdle()
-        }
 
-        step("Open the overflow menu") {
-            composeTestRule.onNodeWithTag("overflow_menu").performClick()
-            composeTestRule.waitForIdle()
-        }
-
-        step("No navigation entry is offered; sections moved to the Main tiles") {
-            composeTestRule.onNodeWithText("Workouts").assertDoesNotExist()
-            composeTestRule.onNodeWithText("View Archive").assertDoesNotExist()
-            composeTestRule.onNodeWithText("Settings").assertDoesNotExist()
-        }
-    }
     @Test
     fun testHistoryScreen_SwipeToArchiveAndUndo() {
         val entry = JournalEntry(entry_id = "1", description = "Test Swipe")

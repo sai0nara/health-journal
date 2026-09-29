@@ -93,37 +93,37 @@ fun MainScreen(onTileClick: (String) -> Unit) {
             )
         }
     ) { padding ->
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)
-    ) {
-        items(mainTiles) { tile ->
-            val label = stringResource(tile.labelRes)
-            Card(
-                modifier = Modifier
-                    .testTag("main_tile_${tile.route}")
-                    .semantics { contentDescription = label }
-                    .clickable(role = Role.Button, onClickLabel = label) {
-                        onTileClick(tile.route)
-                    }
-            ) {
-                Column(
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            items(mainTiles) { tile ->
+                val label = stringResource(tile.labelRes)
+                Card(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .testTag("main_tile_${tile.route}")
+                        .semantics { contentDescription = label }
+                        .clickable(role = Role.Button, onClickLabel = label) {
+                            onTileClick(tile.route)
+                        }
                 ) {
-                    Icon(tile.icon, contentDescription = null)
-                    Text(label, style = MaterialTheme.typography.titleMedium)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(tile.icon, contentDescription = null)
+                        Text(label, style = MaterialTheme.typography.titleMedium)
+                    }
                 }
             }
         }
-    }
     }
 }
