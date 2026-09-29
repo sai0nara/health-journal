@@ -5,11 +5,11 @@
 
 Last updated: 2026-09-29
 
-> **Status: PLANNED.** This PRD records the agreed requirements. The feature
-> has not been implemented: the nav graph in `MainActivity.kt` still starts
-> at `"history"`, and no dashboard destination exists. It is documented
-> up-front so the scope is captured before work starts; the product
-> specification and test cases are added when the feature is built.
+> **Status: BUILT.** All functional requirements below are implemented: the
+> `"main"` dashboard renders eight static tiles and is the launch screen,
+> sections round-trip via Back, and the History menu is actions-only. See
+> `Docs/psd/main-page-tiles.md` for the design and
+> `Docs/tests/main-page-tiles.md` for the verification.
 
 ## Overview
 
@@ -81,7 +81,13 @@ explicit named follow-up, not this feature.
 
 ## Acceptance criteria
 
-(To be defined with the PSD when the feature is built.)
+- AC-1 (FR-1/FR-2): Cold launch lands on the tile grid with all 8 tiles in
+  order.
+- AC-2 (FR-3): Every tile reaches its section; Back from each returns to
+  Main.
+- AC-3 (FR-7): History menu shows only Sync/Sort/About.
+- AC-4 (FR-5): RU device renders all tile labels in Russian; EN unchanged.
+- AC-5: JVM suite green; wiki lint exits 0.
 
 ## Out of scope
 
