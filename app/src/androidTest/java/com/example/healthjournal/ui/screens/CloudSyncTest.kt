@@ -39,7 +39,6 @@ class CloudSyncTest {
                                             measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
-                        onArchiveClick = {},
                         onExportClick = {}
                     )
 

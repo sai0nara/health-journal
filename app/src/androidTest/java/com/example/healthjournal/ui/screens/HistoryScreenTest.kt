@@ -55,7 +55,6 @@ class HistoryScreenTest {
                         measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
-                        onArchiveClick = {},
                         onExportClick = {}
                     )
                 }
@@ -82,7 +81,6 @@ class HistoryScreenTest {
                         measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
-                        onArchiveClick = {},
                         onExportClick = {}
                     )
                 }
@@ -101,7 +99,7 @@ class HistoryScreenTest {
         }
     }
     @Test
-    fun testHistoryScreen_OverflowMenu_revealsSecondaryActions() {        var archiveClicked = false
+    fun testHistoryScreen_OverflowMenu_showsOnlyActions() {
         step("Open History Screen") {
             viewModel.allEntries.value = emptyList()
             composeTestRule.setContent {
@@ -111,7 +109,6 @@ class HistoryScreenTest {
                         measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
-                        onArchiveClick = { archiveClicked = true },
                         onExportClick = {}
                     )
                 }
@@ -119,23 +116,17 @@ class HistoryScreenTest {
             composeTestRule.waitForIdle()
         }
 
-        step("Secondary actions are hidden until the overflow menu opens") {
-            composeTestRule.onNodeWithText("View Archive").assertDoesNotExist()
-        }
-
         step("Open the overflow menu") {
             composeTestRule.onNodeWithTag("overflow_menu").performClick()
             composeTestRule.waitForIdle()
         }
 
-        step("Overflow actions appear and invoke their callbacks") {
-            composeTestRule.onNodeWithText("View Archive").assertExists()
-            composeTestRule.onNodeWithText("View Archive").performClick()
-            composeTestRule.waitForIdle()
-            org.junit.Assert.assertTrue(
-                "onArchiveClick was not invoked from the overflow menu",
-                archiveClicked
-            )
+        step("Navigation entries are gone; only actions remain") {
+            composeTestRule.onNodeWithText("View Archive").assertDoesNotExist()
+            composeTestRule.onNodeWithText("Workouts").assertDoesNotExist()
+            composeTestRule.onNodeWithText("Settings").assertDoesNotExist()
+            composeTestRule.onNodeWithText("Sort order").assertExists()
+            composeTestRule.onNodeWithText("About App").assertExists()
         }
     }
     @Test
@@ -150,7 +141,6 @@ class HistoryScreenTest {
                         measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
-                        onArchiveClick = {},
                         onExportClick = {},
                         onMeasurementsClick = { measurementsClicked = true }
                     )
@@ -171,8 +161,7 @@ class HistoryScreenTest {
         }
     }
     @Test
-    fun testHistoryScreen_OverflowMenu_opensWorkoutScreen() {
-        var workoutClicked = false
+    fun testHistoryScreen_OverflowMenu_hasNoNavigationEntries() {
         step("Open History Screen") {
             viewModel.allEntries.value = emptyList()
             composeTestRule.setContent {
@@ -182,28 +171,22 @@ class HistoryScreenTest {
                         measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
-                        onArchiveClick = {},
-                        onExportClick = {},
-                        onWorkoutClick = { workoutClicked = true }
+                        onExportClick = {}
                     )
                 }
             }
             composeTestRule.waitForIdle()
         }
 
-        step("Open the overflow menu and choose Workouts") {
+        step("Open the overflow menu") {
             composeTestRule.onNodeWithTag("overflow_menu").performClick()
-            composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithText("Workouts").assertExists()
-            composeTestRule.onNodeWithText("Workouts").performClick()
             composeTestRule.waitForIdle()
         }
 
-        step("Verify workouts navigation was invoked") {
-            org.junit.Assert.assertTrue(
-                "onWorkoutClick was not invoked from the overflow menu",
-                workoutClicked
-            )
+        step("No navigation entry is offered; sections moved to the Main tiles") {
+            composeTestRule.onNodeWithText("Workouts").assertDoesNotExist()
+            composeTestRule.onNodeWithText("View Archive").assertDoesNotExist()
+            composeTestRule.onNodeWithText("Settings").assertDoesNotExist()
         }
     }
     @Test
@@ -219,7 +202,6 @@ class HistoryScreenTest {
                         measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
-                        onArchiveClick = {},
                         onExportClick = {}
                     )
                 }
@@ -269,7 +251,6 @@ class HistoryScreenTest {
                             measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                             onAddEntryClick = {},
                             onEntryClick = {},
-                            onArchiveClick = {},
                             onExportClick = {}
                         )
                     }
@@ -314,7 +295,6 @@ class HistoryScreenTest {
                         measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
-                        onArchiveClick = {},
                         onExportClick = {}
                     )
                 }
@@ -346,7 +326,6 @@ class HistoryScreenTest {
                         measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
-                        onArchiveClick = {},
                         onExportClick = {}
                     )
                 }
@@ -381,7 +360,6 @@ class HistoryScreenTest {
                         measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
-                        onArchiveClick = {},
                         onExportClick = {}
                     )
                 }

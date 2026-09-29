@@ -37,7 +37,6 @@ class TruncationTest {
                                         measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                     onAddEntryClick = {},
                     onEntryClick = {},
-                    onArchiveClick = {},
                     onExportClick = {}
                 )
             }

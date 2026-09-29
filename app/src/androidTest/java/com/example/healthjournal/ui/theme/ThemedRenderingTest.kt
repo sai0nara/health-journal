@@ -39,7 +39,6 @@ class ThemedRenderingTest {
                                         measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                     onAddEntryClick = {},
                     onEntryClick = {},
-                    onArchiveClick = {},
                     onExportClick = {}
                 )
             }
@@ -57,7 +56,6 @@ class ThemedRenderingTest {
                                         measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                     onAddEntryClick = {},
                     onEntryClick = {},
-                    onArchiveClick = {},
                     onExportClick = {}
                 )
             }

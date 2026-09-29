@@ -58,12 +58,9 @@ fun HistoryScreen(
     measurementViewModelFactory: ViewModelProvider.Factory,
     onAddEntryClick: () -> Unit,
     onEntryClick: (String) -> Unit,
-    onArchiveClick: () -> Unit,
     onExportClick: () -> Unit,
     onMeasurementsClick: () -> Unit = {},
-    onWorkoutClick: () -> Unit = {},
-    onPersonalCardClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onPersonalCardClick: () -> Unit = {}
 ) {
     val entries by viewModel.allEntries.collectAsState()
     val isAscending by viewModel.isAscending.collectAsState()
@@ -172,21 +169,6 @@ fun HistoryScreen(
                                 leadingIcon = { Icon(Icons.Default.Sync, contentDescription = null) }
                             )
                         }
-                        DropdownMenuItem(
-                                text = { Text(stringResource(R.string.history_menu_archive)) },
-                            onClick = { showOverflow = false; onArchiveClick() },
-                            leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
-                        )
-                        DropdownMenuItem(
-                                text = { Text(stringResource(R.string.history_menu_workouts)) },
-                            onClick = { showOverflow = false; onWorkoutClick() },
-                            leadingIcon = { Icon(Icons.Default.FitnessCenter, contentDescription = null) }
-                        )
-                        DropdownMenuItem(
-                                text = { Text(stringResource(R.string.history_menu_settings)) },
-                            onClick = { showOverflow = false; onSettingsClick() },
-                            leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
-                        )
                         DropdownMenuItem(
                                 text = { Text(stringResource(R.string.history_menu_sort)) },
                             onClick = { showOverflow = false; viewModel.setSortOrder(!isAscending) },
