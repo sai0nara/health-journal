@@ -78,6 +78,15 @@ android {
     }
 }
 
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            val version = output.versionName.get()
+            output.outputFileName.set("app-${variant.name}-v$version-${buildTimestamp()}.apk")
+        }
+    }
+}
+
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
