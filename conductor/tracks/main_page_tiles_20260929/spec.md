@@ -32,6 +32,9 @@ Settings) and keeps Sync, Sort, About.
   untouched.
 - FR-8: Leading tile icons are decorative (`contentDescription = null`);
   the tile itself exposes the label as its TalkBack description.
+- FR-9: Main carries its own top bar: app title plus an About action that
+  opens the existing `AboutAppDialog`. History keeps its full bar
+  unchanged (including its own About menu entry).
 
 ## Non-Functional Requirements
 
@@ -45,6 +48,8 @@ Settings) and keeps Sync, Sort, About.
 - AC-3: History menu shows only Sync/Sort/About.
 - AC-4: RU device renders all tile labels in Russian; EN unchanged.
 - AC-5: JVM suite green; wiki lint exits 0.
+- AC-6: Main top bar shows the app title and an About action; tapping it
+  opens the About dialog.
 
 ## Out of Scope
 

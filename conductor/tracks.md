@@ -46,7 +46,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Main page with tiles**
+- [x] **Track: Main page with tiles**
 *Link: [./tracks/main_page_tiles_20260929/](./tracks/main_page_tiles_20260929/)*
 
 
