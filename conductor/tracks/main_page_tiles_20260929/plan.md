@@ -29,3 +29,6 @@
 - [x] Task: Write Docs/psd/main-page-tiles.md and Docs/tests/main-page-tiles.md; drop planned marker [965bba6]
     - [x] wiki lint exits 0
 - [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) [user signed off 2026-09-29 incl. back-arrow + shared-bar follow-ups]
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions d3db528
