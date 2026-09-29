@@ -14,16 +14,25 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -34,6 +43,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.R
+import com.example.healthjournal.ui.components.AboutAppDialog
 
 private data class MainTile(
     val route: String,
@@ -58,14 +68,39 @@ private val mainTiles = listOf(
  * stays instant and offline. Each tile navigates to its existing
  * destination; system Back from any section returns here.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(onTileClick: (String) -> Unit) {
+    var showAboutDialog by remember { mutableStateOf(false) }
+    if (showAboutDialog) {
+        AboutAppDialog(onDismiss = { showAboutDialog = false })
+    }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.main_title)) },
+                actions = {
+                    IconButton(
+                        onClick = { showAboutDialog = true },
+                        modifier = Modifier.testTag("main_about")
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = stringResource(R.string.history_menu_about)
+                        )
+                    }
+                }
+            )
+        }
+    ) { padding ->
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
     ) {
         items(mainTiles) { tile ->
             val label = stringResource(tile.labelRes)
@@ -89,5 +124,6 @@ fun MainScreen(onTileClick: (String) -> Unit) {
                 }
             }
         }
+    }
     }
 }

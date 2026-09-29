@@ -407,6 +407,7 @@
     </plurals>
 
     <!-- Main dashboard -->
+    <string name="main_title">Health Journal</string>
     <string name="main_tile_history">History</string>
     <string name="main_tile_workout">Workouts</string>
     <string name="main_tile_measurements">Body measurements</string>

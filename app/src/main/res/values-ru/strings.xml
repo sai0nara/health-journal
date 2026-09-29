@@ -410,6 +410,7 @@
     </plurals>
 
     <!-- Main dashboard -->
+    <string name="main_title">Журнал здоровья</string>
     <string name="main_tile_history">История</string>
     <string name="main_tile_workout">Тренировки</string>
     <string name="main_tile_measurements">Измерения тела</string>

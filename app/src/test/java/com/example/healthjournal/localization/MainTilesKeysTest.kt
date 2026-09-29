@@ -13,6 +13,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 class MainTilesKeysTest {
 
     private val tileKeys = listOf(
+        "main_title",
         "main_tile_history",
         "main_tile_workout",
         "main_tile_measurements",
