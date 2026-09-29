@@ -12,6 +12,7 @@ Last updated: 2026-09-24
 ## Features
 
 - `Docs/prd/ai-insights.md` — planned
+- `Docs/prd/main-page-tiles.md` — planned
 - `Docs/prd/russian-localization.md` — PRD
 - `Docs/prd/unit-conversion.md` — PRD
 - `Docs/prd/body-measurements.md` — PRD
