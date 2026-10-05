@@ -27,3 +27,6 @@
 - [x] Task: Write Docs/psd/hashtags.md and Docs/tests/hashtags.md; drop planned marker [33056c5]
     - [x] wiki lint exits 0
 - [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) [user signed off 2026-10-05]
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions 73252e1
