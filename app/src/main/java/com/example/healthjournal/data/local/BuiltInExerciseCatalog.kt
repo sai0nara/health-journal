@@ -9,7 +9,7 @@ package com.example.healthjournal.data.local
 object BuiltInExerciseCatalog {
 
     /** Bump when the curated set or mappings change; drives re-seed detection. */
-    const val CATALOG_VERSION: Int = 1
+    const val CATALOG_VERSION: Int = 2
 
     private fun exercise(
         id: String,
@@ -29,6 +29,10 @@ object BuiltInExerciseCatalog {
         exercise("barbell-bench-press", "Barbell Bench Press", "Chest", "dumbbell-bench-press", "machine-chest-press"),
         exercise("dumbbell-bench-press", "Dumbbell Bench Press", "Chest", "barbell-bench-press", "machine-chest-press"),
         exercise("machine-chest-press", "Machine Chest Press", "Chest", "barbell-bench-press", "dumbbell-bench-press"),
+        exercise("wide-chest-press", "Wide Chest Press", "Chest", "machine-chest-press"),
+        exercise("machine-incline-chest-press", "Incline Chest Press (Machine)", "Chest", "incline-barbell-press", "machine-chest-press"),
+        exercise("smith-incline-press", "Smith Machine Incline Press", "Chest", "incline-barbell-press", "incline-dumbbell-press"),
+        exercise("wide-push-up", "Wide-Grip Push-Up", "Chest"),
         exercise("incline-barbell-press", "Incline Barbell Press", "Chest", "incline-dumbbell-press"),
         exercise("incline-dumbbell-press", "Incline Dumbbell Press", "Chest", "incline-barbell-press"),
         exercise("cable-fly", "Cable Fly", "Chest", "pec-deck"),
@@ -39,6 +43,8 @@ object BuiltInExerciseCatalog {
         exercise("seated-cable-row", "Seated Cable Row", "Back", "barbell-row", "dumbbell-row"),
         exercise("lat-pulldown", "Lat Pulldown", "Back", "pull-up"),
         exercise("pull-up", "Pull-Up", "Back", "lat-pulldown"),
+        exercise("machine-row", "Machine Row", "Back", "seated-cable-row", "barbell-row"),
+        exercise("hyperextension", "Hyperextension", "Back"),
         exercise("t-bar-row", "T-Bar Row", "Back", "barbell-row", "seated-cable-row"),
         // Shoulders
         exercise("overhead-press", "Overhead Press", "Shoulders", "seated-dumbbell-press", "machine-shoulder-press"),
@@ -46,17 +52,21 @@ object BuiltInExerciseCatalog {
         exercise("machine-shoulder-press", "Machine Shoulder Press", "Shoulders", "overhead-press", "seated-dumbbell-press"),
         exercise("lateral-raise", "Lateral Raise", "Shoulders", "cable-lateral-raise"),
         exercise("cable-lateral-raise", "Cable Lateral Raise", "Shoulders", "lateral-raise"),
+        exercise("military-press", "Military Press", "Shoulders", "overhead-press", "seated-dumbbell-press"),
+        exercise("dumbbell-lateral-raise", "Dumbbell Lateral Raise", "Shoulders", "lateral-raise", "cable-lateral-raise"),
         // Quads
         exercise("barbell-squat", "Barbell Squat", "Quads", "leg-press", "hack-squat", "front-squat"),
         exercise("front-squat", "Front Squat", "Quads", "barbell-squat", "leg-press"),
         exercise("leg-press", "Leg Press", "Quads", "barbell-squat", "hack-squat"),
         exercise("hack-squat", "Hack Squat", "Quads", "barbell-squat", "leg-press"),
+        exercise("smith-machine-squat", "Smith Machine Squat", "Quads", "barbell-squat", "hack-squat"),
         exercise("leg-extension", "Leg Extension", "Quads", "hack-squat"),
         exercise("goblet-squat", "Goblet Squat", "Quads", "barbell-squat", "leg-press"),
         // Hamstrings / Glutes
         exercise("romanian-deadlift", "Romanian Deadlift", "Hamstrings", "stiff-leg-deadlift", "leg-curl"),
         exercise("stiff-leg-deadlift", "Stiff-Leg Deadlift", "Hamstrings", "romanian-deadlift"),
         exercise("leg-curl", "Leg Curl", "Hamstrings", "romanian-deadlift"),
+        exercise("deadlift", "Deadlift", "Glutes", "conventional-deadlift", "trap-bar-deadlift"),
         exercise("conventional-deadlift", "Conventional Deadlift", "Glutes", "trap-bar-deadlift", "romanian-deadlift"),
         exercise("trap-bar-deadlift", "Trap-Bar Deadlift", "Glutes", "conventional-deadlift"),
         exercise("hip-thrust", "Hip Thrust", "Glutes", "barbell-glute-bridge"),
@@ -65,14 +75,18 @@ object BuiltInExerciseCatalog {
         exercise("barbell-curl", "Barbell Curl", "Biceps", "dumbbell-curl", "cable-curl"),
         exercise("dumbbell-curl", "Dumbbell Curl", "Biceps", "barbell-curl", "cable-curl"),
         exercise("cable-curl", "Cable Curl", "Biceps", "dumbbell-curl", "barbell-curl"),
+        exercise("hammer-curl", "Hammer Curl", "Biceps", "dumbbell-curl"),
+        exercise("preacher-curl", "Preacher Curl", "Biceps", "barbell-curl", "dumbbell-curl"),
         exercise("close-grip-bench", "Close-Grip Bench", "Triceps", "dips", "lying-triceps-extension"),
         exercise("dips", "Dips", "Triceps", "close-grip-bench", "lying-triceps-extension"),
         exercise("lying-triceps-extension", "Lying Triceps Extension", "Triceps", "cable-triceps-pushdown"),
         exercise("cable-triceps-pushdown", "Cable Triceps Pushdown", "Triceps", "lying-triceps-extension"),
+        exercise("seated-overhead-triceps-extension", "Seated Overhead Dumbbell Triceps Extension", "Triceps", "lying-triceps-extension"),
         // Core
         exercise("plank", "Plank", "Core", "cable-crunch"),
         exercise("cable-crunch", "Cable Crunch", "Core", "plank"),
         // Calves
+        exercise("smith-machine-calf-raise", "Smith Machine Calf Raise", "Calves", "standing-calf-raise", "seated-calf-raise"),
         exercise("standing-calf-raise", "Standing Calf Raise", "Calves", "seated-calf-raise", "leg-press-calf-raise"),
         exercise("seated-calf-raise", "Seated Calf Raise", "Calves", "standing-calf-raise"),
         exercise("leg-press-calf-raise", "Leg Press Calf Raise", "Calves", "standing-calf-raise")
@@ -132,6 +146,20 @@ fun defaultPlanFor(exerciseId: String): PresetDefaults = when (exerciseId) {
     "standing-calf-raise" -> PresetDefaults(3, 12, 20.0, 60)
     "seated-calf-raise" -> PresetDefaults(3, 12, 20.0, 60)
     "leg-press-calf-raise" -> PresetDefaults(3, 12, 15.0, 60)
+    "smith-machine-squat" -> PresetDefaults(3, 8, 30.0, 120)
+    "smith-machine-calf-raise" -> PresetDefaults(3, 12, 20.0, 60)
+    "deadlift" -> PresetDefaults(3, 5, 40.0, 150)
+    "military-press" -> PresetDefaults(3, 8, 20.0, 90)
+    "dumbbell-lateral-raise" -> PresetDefaults(3, 12, 6.0, 60)
+    "hyperextension" -> PresetDefaults(3, 12, 10.0, 60)
+    "smith-incline-press" -> PresetDefaults(3, 8, 25.0, 90)
+    "wide-chest-press" -> PresetDefaults(3, 10, 25.0, 90)
+    "machine-incline-chest-press" -> PresetDefaults(3, 10, 20.0, 90)
+    "wide-push-up" -> PresetDefaults(3, 10, 10.0, 60)
+    "seated-overhead-triceps-extension" -> PresetDefaults(3, 10, 12.0, 60)
+    "machine-row" -> PresetDefaults(3, 10, 25.0, 90)
+    "hammer-curl" -> PresetDefaults(3, 10, 10.0, 60)
+    "preacher-curl" -> PresetDefaults(3, 10, 12.0, 60)
     else -> PresetDefaults()
 }
 
