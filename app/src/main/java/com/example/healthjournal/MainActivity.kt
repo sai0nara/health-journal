@@ -15,6 +15,7 @@ import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.ui.screens.AddEntryScreen
 import com.example.healthjournal.ui.screens.ArchiveScreen
 import com.example.healthjournal.ui.screens.HistoryScreen
+import com.example.healthjournal.ui.screens.MainScreen
 import com.example.healthjournal.ui.screens.ComponentPreviewScreen
 import com.example.healthjournal.ui.theme.HealthJournalTheme
 import com.example.healthjournal.viewmodel.JournalViewModel
@@ -76,19 +77,22 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val viewModel: JournalViewModel = viewModel(factory = viewModelFactory)
 
-                NavHost(navController = navController, startDestination = "history") {
+                NavHost(navController = navController, startDestination = "main") {
+                    composable("main") {
+                        MainScreen(
+                            onTileClick = { route -> navController.navigate(route) }
+                        )
+                    }
                     composable("history") {
                         HistoryScreen(
                             viewModel = viewModel,
                             measurementViewModelFactory = measurementViewModelFactory,
                             onAddEntryClick = { navController.navigate("add_entry") },
                             onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") },
-                            onArchiveClick = { navController.navigate("archive") },
                             onExportClick = { navController.navigate("export") },
                             onMeasurementsClick = { navController.navigate("measurements") },
                             onPersonalCardClick = { navController.navigate("personal_card") },
-                            onWorkoutClick = { navController.navigate("workout") },
-                            onSettingsClick = { navController.navigate("settings") }
+                            onBack = { navController.popBackStack() }
                         )
                     }
                     composable("settings") {

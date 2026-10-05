@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -58,12 +59,10 @@ fun HistoryScreen(
     measurementViewModelFactory: ViewModelProvider.Factory,
     onAddEntryClick: () -> Unit,
     onEntryClick: (String) -> Unit,
-    onArchiveClick: () -> Unit,
     onExportClick: () -> Unit,
     onMeasurementsClick: () -> Unit = {},
-    onWorkoutClick: () -> Unit = {},
     onPersonalCardClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onBack: () -> Unit = {}
 ) {
     val entries by viewModel.allEntries.collectAsState()
     val isAscending by viewModel.isAscending.collectAsState()
@@ -121,14 +120,21 @@ fun HistoryScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    Image(
-                        painter = painterResource(R.drawable.app_logo),
-                        contentDescription = stringResource(R.string.cd_app_logo),
-                        modifier = Modifier
-                            .padding(start = 12.dp)
-                            .size(32.dp)
-                            .testTag("app_logo")
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back_label)
+                            )
+                        }
+                        Image(
+                            painter = painterResource(R.drawable.app_logo),
+                            contentDescription = stringResource(R.string.cd_app_logo),
+                            modifier = Modifier
+                                .size(32.dp)
+                                .testTag("app_logo")
+                        )
+                    }
                 },
                 title = {
                     Text(
@@ -172,21 +178,6 @@ fun HistoryScreen(
                                 leadingIcon = { Icon(Icons.Default.Sync, contentDescription = null) }
                             )
                         }
-                        DropdownMenuItem(
-                                text = { Text(stringResource(R.string.history_menu_archive)) },
-                            onClick = { showOverflow = false; onArchiveClick() },
-                            leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
-                        )
-                        DropdownMenuItem(
-                                text = { Text(stringResource(R.string.history_menu_workouts)) },
-                            onClick = { showOverflow = false; onWorkoutClick() },
-                            leadingIcon = { Icon(Icons.Default.FitnessCenter, contentDescription = null) }
-                        )
-                        DropdownMenuItem(
-                                text = { Text(stringResource(R.string.history_menu_settings)) },
-                            onClick = { showOverflow = false; onSettingsClick() },
-                            leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
-                        )
                         DropdownMenuItem(
                                 text = { Text(stringResource(R.string.history_menu_sort)) },
                             onClick = { showOverflow = false; viewModel.setSortOrder(!isAscending) },

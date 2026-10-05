@@ -58,7 +58,6 @@ class MeasurementEntrySheetTest {
                     },
                     onAddEntryClick = {},
                     onEntryClick = {},
-                    onArchiveClick = {},
                     onExportClick = {}
                 )
             }

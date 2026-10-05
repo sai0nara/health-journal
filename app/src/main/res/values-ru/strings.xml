@@ -105,9 +105,6 @@
     <!-- History -->
     <string name="history_title">Журнал здоровья</string>
     <string name="history_menu_sync">Синхронизировать сейчас</string>
-    <string name="history_menu_archive">Показать архив</string>
-    <string name="history_menu_workouts">Тренировки</string>
-    <string name="history_menu_settings">Настройки</string>
     <string name="history_menu_sort">Порядок сортировки</string>
     <string name="history_menu_about">О приложении</string>
     <string name="history_sign_in">Войти</string>
@@ -411,4 +408,15 @@
         <item quantity="few">%1$d вложения</item>
         <item quantity="many">%1$d вложений</item>
     </plurals>
+
+    <!-- Main dashboard -->
+    <string name="main_title">Журнал здоровья</string>
+    <string name="main_tile_history">История</string>
+    <string name="main_tile_workout">Тренировки</string>
+    <string name="main_tile_measurements">Измерения тела</string>
+    <string name="main_tile_presets">Пресеты</string>
+    <string name="main_tile_archive">Архив</string>
+    <string name="main_tile_export">Экспорт данных</string>
+    <string name="main_tile_personal_card">Личная карточка</string>
+    <string name="main_tile_settings">Настройки</string>
 </resources>
