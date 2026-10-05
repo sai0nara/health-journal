@@ -10,7 +10,7 @@ object HashtagParser {
 
     private val hashtag = Regex("#([\\p{L}\\p{N}_]+)")
 
-    /** Lowercase tags found in [text], in first-seen order. */
+    /** Lowercase tags found in [text], deduplicated. */
     fun extractHashtags(text: String): Set<String> =
         hashtag.findAll(text)
             .map { it.groupValues[1].lowercase(java.util.Locale.ROOT) }
