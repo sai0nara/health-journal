@@ -46,5 +46,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Hashtags**
+- [x] **Track: Hashtags**
 *Link: [./tracks/hashtags_20261002/](./tracks/hashtags_20261002/)*
