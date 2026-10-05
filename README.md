@@ -15,7 +15,7 @@ Personal health journal app
 
 # Build apk
 ```shell
- ./gradlew assembleDebug
+./gradlew assembleDist
 ```
 
 # Install apk
