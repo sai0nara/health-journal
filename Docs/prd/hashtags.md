@@ -4,13 +4,15 @@
 > (workouts → Fitness), `#words` typed into entry text become tags on save,
 > and all of it filters through the existing tag search.
 
-Last updated: 2026-10-02
+Last updated: 2026-10-05
 
-> **Status: PLANNED.** This PRD records the agreed requirements. The feature
-> has not been implemented: tags today are manual-only via the tag picker,
-> entry text is never scanned, and no automatic tagging exists. It is
-> documented up-front so the scope is captured before work starts; the
-> product specification and test cases are added when the feature is built.
+> **Status: BUILT.** All functional requirements below are implemented:
+> kind auto-tags and inline `#word` parsing feed the shared tag table,
+> feed chips filter on tap, and labels carry Russian parity. Measurement
+> saves create linked entries (user-approved); medications have no log
+> flow, so that mapping stays unwired. See
+> `Docs/psd/hashtags.md` for the design and `Docs/tests/hashtags.md` for
+> the verification.
 
 ## Overview
 
@@ -84,7 +86,14 @@ them identically:
 
 ## Acceptance criteria
 
-(To be defined with the PSD when the feature is built.)
+- AC-1 (FR-1): Logged workout's entry carries Fitness; filter shows it.
+- AC-2 (FR-2/FR-3): Entry saved with `#Recovery and #recovery` yields one
+  tag; chip filters.
+- AC-3 (FR-5): Russian auto-tag labels render; Cyrillic inline tags stored
+  verbatim.
+- AC-4 (FR-4): Editing text to drop `#word` removes that tag on save;
+  auto-tag remains.
+- AC-5: JVM suite green; wiki lint exits 0.
 
 ## Out of scope
 

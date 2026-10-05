@@ -12,7 +12,7 @@ Last updated: 2026-09-24
 ## Features
 
 - `Docs/prd/ai-insights.md` — planned
-- `Docs/prd/hashtags.md` — planned
+- `Docs/prd/hashtags.md` — PRD
 - `Docs/prd/main-page-tiles.md` — PRD
 - `Docs/prd/russian-localization.md` — PRD
 - `Docs/prd/unit-conversion.md` — PRD
@@ -34,6 +34,7 @@ Last updated: 2026-09-24
 - `Docs/psd/history-feed.md` — PSD
 - `Docs/psd/medical-color-system.md` — PSD
 - `Docs/psd/personal-card.md` — PSD
+- `Docs/psd/hashtags.md` — PSD
 - `Docs/psd/main-page-tiles.md` — PSD
 - `Docs/psd/photos-media.md` — PSD
 - `Docs/psd/restore-from-backup.md` — PSD
@@ -47,6 +48,7 @@ Last updated: 2026-09-24
 - `Docs/tests/history-feed.md` — tests
 - `Docs/tests/medical-color-system.md` — tests
 - `Docs/tests/personal-card.md` — tests
+- `Docs/tests/hashtags.md` — tests
 - `Docs/tests/main-page-tiles.md` — tests
 - `Docs/tests/photos-media.md` — tests
 - `Docs/tests/restore-from-backup.md` — tests
