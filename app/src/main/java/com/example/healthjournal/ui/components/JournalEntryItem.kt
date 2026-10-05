@@ -35,10 +35,12 @@ import java.util.*
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun JournalEntryItem(
-    entry: JournalEntry, 
-    onClick: () -> Unit, 
+    entry: JournalEntry,
+    onClick: () -> Unit,
     onPhotoClick: (String) -> Unit,
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    tags: List<String> = emptyList(),
+    onTagClick: (String) -> Unit = {}
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -111,6 +113,28 @@ fun JournalEntryItem(
                     }
                 }
                 
+                if (tags.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth().testTag("entry_tag_row")
+                    ) {
+                        tags.forEach { tag ->
+                            FilterChip(
+                                selected = false,
+                                onClick = { onTagClick(tag) },
+                                label = {
+                                    Text(
+                                        "#${tagDisplayName(tag)}",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                },
+                                modifier = Modifier.testTag("entry_tag_$tag")
+                            )
+                        }
+                    }
+                }
+
                 if (!entry.photo_urls.isNullOrEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     androidx.compose.foundation.lazy.LazyRow(

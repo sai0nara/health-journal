@@ -409,6 +409,11 @@
         <item quantity="many">%1$d вложений</item>
     </plurals>
 
+    <!-- Hashtags -->
+    <string name="auto_tag_fitness">Фитнес</string>
+    <string name="auto_tag_health">Здоровье</string>
+    <string name="auto_tag_medication">Лекарства</string>
+
     <!-- Main dashboard -->
     <string name="main_title">Журнал здоровья</string>
     <string name="main_tile_history">История</string>

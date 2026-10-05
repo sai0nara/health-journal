@@ -406,6 +406,11 @@
         <item quantity="other">%1$d attachments</item>
     </plurals>
 
+    <!-- Hashtags -->
+    <string name="auto_tag_fitness">Fitness</string>
+    <string name="auto_tag_health">Health</string>
+    <string name="auto_tag_medication">Medication</string>
+
     <!-- Main dashboard -->
     <string name="main_title">Health Journal</string>
     <string name="main_tile_history">History</string>

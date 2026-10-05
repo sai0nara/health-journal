@@ -15,6 +15,7 @@ import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.data.local.WorkoutStatus
 import com.example.healthjournal.data.local.defaultPlanFor
 import com.example.healthjournal.domain.CalorieEstimator
+import com.example.healthjournal.domain.EntryKindTag
 import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.StrengthSet
 import com.example.healthjournal.domain.TonnageCalculator
@@ -569,12 +570,12 @@ class WorkoutViewModel(
                 calories = calories
             )
             repository.saveSession(completed)
-            journalRepository.insert(
-                JournalEntry(
-                    timestamp = current.startTimestamp,
-                    description = describe(completed, calories)
-                )
+            val linkedEntry = JournalEntry(
+                timestamp = current.startTimestamp,
+                description = describe(completed, calories)
             )
+            journalRepository.insert(linkedEntry)
+            journalRepository.addTag(linkedEntry.entry_id, EntryKindTag.forWorkout())
             val healthSynced = try {
                 healthSource.writeRecord(completed.toHealthRecord(now = end))
             } catch (e: Exception) {
@@ -631,12 +632,12 @@ class WorkoutViewModel(
                 notes = note
             )
             repository.saveSession(completed)
-            journalRepository.insert(
-                JournalEntry(
-                    timestamp = timestamp,
-                    description = describe(completed, kcal)
-                )
+            val linkedEntry = JournalEntry(
+                timestamp = timestamp,
+                description = describe(completed, kcal)
             )
+            journalRepository.insert(linkedEntry)
+            journalRepository.addTag(linkedEntry.entry_id, EntryKindTag.forWorkout())
             try {
                 healthSource.writeRecord(completed.toHealthRecord(now = clock()))
             } catch (e: Exception) {

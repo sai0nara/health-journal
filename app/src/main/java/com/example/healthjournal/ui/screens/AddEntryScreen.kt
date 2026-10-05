@@ -37,6 +37,7 @@ import com.mohamedrejeb.richeditor.ui.material3.RichText
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.domain.HashtagParser
 import com.example.healthjournal.util.HtmlEntities
 import com.example.healthjournal.ui.components.EnrichmentPanel
 import com.example.healthjournal.ui.components.RichTextToolbar
@@ -569,6 +570,10 @@ fun AddEntryScreen(
                                 }
                             }.filter { it.uri.isNotBlank() }
 
+                            // Hashtags parse from plain text: the editor serializes
+                            // '#' as '&num;' in HTML, so HTML parsing would miss them.
+                            val tagsWithHashtags = entryTags +
+                                HashtagParser.extractHashtags(plainText)
                             if (entryId == null) {
                                 viewModel.addEntry(
                                     description = descriptionHtml,
@@ -579,7 +584,7 @@ fun AddEntryScreen(
                                     bpDiastolic = bpDiastolic,
                                     heartRate = heartRate,
                                     sleepHours = sleepHours,
-                                    tags = entryTags
+                                    tags = tagsWithHashtags
                                 )
                             } else {
                                 existingEntry?.let {
@@ -594,7 +599,7 @@ fun AddEntryScreen(
                                             heart_rate_avg = heartRate,
                                             sleep_hours = sleepHours
                                         ),
-                                        tags = entryTags
+                                        tags = tagsWithHashtags
                                     )
                                 }
                             }

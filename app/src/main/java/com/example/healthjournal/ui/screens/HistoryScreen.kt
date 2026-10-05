@@ -67,6 +67,7 @@ fun HistoryScreen(
     val entries by viewModel.allEntries.collectAsState()
     val isAscending by viewModel.isAscending.collectAsState()
     val selectedTags by viewModel.selectedTags.collectAsState()
+    val tagsByEntry by viewModel.tagsByEntry.collectAsState()
     var expandedImageUri by remember { mutableStateOf<String?>(null) }
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()
@@ -287,7 +288,9 @@ fun HistoryScreen(
                                 JournalEntryItem(
                                     entry = entry,
                                     onClick = { onEntryClick(entry.entry_id) },
-                                    onPhotoClick = { expandedImageUri = it }
+                                    onPhotoClick = { expandedImageUri = it },
+                                    tags = tagsByEntry[entry.entry_id] ?: emptyList(),
+                                    onTagClick = { tag -> viewModel.toggleTag(tag) }
                                 )
                             }
                         }

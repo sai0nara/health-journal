@@ -97,6 +97,7 @@ class JournalViewModelTest {
         
         coEvery { repository.allEntries } returns flowOf(emptyList())
         coEvery { repository.archivedEntries } returns flowOf(emptyList())
+        coEvery { repository.allTags } returns flowOf(emptyList())
         coEvery { repository.getEntriesSortedByDate(any()) } returns flowOf(emptyList())
         
         viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
@@ -142,6 +143,34 @@ class JournalViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify { repository.insert(match { it.description == "New" }) }
+    }
+
+    @Test
+    fun addEntry_unionsParsedHashtagsWithManualTags() = runTest {
+        coEvery { repository.insert(any()) } returns Unit
+        coEvery { repository.addTag(any(), any()) } returns Unit
+
+        viewModel.addEntry("Evening #Recovery walk", tags = setOf("DOCTOR"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { repository.addTag(any(), "recovery") }
+        coVerify { repository.addTag(any(), "DOCTOR") }
+    }
+
+    @Test
+    fun updateEntry_reparsesHashtagsAndPreservesAutoTags() = runTest {
+        val entry = JournalEntry(entry_id = "e1", description = "Old #stale text")
+        coEvery { repository.insert(any()) } returns Unit
+        coEvery { repository.getTagsForEntry("e1") } returns listOf("Fitness", "DOCTOR", "stale")
+        coEvery { repository.removeTag(any(), any()) } returns Unit
+        coEvery { repository.addTag(any(), any()) } returns Unit
+
+        viewModel.updateEntry(entry.copy(description = "New #sleep text"), setOf("DOCTOR"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { repository.addTag("e1", "sleep") }
+        coVerify { repository.addTag("e1", "Fitness") }
+        coVerify(exactly = 0) { repository.addTag("e1", "stale") }
     }
 
     @Test

@@ -40,7 +40,8 @@ class MainActivity : ComponentActivity() {
         )
         val viewModelFactory = JournalViewModelFactory(application, journalRepository)
         val measurementViewModelFactory = com.example.healthjournal.viewmodel.BodyMeasurementViewModelFactory(
-            measurementRepository
+            measurementRepository,
+            journalRepository
         )
         val goalsRepository = com.example.healthjournal.data.GoalsRepository(database.goalDao())
         val personalCardRepository = com.example.healthjournal.data.PersonalCardRepository(database.personalCardDao())

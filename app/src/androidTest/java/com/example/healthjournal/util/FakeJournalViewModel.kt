@@ -25,6 +25,7 @@ open class FakeJournalViewModel : IJournalViewModel {
     override val archiveSearchQuery: MutableStateFlow<String> = MutableStateFlow("")
     override val isAscending: MutableStateFlow<Boolean> = MutableStateFlow(false)
     override val selectedTags: MutableStateFlow<Set<String>> = MutableStateFlow(emptySet())
+    override val tagsByEntry: MutableStateFlow<Map<String, List<String>>> = MutableStateFlow(emptyMap())
 
     var addEntryCalledWith: AddEntryCall? = null
     var updateEntryCalledWith: Pair<JournalEntry, Set<String>>? = null

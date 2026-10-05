@@ -15,6 +15,8 @@ import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.domain.EntryKindTag
+import com.example.healthjournal.domain.HashtagParser
 import com.example.healthjournal.health.HealthConnectManager
 import com.example.healthjournal.media.AndroidMediaCompressionService
 import com.example.healthjournal.media.MediaCompressionService
@@ -46,6 +48,7 @@ interface IJournalViewModel {
     val archiveSearchQuery: StateFlow<String>
     val isAscending: StateFlow<Boolean>
     val selectedTags: StateFlow<Set<String>>
+    val tagsByEntry: StateFlow<Map<String, List<String>>>
 
     fun addEntry(
         description: String,
@@ -101,6 +104,13 @@ class JournalViewModel(
 
     private val _selectedTags = MutableStateFlow(setOf<String>())
     override val selectedTags: StateFlow<Set<String>> = _selectedTags.asStateFlow()
+    override val tagsByEntry: StateFlow<Map<String, List<String>>> =
+        repository.allTags.map { refs -> refs.groupBy({ it.entryId }, { it.tag }) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyMap()
+            )
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     override val allEntries: StateFlow<List<JournalEntry>> = combine(
@@ -259,8 +269,9 @@ class JournalViewModel(
                 lastModified = System.currentTimeMillis()
             )
             repository.insert(newEntry)
-            
-            tags.forEach { tag ->
+
+            val finalTags = tags + HashtagParser.extractHashtags(description)
+            finalTags.forEach { tag ->
                 repository.addTag(newEntry.entry_id, tag)
             }
 
@@ -276,12 +287,16 @@ class JournalViewModel(
             // Keep the original timestamp (creation date)
             repository.insert(entry.copy(syncStatus = "PENDING_SYNC", lastModified = System.currentTimeMillis()))
             
-            // Refresh tags: remove all existing and add current selection
+            // Refresh tags: remove all existing and add current selection,
+            // re-parsed hashtags, plus sticky system auto-tags.
             val existingTags = repository.getTagsForEntry(entry.entry_id)
             existingTags.forEach { tag ->
                 repository.removeTag(entry.entry_id, tag)
             }
-            tags.forEach { tag ->
+            val finalTags = tags +
+                HashtagParser.extractHashtags(entry.description) +
+                existingTags.intersect(EntryKindTag.SYSTEM_TAGS)
+            finalTags.forEach { tag ->
                 repository.addTag(entry.entry_id, tag)
             }
 
