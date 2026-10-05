@@ -1,0 +1,8 @@
+{
+  "created_at": "2026-10-02T00:00:00Z",
+  "description": "Hashtags: auto-tags by entry kind plus inline #word parsing per Docs/prd/hashtags.md",
+  "status": "new",
+  "track_id": "hashtags_20261002",
+  "type": "feature",
+  "updated_at": "2026-10-02T00:00:00Z"
+}
