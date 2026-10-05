@@ -44,6 +44,18 @@ android {
                 "proguard-rules.pro"
             )
         }
+        // Slim distribution build: debug-signed, minified + resource-shrunk
+        // so the APK stays under Drive's virus-scan budget. Dev loop keeps
+        // using unminified `debug`; upload `dist` artifacts to Drive.
+        create("dist") {
+            initWith(getByName("debug"))
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21

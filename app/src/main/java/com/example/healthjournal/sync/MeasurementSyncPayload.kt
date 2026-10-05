@@ -2,7 +2,6 @@ package com.example.healthjournal.sync
 
 import com.example.healthjournal.data.local.BodyMeasurementEntry
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 
 /**
  * Gson codec for the body_measurements.json Drive payload: a bare JSON
@@ -12,7 +11,7 @@ import com.google.gson.reflect.TypeToken
  */
 object MeasurementSyncPayload {
     private val gson = Gson()
-    private val type = object : TypeToken<List<BodyMeasurementEntry>>() {}.type
+
 
     fun toJson(measurements: List<BodyMeasurementEntry>): String =
         gson.toJson(measurements)
@@ -20,7 +19,7 @@ object MeasurementSyncPayload {
     fun fromJson(json: String?): List<BodyMeasurementEntry> {
         if (json.isNullOrBlank()) return emptyList()
         return try {
-            gson.fromJson<List<BodyMeasurementEntry>>(json, type) ?: emptyList()
+            gson.fromJson(json, Array<BodyMeasurementEntry>::class.java)?.toList() ?: emptyList()
         } catch (_: Exception) {
             emptyList()
         }

@@ -28,7 +28,6 @@ import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.AccessToken
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.first
 
 class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
@@ -75,8 +74,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             
             var cloudEntries: List<JournalEntry> = if (cloudJson != null) {
                 try {
-                    val type = object : TypeToken<List<JournalEntry>>() {}.type
-                    val rawEntries = Gson().fromJson<List<JournalEntry>>(cloudJson, type) ?: emptyList()
+                    val rawEntries = Gson().fromJson(cloudJson, Array<JournalEntry>::class.java)?.toList() ?: emptyList()
                     // Fix nulls from old cloud data
                     rawEntries.map { entry ->
                         // Fix nulls from old cloud data (preserve tags through copy)

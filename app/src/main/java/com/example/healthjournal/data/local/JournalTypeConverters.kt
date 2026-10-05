@@ -5,7 +5,6 @@ import com.example.healthjournal.domain.PresetExercise
 import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.WorkoutIntervalSession
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 
 class JournalTypeConverters {
     private val gson = Gson()
@@ -19,8 +18,7 @@ class JournalTypeConverters {
     fun toStringList(value: String?): List<String> {
         if (value == null) return emptyList()
         return try {
-            val listType = object : TypeToken<List<String>>() {}.type
-            gson.fromJson(value, listType) ?: emptyList()
+            gson.fromJson(value, Array<String>::class.java)?.toList() ?: emptyList()
         } catch (e: Exception) {
             emptyList()
         }
@@ -35,8 +33,7 @@ class JournalTypeConverters {
     fun toAttachmentList(value: String?): List<AttachmentData> {
         if (value == null) return emptyList()
         return try {
-            val listType = object : TypeToken<List<AttachmentData>>() {}.type
-            val rawList = gson.fromJson<List<AttachmentData>>(value, listType) ?: emptyList()
+            val rawList = gson.fromJson(value, Array<AttachmentData>::class.java)?.toList() ?: emptyList()
             rawList.map { att ->
                 att.copy(
                     syncStatus = att.syncStatus ?: "PENDING",
@@ -118,8 +115,7 @@ class JournalTypeConverters {
     fun toStrengthExercises(value: String?): List<StrengthExercise>? {
         if (value == null) return null
         return try {
-            val listType = object : TypeToken<List<StrengthExercise>>() {}.type
-            gson.fromJson<List<StrengthExercise>>(value, listType) ?: emptyList()
+            gson.fromJson(value, Array<StrengthExercise>::class.java)?.toList() ?: emptyList()
         } catch (e: Exception) {
             emptyList()
         }
@@ -151,8 +147,7 @@ class JournalTypeConverters {
     fun toPresetExercises(value: String?): List<PresetExercise>? {
         if (value == null) return null
         return try {
-            val listType = object : TypeToken<List<PresetExercise>>() {}.type
-            gson.fromJson<List<PresetExercise>>(value, listType) ?: emptyList()
+            gson.fromJson(value, Array<PresetExercise>::class.java)?.toList() ?: emptyList()
         } catch (e: Exception) {
             emptyList()
         }
