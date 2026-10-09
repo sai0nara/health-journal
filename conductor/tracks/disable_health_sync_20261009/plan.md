@@ -20,7 +20,7 @@
     - [x] Run UI test on emulator until green — pending: no emulator in this environment, compile verified
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Preference store + Settings toggle' (Protocol in workflow.md)
 
-## Phase 2: Gate all Health Connect entry points
+## Phase 2: Gate all Health Connect entry points [checkpoint: ea7d5b0]
 - [x] Task: Write failing tests for gating logic (Red) [894b767]
     - [x] Test JournalViewModel exposes `isHealthSyncEnabled` reflecting `HealthSyncSettings`
     - [x] Test `syncHealthData` short-circuits (no SDK call) when disabled
