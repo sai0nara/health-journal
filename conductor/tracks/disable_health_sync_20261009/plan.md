@@ -1,6 +1,6 @@
 # Implementation Plan: Disable Health Sync (User Toggle, Default OFF)
 
-## Phase 1: Preference store + Settings toggle
+## Phase 1: Preference store + Settings toggle [checkpoint: 31e4327]
 - [x] Task: Write failing unit tests for health-sync preference (Red) [52c11c5]
     - [ ] Test default is OFF when prefs empty
     - [ ] Test write ON then read returns ON, survives re-read
