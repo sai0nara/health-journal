@@ -40,7 +40,7 @@
     - [x] Run UI tests on emulator until green — pending: no emulator in this environment, androidTest compiles
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Gate all Health Connect entry points' (Protocol in workflow.md)
 
-## Phase 3: Regression, strings, docs
+## Phase 3: Regression, strings, docs [checkpoint: e995ab3]
 - [x] Task: Regression + coverage verification [5398a25]
     - [x] Run `./gradlew :app:testDebugUnitTest` full suite green — 598/598, 0 failures
     - [x] Verify >80% coverage on new/changed code — new store fully covered; gating branches covered by 8 new tests (no coverage plugin configured)
