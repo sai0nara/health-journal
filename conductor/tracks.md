@@ -46,5 +46,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Disable Health Sync**
+- [~] **Track: Disable Health Sync**
 *Link: [./tracks/disable_health_sync_20261009/](./tracks/disable_health_sync_20261009/)*
