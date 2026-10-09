@@ -30,6 +30,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -135,8 +137,9 @@ fun SettingsScreen(onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val healthSyncLabel = stringResource(R.string.settings_health_sync_label)
                 Text(
-                    text = stringResource(R.string.settings_health_sync_label),
+                    text = healthSyncLabel,
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.weight(1f)
                 )
@@ -146,7 +149,9 @@ fun SettingsScreen(onBack: () -> Unit) {
                         healthSyncEnabled = it
                         HealthSyncSettings.write(context, it)
                     },
-                    modifier = Modifier.testTag("settings_health_sync_toggle")
+                    modifier = Modifier
+                        .testTag("settings_health_sync_toggle")
+                        .semantics { contentDescription = healthSyncLabel }
                 )
             }
             Text(

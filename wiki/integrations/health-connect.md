@@ -3,7 +3,18 @@
 > How this repo reads wearable health metrics (steps, heart rate, sleep) from
 > Android Health Connect and writes completed workouts as exercise records.
 
-Last updated: 2026-09-10
+Last updated: 2026-10-09
+
+## Opt-in gate
+
+Every Health Connect call in this repo is gated behind a user-facing Settings
+toggle that defaults to off: when disabled the app performs no reads, no
+writes, and requests no health permissions, while previously synced metric
+values stay untouched in the database. The toggle is persisted in
+`app/src/main/java/com/example/healthjournal/data/local/HealthSyncSettings.kt`
+and enforced in `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt`
+(entry vitals) and `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutViewModel.kt`
+(exercise writes) plus the entry UI.
 
 ## Relationship to Android Health Connect
 
