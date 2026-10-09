@@ -80,6 +80,13 @@ fun AddEntryScreen(
     var linkText by remember { mutableStateOf("") }
     var linkUrl by remember { mutableStateOf("") }
 
+    // Health Connect opt-in gate: hidden Sync Health action means no
+    // availability check, permission request, or fetch can be triggered.
+    val healthSyncEnabled by viewModel.isHealthSyncEnabled.collectAsState()
+    LaunchedEffect(Unit) {
+        viewModel.refreshHealthSyncSetting()
+    }
+
     if (showLinkDialog) {
         AlertDialog(
             onDismissRequest = { showLinkDialog = false },
@@ -133,6 +140,7 @@ fun AddEntryScreen(
         contract = PermissionController.createRequestPermissionResultContract()
     ) { granted ->
         android.util.Log.d("AddEntryScreen", "Health permissions result: $granted")
+        if (!viewModel.isHealthSyncEnabled.value) return@rememberLauncherForActivityResult
         if (granted.containsAll(viewModel.healthPermissions)) {
             scope.launch {
                 isHealthSyncing = true
@@ -510,7 +518,9 @@ fun AddEntryScreen(
                     onCameraClick = { launchCamera() },
                     onGalleryClick = { photoPickerLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                     onAttachFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
-                    onSyncHealthClick = { 
+                    showSyncHealth = healthSyncEnabled,
+                    onSyncHealthClick = {
+                        if (!viewModel.isHealthSyncEnabled.value) return@EnrichmentPanel
                         scope.launch {
                             val availability = viewModel.checkHealthAvailability()
                             if (availability != HealthConnectClient.SDK_AVAILABLE) {

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -17,7 +18,12 @@ fun EnrichmentPanel(
     onGalleryClick: () -> Unit,
     onAttachFileClick: () -> Unit,
     onSyncHealthClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /**
+     * Health Connect opt-in gate: when false the Sync Health action is
+     * hidden entirely, so no health permission flow can be triggered.
+     */
+    showSyncHealth: Boolean = true
 ) {
     ElevatedCard(
         modifier = modifier.fillMaxWidth(),
@@ -84,18 +90,22 @@ fun EnrichmentPanel(
                     Text(text = "File", style = MaterialTheme.typography.labelSmall)
                 }
                 
-                Button(
-                    onClick = onSyncHealthClick,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.HealthAndSafety,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Health", style = MaterialTheme.typography.labelSmall)
+                if (showSyncHealth) {
+                    Button(
+                        onClick = onSyncHealthClick,
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("enrichment_sync_health"),
+                        contentPadding = PaddingValues(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.HealthAndSafety,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Health", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
         }

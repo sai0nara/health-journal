@@ -57,17 +57,20 @@ class WorkoutViewModelTest {
     }
 
     private fun newViewModel(
-        health: FakeWorkoutHealthDataSource = healthSource
+        health: FakeWorkoutHealthDataSource = healthSource,
+        healthSyncEnabled: Boolean = true
     ): WorkoutViewModel = WorkoutViewModel(
         repository = repository,
         healthSource = health,
         journalRepository = journalRepository,
         dispatcher = dispatcher,
         onHaptic = { haptics.add(it) },
-        clock = { nowMillis }
+        clock = { nowMillis },
+        healthSyncEnabled = healthSyncEnabled
     )
 
     private fun newViewModelWithClock(
+        healthSyncEnabled: Boolean = true,
         clock: () -> Long
     ): WorkoutViewModel = WorkoutViewModel(
         repository = repository,
@@ -75,12 +78,17 @@ class WorkoutViewModelTest {
         journalRepository = journalRepository,
         dispatcher = dispatcher,
         onHaptic = { haptics.add(it) },
-        clock = clock
+        clock = clock,
+        healthSyncEnabled = healthSyncEnabled
     )
 
     /** Starts a configured session and runs it past the 3-2-1 countdown. */
-    private fun startActiveSession(type: WorkoutType, target: String): WorkoutViewModel {
-        val vm = newViewModel()
+    private fun startActiveSession(
+        type: WorkoutType,
+        target: String,
+        healthSyncEnabled: Boolean = true
+    ): WorkoutViewModel {
+        val vm = newViewModel(healthSyncEnabled = healthSyncEnabled)
         dispatcher.scheduler.advanceUntilIdle()
         vm.selectType(type)
         vm.updateTarget(target)
@@ -353,7 +361,8 @@ class WorkoutViewModelTest {
             healthSource = denied,
             journalRepository = journalRepository,
             dispatcher = dispatcher,
-            onHaptic = { haptics.add(it) }
+            onHaptic = { haptics.add(it) },
+            healthSyncEnabled = true
         )
         dispatcher.scheduler.advanceUntilIdle()
         vm.selectType(WorkoutType.YOGA)
@@ -448,6 +457,40 @@ class WorkoutViewModelTest {
 
         assertTrue(vm.uiState.value is WorkoutUiState.Idle)
         assertTrue(offline.storedRecords().isEmpty())
+    }
+
+    @Test
+    fun finishSession_healthSyncDisabled_skipsWriteAndReportsUnsynced() = runTest {
+        val before = healthSource.storedRecords().size
+        val vm = startActiveSession(WorkoutType.RUN, "5", healthSyncEnabled = false)
+        vm.advanceTime(1_800)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value
+        assertTrue(state is WorkoutUiState.Summary)
+        assertEquals(false, (state as WorkoutUiState.Summary).healthSynced)
+        assertEquals(before, healthSource.storedRecords().size)
+    }
+
+    @Test
+    fun saveManualLog_healthSyncDisabled_skipsWrite() = runTest {
+        val before = healthSource.storedRecords().size
+        val vm = newViewModel(healthSyncEnabled = false)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.saveManualLog(
+            type = WorkoutType.FITNESS,
+            durationMinutes = "45",
+            calories = "270",
+            timestamp = 1_000L
+        )
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(vm.uiState.value is WorkoutUiState.Idle)
+        assertEquals(before, healthSource.storedRecords().size)
     }
 
     @Test

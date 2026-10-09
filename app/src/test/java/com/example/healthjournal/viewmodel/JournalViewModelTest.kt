@@ -2,6 +2,7 @@ package com.example.healthjournal.viewmodel
 
 import android.app.Application
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import android.widget.Toast
 import androidx.work.WorkInfo
@@ -462,5 +463,85 @@ class JournalViewModelTest {
         
         assertTrue(items.any { it.any { entry -> entry.description == "Apple" } })
         collectJob.cancel()
+    }
+
+    @Test
+    fun healthSync_defaultsToDisabled() = runTest {
+        // Strict-mock Application has no stubbed prefs: unreadable resolves to OFF.
+        assertFalse(viewModel.isHealthSyncEnabled.value)
+    }
+
+    @Test
+    fun healthSync_initialEnabled_reflectsOptIn() = runTest {
+        val enabled = JournalViewModel(
+            application, repository, authManager, sessionManager,
+            healthManager, mediaService, testDispatcher,
+            healthSyncEnabledInitial = true
+        )
+
+        assertTrue(enabled.isHealthSyncEnabled.value)
+    }
+
+    @Test
+    fun syncHealthData_whenDisabled_returnsEmptyWithoutCallingManager() = runTest {
+        val result = viewModel.syncHealthData(1_700_000_000_000L)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(HealthSyncResult(), result)
+        coVerify(exactly = 0) { healthManager.getLatestBloodPressure(any(), any()) }
+        coVerify(exactly = 0) { healthManager.getAverageHeartRate(any(), any()) }
+        coVerify(exactly = 0) { healthManager.getSleepDurationHours(any(), any()) }
+    }
+
+    @Test
+    fun syncHealthData_whenEnabled_fetchesFromManager() = runTest {
+        coEvery { healthManager.getLatestBloodPressure(any(), any()) } returns (120.0 to 80.0)
+        coEvery { healthManager.getAverageHeartRate(any(), any()) } returns 72L
+        coEvery { healthManager.getSleepDurationHours(any(), any()) } returns 7.5f
+        val enabled = JournalViewModel(
+            application, repository, authManager, sessionManager,
+            healthManager, mediaService, testDispatcher,
+            healthSyncEnabledInitial = true
+        )
+
+        val result = enabled.syncHealthData(1_700_000_000_000L)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(120.0, result.bpSystolic)
+        assertEquals(80.0, result.bpDiastolic)
+        assertEquals(72, result.heartRate)
+        assertEquals(7.5f, result.sleepHours!!, 0.001f)
+    }
+
+    @Test
+    fun hasHealthPermissions_whenDisabled_returnsFalseWithoutManagerCall() = runTest {
+        assertFalse(viewModel.hasHealthPermissions())
+
+        coVerify(exactly = 0) { healthManager.hasAllPermissions() }
+    }
+
+    @Test
+    fun setHealthSyncEnabled_persistsAndReloadsAcrossInstances() = runTest {
+        val store = mutableMapOf<String, Boolean>()
+        val prefs: SharedPreferences = mockk()
+        val editor: SharedPreferences.Editor = mockk(relaxed = true)
+        every { application.getSharedPreferences(any(), any()) } returns prefs
+        every { prefs.edit() } returns editor
+        every { prefs.getBoolean(any(), any()) } answers {
+            store[it.invocation.args[0] as String] ?: (it.invocation.args[1] as Boolean)
+        }
+        every { editor.putBoolean(any(), any()) } answers {
+            store[it.invocation.args[0] as String] = it.invocation.args[1] as Boolean
+            editor
+        }
+
+        viewModel.setHealthSyncEnabled(true)
+        assertTrue(viewModel.isHealthSyncEnabled.value)
+
+        val reloaded = JournalViewModel(
+            application, repository, authManager, sessionManager,
+            healthManager, mediaService, testDispatcher
+        )
+        assertTrue(reloaded.isHealthSyncEnabled.value)
     }
 }

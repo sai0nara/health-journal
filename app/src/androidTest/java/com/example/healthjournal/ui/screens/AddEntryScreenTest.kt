@@ -213,6 +213,25 @@ class AddEntryScreenTest {
     }
 
     @Test
+    fun testAddEntryScreen_HealthHiddenWhenSyncDisabled() {
+        viewModel.isHealthSyncEnabled.value = false
+        step("Open Add Entry Screen with Health sync disabled") {
+            composeTestRule.setContent {
+                AddEntryScreen(
+                    viewModel = viewModel,
+                    onBack = {}
+                )
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify Sync Health action is not actionable") {
+            composeTestRule.onNodeWithText("Health").assertDoesNotExist()
+            allureScreenshot("health_hidden_when_disabled")
+        }
+    }
+
+    @Test
     fun testAddEntryScreen_UnarchiveAction() {
         val archivedEntry = JournalEntry(entry_id = "1", description = "Archived", isArchived = true)
         

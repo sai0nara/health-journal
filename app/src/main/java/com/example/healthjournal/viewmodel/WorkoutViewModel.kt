@@ -63,8 +63,17 @@ class WorkoutViewModel(
     private val onHaptic: (WorkoutHaptic) -> Unit = {},
     private val clock: () -> Long = System::currentTimeMillis,
     private val presetRepository: PresetRepository? = null,
-    private val catalogDao: ExerciseCatalogDao? = null
+    private val catalogDao: ExerciseCatalogDao? = null,
+    /**
+     * User opt-in gate for Health Connect writes. Defaults to disabled
+     * (privacy-first); production passes the persisted setting from
+     * `HealthSyncSettings` at construction.
+     */
+    healthSyncEnabled: Boolean = false
 ) : ViewModel() {
+
+    /** Observable mirror of [healthSyncEnabled] for UI gating. */
+    val isHealthSyncEnabled: StateFlow<Boolean> = MutableStateFlow(healthSyncEnabled)
 
     /**
      * Wall-clock reading of the last tick, used to reconcile the running
@@ -576,7 +585,9 @@ class WorkoutViewModel(
             )
             journalRepository.insert(linkedEntry)
             journalRepository.addTag(linkedEntry.entry_id, EntryKindTag.forWorkout())
-            val healthSynced = try {
+            val healthSynced = if (!isHealthSyncEnabled.value) {
+                false
+            } else try {
                 healthSource.writeRecord(completed.toHealthRecord(now = end))
             } catch (e: Exception) {
                 false
@@ -638,10 +649,12 @@ class WorkoutViewModel(
             )
             journalRepository.insert(linkedEntry)
             journalRepository.addTag(linkedEntry.entry_id, EntryKindTag.forWorkout())
-            try {
-                healthSource.writeRecord(completed.toHealthRecord(now = clock()))
-            } catch (e: Exception) {
-                // Manual logs must not fail when Health Connect is unavailable.
+            if (isHealthSyncEnabled.value) {
+                try {
+                    healthSource.writeRecord(completed.toHealthRecord(now = clock()))
+                } catch (e: Exception) {
+                    // Manual logs must not fail when Health Connect is unavailable.
+                }
             }
             _uiState.value = WorkoutUiState.Idle
         }
@@ -761,7 +774,8 @@ class WorkoutViewModelFactory(
     private val journalRepository: JournalRepository,
     private val onHaptic: (WorkoutHaptic) -> Unit = {},
     private val presetRepository: PresetRepository? = null,
-    private val catalogDao: ExerciseCatalogDao? = null
+    private val catalogDao: ExerciseCatalogDao? = null,
+    private val healthSyncEnabled: Boolean = false
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(WorkoutViewModel::class.java)) {
@@ -772,7 +786,8 @@ class WorkoutViewModelFactory(
                 journalRepository = journalRepository,
                 onHaptic = onHaptic,
                 presetRepository = presetRepository,
-                catalogDao = catalogDao
+                catalogDao = catalogDao,
+                healthSyncEnabled = healthSyncEnabled
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

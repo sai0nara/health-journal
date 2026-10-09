@@ -14,6 +14,7 @@ import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.AttachmentData
+import com.example.healthjournal.data.local.HealthSyncSettings
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.domain.EntryKindTag
 import com.example.healthjournal.domain.HashtagParser
@@ -74,6 +75,9 @@ interface IJournalViewModel {
 
     // Health Connect
     val healthPermissions: Set<String>
+    val isHealthSyncEnabled: StateFlow<Boolean>
+    fun refreshHealthSyncSetting()
+    fun setHealthSyncEnabled(enabled: Boolean)
     suspend fun hasHealthPermissions(): Boolean
     fun checkHealthAvailability(): Int
     suspend fun syncHealthData(timestamp: Long): HealthSyncResult
@@ -93,7 +97,8 @@ class JournalViewModel(
     private val sessionManager: SessionManager,
     private val healthManager: HealthConnectManager,
     private val mediaService: MediaCompressionService,
-    private val ioContext: kotlin.coroutines.CoroutineContext = Dispatchers.IO
+    private val ioContext: kotlin.coroutines.CoroutineContext = Dispatchers.IO,
+    healthSyncEnabledInitial: Boolean? = null
 ) : AndroidViewModel(application), IJournalViewModel {
 
     private val _searchQuery = MutableStateFlow("")
@@ -415,10 +420,36 @@ class JournalViewModel(
 
     // Health Connect Implementation
 
+    /**
+     * User opt-in gate for every Health Connect call. Defaults to disabled
+     * (privacy-first): an explicit [healthSyncEnabledInitial] wins (used by
+     * tests), otherwise the persisted [HealthSyncSettings] value is read and
+     * any unreadable state falls back to disabled.
+     */
+    private val _isHealthSyncEnabled = MutableStateFlow(
+        healthSyncEnabledInitial
+            ?: runCatching {
+                HealthSyncSettings.read(getApplication())
+            }.getOrDefault(false)
+    )
+    override val isHealthSyncEnabled: StateFlow<Boolean> = _isHealthSyncEnabled.asStateFlow()
+
+    override fun refreshHealthSyncSetting() {
+        _isHealthSyncEnabled.value = runCatching {
+            HealthSyncSettings.read(getApplication())
+        }.getOrDefault(false)
+    }
+
+    override fun setHealthSyncEnabled(enabled: Boolean) {
+        HealthSyncSettings.write(getApplication(), enabled)
+        _isHealthSyncEnabled.value = enabled
+    }
+
     override val healthPermissions: Set<String>
         get() = healthManager.requiredPermissions.toSet()
 
     override suspend fun hasHealthPermissions(): Boolean {
+        if (!_isHealthSyncEnabled.value) return false
         return healthManager.hasAllPermissions()
     }
 
@@ -427,6 +458,7 @@ class JournalViewModel(
     }
 
     override suspend fun syncHealthData(timestamp: Long): HealthSyncResult = withContext(ioContext) {
+        if (!_isHealthSyncEnabled.value) return@withContext HealthSyncResult()
         val instant = Instant.ofEpochMilli(timestamp)
         val zoneId = ZoneId.systemDefault()
         val startOfDay = instant.atZone(zoneId).toLocalDate().atStartOfDay(zoneId).toInstant()

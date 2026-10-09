@@ -101,7 +101,8 @@ class RoutineExecutionTest {
 
     private fun newViewModel(
         health: FakeWorkoutHealthDataSource = healthSource,
-        clock: () -> Long = { nowMillis }
+        clock: () -> Long = { nowMillis },
+        healthSyncEnabled: Boolean = true
     ): WorkoutViewModel = WorkoutViewModel(
         repository = repository,
         healthSource = health,
@@ -110,7 +111,8 @@ class RoutineExecutionTest {
         onHaptic = { haptics.add(it) },
         clock = clock,
         presetRepository = PresetRepository(presetDao),
-        catalogDao = catalogDao
+        catalogDao = catalogDao,
+        healthSyncEnabled = healthSyncEnabled
     )
 
     /** Advances a configured session past the 3-2-1 countdown into Active. */

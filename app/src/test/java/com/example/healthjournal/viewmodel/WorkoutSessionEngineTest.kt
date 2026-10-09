@@ -61,7 +61,8 @@ class WorkoutSessionEngineTest {
         journalRepository = journalRepository,
         dispatcher = dispatcher,
         onHaptic = { haptics.add(it) },
-        clock = { 1_000L }
+        clock = { 1_000L },
+        healthSyncEnabled = true
     )
 
     /** Selects a type with valid target and completes the countdown. */

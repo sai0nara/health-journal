@@ -112,6 +112,7 @@ class MainActivity : ComponentActivity() {
                                 repository = workoutRepository,
                                 healthSource = workoutHealthSource,
                                 journalRepository = journalRepository,
+                                healthSyncEnabled = com.example.healthjournal.data.local.HealthSyncSettings.read(this@MainActivity),
                                 onHaptic = { kind ->
                                     // Routine milestones vibrate via the system
                                     // vibrator so the athlete feels them against
