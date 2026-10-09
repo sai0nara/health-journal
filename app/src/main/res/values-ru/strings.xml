@@ -279,6 +279,9 @@
     <string name="settings_title">Настройки</string>
     <string name="settings_section_general">Общие</string>
     <string name="settings_units_hint">Используется для измерений тела, личной карточки и панели быстрого ввода тренировки.</string>
+    <string name="settings_section_health_sync">Синхронизация здоровья</string>
+    <string name="settings_health_sync_label">Синхронизировать с Health Connect</string>
+    <string name="settings_health_sync_hint">Когда выключено, приложение не обращается к Health Connect и не запрашивает разрешения на данные о здоровье. Ранее синхронизированные записи сохранят свои значения.</string>
 
     <!-- Entry -->
     <string name="entry_title_add">Добавить запись</string>
