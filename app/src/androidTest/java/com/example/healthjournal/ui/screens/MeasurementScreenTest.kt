@@ -50,7 +50,11 @@ class MeasurementScreenTest {
         val goalsDao = mockk<com.example.healthjournal.data.local.GoalDao>(relaxed = true)
         every { goalsDao.observeAll() } returns goalsFlow
         val goalsRepository = GoalsRepository(goalsDao)
-        val viewModel = BodyMeasurementViewModel(repository, testDispatcher)
+        val viewModel = BodyMeasurementViewModel(
+            repository,
+            testDispatcher,
+            journalRepository = mockk(relaxed = true)
+        )
         val analyticsViewModel = BodyAnalyticsViewModel(
             repository,
             goalsRepository,

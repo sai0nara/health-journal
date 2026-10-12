@@ -7,5 +7,8 @@ enum class JournalTag {
     ILLNESS,
     CHECKUP,
     DOCTOR,
-    EXERCISES
+    EXERCISES,
+    FITNESS,
+    HEALTH,
+    MEDICATION
 }

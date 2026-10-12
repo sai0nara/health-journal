@@ -5,9 +5,13 @@
 > the platform permission flow before calling it. The workout hub additionally
 > writes completed sessions as exercise records.
 
-Last updated: 2026-09-10
+Last updated: 2026-10-09
 
 ## Overview
+
+All flows below additionally require the Health sync opt-in toggle
+(`HealthSyncSettings`, default off): while off, the ViewModels short-circuit
+before any SDK call and the entry UI hides the Health action entirely.
 
 `HealthConnectManager` wraps the Health Connect SDK's read/aggregate APIs for
 three record types. `syncHealthData(timestamp)` computes the day-window (and a
@@ -36,6 +40,8 @@ never blocks logging.
 
 ## Data flow
 
+0. Settings toggle must be on; when off, the Health action is hidden and
+   `syncHealthData`/workout writes return without touching the SDK.
 1. User taps the Health action in the Enrichment panel.
 2. Screen checks SDK availability; unavailable → toast and stop.
 3. If permissions not yet granted, launch the permission controller with the
@@ -56,11 +62,13 @@ never blocks logging.
 | Manifest / permissions | `app/src/main/AndroidManifest.xml`, `app/src/main/res/values/health_permissions.xml` | declared read/write permissions + intent filters |
 | Entry columns | `app/src/main/java/com/example/healthjournal/data/local/JournalEntry.kt` | persisted metric fields |
 | Workout data source | `app/src/main/java/com/example/healthjournal/health/HealthConnectWorkoutDataSource.kt` | writes finished workouts as exercise records |
+| Opt-in store | `app/src/main/java/com/example/healthjournal/data/local/HealthSyncSettings.kt` | persisted toggle (default off) gating every Health Connect call |
 
 ## Edge cases & failure handling
 
 | Condition | Behaviour |
 |---|---|
+| Sync disabled (toggle off) | Health action hidden; no SDK calls, no permission prompts; stored metrics kept |
 | Health Connect unavailable | toast; no permission flow |
 | Permissions denied/incomplete | toast guidance; no vitals saved |
 | Read fails / no record in range | metric is `null`; entry still saves |

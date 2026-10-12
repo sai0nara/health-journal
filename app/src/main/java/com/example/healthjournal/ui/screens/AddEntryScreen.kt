@@ -37,6 +37,7 @@ import com.mohamedrejeb.richeditor.ui.material3.RichText
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.domain.HashtagParser
 import com.example.healthjournal.util.HtmlEntities
 import com.example.healthjournal.ui.components.EnrichmentPanel
 import com.example.healthjournal.ui.components.RichTextToolbar
@@ -78,6 +79,13 @@ fun AddEntryScreen(
     var showLinkDialog by remember { mutableStateOf(false) }
     var linkText by remember { mutableStateOf("") }
     var linkUrl by remember { mutableStateOf("") }
+
+    // Health Connect opt-in gate: hidden Sync Health action means no
+    // availability check, permission request, or fetch can be triggered.
+    val healthSyncEnabled by viewModel.isHealthSyncEnabled.collectAsState()
+    LaunchedEffect(Unit) {
+        viewModel.refreshHealthSyncSetting()
+    }
 
     if (showLinkDialog) {
         AlertDialog(
@@ -132,6 +140,7 @@ fun AddEntryScreen(
         contract = PermissionController.createRequestPermissionResultContract()
     ) { granted ->
         android.util.Log.d("AddEntryScreen", "Health permissions result: $granted")
+        if (!viewModel.isHealthSyncEnabled.value) return@rememberLauncherForActivityResult
         if (granted.containsAll(viewModel.healthPermissions)) {
             scope.launch {
                 isHealthSyncing = true
@@ -509,7 +518,9 @@ fun AddEntryScreen(
                     onCameraClick = { launchCamera() },
                     onGalleryClick = { photoPickerLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                     onAttachFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
-                    onSyncHealthClick = { 
+                    showSyncHealth = healthSyncEnabled,
+                    onSyncHealthClick = {
+                        if (!viewModel.isHealthSyncEnabled.value) return@EnrichmentPanel
                         scope.launch {
                             val availability = viewModel.checkHealthAvailability()
                             if (availability != HealthConnectClient.SDK_AVAILABLE) {
@@ -569,6 +580,10 @@ fun AddEntryScreen(
                                 }
                             }.filter { it.uri.isNotBlank() }
 
+                            // Hashtags parse from plain text: the editor serializes
+                            // '#' as '&num;' in HTML, so HTML parsing would miss them.
+                            val tagsWithHashtags = entryTags +
+                                HashtagParser.extractHashtags(plainText)
                             if (entryId == null) {
                                 viewModel.addEntry(
                                     description = descriptionHtml,
@@ -579,7 +594,7 @@ fun AddEntryScreen(
                                     bpDiastolic = bpDiastolic,
                                     heartRate = heartRate,
                                     sleepHours = sleepHours,
-                                    tags = entryTags
+                                    tags = tagsWithHashtags
                                 )
                             } else {
                                 existingEntry?.let {
@@ -594,7 +609,7 @@ fun AddEntryScreen(
                                             heart_rate_avg = heartRate,
                                             sleep_hours = sleepHours
                                         ),
-                                        tags = entryTags
+                                        tags = tagsWithHashtags
                                     )
                                 }
                             }

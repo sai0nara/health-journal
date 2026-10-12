@@ -4,11 +4,17 @@
 > into a journal entry, with a clear permission flow and a rationale screen.
 > The workout hub additionally writes completed workouts as exercise records.
 
-Last updated: 2026-09-10
+Last updated: 2026-10-09
 
 ## Overview
 
-From the Add Entry screen's Health action, the app reads the selected date's
+Health sync is opt-in: a Settings toggle (default off) gates every Health
+Connect read, write, and permission request. When off, the Add Entry Health
+action is hidden and workouts never touch Health Connect; previously synced
+values stay untouched.
+
+From the Add Entry screen's Health action (visible only while the toggle is
+on), the app reads the selected date's
 health metrics from Health Connect and attaches them to the entry: latest
 blood pressure for the day, average heart rate, and the previous night's sleep
 duration. Access requires Health Connect read permissions, requested through
@@ -57,6 +63,9 @@ each completed workout to Health Connect as an exercise record.
   `UNKNOWN` rather than failing the write.
 - FR-9: Completing a workout always records the journal entry and summary locally
   even when the Health Connect write is denied or unavailable (airplane mode).
+- FR-10: A Settings toggle gates all Health Connect calls (default off);
+  while off, no reads, writes, or permission prompts occur and existing
+  metric values are preserved.
 
 ## Non-functional requirements
 
@@ -71,6 +80,8 @@ each completed workout to Health Connect as an exercise record.
 - AC-2: A denied/incomplete permission shows guidance and saves no vitals.
 - AC-3: Health Connect not available shows a message and does not launch the
   permission flow.
+- AC-4: With the toggle off, the Health action is hidden and no health
+  permission flow can trigger; toggling on restores the previous behavior.
 
 ## Out of scope
 
@@ -89,6 +100,8 @@ each completed workout to Health Connect as an exercise record.
 - `app/src/main/java/com/example/healthjournal/health/HealthConnectWorkoutDataSource.kt` — writing workout exercise records.
 - `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` — `syncHealthData` + date-window logic.
 - `app/src/main/java/com/example/healthjournal/ui/screens/AddEntryScreen.kt` — permission launcher + metric display.
+- `app/src/main/java/com/example/healthjournal/ui/screens/SettingsScreen.kt` — opt-in toggle UI.
+- `app/src/main/java/com/example/healthjournal/data/local/HealthSyncSettings.kt` — persisted opt-in gate (default off).
 - `app/src/main/java/com/example/healthjournal/PermissionsRationaleActivity.kt` — rationale screen.
 - `app/src/main/AndroidManifest.xml` — health permissions and the rationale intent filters.
 - `app/src/main/res/values/health_permissions.xml` — declared permission array.

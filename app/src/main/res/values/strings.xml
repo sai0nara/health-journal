@@ -281,6 +281,9 @@
     <string name="settings_title">Settings</string>
     <string name="settings_section_general">General</string>
     <string name="settings_units_hint">Used by body measurements, the personal card, and the workout quick-step pad.</string>
+    <string name="settings_section_health_sync">Health sync</string>
+    <string name="settings_health_sync_label">Sync with Health Connect</string>
+    <string name="settings_health_sync_hint">When off, the app never reads Health Connect data or asks for health permissions. Entries you already synced keep their values.</string>
 
     <!-- Entry -->
     <string name="entry_title_add">Add Entry</string>
@@ -405,6 +408,11 @@
         <item quantity="one">%1$d attachment</item>
         <item quantity="other">%1$d attachments</item>
     </plurals>
+
+    <!-- Hashtags -->
+    <string name="auto_tag_fitness">Fitness</string>
+    <string name="auto_tag_health">Health</string>
+    <string name="auto_tag_medication">Medication</string>
 
     <!-- Main dashboard -->
     <string name="main_title">Health Journal</string>

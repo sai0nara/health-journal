@@ -153,6 +153,9 @@ interface JournalDao {
     @Query("SELECT * FROM EntryTagCrossRef")
     suspend fun getAllTags(): List<EntryTagCrossRef>
 
+    @Query("SELECT * FROM EntryTagCrossRef")
+    fun observeAllTags(): Flow<List<EntryTagCrossRef>>
+
     @Query("DELETE FROM journal_entries")
     suspend fun clearAllEntries()
 

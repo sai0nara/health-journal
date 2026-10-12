@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 class JournalRepository(private val journalDao: JournalDao) {
     val allEntries: Flow<List<JournalEntry>> = journalDao.getAllEntries()
+    val allTags: Flow<List<EntryTagCrossRef>> = journalDao.observeAllTags()
     val archivedEntries: Flow<List<JournalEntry>> = journalDao.getArchivedEntries()
 
     fun getEntriesSortedByDate(isAsc: Boolean): Flow<List<JournalEntry>> {

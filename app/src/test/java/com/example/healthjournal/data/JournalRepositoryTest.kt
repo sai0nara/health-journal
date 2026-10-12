@@ -22,6 +22,7 @@ class JournalRepositoryTest {
     fun setup() {
         coEvery { journalDao.getAllEntries() } returns flowOf(emptyList())
         coEvery { journalDao.getArchivedEntries() } returns flowOf(emptyList())
+        coEvery { journalDao.observeAllTags() } returns flowOf(emptyList())
         repository = JournalRepository(journalDao)
     }
 

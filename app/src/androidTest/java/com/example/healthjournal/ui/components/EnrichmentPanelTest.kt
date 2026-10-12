@@ -96,4 +96,35 @@ class EnrichmentPanelTest {
         composeTestRule.onNodeWithText("Health").performClick()
         assert(clicked)
     }
+
+    @Test
+    fun enrichmentPanel_syncHealthVisible_whenGateOn() {
+        composeTestRule.setContent {
+            EnrichmentPanel(
+                onCameraClick = {},
+                onGalleryClick = {},
+                onAttachFileClick = {},
+                onSyncHealthClick = {},
+                showSyncHealth = true
+            )
+        }
+
+        composeTestRule.onNodeWithTag("enrichment_sync_health").assertIsDisplayed()
+    }
+
+    @Test
+    fun enrichmentPanel_syncHealthHidden_whenGateOff() {
+        composeTestRule.setContent {
+            EnrichmentPanel(
+                onCameraClick = {},
+                onGalleryClick = {},
+                onAttachFileClick = {},
+                onSyncHealthClick = {},
+                showSyncHealth = false
+            )
+        }
+
+        composeTestRule.onNodeWithTag("enrichment_sync_health").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Health").assertDoesNotExist()
+    }
 }

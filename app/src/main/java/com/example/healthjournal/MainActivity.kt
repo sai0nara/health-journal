@@ -40,7 +40,8 @@ class MainActivity : ComponentActivity() {
         )
         val viewModelFactory = JournalViewModelFactory(application, journalRepository)
         val measurementViewModelFactory = com.example.healthjournal.viewmodel.BodyMeasurementViewModelFactory(
-            measurementRepository
+            measurementRepository,
+            journalRepository
         )
         val goalsRepository = com.example.healthjournal.data.GoalsRepository(database.goalDao())
         val personalCardRepository = com.example.healthjournal.data.PersonalCardRepository(database.personalCardDao())
@@ -111,6 +112,7 @@ class MainActivity : ComponentActivity() {
                                 repository = workoutRepository,
                                 healthSource = workoutHealthSource,
                                 journalRepository = journalRepository,
+                                healthSyncEnabled = com.example.healthjournal.data.local.HealthSyncSettings.read(this@MainActivity),
                                 onHaptic = { kind ->
                                     // Routine milestones vibrate via the system
                                     // vibrator so the athlete feels them against

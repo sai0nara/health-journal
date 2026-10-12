@@ -38,7 +38,10 @@ class MeasurementEntrySheetTest {
 
     private val measurementRepository: BodyMeasurementRepository = mockk(relaxed = true)
 
-    private val measurementViewModel = BodyMeasurementViewModel(measurementRepository)
+    private val measurementViewModel = BodyMeasurementViewModel(
+        measurementRepository,
+        journalRepository = mockk(relaxed = true)
+    )
 
     private fun step(description: String, block: () -> Unit) {
         io.qameta.allure.kotlin.Allure.step(description) {

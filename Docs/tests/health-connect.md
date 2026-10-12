@@ -4,16 +4,18 @@
 > direct Health Connect SDK reads are exercised indirectly (there is no
 > dedicated manager test today).
 
-Last updated: 2026-09-10
+Last updated: 2026-10-09
 
 ## Automated coverage
 
 | Stack | Test file | Scope |
 |---|---|---|
+| JVM | `app/src/test/java/com/example/healthjournal/data/local/HealthSyncSettingsTest.kt` | opt-in store: default off, round-trip persistence, corrupt fallback |
 | JVM | `app/src/test/java/com/example/healthjournal/health/WorkoutHealthMapperTest.kt` | session → exercise-record mapping, incl. UNKNOWN fallback |
-| JVM | `app/src/test/java/com/example/healthjournal/viewmodel/WorkoutViewModelTest.kt` | finish logs locally with denied/unavailable Health Connect write |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/AddEntryScreenTest.kt` | Health button present/enabled; unavailable path toasts |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/components/EnrichmentPanelTest.kt` | Health button callback fires |
+| JVM | `app/src/test/java/com/example/healthjournal/viewmodel/WorkoutViewModelTest.kt` | finish logs locally with denied/unavailable Health Connect write; no write while opt-out gate is off |
+| JVM | `app/src/test/java/com/example/healthjournal/viewmodel/JournalViewModelTest.kt` | `syncHealthData` short-circuits and permissions report false while opt-out gate is off |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/AddEntryScreenTest.kt` | Health button present/enabled when opted in, hidden when opted out; unavailable path toasts |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/components/EnrichmentPanelTest.kt` | Health button callback fires; hidden while opt-out gate is off |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/MigrationTest.kt` | metric columns survive migrations |
 
 ## Test cases
@@ -27,8 +29,14 @@ Last updated: 2026-09-10
 | T-5 | FR-8 | Discovered workout types map | 10 workout types | each becomes its exercise counterpart; unmapped → `UNKNOWN` (JVM `WorkoutHealthMapperTest`) |
 | T-6 | FR-9 | Health Connect write denied | permission denied | workout still finishes, journal entry + summary saved locally (JVM `WorkoutViewModelTest`) |
 | T-7 | FR-9 | Airplane mode | Health write throws | workout still finishes; manual log still confirms (JVM `WorkoutViewModelTest`) |
+| T-8 | FR-10 | Sync toggle off | default prefs | Health action hidden, `syncHealthData` empty, no manager calls (JVM `JournalViewModelTest` + `HealthSyncSettingsTest`, instrumented AddEntry/Enrichment tests) |
+| T-9 | FR-10 | Workout while opted out | toggle off | finish/manual-log skip the exercise write, summary reports unsynced (JVM `WorkoutViewModelTest`) |
 
 ## Manual checks
+
+- With the toggle off (fresh install), confirm the Health action is hidden and
+  no health permission prompt appears; toggle on and confirm prior behavior.
+- Verify opting out never clears previously synced vitals on saved entries.
 
 - On a Health Connect-enabled device, grant permissions and confirm BP/HR/sleep
   fill for a past date.

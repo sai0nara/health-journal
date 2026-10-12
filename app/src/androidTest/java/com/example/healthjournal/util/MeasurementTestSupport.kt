@@ -12,6 +12,9 @@ object MeasurementTestSupport {
     val factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            BodyMeasurementViewModel(mockk<BodyMeasurementRepository>(relaxed = true)) as T
+            BodyMeasurementViewModel(
+                mockk<BodyMeasurementRepository>(relaxed = true),
+                journalRepository = mockk<com.example.healthjournal.data.JournalRepository>(relaxed = true)
+            ) as T
     }
 }

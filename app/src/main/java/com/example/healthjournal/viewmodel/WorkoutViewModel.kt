@@ -15,6 +15,7 @@ import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.data.local.WorkoutStatus
 import com.example.healthjournal.data.local.defaultPlanFor
 import com.example.healthjournal.domain.CalorieEstimator
+import com.example.healthjournal.domain.EntryKindTag
 import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.StrengthSet
 import com.example.healthjournal.domain.TonnageCalculator
@@ -62,8 +63,17 @@ class WorkoutViewModel(
     private val onHaptic: (WorkoutHaptic) -> Unit = {},
     private val clock: () -> Long = System::currentTimeMillis,
     private val presetRepository: PresetRepository? = null,
-    private val catalogDao: ExerciseCatalogDao? = null
+    private val catalogDao: ExerciseCatalogDao? = null,
+    /**
+     * User opt-in gate for Health Connect writes. Defaults to disabled
+     * (privacy-first); production passes the persisted setting from
+     * `HealthSyncSettings` at construction.
+     */
+    healthSyncEnabled: Boolean = false
 ) : ViewModel() {
+
+    /** Observable mirror of [healthSyncEnabled] for UI gating. */
+    val isHealthSyncEnabled: StateFlow<Boolean> = MutableStateFlow(healthSyncEnabled)
 
     /**
      * Wall-clock reading of the last tick, used to reconcile the running
@@ -569,13 +579,15 @@ class WorkoutViewModel(
                 calories = calories
             )
             repository.saveSession(completed)
-            journalRepository.insert(
-                JournalEntry(
-                    timestamp = current.startTimestamp,
-                    description = describe(completed, calories)
-                )
+            val linkedEntry = JournalEntry(
+                timestamp = current.startTimestamp,
+                description = describe(completed, calories)
             )
-            val healthSynced = try {
+            journalRepository.insert(linkedEntry)
+            journalRepository.addTag(linkedEntry.entry_id, EntryKindTag.forWorkout())
+            val healthSynced = if (!isHealthSyncEnabled.value) {
+                false
+            } else try {
                 healthSource.writeRecord(completed.toHealthRecord(now = end))
             } catch (e: Exception) {
                 false
@@ -631,16 +643,18 @@ class WorkoutViewModel(
                 notes = note
             )
             repository.saveSession(completed)
-            journalRepository.insert(
-                JournalEntry(
-                    timestamp = timestamp,
-                    description = describe(completed, kcal)
-                )
+            val linkedEntry = JournalEntry(
+                timestamp = timestamp,
+                description = describe(completed, kcal)
             )
-            try {
-                healthSource.writeRecord(completed.toHealthRecord(now = clock()))
-            } catch (e: Exception) {
-                // Manual logs must not fail when Health Connect is unavailable.
+            journalRepository.insert(linkedEntry)
+            journalRepository.addTag(linkedEntry.entry_id, EntryKindTag.forWorkout())
+            if (isHealthSyncEnabled.value) {
+                try {
+                    healthSource.writeRecord(completed.toHealthRecord(now = clock()))
+                } catch (e: Exception) {
+                    // Manual logs must not fail when Health Connect is unavailable.
+                }
             }
             _uiState.value = WorkoutUiState.Idle
         }
@@ -760,7 +774,8 @@ class WorkoutViewModelFactory(
     private val journalRepository: JournalRepository,
     private val onHaptic: (WorkoutHaptic) -> Unit = {},
     private val presetRepository: PresetRepository? = null,
-    private val catalogDao: ExerciseCatalogDao? = null
+    private val catalogDao: ExerciseCatalogDao? = null,
+    private val healthSyncEnabled: Boolean = false
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(WorkoutViewModel::class.java)) {
@@ -771,7 +786,8 @@ class WorkoutViewModelFactory(
                 journalRepository = journalRepository,
                 onHaptic = onHaptic,
                 presetRepository = presetRepository,
-                catalogDao = catalogDao
+                catalogDao = catalogDao,
+                healthSyncEnabled = healthSyncEnabled
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

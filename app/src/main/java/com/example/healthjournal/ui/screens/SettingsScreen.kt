@@ -2,6 +2,7 @@ package com.example.healthjournal.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -26,12 +28,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.healthjournal.R
+import com.example.healthjournal.data.local.HealthSyncSettings
 import com.example.healthjournal.data.local.UnitSettings
 import com.example.healthjournal.data.local.UnitSystem
 
@@ -46,6 +52,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var unitSystem by remember { mutableStateOf(UnitSettings.read(context)) }
     var unitSystemExpanded by remember { mutableStateOf(false) }
+    var healthSyncEnabled by remember { mutableStateOf(HealthSyncSettings.read(context)) }
 
     Scaffold(
         topBar = {
@@ -116,6 +123,39 @@ fun SettingsScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.settings_units_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.settings_section_health_sync),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val healthSyncLabel = stringResource(R.string.settings_health_sync_label)
+                Text(
+                    text = healthSyncLabel,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f)
+                )
+                Switch(
+                    checked = healthSyncEnabled,
+                    onCheckedChange = {
+                        healthSyncEnabled = it
+                        HealthSyncSettings.write(context, it)
+                    },
+                    modifier = Modifier
+                        .testTag("settings_health_sync_toggle")
+                        .semantics { contentDescription = healthSyncLabel }
+                )
+            }
+            Text(
+                text = stringResource(R.string.settings_health_sync_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

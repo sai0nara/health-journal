@@ -1,6 +1,7 @@
 package com.example.healthjournal.viewmodel
 
 import com.example.healthjournal.data.BodyMeasurementRepository
+import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.BodyMeasurementEntry
 import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.MeasurementField
@@ -27,6 +28,7 @@ class BodyMeasurementViewModelTest {
 
     private lateinit var viewModel: BodyMeasurementViewModel
     private val repository: BodyMeasurementRepository = mockk()
+    private val journalRepository: JournalRepository = mockk()
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -34,7 +36,13 @@ class BodyMeasurementViewModelTest {
         Dispatchers.setMain(testDispatcher)
         coEvery { repository.insert(any()) } returns Unit
         coEvery { repository.allEntries } returns mockk(relaxed = true)
-        viewModel = BodyMeasurementViewModel(repository, testDispatcher)
+        coEvery { journalRepository.insert(any()) } returns Unit
+        coEvery { journalRepository.addTag(any(), any()) } returns Unit
+        viewModel = BodyMeasurementViewModel(
+            repository = repository,
+            ioDispatcher = testDispatcher,
+            journalRepository = journalRepository
+        )
     }
 
     @After
@@ -131,6 +139,19 @@ class BodyMeasurementViewModelTest {
                 }
             )
         }
+    }
+
+    @Test
+    fun onSaveClicked_createsLinkedEntryWithHealthTag() = runTest {
+        set(MeasurementField.WEIGHT, "78.5")
+        coEvery { journalRepository.insert(any()) } returns Unit
+        coEvery { journalRepository.addTag(any(), any()) } returns Unit
+
+        viewModel.onSaveClicked()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { journalRepository.insert(match { it.description.isNotBlank() }) }
+        coVerify { journalRepository.addTag(any(), "Health") }
     }
 
     @Test
@@ -249,7 +270,11 @@ class BodyMeasurementViewModelTest {
     private fun seedEntries(vararg entries: BodyMeasurementEntry) {
         coEvery { repository.allEntries } returns kotlinx.coroutines.flow.flowOf(entries.toList())
         coEvery { repository.deleteEntry(any()) } returns Unit
-        viewModel = BodyMeasurementViewModel(repository, testDispatcher)
+        viewModel = BodyMeasurementViewModel(
+            repository = repository,
+            ioDispatcher = testDispatcher,
+            journalRepository = journalRepository
+        )
         testDispatcher.scheduler.advanceUntilIdle()
     }
 
@@ -315,7 +340,12 @@ class BodyMeasurementViewModelTest {
     }
 
     private fun imperialViewModel() =
-        BodyMeasurementViewModel(repository, testDispatcher, UnitSystem.IMPERIAL)
+        BodyMeasurementViewModel(
+            repository = repository,
+            ioDispatcher = testDispatcher,
+            unitSystem = UnitSystem.IMPERIAL,
+            journalRepository = journalRepository
+        )
 
     @Test
     fun imperialWeightInput_persistsMetricKg() = runTest {
