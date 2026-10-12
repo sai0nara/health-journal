@@ -51,3 +51,6 @@
     - [x] Update wiki page citing Health sync behavior + new `HealthSyncSettings.kt` path if wiki cites it — wiki/integrations/health-connect.md + Docs prd/psd/tests health-connect updated
     - [x] Run `python3 wiki/lint.py` exits 0 — exit 0 confirmed
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Regression, strings, docs' (Protocol in workflow.md)
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions [d108cc8] — import-order fix in SettingsScreen (semantics after platform); emulator UI-test run + setter wiring deferred (need device / no action required)
