@@ -43,8 +43,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: History dual units + performed values**
 *Link: [./tracks/history_dual_units_20260922/](./tracks/history_dual_units_20260922/)*
-
----
-
-- [x] **Track: Disable Health Sync**
-*Link: [./tracks/disable_health_sync_20261009/](./tracks/disable_health_sync_20261009/)*
