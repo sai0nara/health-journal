@@ -98,6 +98,7 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("settings") {
                         com.example.healthjournal.ui.screens.SettingsScreen(
+                            viewModel = viewModel,
                             onBack = { navController.popBackStack() }
                         )
                     }

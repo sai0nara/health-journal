@@ -1,5 +1,8 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -24,6 +28,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,19 +45,32 @@ import com.example.healthjournal.R
 import com.example.healthjournal.data.local.HealthSyncSettings
 import com.example.healthjournal.data.local.UnitSettings
 import com.example.healthjournal.data.local.UnitSystem
+import com.example.healthjournal.viewmodel.IJournalViewModel
 
 /**
  * General app settings: exposes the app-wide unit system (metric/imperial)
  * persisted to [UnitSettings] — the same choice the Personal Card and the
- * workout quick pad share, surfaced here as the primary point of control.
+ * workout quick pad share, surfaced here as the primary point of control —
+ * alongside the Google account section (sign in/out for Drive sync).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(viewModel: IJournalViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     var unitSystem by remember { mutableStateOf(UnitSettings.read(context)) }
     var unitSystemExpanded by remember { mutableStateOf(false) }
     var healthSyncEnabled by remember { mutableStateOf(HealthSyncSettings.read(context)) }
+    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
+    val userEmail by viewModel.userEmail.collectAsState()
+    val syncStatus by viewModel.syncStatus.collectAsState()
+
+    val authorizationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            viewModel.syncNow()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -159,6 +177,51 @@ fun SettingsScreen(onBack: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.settings_section_account),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+            )
+            if (isUserSignedIn) {
+                userEmail?.let { email ->
+                    Text(
+                        text = email,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.testTag("settings_account_email")
+                    )
+                }
+                syncStatus?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Button(
+                    onClick = { viewModel.signOut() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("settings_sign_out")
+                ) {
+                    Text(stringResource(R.string.settings_sign_out))
+                }
+            } else {
+                Button(
+                    onClick = {
+                        viewModel.signIn(context) { pendingIntent ->
+                            authorizationLauncher.launch(
+                                IntentSenderRequest.Builder(pendingIntent).build()
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("settings_sign_in")
+                ) {
+                    Text(stringResource(R.string.settings_sign_in))
+                }
+            }
         }
     }
 }

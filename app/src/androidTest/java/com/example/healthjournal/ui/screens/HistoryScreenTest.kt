@@ -39,6 +39,31 @@ class HistoryScreenTest {
     }
 
     @Test
+    fun testHistoryScreen_signedOut_showsNoSignInButton() {
+        step("Open History Screen while signed out") {
+            viewModel.isUserSignedIn.value = false
+            viewModel.allEntries.value = emptyList()
+
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
+                        onAddEntryClick = {},
+                        onEntryClick = {},
+                        onExportClick = {}
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify no Sign In button is shown (lives in Settings now)") {
+            composeTestRule.onNodeWithText("Sign In").assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun testHistoryScreen_DisplaysEntries() {
         val entries = listOf(
             JournalEntry(description = "Morning jog"),

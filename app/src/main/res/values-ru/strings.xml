@@ -107,7 +107,6 @@
     <string name="history_menu_sync">Синхронизировать сейчас</string>
     <string name="history_menu_sort">Порядок сортировки</string>
     <string name="history_menu_about">О приложении</string>
-    <string name="history_sign_in">Войти</string>
     <string name="history_empty">Пока нет записей. Добавьте первую!</string>
     <string name="history_entry_archived">Запись архивирована</string>
     <string name="history_undo">Отменить</string>
@@ -282,6 +281,9 @@
     <string name="settings_section_health_sync">Синхронизация здоровья</string>
     <string name="settings_health_sync_label">Синхронизировать с Health Connect</string>
     <string name="settings_health_sync_hint">Когда выключено, приложение не обращается к Health Connect и не запрашивает разрешения на данные о здоровье. Ранее синхронизированные записи сохранят свои значения.</string>
+    <string name="settings_section_account">Учётная запись</string>
+    <string name="settings_sign_in">Войти</string>
+    <string name="settings_sign_out">Выйти</string>
 
     <!-- Entry -->
     <string name="entry_title_add">Добавить запись</string>

@@ -1,0 +1,2 @@
+{"created_at": "2026-10-12T00:00:00Z", "description": "Move Sign in from History screen to settings",   "status": "completed", "track_id": "move_signin_to_settings_20261012",
+  "branch": "feat/move-signin-to-settings", "type": "refactor", "updated_at": "2026-10-12T00:00:00Z"}

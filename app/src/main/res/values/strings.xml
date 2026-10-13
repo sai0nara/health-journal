@@ -107,7 +107,6 @@
     <string name="history_menu_sync">Sync Now</string>
     <string name="history_menu_sort">Sort order</string>
     <string name="history_menu_about">About App</string>
-    <string name="history_sign_in">Sign In</string>
     <string name="history_empty">No entries yet. Start by adding one!</string>
     <string name="history_entry_archived">Entry archived</string>
     <string name="history_undo">Undo</string>
@@ -284,6 +283,9 @@
     <string name="settings_section_health_sync">Health sync</string>
     <string name="settings_health_sync_label">Sync with Health Connect</string>
     <string name="settings_health_sync_hint">When off, the app never reads Health Connect data or asks for health permissions. Entries you already synced keep their values.</string>
+    <string name="settings_section_account">Account</string>
+    <string name="settings_sign_in">Sign In</string>
+    <string name="settings_sign_out">Sign Out</string>
 
     <!-- Entry -->
     <string name="entry_title_add">Add Entry</string>

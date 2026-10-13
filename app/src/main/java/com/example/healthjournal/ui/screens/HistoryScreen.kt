@@ -1,8 +1,5 @@
 package com.example.healthjournal.ui.screens
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -78,14 +75,6 @@ fun HistoryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val entryArchivedMessage = stringResource(R.string.history_entry_archived)
     val undoActionLabel = stringResource(R.string.history_undo)
-    
-    val authorizationLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            viewModel.syncNow()
-        }
-    }
 
     var isRefreshing by remember { mutableStateOf(false) }
 
@@ -232,21 +221,6 @@ fun HistoryScreen(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                         color = MaterialTheme.colorScheme.primary
                     )
-                }
-            } else {
-                Button(
-                    onClick = { 
-                        viewModel.signIn(context) { pendingIntent ->
-                            authorizationLauncher.launch(
-                                IntentSenderRequest.Builder(pendingIntent).build()
-                            )
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                ) {
-                    Text(stringResource(R.string.history_sign_in))
                 }
             }
 

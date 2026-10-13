@@ -318,6 +318,50 @@ class JournalViewModelTest {
     }
 
     @Test
+    fun userEmailReflectsSavedSession() = runTest {
+        assertEquals("test@example.com", viewModel.userEmail.value)
+    }
+
+    @Test
+    fun signInSuccessUpdatesUserEmail() = runTest {
+        // Overwrite default signed in state for this test
+        every { sessionManager.getUserEmail() } returns null
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
+        assertEquals(null, viewModel.userEmail.value)
+
+        val context: Context = mockk()
+        val email = "test@example.com"
+        val credential = mockk<com.google.android.libraries.identity.googleid.GoogleIdTokenCredential>()
+        every { credential.id } returns email
+
+        coEvery { authManager.signIn(context) } returns credential
+        every { sessionManager.saveUserEmail(email) } returns Unit
+        every { sessionManager.getUserEmail() } returns email
+
+        val onResolution = slot<(android.app.PendingIntent) -> Unit>()
+        val onSuccess = slot<(String) -> Unit>()
+        every { authManager.requestDriveAuthorization(capture(onResolution), capture(onSuccess)) } answers {
+            onSuccess.captured.invoke("test_token")
+        }
+
+        viewModel.signIn(context) {}
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(email, viewModel.userEmail.value)
+    }
+
+    @Test
+    fun signOutClearsUserEmail() = runTest {
+        coEvery { authManager.signOut() } returns Unit
+        every { sessionManager.clearSession() } returns Unit
+
+        viewModel.signOut()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(null, viewModel.userEmail.value)
+    }
+
+    @Test
     fun toggleEntryTag_marksEntryDirtyAndTriggersSync() = runTest {
         val entryId = "tagged_entry"
         coEvery { repository.getTagsForEntry(entryId) } returns listOf("DOCTOR")
