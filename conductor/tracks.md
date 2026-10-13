@@ -46,10 +46,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Move Sign in from History screen to settings**
-*Link: [./tracks/move_signin_to_settings_20261012/](./tracks/move_signin_to_settings_20261012/)*
-
----
-
 - [ ] **Track: Fix Personal Card crash on open (Main tile + History icon)**
 *Link: [./tracks/fix_personal_card_crash_20261012/](./tracks/fix_personal_card_crash_20261012/)*
