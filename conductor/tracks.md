@@ -46,5 +46,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Fix Personal Card crash on open (Main tile + History icon)**
+- [~] **Track: Fix Personal Card crash on open (Main tile + History icon)**
 *Link: [./tracks/fix_personal_card_crash_20261012/](./tracks/fix_personal_card_crash_20261012/)*

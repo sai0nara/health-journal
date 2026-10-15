@@ -54,7 +54,7 @@ class JournalTypeConverters {
     fun toDemographics(value: String?): Demographics {
         if (value == null) return Demographics()
         return try {
-            gson.fromJson(value, Demographics::class.java) ?: Demographics()
+            gson.fromJson(value, Demographics::class.java)?.sanitized() ?: Demographics()
         } catch (e: Exception) {
             Demographics()
         }
@@ -69,7 +69,7 @@ class JournalTypeConverters {
     fun toMedicalProfile(value: String?): MedicalProfile {
         if (value == null) return MedicalProfile()
         return try {
-            gson.fromJson(value, MedicalProfile::class.java) ?: MedicalProfile()
+            gson.fromJson(value, MedicalProfile::class.java)?.sanitized() ?: MedicalProfile()
         } catch (e: Exception) {
             MedicalProfile()
         }
@@ -84,7 +84,7 @@ class JournalTypeConverters {
     fun toMedicalHistory(value: String?): MedicalHistory {
         if (value == null) return MedicalHistory()
         return try {
-            gson.fromJson(value, MedicalHistory::class.java) ?: MedicalHistory()
+            gson.fromJson(value, MedicalHistory::class.java)?.sanitized() ?: MedicalHistory()
         } catch (e: Exception) {
             MedicalHistory()
         }
@@ -99,7 +99,7 @@ class JournalTypeConverters {
     fun toEmergencyContacts(value: String?): EmergencyContacts {
         if (value == null) return EmergencyContacts()
         return try {
-            gson.fromJson(value, EmergencyContacts::class.java) ?: EmergencyContacts()
+            gson.fromJson(value, EmergencyContacts::class.java)?.sanitized() ?: EmergencyContacts()
         } catch (e: Exception) {
             EmergencyContacts()
         }

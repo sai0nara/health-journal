@@ -1,6 +1,7 @@
 package com.example.healthjournal.sync
 
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.sanitized
 import com.google.gson.Gson
 
 /**
@@ -18,7 +19,8 @@ object PersonalCardSyncPayload {
     fun fromJson(json: String?): List<PersonalCard> {
         if (json.isNullOrBlank()) return emptyList()
         return try {
-            gson.fromJson(json, Array<PersonalCard>::class.java)?.toList() ?: emptyList()
+            gson.fromJson(json, Array<PersonalCard>::class.java)?.toList()?.mapNotNull { it?.sanitized() }
+                ?: emptyList()
         } catch (_: Exception) {
             emptyList()
         }
