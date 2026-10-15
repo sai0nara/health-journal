@@ -43,8 +43,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: History dual units + performed values**
 *Link: [./tracks/history_dual_units_20260922/](./tracks/history_dual_units_20260922/)*
-
----
-
-- [~] **Track: Fix Personal Card crash on open (Main tile + History icon)**
-*Link: [./tracks/fix_personal_card_crash_20261012/](./tracks/fix_personal_card_crash_20261012/)*
