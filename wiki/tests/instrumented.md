@@ -2,7 +2,7 @@
 
 > The on-device test stack under `app/src/androidTest` — Compose UI tests plus Room DAO and migration tests that need the Android framework.
 
-Last updated: 2026-09-10
+Last updated: 2026-10-15
 
 ## What this stack is
 
@@ -38,6 +38,26 @@ config block.
 Instrumented tests run through the Gradle `connected*` tasks (which need a device and
 a running `adb`). The Compose-runner test property must be supplied for the Compose
 suites. The JVM suite is a different task and needs no device.
+
+## Running the emulator for this stack
+
+The stack needs exactly one booted device. With an AVD already configured in the SDK,
+boot it headless, wait for boot, and freeze animations before running:
+
+- Boot: `emulator -avd <avd-name> -no-window -no-audio -no-snapshot` (binary under
+  the SDK `emulator/` directory).
+- Wait: poll `adb shell getprop sys.boot_completed` until it prints `1`.
+- Freeze animations: `adb shell settings put global window_animation_scale 0` (and the
+  same for `transition_animation_scale` and `animator_duration_scale`) — animated
+  transitions otherwise flake Compose assertions.
+- Run: `./gradlew :app:connectedDebugAndroidTest`, narrowing to one suite with the
+  class-filter project property. Every Gradle command needs the JDK 21 `JAVA_HOME`
+  from `AGENTS.md`.
+- Shut down: `adb emu kill`.
+
+If no system image is installed, fetch one matching an existing AVD with the SDK
+manager before booting. Missing images surface as a "Cannot find AVD system path"
+fatal at boot, not as a test failure.
 
 ## Cross-references
 
