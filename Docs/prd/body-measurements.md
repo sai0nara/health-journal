@@ -4,7 +4,7 @@
 > calf, bicep) with per-parameter trend charts, goals, and deletion undo, synced
 > to the cloud like the rest of the health data.
 
-Last updated: 2026-09-21
+Last updated: 2026-10-16
 
 ## Overview
 
@@ -44,8 +44,9 @@ inputs are blocked before save.
 
 ## Functional requirements
 
-- FR-1: A speed-dial button opens the measurement entry sheet from the History
-  screen.
+- FR-1: An add button on the Measurements screen opens the measurement
+  entry sheet (relocated from the History screen per
+  `Docs/prd/move-add-measurement-button.md`).
 - FR-2: The sheet captures a timestamp and up to seven fields; partial
   entries are allowed (at least one value required). Fields render in the
   preferred display units and parse back to canonical metric storage.

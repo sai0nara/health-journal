@@ -12,6 +12,7 @@ Last updated: 2026-09-24
 ## Features
 
 - `Docs/prd/ai-insights.md` — planned
+- `Docs/prd/move-add-measurement-button.md` — PRD
 - `Docs/prd/hashtags.md` — PRD
 - `Docs/prd/main-page-tiles.md` — PRD
 - `Docs/prd/russian-localization.md` — PRD
@@ -56,4 +57,6 @@ Last updated: 2026-09-24
 - `Docs/tests/unit-conversion.md` — tests
 - `Docs/prd/workout-presets.md` — PRD
 - `Docs/psd/workout-presets.md` — PSD
+- `Docs/psd/move-add-measurement-button.md` — PSD
 - `Docs/tests/workout-presets.md` — tests
+- `Docs/tests/move-add-measurement-button.md` — tests

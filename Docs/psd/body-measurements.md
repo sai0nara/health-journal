@@ -6,7 +6,7 @@
 > dependency-free chart, and both rows and goals sync as Drive snapshots
 > with tombstone + last-write-wins merge.
 
-Last updated: 2026-09-21
+Last updated: 2026-10-16
 
 ## Overview
 
@@ -34,8 +34,8 @@ a tombstone-first path.
 
 ## Data flow
 
-1. Secondary FAB on History opens the sheet; or the top bar opens the
-   measurements screen.
+1. The add button on the Measurements screen opens the sheet; History's
+   top bar opens the measurements screen.
 2. User enters values in display units; each keystroke validates in display
    units; save is enabled only when `canSave` (no errors, ≥1 value, not
    future, not already saving).
@@ -49,7 +49,7 @@ a tombstone-first path.
 
 | Component | File | Responsibility |
 |---|---|---|
-| Measurements screen | `app/src/main/java/com/example/healthjournal/ui/screens/MeasurementsScreen.kt` | tabs, chart, history list, delete/undo, goals entry |
+| Measurements screen | `app/src/main/java/com/example/healthjournal/ui/screens/MeasurementsScreen.kt` | tabs, chart, history list, delete/undo, goals entry, add FAB |
 | Capture sheet | `app/src/main/java/com/example/healthjournal/ui/components/MeasurementEntrySheet.kt` | field input + save |
 | Goal sheet | `app/src/main/java/com/example/healthjournal/ui/components/GoalSheet.kt` | goal set/clear |
 | Trend chart | `app/src/main/java/com/example/healthjournal/ui/components/ParamTrendChart.kt` | dependency-free line/goal chart |
