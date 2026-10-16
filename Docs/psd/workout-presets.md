@@ -53,7 +53,8 @@ set-matrix and HIIT flows intact beside the routine path.
   rest ≥ 0; RPE 1..10 where applicable) — no upper bounds anywhere, and the
   preset name column carries no length constraint.
 - The weight pad steps `1.25` kg metric / `5` lb converted to kg imperial
-  (`padStepWeightKg`); typed entry is free decimal text with no fixed step.
+  (`padStepWeightKg`), plus a dumbbell step of `1` kg / `2.5` lb
+  (`padSmallStepWeightKg`); typed entry is free decimal text with no fixed step.
 - `CalculateOneRepMaxUseCase` (Epley `weight × (1 + reps/30)`, single rep
   returns weight) and `ConvertAlternativeExerciseWeightUseCase`
   (`DEFAULT_COEFFICIENT = 0.6`) have no production call sites yet — constants
