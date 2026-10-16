@@ -46,5 +46,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Move Add Measurement Button from History Screen**
+- [x] **Track: Move Add Measurement Button from History Screen**
 *Link: [./tracks/move_add_measurement_button_20261016/](./tracks/move_add_measurement_button_20261016/)*
