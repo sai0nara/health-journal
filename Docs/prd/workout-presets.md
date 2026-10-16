@@ -83,7 +83,7 @@ exercises instead of a bare tonnage figure.
   validation; the quick-increment pad adjusts the value in place, including
   while a field is focused, and updates the displayed text. Weight entry is
   free decimal text (no fixed granularity); the pad steps 1.25 kg in metric
-  mode or 5 lb in imperial mode.
+  mode or 5 lb in imperial mode, plus a 1 kg / 2.5 lb dumbbell step.
 - FR-6: Exercise swap — the dropdown replaces the exercise mid-routine and
   resets the row to the new movement's catalog default plan (sets, reps,
   weight, rest).

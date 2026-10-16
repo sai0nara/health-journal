@@ -361,6 +361,22 @@ class RoutineExecutionScreenTest {
     }
 
     @Test
+    fun routineQuickPad_smallStepIsOneKg() {
+        openRoutine()
+
+        composeTestRule.onNodeWithTag("routine_weight_plus_small").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("61")
+
+        composeTestRule.onNodeWithTag("routine_weight_minus_small").performClick()
+        composeTestRule.onNodeWithTag("routine_weight_minus_small").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("59")
+    }
+
+    @Test
     fun routineQuickPad_rapidTaps_applyEveryIncrementWithoutLostUpdates() {
         openRoutine()
 
