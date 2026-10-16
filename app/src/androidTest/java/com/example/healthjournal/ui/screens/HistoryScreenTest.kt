@@ -48,7 +48,6 @@ class HistoryScreenTest {
                 HealthJournalTheme {
                     HistoryScreen(
                         viewModel = viewModel,
-                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
                         onExportClick = {}
@@ -77,7 +76,6 @@ class HistoryScreenTest {
                 HealthJournalTheme {
                     HistoryScreen(
                         viewModel = viewModel,
-                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
                         onExportClick = {}
@@ -103,7 +101,6 @@ class HistoryScreenTest {
                 HealthJournalTheme {
                     HistoryScreen(
                         viewModel = viewModel,
-                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
                         onExportClick = {}
@@ -131,7 +128,6 @@ class HistoryScreenTest {
                 HealthJournalTheme {
                     HistoryScreen(
                         viewModel = viewModel,
-                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
                         onExportClick = {}
@@ -163,7 +159,6 @@ class HistoryScreenTest {
                 HealthJournalTheme {
                     HistoryScreen(
                         viewModel = viewModel,
-                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
                         onExportClick = {},
@@ -194,7 +189,6 @@ class HistoryScreenTest {
                 HealthJournalTheme {
                     HistoryScreen(
                         viewModel = viewModel,
-                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
                         onExportClick = {}
@@ -222,7 +216,6 @@ class HistoryScreenTest {
                 HealthJournalTheme {
                     HistoryScreen(
                         viewModel = viewModel,
-                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
                         onExportClick = {}
@@ -271,7 +264,6 @@ class HistoryScreenTest {
                     HealthJournalTheme {
                         HistoryScreen(
                             viewModel = viewModel,
-                            measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                             onAddEntryClick = {},
                             onEntryClick = {},
                             onExportClick = {}
@@ -315,7 +307,6 @@ class HistoryScreenTest {
                 HealthJournalTheme {
                     HistoryScreen(
                         viewModel = viewModel,
-                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
                         onExportClick = {}
@@ -346,7 +337,6 @@ class HistoryScreenTest {
                 HealthJournalTheme {
                     HistoryScreen(
                         viewModel = viewModel,
-                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
                         onExportClick = {}
@@ -380,7 +370,6 @@ class HistoryScreenTest {
                 HealthJournalTheme {
                     HistoryScreen(
                         viewModel = viewModel,
-                        measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
                         onAddEntryClick = {},
                         onEntryClick = {},
                         onExportClick = {}
