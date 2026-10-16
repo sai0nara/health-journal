@@ -264,7 +264,7 @@
     <string name="measurements_title">Body measurements</string>
     <string name="measurements_param_empty_format">No %1$s data yet</string>
     <string name="measurements_empty_title">No body measurements yet</string>
-    <string name="measurements_empty_hint">Tap the ruler button on the History screen to log your first entry.</string>
+    <string name="measurements_empty_hint">Tap the add button to log your first entry.</string>
     <string name="measurements_snackbar_deleted">Measurement deleted</string>
     <string name="measurements_goal_header_format">%1$s · Goal %2$s %3$s</string>
     <string name="measurements_cd_set_goal_format">Set %1$s goal</string>

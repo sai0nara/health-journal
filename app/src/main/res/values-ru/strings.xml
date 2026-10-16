@@ -262,7 +262,7 @@
     <string name="measurements_title">Измерения тела</string>
     <string name="measurements_param_empty_format">Пока нет данных: %1$s</string>
     <string name="measurements_empty_title">Пока нет измерений тела</string>
-    <string name="measurements_empty_hint">Нажмите кнопку с линейкой на экране журнала, чтобы записать первое измерение.</string>
+    <string name="measurements_empty_hint">Нажмите кнопку добавления, чтобы записать первое измерение.</string>
     <string name="measurements_snackbar_deleted">Измерение удалено</string>
     <string name="measurements_goal_header_format">%1$s · Цель %2$s %3$s</string>
     <string name="measurements_cd_set_goal_format">Задать цель: %1$s</string>
