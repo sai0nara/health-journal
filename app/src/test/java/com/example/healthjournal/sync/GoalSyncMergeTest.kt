@@ -8,10 +8,30 @@ import org.junit.Test
 class GoalSyncMergeTest {
 
     @Test
-    fun mergeGoals_disjointIds_prunesLocalOnly() {
-        // Local goal absent from cloud snapshot is pruned (goal was cleared on
-        // another device); only cloud-present parameters survive.
-        val cloud = GoalEntity("WEIGHT", 75.0, 100)
+    fun mergeGoals_stalePartialCloud_keepsNewerLocalGoals() {
+        // Reported bug: cloud snapshot holds only WEIGHT (older), local has
+        // newer goals for other parameters — a stale partial cloud must not
+        // wipe them; only WEIGHT resolves by per-parameter LWW (cloud newer).
+        val cloud = listOf(GoalEntity("WEIGHT", 75.0, 1000))
+        val local = listOf(
+            GoalEntity("WEIGHT", 80.0, 500),
+            GoalEntity("WAIST", 82.0, 2000),
+            GoalEntity("CHEST", 95.0, 2000)
+        )
+
+        val merged = SyncMerge.mergeGoals(cloud, local)
+        val byId = merged.associateBy { it.parameterId }
+
+        assertEquals(75.0, byId.getValue("WEIGHT").target, 0.001)
+        assertEquals(82.0, byId.getValue("WAIST").target, 0.001)
+        assertEquals(95.0, byId.getValue("CHEST").target, 0.001)
+    }
+
+    @Test
+    fun mergeGoals_freshCloud_prunesLocalOnly() {
+        // Cloud snapshot is at least as fresh: a local goal absent from it
+        // was cleared on another device and stays pruned.
+        val cloud = GoalEntity("WEIGHT", 75.0, 300)
         val local = GoalEntity("WAIST", 82.0, 200)
 
         val merged = SyncMerge.mergeGoals(listOf(cloud), listOf(local))
@@ -50,12 +70,14 @@ class GoalSyncMergeTest {
     }
 
     @Test
-    fun mergeGoals_emptyCloud_prunesLocal() {
+    fun mergeGoals_emptyCloud_keepsLocal() {
+        // An empty cloud snapshot carries no freshness signal; local goals
+        // are kept (the worker also guards this case before merging).
         val local = GoalEntity("WEIGHT", 75.0, 100)
 
         val merged = SyncMerge.mergeGoals(emptyList(), listOf(local))
 
-        assertTrue(merged.isEmpty())
+        assertEquals(listOf(local), merged)
     }
 
     @Test
