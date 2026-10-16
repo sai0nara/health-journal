@@ -70,9 +70,10 @@ object SyncMerge {
 
     /**
      * Full-snapshot merge for goals: newest [GoalEntity.lastModified] wins
-     * per parameter id (cloud wins ties). Local goals absent from the cloud
-     * snapshot are pruned — propagating goal clears across devices without
-     * needing a tombstone ledger.
+     * per parameter id (cloud wins ties). A local goal absent from the cloud
+     * snapshot is pruned only when the cloud snapshot is at least as fresh —
+     * propagating genuine goal clears without letting a stale partial cloud
+     * wipe newer local goals.
      */
     fun mergeGoals(
         cloudGoals: List<GoalEntity>,
@@ -84,11 +85,21 @@ object SyncMerge {
             result[cloud.parameterId] = cloud
         }
 
-        // Keep local copy only when cloud has the same parameter AND
-        // the local edit is strictly newer (cloud wins ties).
+        val cloudFresh = cloudGoals.maxOfOrNull { it.lastModified }
+        val localFresh = localGoals.maxOfOrNull { it.lastModified }
+        // Absent-from-cloud params are pruned only if the cloud snapshot is
+        // at least as fresh; an empty cloud carries no freshness signal.
+        val pruneAbsent = cloudFresh != null && (localFresh == null || cloudFresh >= localFresh)
+
         localGoals.forEach { local ->
             val cloud = result[local.parameterId]
-            if (cloud != null && local.lastModified > cloud.lastModified) {
+            if (cloud != null) {
+                // Keep local copy only when the local edit is strictly newer
+                // (cloud wins ties).
+                if (local.lastModified > cloud.lastModified) {
+                    result[local.parameterId] = local
+                }
+            } else if (!pruneAbsent) {
                 result[local.parameterId] = local
             }
         }

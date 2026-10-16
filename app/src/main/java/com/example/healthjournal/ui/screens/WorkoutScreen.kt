@@ -897,6 +897,20 @@ private fun RoutineExerciseCard(
                 }
                 OutlinedButton(
                     enabled = padEnabled,
+                    onClick = { adjustWeight(-padSmallStepWeightKg(unitSystem)) },
+                    modifier = Modifier.testTag("routine_weight_minus_small")
+                ) {
+                    Text("-${padSmallStepDisplay(unitSystem)}", maxLines = 1)
+                }
+                OutlinedButton(
+                    enabled = padEnabled,
+                    onClick = { adjustWeight(padSmallStepWeightKg(unitSystem)) },
+                    modifier = Modifier.testTag("routine_weight_plus_small")
+                ) {
+                    Text("+${padSmallStepDisplay(unitSystem)}", maxLines = 1)
+                }
+                OutlinedButton(
+                    enabled = padEnabled,
                     onClick = { adjustWeight(padStepWeightKg(unitSystem)) },
                     modifier = Modifier.testTag("routine_weight_plus")
                 ) {
@@ -921,6 +935,14 @@ private fun padStepWeightKg(unitSystem: UnitSystem): Double =
 /** Display label for the current pad step, in the selected unit system. */
 private fun padStepDisplay(unitSystem: UnitSystem): String =
     if (unitSystem == UnitSystem.IMPERIAL) "5 lb" else "1.25 kg"
+
+/** Dumbbell step for the quick pad: 1 kg or a 2.5 lb plate. */
+private fun padSmallStepWeightKg(unitSystem: UnitSystem): Double =
+    if (unitSystem == UnitSystem.IMPERIAL) UnitConverter.lbsToKg(2.5) else 1.0
+
+/** Display label for the dumbbell step, in the selected unit system. */
+private fun padSmallStepDisplay(unitSystem: UnitSystem): String =
+    if (unitSystem == UnitSystem.IMPERIAL) "2.5 lb" else "1 kg"
 
 /** Dual-unit weight rendering, metric primary: `60 kg (132.3 lb)`. */
 private fun dualWeight(weightKg: Double): String =
