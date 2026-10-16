@@ -542,6 +542,28 @@ class RoutineExecutionScreenTest {
     }
 
     @Test
+    fun routineQuickPad_imperialSmallStepIsTwoPointFivePounds() {
+        UnitSettings.write(InstrumentationRegistry.getInstrumentation().targetContext, UnitSystem.IMPERIAL)
+        openRoutine()
+
+        composeTestRule.onNodeWithText("+2.5 lb").assertExists()
+
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextClearance()
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0").performTextInput("20")
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("routine_weight_plus_small").performClick()
+        composeTestRule.waitForIdle()
+
+        // Rows display lb now: anchoring "20" means 20 lb, and one small +
+        // tap lands on 22.5 lb while storage stays canonical kg.
+        val expected = UnitConverter.lbsToKg(20.0) + UnitConverter.lbsToKg(2.5)
+        assertEquals(expected, persistedMatrix().single().sets[0].kg, 0.0)
+        composeTestRule.onNodeWithTag("routine_set_kg_0_0")
+            .assertEditableText("22.5")
+    }
+
+    @Test
     fun routineQuickPad_weightBelowLowerBound_showsInlineErrorAndKeepsValue() {
         openRoutine()
 

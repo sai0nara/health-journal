@@ -4,7 +4,7 @@
 > verification. The "Automated coverage" table cites the real test files; keep
 > it in sync when coverage moves.
 
-Last updated: 2026-09-18
+Last updated: 2026-10-15
 
 ## Automated coverage
 
@@ -17,7 +17,7 @@ Last updated: 2026-09-18
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/StrengthExerciseTest.kt` | planned rows, `isPlanned`, tonnage |
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/WorkoutRepositoryTest.kt` | session persistence (crash-recovery rows) |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/PresetLibraryScreenTest.kt` | preset list/create/edit/delete + dropdown |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/RoutineExecutionScreenTest.kt` | set matrix, rest timer, pad-while-focused, ordered-completion disable, swap, many-sets reachability, haptics |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/RoutineExecutionScreenTest.kt` | set matrix, rest timer, pad-while-focused, 1 kg dumbbell step (metric + imperial), ordered-completion disable, swap, many-sets reachability, haptics |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/WorkoutScreenTest.kt` | hub → preset start → execution flow |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/MigrationTest.kt` | schema migration preserving workout data + new routine-name column |
 
@@ -50,6 +50,7 @@ Last updated: 2026-09-18
 | T-23 | Mutation while paused | paused routine | toggle a set / edit weight | ignored; session unchanged until Resume |
 | T-24 | Countdown not skippable | routine starting | observe countdown UI | runs to zero; no skip/cancel control |
 | T-25 | Catalog search semantics | library open, catalog seeded | type mixed-case substring / clear to blank | case-insensitive substring matches; blank shows no results |
+| T-26 | Dumbbell step | active routine, 60 kg set, metric units | pad +1 kg → 61; pad −1 kg twice → 59 | weight adjusts by exactly 1 kg per tap (2.5 lb in imperial) |
 
 ## Manual checks
 
