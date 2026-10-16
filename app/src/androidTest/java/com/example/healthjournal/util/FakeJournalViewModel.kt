@@ -19,6 +19,7 @@ open class FakeJournalViewModel : IJournalViewModel {
     override val archivedEntries: MutableStateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
     override val reactiveArchivedEntries: MutableStateFlow<List<JournalEntry>> = MutableStateFlow(emptyList())
     override val isUserSignedIn: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    override val userEmail: MutableStateFlow<String?> = MutableStateFlow(null)
     override val syncStatus: StateFlow<String?> = MutableStateFlow(null)
     override val isManualSyncActive: StateFlow<Boolean> = MutableStateFlow(false)
     override val searchQuery: MutableStateFlow<String> = MutableStateFlow("")
@@ -34,6 +35,7 @@ open class FakeJournalViewModel : IJournalViewModel {
     var deletedEntriesIds: List<String>? = null
     var emptyArchiveCalled = false
     var signInCalled = false
+    var signOutCalled = false
     var syncNowCalled = false
     var healthAvailability = 1
 
@@ -73,7 +75,9 @@ open class FakeJournalViewModel : IJournalViewModel {
         syncNowCalled = true
     }
 
-    override fun signOut() {}
+    override fun signOut() {
+        signOutCalled = true
+    }
 
     override fun setSearchQuery(query: String) {
         searchQuery.value = query

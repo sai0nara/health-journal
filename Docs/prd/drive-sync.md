@@ -82,7 +82,7 @@ only the app-data scope; a background worker refreshes an access token silently.
 ## Cross-references
 
 - `Docs/prd/restore-from-backup.md` — restore triggers a post-restore re-sync.
-- `Docs/prd/history-feed.md` — the History screen exposes sign-in/sync.
+- `Docs/prd/history-feed.md` — the History screen exposes sync status/actions; sign-in lives in Settings.
 - [[sync-engine]] — the worker, merge, and scheduling.
 - [[google-drive]] — authentication and the Drive service.
 

@@ -16,7 +16,7 @@ Last updated: 2026-09-02
 | JVM unit | `app/src/test/java/com/example/healthjournal/sync/MeasurementTombstonePayloadTest.kt` | tombstone round-trip + defensive parse |
 | JVM unit | `app/src/test/java/com/example/healthjournal/sync/GoalSyncPayloadTest.kt` | goal payload round-trip |
 | JVM unit | `app/src/test/java/com/example/healthjournal/sync/DriveServiceHelperTest.kt` | Drive upload/download against app-data |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/CloudSyncTest.kt` | History sign-in renders + calls viewModel |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/CloudSyncTest.kt` | Settings sign-in renders + calls viewModel |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/sync/SyncDownloadTest.kt` | worker merges multiple photos/attachments |
 
 ## Test cases
@@ -30,7 +30,7 @@ Last updated: 2026-09-02
 | T-5 | AC-3 | Tombstone removes cloud row | cloud copy + local tombstone | cloud row filtered out; merged back |
 | T-6 | AC-1 | Goal prune | local goal absent from cloud | local-only goal pruned |
 | T-7 | AC-1 | Media merge | worker with 2 photos + 1 attachment | files survive; URIs remapped to filesDir |
-| T-8 | AC-5 | Sign-in flow | not signed in, History shown | tapping Sign In calls viewModel.signIn |
+| T-8 | AC-5 | Sign-in flow | not signed in, Settings shown | tapping Sign In calls viewModel.signIn |
 | T-9 | FR-8 | Payload defensive parse | garbage/null cloud file | parses to empty list, no crash |
 
 ## Manual checks

@@ -72,3 +72,63 @@ data class PersonalCard(
     val medicalHistory: MedicalHistory = MedicalHistory(),
     val emergencyContacts: EmergencyContacts = EmergencyContacts()
 )
+
+/**
+ * Gson allocates Kotlin data classes without calling constructors, so
+ * explicit JSON nulls (e.g. from another writer's cloud payload) land in
+ * non-null fields and crash readers later. Sanitize at decode boundaries
+ * so poisoned data can never reach the UI or the database.
+ */
+@Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS")
+fun Demographics.sanitized(): Demographics = copy(
+    fullName = fullName ?: "",
+    dateOfBirth = dateOfBirth ?: "",
+    sex = sex ?: "",
+    heightCm = heightCm?.takeIf { it.isFinite() },
+    weightKg = weightKg?.takeIf { it.isFinite() },
+    raceEthnicity = raceEthnicity ?: ""
+)
+
+/** See [Demographics.sanitized] for why this exists. */
+@Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS")
+fun MedicalProfile.sanitized(): MedicalProfile = copy(
+    allergies = allergies?.filterNotNull() ?: emptyList(),
+    medications = medications?.mapNotNull { med ->
+        med?.copy(
+            name = med?.name ?: "",
+            dosage = med?.dosage ?: "",
+            schedule = med?.schedule ?: "",
+            purpose = med?.purpose ?: ""
+        )
+    } ?: emptyList(),
+    adverseReactions = adverseReactions?.filterNotNull() ?: emptyList()
+)
+
+/** See [Demographics.sanitized] for why this exists. */
+@Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS")
+fun MedicalHistory.sanitized(): MedicalHistory = copy(
+    hereditaryDiseases = hereditaryDiseases?.filterNotNull() ?: emptyList(),
+    chronicConditions = chronicConditions?.filterNotNull() ?: emptyList(),
+    surgicalHistory = surgicalHistory?.filterNotNull() ?: emptyList()
+)
+
+/** See [Demographics.sanitized] for why this exists. */
+@Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS")
+fun EmergencyContacts.sanitized(): EmergencyContacts = copy(
+    contacts = contacts?.mapNotNull { contact ->
+        contact?.copy(
+            name = contact?.name ?: "",
+            relationship = contact?.relationship ?: "",
+            phoneNumber = contact?.phoneNumber ?: ""
+        )
+    } ?: emptyList()
+)
+
+/** See [Demographics.sanitized] for why this exists. */
+@Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS")
+fun PersonalCard.sanitized(): PersonalCard = copy(
+    demographics = demographics?.sanitized() ?: Demographics(),
+    medicalProfile = medicalProfile?.sanitized() ?: MedicalProfile(),
+    medicalHistory = medicalHistory?.sanitized() ?: MedicalHistory(),
+    emergencyContacts = emergencyContacts?.sanitized() ?: EmergencyContacts()
+)

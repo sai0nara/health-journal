@@ -30,23 +30,19 @@ class CloudSyncTest {
 
     @Test
     fun testSignInTriggered() {
-        step("Open app and click Sign In") {
+        step("Open Settings and click Sign In") {
             viewModel.isUserSignedIn.value = false
             composeTestRule.setContent {
                 HealthJournalTheme {
-                    HistoryScreen(
+                    SettingsScreen(
                         viewModel = viewModel,
-                                            measurementViewModelFactory = com.example.healthjournal.util.MeasurementTestSupport.factory,
-                        onAddEntryClick = {},
-                        onEntryClick = {},
-                        onExportClick = {}
+                        onBack = {}
                     )
-
                 }
             }
             composeTestRule.waitForIdle()
             allureScreenshot("login_screen")
-            composeTestRule.onNodeWithText("Sign In").performClick()
+            composeTestRule.onNodeWithTag("settings_sign_in").performClick()
         }
 
         step("Verify Sign In was called on ViewModel") {

@@ -44,6 +44,7 @@ interface IJournalViewModel {
     val reactiveArchivedEntries: StateFlow<List<JournalEntry>>
     val isUserSignedIn: StateFlow<Boolean>
     val syncStatus: StateFlow<String?>
+    val userEmail: StateFlow<String?>
     val isManualSyncActive: StateFlow<Boolean>
     val searchQuery: StateFlow<String>
     val archiveSearchQuery: StateFlow<String>
@@ -169,6 +170,9 @@ class JournalViewModel(
 
     private val _isUserSignedIn = MutableStateFlow(sessionManager.getUserEmail() != null)
     override val isUserSignedIn: StateFlow<Boolean> = _isUserSignedIn.asStateFlow()
+
+    private val _userEmail = MutableStateFlow(sessionManager.getUserEmail())
+    override val userEmail: StateFlow<String?> = _userEmail.asStateFlow()
 
     private val _syncStatus = MutableStateFlow<String?>(null)
     override val syncStatus: StateFlow<String?> = _syncStatus.asStateFlow()
@@ -323,6 +327,7 @@ class JournalViewModel(
                 Log.d(TAG, "Sign in successful for ${credential.id}")
                 sessionManager.saveUserEmail(credential.id)
                 _isUserSignedIn.value = true
+                _userEmail.value = credential.id
                 
                 withContext(Dispatchers.Main) {
                     android.widget.Toast.makeText(getApplication(), getApplication<Application>().getString(R.string.sync_toast_signed_in_format, credential.id), android.widget.Toast.LENGTH_SHORT).show()
@@ -372,6 +377,7 @@ class JournalViewModel(
             authManager.signOut()
             sessionManager.clearSession()
             _isUserSignedIn.value = false
+            _userEmail.value = null
             _syncStatus.value = null
             android.widget.Toast.makeText(getApplication(), getApplication<Application>().getString(R.string.sync_toast_signed_out), android.widget.Toast.LENGTH_SHORT).show()
         }

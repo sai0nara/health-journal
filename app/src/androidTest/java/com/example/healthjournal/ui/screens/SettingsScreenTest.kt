@@ -12,6 +12,8 @@ import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthjournal.data.local.HealthSyncSettings
 import com.example.healthjournal.ui.theme.HealthJournalTheme
+import com.example.healthjournal.util.FakeJournalViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -26,7 +28,7 @@ class SettingsScreenTest {
     fun settingsScreen_rendersExternalizedEnglishStrings() {
         composeTestRule.setContent {
             HealthJournalTheme {
-                SettingsScreen(onBack = {})
+                SettingsScreen(viewModel = FakeJournalViewModel(), onBack = {})
             }
         }
 
@@ -49,7 +51,7 @@ class SettingsScreenTest {
         try {
             composeTestRule.setContent {
                 HealthJournalTheme {
-                    SettingsScreen(onBack = {})
+                    SettingsScreen(viewModel = FakeJournalViewModel(), onBack = {})
                 }
             }
 
@@ -65,5 +67,39 @@ class SettingsScreenTest {
         } finally {
             HealthSyncSettings.write(targetContext, false)
         }
+    }
+
+    @Test
+    fun settingsScreen_signedOut_showsSignInAndCallsViewModel() {
+        val viewModel = FakeJournalViewModel()
+        viewModel.isUserSignedIn.value = false
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                SettingsScreen(viewModel = viewModel, onBack = {})
+            }
+        }
+
+        composeTestRule.onNodeWithText("Account").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("settings_sign_in").assertIsDisplayed().performClick()
+        assertTrue(viewModel.signInCalled)
+    }
+
+    @Test
+    fun settingsScreen_signedIn_showsEmailAndSignOut() {
+        val viewModel = object : FakeJournalViewModel() {
+            override val syncStatus = MutableStateFlow<String?>("Synced")
+        }
+        viewModel.isUserSignedIn.value = true
+        viewModel.userEmail.value = "test@example.com"
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                SettingsScreen(viewModel = viewModel, onBack = {})
+            }
+        }
+
+        composeTestRule.onNodeWithText("test@example.com").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Synced").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("settings_sign_out").assertIsDisplayed().performClick()
+        assertTrue(viewModel.signOutCalled)
     }
 }

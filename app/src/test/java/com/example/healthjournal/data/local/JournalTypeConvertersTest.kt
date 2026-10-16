@@ -168,4 +168,47 @@ class JournalTypeConvertersTest {
         val json = converters.fromStringList(ids)
         assertEquals(ids, converters.toStringList(json))
     }
+
+    @Test
+    fun toDemographics_nullPoisonedJson_sanitizesToDefaults() {
+        val result = converters.toDemographics(
+            """{"fullName":null,"dateOfBirth":null,"sex":null,"heightCm":180.0,"weightKg":null,"raceEthnicity":null}"""
+        )
+
+        assertEquals("", result.fullName)
+        assertEquals("", result.dateOfBirth)
+        assertEquals("", result.sex)
+        assertEquals("", result.raceEthnicity)
+        assertEquals(180.0, result.heightCm)
+    }
+
+    @Test
+    fun toMedicalProfile_nullPoisonedJson_sanitizesToDefaults() {
+        val result = converters.toMedicalProfile(
+            """{"bloodType":null,"allergies":null,"medications":[{"name":null,"dosage":null,"schedule":null,"purpose":null}],"adverseReactions":null}"""
+        )
+
+        assertTrue(result.allergies.isEmpty())
+        assertEquals("", result.medications.single().name)
+        assertTrue(result.adverseReactions.isEmpty())
+    }
+
+    @Test
+    fun toMedicalHistory_nullJson_returnsDefault() {
+        val result = converters.toMedicalHistory(null)
+
+        assertTrue(result.hereditaryDiseases.isEmpty())
+        assertTrue(result.chronicConditions.isEmpty())
+        assertTrue(result.surgicalHistory.isEmpty())
+    }
+
+    @Test
+    fun toEmergencyContacts_nullPoisonedJson_sanitizesToDefaults() {
+        val result = converters.toEmergencyContacts(
+            """{"contacts":[{"name":null,"relationship":null,"phoneNumber":null}]}"""
+        )
+
+        assertEquals("", result.contacts.single().name)
+        assertEquals("", result.contacts.single().phoneNumber)
+    }
 }
