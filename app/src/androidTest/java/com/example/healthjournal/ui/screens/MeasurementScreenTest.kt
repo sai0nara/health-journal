@@ -74,6 +74,42 @@ class MeasurementScreenTest {
     }
 
     @Test
+    fun addFab_visibleOnEmptyStateAndOpensSheet() {
+        step("Open Measurements screen with no records") {
+            setScreen(emptyList())
+        }
+
+        step("Add-measurement FAB is visible") {
+            composeTestRule.onNodeWithContentDescription("Add body measurements")
+                .assertExists()
+            composeTestRule.onNodeWithContentDescription("Add body measurements")
+                .assertIsDisplayed()
+        }
+
+        step("Tapping the FAB opens the capture sheet") {
+            composeTestRule.onNodeWithContentDescription("Add body measurements")
+                .performClick()
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithTag("bm_field_WAIST").assertExists()
+            composeTestRule.onNodeWithTag("bm_save").assertExists()
+        }
+    }
+
+    @Test
+    fun addFab_visibleWithPopulatedList() {
+        step("Open Measurements screen with one record") {
+            setScreen(listOf(BodyMeasurementEntry(entry_id = "e1", timestamp = 1_000L, weight_kg = 80.0)))
+        }
+
+        step("Add-measurement FAB is visible above the list") {
+            composeTestRule.onNodeWithContentDescription("Add body measurements")
+                .assertExists()
+            composeTestRule.onNodeWithContentDescription("Add body measurements")
+                .assertIsDisplayed()
+        }
+    }
+
+    @Test
     fun emptyList_showsFriendlyEmptyState() {
         step("Open Measurements screen with no records") {
             setScreen(emptyList())
