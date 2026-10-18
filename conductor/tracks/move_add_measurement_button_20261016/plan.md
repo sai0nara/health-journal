@@ -32,3 +32,6 @@
     - [x] Write/run UI tests for both touched surfaces until green on an emulator (`connectedAndroidTest` for the touched screens, then `adb emu kill`)
     - [x] Verify coverage >80% on new/changed code and run `python3 wiki/lint.py` to exit 0
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Docs + verification (Blue + gates)' (Protocol in workflow.md)
+
+## Review
+- Applied review fix: removed 5 duplicated unchecked sub-task lines (d0c7aab)
