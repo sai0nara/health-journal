@@ -8,8 +8,6 @@
 - [x] Task: Measurements FAB failing tests (ca09619)
     - [x] Extend `MeasurementScreenTest` / `MeasurementEntrySheetTest` with failing assertions: FAB visible in empty and populated states and opens the entry sheet on click
     - [x] Run the new Measurements assertions and confirm they fail (`Red`) with `JAVA_HOME` on JDK 21
-    - [ ] Extend `MeasurementScreenTest` / `MeasurementEntrySheetTest` with failing assertions: FAB visible in empty and populated states and opens the entry sheet on click
-    - [ ] Run the new Measurements assertions and confirm they fail (`Red`) with `JAVA_HOME` on JDK 21
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Failing tests (Red)' (Protocol in workflow.md)
 
 ## Phase 2: Implementation (Green + Refactor)
@@ -21,9 +19,6 @@
     - [x] Add a regular `FloatingActionButton` (Straighten icon, existing measurement content description) to `MeasurementsScreen.kt`, visible in empty and populated states
     - [x] Host `MeasurementEntrySheet` behind a local `showSheet` boolean reusing the screen's existing `BodyMeasurementViewModel`; no ViewModel or sheet logic changes
     - [x] Re-run the Phase 1 tests and confirm green; refactor for clarity/duplication and re-run to stay green
-    - [ ] Add a regular `FloatingActionButton` (Straighten icon, existing measurement content description) to `MeasurementsScreen.kt`, visible in empty and populated states
-    - [ ] Host `MeasurementEntrySheet` behind a local `showSheet` boolean reusing the screen's existing `BodyMeasurementViewModel`; no ViewModel or sheet logic changes
-    - [ ] Re-run the Phase 1 tests and confirm green; refactor for clarity/duplication and re-run to stay green
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Implementation (Green + Refactor)' (Protocol in workflow.md)
 
 ## Phase 3: Docs + verification (Blue + gates)
