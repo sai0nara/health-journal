@@ -24,13 +24,13 @@
 
 ## Phase 3: Docs + verification (Blue + gates)
 
-- [ ] Task: Ship docs and wiki updates
-    - [ ] Update `Docs/psd/history-feed.md`, `Docs/tests/history-feed.md` (no top-bar shortcuts)
-    - [ ] Update `Docs/psd/main-page-tiles.md`, `Docs/tests/main-page-tiles.md` (logo in bar)
-    - [ ] Update `Docs/prd|psd/russian-localization.md` string counts after the catalog trim
-    - [ ] Update wiki pages citing the touched sources (start `wiki/modules/ui-layer.md`)
-- [ ] Task: Full verification
-    - [ ] `./gradlew :app:testDebugUnitTest` green (JDK 21, `CI=true`)
-    - [ ] UI tests green on the physical device (`-PcomposeRunner=true`, one class per run): `MainScreenTest`, `HistoryScreenTest`, `TruncationTest`, `ThemedRenderingTest`
-    - [ ] `./gradlew build` green; `python3 wiki/lint.py` exits 0
+- [x] Task: Ship docs and wiki updates (239b35a)
+    - [x] Update `Docs/psd/history-feed.md`, `Docs/tests/history-feed.md` (top bar: back + title + actions-only overflow; stale workout-hub case replaced)
+    - [x] Update `Docs/psd/main-page-tiles.md`, `Docs/tests/main-page-tiles.md` (dashboard brand mark, T-11)
+    - [x] Update `Docs/prd|psd/russian-localization.md` string counts (367 → 364) after the catalog trim
+    - [x] Update wiki pages citing the touched sources (`wiki/modules/ui-layer.md`) and bump dates on remaining citing pages
+- [x] Task: Full verification
+    - [x] `./gradlew :app:testDebugUnitTest` green (612 tests, 0 failures, JDK 21, `CI=true`)
+    - [x] UI tests green on the physical device (`-PcomposeRunner=true`, one class per run): `MainScreenTest` 5/5, `HistoryScreenTest` 10/10, `TruncationTest` 1/1, `ThemedRenderingTest` 2/2
+    - [x] `./gradlew build` green; `python3 wiki/lint.py` exits 0
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Docs + verification (Blue + gates)' (Protocol in workflow.md)
