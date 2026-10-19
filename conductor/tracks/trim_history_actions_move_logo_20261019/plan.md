@@ -12,14 +12,14 @@
 
 ## Phase 2: Implementation (Green + Refactor)
 
-- [ ] Task: Move the logo to Main screen
-    - [ ] Add the 32dp `app_logo` image (testTag `app_logo`, cd `cd_app_logo`) to the `MainScreen` TopAppBar leading slot, before the "Health Journal" title
-    - [ ] Re-run Phase 1 Main tests and confirm green
-- [ ] Task: Remove History actions and wiring
-    - [ ] Remove logo Image and Person/Measurements/Export `IconButton`s from `HistoryScreen.kt`; drop the three callback params
-    - [ ] Update `MainActivity.kt`; strip the params from `HistoryScreenTest`, `TruncationTest`, `ThemedRenderingTest`
-    - [ ] Delete `cd_open_personal_card`, `history_cd_measurements`, `history_cd_export` from both catalogs; keep `cd_app_logo`
-    - [ ] Re-run Phase 1 tests and confirm green; refactor and re-run to stay green
+- [x] Task: Move the logo to Main screen (f82d477)
+    - [x] Add the 32dp `app_logo` image (testTag `app_logo`, cd `cd_app_logo`) to the `MainScreen` TopAppBar leading slot, before the "Health Journal" title
+    - [x] Re-run Phase 1 Main tests and confirm green
+- [x] Task: Remove History actions and wiring (bbfad8c)
+    - [x] Remove logo Image and Person/Measurements/Export `IconButton`s from `HistoryScreen.kt`; drop the three callback params
+    - [x] Update `MainActivity.kt`; strip the params from `HistoryScreenTest`, `TruncationTest`, `ThemedRenderingTest`
+    - [x] Delete `cd_open_personal_card`, `history_cd_measurements`, `history_cd_export` from both catalogs; keep `cd_app_logo`
+    - [x] Re-run Phase 1 tests and confirm green; refactor and re-run to stay green
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Implementation (Green + Refactor)' (Protocol in workflow.md)
 
 ## Phase 3: Docs + verification (Blue + gates)
