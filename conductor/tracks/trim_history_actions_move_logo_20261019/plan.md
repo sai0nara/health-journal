@@ -2,12 +2,12 @@
 
 ## Phase 1: Failing tests (Red)
 
-- [ ] Task: History top-bar cleanup failing tests
-    - [ ] Update `HistoryScreenTest` call sites to the slimmer signature; add assertions: no `app_logo`, no `measurements_chart_icon`, no personal-card/export actions
-    - [ ] Run the new History assertions and confirm they fail (Red) with `JAVA_HOME` on JDK 21
-- [ ] Task: Main-screen logo failing tests
-    - [ ] Extend `MainScreenTest` with a failing assertion: `app_logo` composed and displayed
-    - [ ] Run the new Main assertions and confirm they fail (Red) with `JAVA_HOME` on JDK 21
+- [x] Task: History top-bar cleanup failing tests (36340d1)
+    - [x] Add absence assertions to `HistoryScreenTest`: no `app_logo`, no `measurements_chart_icon`, no personal-card/export actions (call-site signature updates deferred to Phase 2)
+    - [x] Run the new History assertions and confirm they fail (Red) with `JAVA_HOME` on JDK 21
+- [x] Task: Main-screen logo failing tests (36340d1)
+    - [x] Extend `MainScreenTest` with a failing assertion: `app_logo` composed and displayed
+    - [x] Run the new Main assertions and confirm they fail (Red) with `JAVA_HOME` on JDK 21
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Failing tests (Red)' (Protocol in workflow.md)
 
 ## Phase 2: Implementation (Green + Refactor)
