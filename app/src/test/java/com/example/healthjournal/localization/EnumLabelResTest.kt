@@ -1,6 +1,7 @@
 package com.example.healthjournal.localization
 
 import com.example.healthjournal.R
+import com.example.healthjournal.data.JournalTag
 import com.example.healthjournal.domain.MeasurementField
 import com.example.healthjournal.domain.ScheduledDay
 import com.example.healthjournal.domain.WorkoutType
@@ -41,12 +42,13 @@ class EnumLabelResTest {
         WorkoutType.entries.forEach { add(it.labelRes) }
         MeasurementField.entries.forEach { add(it.labelRes) }
         ScheduledDay.entries.forEach { add(it.labelRes) }
+        JournalTag.entries.forEach { add(it.labelRes) }
     }
 
     @Test
     fun taxonomyLabelRes_areDistinct() {
         val ids = labelResIds()
-        assertEquals(25, ids.size)
+        assertEquals(32, ids.size)
         assertEquals(
             "labelRes keys must be distinct across taxonomy enums, duplicates: " +
                 ids.groupingBy { it }.eachCount().filter { it.value > 1 },

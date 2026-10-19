@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import com.example.healthjournal.R
 import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
@@ -105,7 +107,11 @@ fun ParamTrendChart(
 
         if (goalTarget != null && unitLabel != null) {
             Text(
-                text = "Goal ${formatGoalValue(goalTarget)} $unitLabel",
+                text = stringResource(
+                    R.string.measurements_trend_goal_format,
+                    formatGoalValue(goalTarget),
+                    unitLabel
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = goalColor,

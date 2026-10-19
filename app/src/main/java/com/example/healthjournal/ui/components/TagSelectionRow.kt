@@ -9,21 +9,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
 import com.example.healthjournal.R
 import com.example.healthjournal.data.JournalTag
-import com.example.healthjournal.domain.EntryKindTag
 
 /**
- * Display name for a stored tag: system auto-tags resolve through resources
- * (Russian parity); user tags render verbatim.
+ * Resource for a stored tag value: journal-chip enum names ("HEALTH") and
+ * capitalized system auto-tags ("Health") resolve case-insensitively through
+ * the shared taxonomy; free-form user tags have no resource.
+ */
+@StringRes
+fun tagLabelRes(tag: String): Int? =
+    JournalTag.entries.firstOrNull { it.name.equals(tag, ignoreCase = true) }?.labelRes
+
+/**
+ * Display name for a stored tag: known tags resolve through resources
+ * (Russian parity); user tags render verbatim, capitalized.
  */
 @Composable
-fun tagDisplayName(tag: String): String = when (tag) {
-    EntryKindTag.FITNESS -> stringResource(R.string.auto_tag_fitness)
-    EntryKindTag.HEALTH -> stringResource(R.string.auto_tag_health)
-    EntryKindTag.MEDICATION -> stringResource(R.string.auto_tag_medication)
-    else -> tag.lowercase().replaceFirstChar { it.uppercase() }
-}
+fun tagDisplayName(tag: String): String =
+    tagLabelRes(tag)?.let { stringResource(it) }
+        ?: tag.lowercase().replaceFirstChar { it.uppercase() }
 
 @Composable
 fun TagSelectionRow(

@@ -6,8 +6,9 @@ import java.io.File
 
 /**
  * Enforces the string-externalization rule: UI sources must never embed
- * user-facing text in `Text("...")` (including multi-line), `placeholder`,
- * `contentDescription`, `showSnackbar("...")`, or `Toast.makeText(..., "...")`
+ * user-facing text in `Text("...")` (including multi-line) or its named
+ * `text = "..."` argument, `placeholder`, `contentDescription`,
+ * `showSnackbar("...")`, or `Toast.makeText(..., "...")`
  * literals; all such text must resolve via stringResource /
  * pluralStringResource so the Android resource system can substitute the
  * Russian catalog on ru-RU devices. Literals without letters (whitespace,
@@ -21,6 +22,7 @@ class HardcodedStringAuditTest {
 
     private val carriers = listOf(
         Regex("""Text\(\s*"((?:[^"\\]|\\.)*)""", RegexOption.DOT_MATCHES_ALL),
+        Regex("""\btext\s*=\s*"((?:[^"\\]|\\.)*)"""),
         Regex("""placeholder\s*=\s*"((?:[^"\\]|\\.)*)"""),
         Regex("""contentDescription\s*=\s*"((?:[^"\\]|\\.)*)"""),
         Regex("""showSnackbar\(\s*"((?:[^"\\]|\\.)*)""", RegexOption.DOT_MATCHES_ALL),

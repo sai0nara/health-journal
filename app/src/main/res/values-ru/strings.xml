@@ -265,6 +265,7 @@
     <string name="measurements_empty_hint">Нажмите кнопку добавления, чтобы записать первое измерение.</string>
     <string name="measurements_snackbar_deleted">Измерение удалено</string>
     <string name="measurements_goal_header_format">%1$s · Цель %2$s %3$s</string>
+    <string name="measurements_trend_goal_format">Цель %1$s %2$s</string>
     <string name="measurements_cd_set_goal_format">Задать цель: %1$s</string>
     <string name="measurements_weight_value_format">%1$s %2$s</string>
     <string name="measurements_param_value_format">%1$s %2$s %3$s</string>
@@ -309,6 +310,11 @@
     <string name="entry_edited">(Изменено)</string>
     <string name="entry_show_more">Показать больше</string>
     <string name="entry_show_less">Показать меньше</string>
+    <string name="entry_enrich_title">Дополните запись</string>
+    <string name="entry_enrich_camera">Камера</string>
+    <string name="entry_enrich_gallery">Галерея</string>
+    <string name="entry_enrich_file">Файл</string>
+    <string name="entry_enrich_health">Здоровье</string>
 
     <!-- Goal -->
     <string name="goal_title_format">Цель: %1$s</string>
@@ -320,6 +326,7 @@
     <string name="about_title">О приложении Health Journal</string>
     <string name="about_body">Современный журнал здоровья для личных записей и отслеживания показателей здоровья.</string>
     <string name="about_version_label">Версия:\u0020</string>
+    <string name="about_version_format">%1$s (сборка: %2$s)</string>
     <string name="about_build_type_format">Тип сборки: %1$s</string>
 
     <!-- Permissions -->
@@ -418,6 +425,12 @@
     <string name="auto_tag_fitness">Фитнес</string>
     <string name="auto_tag_health">Здоровье</string>
     <string name="auto_tag_medication">Лекарства</string>
+
+    <!-- Journal tags -->
+    <string name="tag_illness">Болезнь</string>
+    <string name="tag_checkup">Обследование</string>
+    <string name="tag_doctor">Врач</string>
+    <string name="tag_exercises">Упражнения</string>
 
     <!-- Main dashboard -->
     <string name="main_title">Журнал здоровья</string>

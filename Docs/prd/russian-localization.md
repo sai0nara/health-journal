@@ -4,26 +4,26 @@
 > user-facing string externalized to resources with a complete `values-ru`
 > translation, Russian plural rules, and locale-aware dates and numbers.
 >
-Last updated: 2026-09-26
+Last updated: 2026-10-18
 >
-> **Status: BUILT.** All functional requirements below are implemented: the
-> English catalog holds 342 strings plus 5 named plurals, `values-ru` covers
-> every key, taxonomy enums resolve through `labelRes`, and the PDF report
+> **Status: BUILT.** All functional requirements below are implemented: both
+> catalogs hold 367 strings plus 5 named plurals with enforced parity,
+> taxonomy enums resolve through `labelRes`, and the PDF report
 > localizes. See `Docs/psd/russian-localization.md` for the design and
 > `Docs/tests/russian-localization.md` for the verification.
 
 ## Overview
 
-The app's UI is English-only. The Personal Card and Settings screens already
-resolve their labels, errors, and content descriptions through
-`app/src/main/res/values/strings.xml` via `stringResource`, which proves the
-pattern — but every other screen (Workout, History menus, Export, Restore,
-Presets, Measurements, Archive, dialogs) embeds English text directly in
-composables. A Russian-speaking user therefore gets a half-English app even
-with the device set to Russian.
+Before this feature the app's UI was English-only. The Personal Card and
+Settings screens already resolved their labels, errors, and content
+descriptions through `app/src/main/res/values/strings.xml` via
+`stringResource`, which proved the pattern — but every other screen (Workout,
+History menus, Export, Restore, Presets, Measurements, Archive, dialogs)
+embedded English text directly in composables, so a Russian-speaking user got
+a half-English app even with the device set to Russian.
 
-This feature externalizes all user-facing text into string resources and
-ships a complete Russian translation, so the Android resource system renders
+This feature externalized all user-facing text into string resources and
+shipped a complete Russian translation, so the Android resource system renders
 the whole UI in Russian when the device locale is Russian and falls back to
 English otherwise. User-entered data (entry text, names, medications) is
 never translated — only the app's own chrome is localized.
@@ -133,6 +133,6 @@ never translated — only the app's own chrome is localized.
 
 ## Sources
 
-- `app/src/main/res/values/strings.xml` — the existing string catalog (Personal Card + Settings keys) that the Russian translation extends.
-- `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` — representative screen still using hard-coded English literals.
-- `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` — menu and empty-state literals pending externalization.
+- `app/src/main/res/values/strings.xml` — the full English catalog (seeded by the Personal Card + Settings keys) mirrored key-for-key by the Russian translation.
+- `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` — representative screen externalized during the build.
+- `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` — menu and empty-state strings externalized during the build.
