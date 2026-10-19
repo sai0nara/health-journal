@@ -37,8 +37,7 @@ class ThemedRenderingTest {
                 com.example.healthjournal.ui.screens.HistoryScreen(
                     viewModel = viewModel,
                     onAddEntryClick = {},
-                    onEntryClick = {},
-                    onExportClick = {}
+                    onEntryClick = {}
                 )
             }
         }
@@ -53,8 +52,7 @@ class ThemedRenderingTest {
                 com.example.healthjournal.ui.screens.HistoryScreen(
                     viewModel = viewModel,
                     onAddEntryClick = {},
-                    onEntryClick = {},
-                    onExportClick = {}
+                    onEntryClick = {}
                 )
             }
         }

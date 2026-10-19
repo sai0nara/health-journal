@@ -5,7 +5,7 @@
 > enforce parity, externalization, and taxonomy labels at build time, while
 > device-locale rendering is covered by instrumented and manual checks.
 
-Last updated: 2026-10-18
+Last updated: 2026-10-19
 
 ## Automated coverage
 

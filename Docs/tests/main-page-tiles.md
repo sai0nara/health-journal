@@ -4,7 +4,7 @@
 > verification. The "Automated coverage" table cites the real test files;
 > keep it in sync when coverage moves.
 
-Last updated: 2026-09-29
+Last updated: 2026-10-19
 
 ## Automated coverage
 
@@ -13,8 +13,8 @@ Last updated: 2026-09-29
 | JVM unit | `app/src/test/java/com/example/healthjournal/localization/MainTilesKeysTest.kt` | `main_tile_*` keys exist in both catalogs |
 | JVM unit | `app/src/test/java/com/example/healthjournal/localization/LocalizationParityTest.kt` | full-catalog RU parity incl. new tile keys |
 | JVM unit | `app/src/test/java/com/example/healthjournal/localization/HardcodedStringAuditTest.kt` | no literals in `MainScreen` (routes exempt as machine constants) |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/MainScreenTest.kt` | 8 tiles in order, tile tap reports route |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` | overflow shows actions only, no nav entries |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/MainScreenTest.kt` | 8 tiles in order, tile tap reports route, logo shown |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` | trimmed top bar, overflow shows actions only |
 
 ## Test cases
 
@@ -30,6 +30,7 @@ Last updated: 2026-09-29
 | T-8 | English unchanged | non-`ru` device | open Main + History | labels exactly as specified; menu unchanged |
 | T-9 | Dark mode + small screen | dark theme, large fonts | open Main | themed, readable, no clipped tiles |
 | T-10 | Full verification | — | JVM suite, androidTest compile, wiki lint | all green, lint exits 0 |
+| T-11 | — | Dashboard logo | — | render `MainScreen` | `app_logo` displayed next to the title |
 
 ## Manual checks
 

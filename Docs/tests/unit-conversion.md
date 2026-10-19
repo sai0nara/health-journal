@@ -5,7 +5,7 @@
 > it in sync when coverage moves. A QA pipeline suite derived from these docs
 > holds 52 cases (18 P0); all P0s are automated in the files cited below.
 
-Last updated: 2026-09-22
+Last updated: 2026-10-19
 
 ## Automated coverage
 

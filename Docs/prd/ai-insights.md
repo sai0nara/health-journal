@@ -4,7 +4,7 @@
 > shown as insights. **Planned, not yet built** — only the dormant `ai_advice`
 > schema column exists today; there is no AI backend, prompt pipeline, or UI.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-19
 
 > **Status: PLANNED.** This PRD records the agreed vision. The feature has not
 > been implemented: no AI client, no prompt construction, no network call, and

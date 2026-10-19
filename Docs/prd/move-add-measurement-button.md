@@ -2,7 +2,7 @@
 
 > Relocate the body-measurement entry point off the History feed onto the Measurements screen so each FAB opens exactly the flow its screen owns.
 
-Last updated: 2026-10-16
+Last updated: 2026-10-19
 
 ## Overview
 
@@ -43,8 +43,10 @@ sheet is launched from changes.
   log a measurement without going back to History.
 - As a user on the History screen, I want a single add action so I am not
   guessing which FAB logs a journal entry versus a measurement.
-- As a user who taps the measurements chart icon from History, I want to land
-  on a screen where logging is obviously available.
+- As a user who opens Measurements from the dashboard tile, I want to land
+  on a screen where logging is obviously available. (The chart-icon shortcut
+  this story originally described was later removed from the History top
+  bar; the dashboard tile is the entry point.)
 
 ## Functional requirements
 

@@ -4,7 +4,7 @@
 > verification. The "Automated coverage" table cites the real test files; keep
 > it in sync when coverage moves.
 
-Last updated: 2026-10-16
+Last updated: 2026-10-19
 
 ## Automated coverage
 
@@ -30,7 +30,7 @@ conversion, and repository layers against regressions.
 | T-6 | AC-4 invalid input still blocked | sheet open | enter malformed weight | inline "Invalid decimal format", save disabled, typed value retained |
 | T-7 | AC-4 future date blocked | future timestamp preset | open sheet | future-date alert renders, save disabled |
 | T-8 | AC-3 imperial entry converts | imperial preference | enter weight in lb, save | metric kg persisted; sheet dismissed |
-| T-9 | AC-5 end-to-end path | History | tap chart icon, tap FAB, save valid set | measurement saved without a History FAB |
+| T-9 | AC-5 end-to-end path | dashboard tile | tap Measurements tile, tap FAB, save valid set | measurement saved without a History FAB |
 
 ## Manual checks
 

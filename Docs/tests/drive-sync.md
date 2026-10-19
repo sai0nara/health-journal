@@ -3,7 +3,7 @@
 > Verifies the pure merge/payload logic at JVM unit level and the Drive client
 > and sign-in flow at instrumented/unit level, plus the end-to-end media merge.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-19
 
 ## Automated coverage
 
@@ -32,12 +32,13 @@ Last updated: 2026-09-02
 | T-7 | AC-1 | Media merge | worker with 2 photos + 1 attachment | files survive; URIs remapped to filesDir |
 | T-8 | AC-5 | Sign-in flow | not signed in, Settings shown | tapping Sign In calls viewModel.signIn |
 | T-9 | FR-8 | Payload defensive parse | garbage/null cloud file | parses to empty list, no crash |
+| T-10 | AC-5 | Re-authorize action | signed in with the auth-required flag set, Settings shown | tapping Re-authorize calls viewModel.requestDriveAuth; hidden when the flag is clear |
 
 ## Manual checks
 
 - Two devices on the same account converge after edits (wait a sync cycle).
 - Revoking Drive access surfaces a re-authorization state and recovers after
-  re-consent.
+  re-consent through the Settings re-authorize action.
 - Sync status text transitions on the History screen during a manual sync.
 
 ## Cross-references

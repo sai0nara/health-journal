@@ -46,6 +46,7 @@ interface IJournalViewModel {
     val syncStatus: StateFlow<String?>
     val userEmail: StateFlow<String?>
     val isManualSyncActive: StateFlow<Boolean>
+    val authRequired: StateFlow<Boolean>
     val searchQuery: StateFlow<String>
     val archiveSearchQuery: StateFlow<String>
     val isAscending: StateFlow<Boolean>
@@ -66,6 +67,7 @@ interface IJournalViewModel {
     fun updateEntry(entry: JournalEntry, tags: Set<String> = emptySet())
     suspend fun getEntryById(entryId: String): JournalEntry?
     fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit)
+    fun requestDriveAuth(onResolutionRequired: (android.app.PendingIntent) -> Unit)
     fun syncNow()
     fun signOut()
 
@@ -186,6 +188,25 @@ class JournalViewModel(
     private val _isManualSyncActive = MutableStateFlow(false)
     override val isManualSyncActive: StateFlow<Boolean> = _isManualSyncActive.asStateFlow()
 
+    /**
+     * Mirrors [SyncWorker.KEY_AUTH_REQUIRED] from the observed work: true when
+     * the last run could not obtain a Drive token silently, meaning the user
+     * must (re-)grant consent — including accounts that restored a signed-in
+     * session but lost the Play-services authorization. Drives the Settings
+     * re-authorize action; [isManualSyncActive] already excludes this state so
+     * the pull-to-refresh spinner is not stuck waiting on the user.
+     */
+    private val _authRequired = MutableStateFlow(false)
+    override val authRequired: StateFlow<Boolean> = _authRequired.asStateFlow()
+
+    /** Combined UI observation of the periodic and manual sync work. */
+    private data class SyncObservation(
+        val status: String?,
+        val manualActive: Boolean,
+        val failedMessage: String?,
+        val authRequired: Boolean
+    )
+
     private val TAG = "JournalViewModel"
 
     init {
@@ -232,10 +253,16 @@ class JournalViewModel(
                     manual.outputData.getString("error_message") ?: app.getString(R.string.sync_status_failed)
                 } else null
 
-                Triple(status, manualActive, failedMessage)
-            }.collect { (status, manualActive, failedMessage) ->
+                // Manual work wins, mirroring the status precedence above: a
+                // token that satisfied the latest manual run is proof consent
+                // is back, even if a stale periodic retry still carries the flag.
+                val authRequired = manual?.authRequired() ?: periodic.authRequired()
+
+                SyncObservation(status, manualActive, failedMessage, authRequired)
+            }.collect { (status, manualActive, failedMessage, authRequired) ->
                 _syncStatus.value = status
                 _isManualSyncActive.value = manualActive
+                _authRequired.value = authRequired
                 if (failedMessage != null) {
                     if (!failureToastShown) {
                         failureToastShown = true
@@ -343,7 +370,7 @@ class JournalViewModel(
         }
     }
 
-    fun requestDriveAuth(onResolutionRequired: (android.app.PendingIntent) -> Unit) {
+    override fun requestDriveAuth(onResolutionRequired: (android.app.PendingIntent) -> Unit) {
         val email = sessionManager.getUserEmail() ?: return
         
         Log.d(TAG, "Requesting Drive authorization for $email")

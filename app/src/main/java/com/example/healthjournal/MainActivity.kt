@@ -89,9 +89,6 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             onAddEntryClick = { navController.navigate("add_entry") },
                             onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") },
-                            onExportClick = { navController.navigate("export") },
-                            onMeasurementsClick = { navController.navigate("measurements") },
-                            onPersonalCardClick = { navController.navigate("personal_card") },
                             onBack = { navController.popBackStack() }
                         )
                     }

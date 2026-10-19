@@ -35,8 +35,7 @@ class TruncationTest {
                 HistoryScreen(
                     viewModel = viewModel,
                     onAddEntryClick = {},
-                    onEntryClick = {},
-                    onExportClick = {}
+                    onEntryClick = {}
                 )
             }
         }

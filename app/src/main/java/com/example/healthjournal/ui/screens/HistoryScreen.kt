@@ -1,6 +1,5 @@
 package com.example.healthjournal.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -27,7 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -50,9 +48,6 @@ fun HistoryScreen(
     viewModel: IJournalViewModel,
     onAddEntryClick: () -> Unit,
     onEntryClick: (String) -> Unit,
-    onExportClick: () -> Unit,
-    onMeasurementsClick: () -> Unit = {},
-    onPersonalCardClick: () -> Unit = {},
     onBack: () -> Unit = {}
 ) {
     val entries by viewModel.allEntries.collectAsState()
@@ -94,19 +89,10 @@ fun HistoryScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.action_back_label)
-                            )
-                        }
-                        Image(
-                            painter = painterResource(R.drawable.app_logo),
-                            contentDescription = stringResource(R.string.cd_app_logo),
-                            modifier = Modifier
-                                .size(32.dp)
-                                .testTag("app_logo")
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.action_back_label)
                         )
                     }
                 },
@@ -118,23 +104,6 @@ fun HistoryScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = onPersonalCardClick) {
-                        Icon(Icons.Default.Person, contentDescription = stringResource(R.string.cd_open_personal_card))
-                    }
-                    IconButton(
-                        onClick = onMeasurementsClick,
-                        modifier = Modifier.testTag("measurements_chart_icon")
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.measurements_chart),
-                            contentDescription = stringResource(R.string.history_cd_measurements),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    IconButton(onClick = onExportClick) {
-                        Icon(Icons.Default.FileDownload, contentDescription = stringResource(R.string.history_cd_export))
-                    }
                     IconButton(
                         onClick = { showOverflow = true },
                         modifier = Modifier.testTag("overflow_menu")

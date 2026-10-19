@@ -4,7 +4,7 @@
 > grid of eight static tiles wired to the existing nav graph, with the
 > History menu trimmed to actions only.
 
-Last updated: 2026-09-29
+Last updated: 2026-10-19
 
 ## Overview
 
@@ -15,8 +15,10 @@ offline. All navigation targets are the existing routes, untouched —
 sections already return via `popBackStack()`, which now lands on Main
 because Main is the only entry. The History overflow menu keeps its
 action entries (Sync, Sort, About) and drops the three entries whose
-destinations have tiles. See `Docs/prd/main-page-tiles.md` for the
-requirements.
+destinations have tiles. The dashboard top bar carries the app logo next
+to the title — the bar every section returns to is the branded entry
+point, so History keeps only back, title, and overflow. See
+`Docs/prd/main-page-tiles.md` for the requirements.
 
 ## Architecture
 
@@ -47,7 +49,7 @@ requirements.
 
 | Component | File | Responsibility |
 |---|---|---|
-| Dashboard UI | `app/src/main/java/com/example/healthjournal/ui/screens/MainScreen.kt` | static 2-column tile grid, testTags, content descriptions |
+| Dashboard UI | `app/src/main/java/com/example/healthjournal/ui/screens/MainScreen.kt` | static 2-column tile grid, app-logo brand mark in the top bar, testTags, content descriptions |
 | Nav graph | `app/src/main/java/com/example/healthjournal/MainActivity.kt` | `"main"` destination, `startDestination` |
 | Trimmed menu | `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` | actions-only overflow (Sync/Sort/About) |
 | Tile labels | `app/src/main/res/values/strings.xml` | `main_tile_*` English labels |

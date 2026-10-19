@@ -64,6 +64,18 @@ class MainScreenTest {
     }
 
     @Test
+    fun mainScreen_showsLogoInTopBar() {
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                MainScreen(onTileClick = {})
+            }
+        }
+
+        composeTestRule.onNodeWithTag("app_logo").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Health Journal").assertIsDisplayed()
+    }
+
+    @Test
     fun mainScreen_tileClickNavigatesToSection() {
         val clicked = mutableListOf<String>()
         composeTestRule.setContent {

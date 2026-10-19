@@ -4,7 +4,7 @@
 > forbids hardcoded colors via a source audit, and confirms status-bar appearance
 > and themed rendering at the instrumented level.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-19
 
 ## Automated coverage
 

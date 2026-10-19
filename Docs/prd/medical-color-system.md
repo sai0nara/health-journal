@@ -4,7 +4,7 @@
 > hardcoded colors with Material role tokens, and keeps the status bar legible in
 > both modes.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-19
 
 ## Overview
 

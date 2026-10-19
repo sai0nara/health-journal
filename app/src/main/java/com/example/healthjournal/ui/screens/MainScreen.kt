@@ -1,5 +1,6 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -37,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -78,6 +81,18 @@ fun MainScreen(onTileClick: (String) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    // Brand mark lives here rather than on a section screen so the
+                    // dashboard is the single branded entry point.
+                    Image(
+                        painter = painterResource(R.drawable.app_logo),
+                        contentDescription = stringResource(R.string.cd_app_logo),
+                        modifier = Modifier
+                            .padding(start = 16.dp)
+                            .size(32.dp)
+                            .testTag("app_logo")
+                    )
+                },
                 title = { Text(stringResource(R.string.main_title)) },
                 actions = {
                     IconButton(

@@ -22,6 +22,7 @@ open class FakeJournalViewModel : IJournalViewModel {
     override val userEmail: MutableStateFlow<String?> = MutableStateFlow(null)
     override val syncStatus: StateFlow<String?> = MutableStateFlow(null)
     override val isManualSyncActive: StateFlow<Boolean> = MutableStateFlow(false)
+    override val authRequired: MutableStateFlow<Boolean> = MutableStateFlow(false)
     override val searchQuery: MutableStateFlow<String> = MutableStateFlow("")
     override val archiveSearchQuery: MutableStateFlow<String> = MutableStateFlow("")
     override val isAscending: MutableStateFlow<Boolean> = MutableStateFlow(false)
@@ -37,6 +38,7 @@ open class FakeJournalViewModel : IJournalViewModel {
     var signInCalled = false
     var signOutCalled = false
     var syncNowCalled = false
+    var requestDriveAuthCalled = false
     var healthAvailability = 1
 
     data class AddEntryCall(
@@ -69,6 +71,10 @@ open class FakeJournalViewModel : IJournalViewModel {
 
     override fun signIn(activityContext: Context, onResolutionRequired: (PendingIntent) -> Unit) {
         signInCalled = true
+    }
+
+    override fun requestDriveAuth(onResolutionRequired: (PendingIntent) -> Unit) {
+        requestDriveAuthCalled = true
     }
 
     override fun syncNow() {
