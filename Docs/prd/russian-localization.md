@@ -7,7 +7,7 @@
 Last updated: 2026-10-19
 >
 > **Status: BUILT.** All functional requirements below are implemented: both
-> catalogs hold 364 strings plus 5 named plurals with enforced parity,
+> catalogs hold 365 strings plus 5 named plurals with enforced parity,
 > taxonomy enums resolve through `labelRes`, and the PDF report
 > localizes. See `Docs/psd/russian-localization.md` for the design and
 > `Docs/tests/russian-localization.md` for the verification.

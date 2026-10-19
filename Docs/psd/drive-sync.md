@@ -5,7 +5,7 @@
 > last-modified with cloud-winning ties, and a shared tombstone ledger carries
 > cross-device deletions.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-19
 
 ## Overview
 
@@ -55,7 +55,7 @@ unmetered) plus one-shot jobs after mutations and on manual demand.
 
 | Condition | Behaviour |
 |---|---|
-| Silent token unavailable | `KEY_AUTH_REQUIRED` progress; transient retry so periodic sync survives |
+| Silent token unavailable | `KEY_AUTH_REQUIRED` progress; transient retry so periodic sync survives; Settings offers a re-authorize action while the flag is set |
 | Missing/bad cloud file | parses to empty list; no crash |
 | Both sides edited same id | newer `lastModified` wins; cloud wins ties |
 | Item deleted on one device | tombstone removes cloud/stale copies; newest deletion wins |

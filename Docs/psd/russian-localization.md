@@ -46,7 +46,7 @@ The design decisions:
   `pluralStringResource`, `context.getString`) is the only resolution
   mechanism. Non-Compose code (PDF export, `PermissionsRationaleActivity`)
   receives a `Context` already held and calls `context.getString`.
-- Catalogs: `values/strings.xml` (English default, 364 strings + 5 plurals)
+- Catalogs: `values/strings.xml` (English default, 365 strings + 5 plurals)
   and `values-ru/strings.xml` (complete translation, same shape). No third
   locale exists, so default == English fallback.
 - Empty-state and dialog surfaces that previously embedded literals now read

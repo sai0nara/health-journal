@@ -4,7 +4,7 @@
 > entry tombstones to a private Google Drive app-data folder, keeping multiple
 > devices consistent in the background.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-19
 
 ## Overview
 
@@ -72,7 +72,9 @@ only the app-data scope; a background worker refreshes an access token silently.
 - AC-2: A newer local edit wins over a stale cloud copy; a tie goes to cloud.
 - AC-3: Deleting on one device removes the item from another (no resurrection).
 - AC-4: Signed-in users get periodic and manual sync; the UI shows a status.
-- AC-5: Re-authorization is surfaced when the silent token cannot be obtained.
+- AC-5: Re-authorization is surfaced when the silent token cannot be obtained. A
+  signed-in session that lost its Drive grant recovers through an explicit
+  re-authorize action in Settings; signing out and back in is not required.
 
 ## Out of scope
 

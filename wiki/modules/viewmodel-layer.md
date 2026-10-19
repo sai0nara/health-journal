@@ -2,7 +2,7 @@
 
 > The MVVM state holders: each feature's ViewModel exposes `StateFlow` state and orchestrates calls into the data layer.
 
-Last updated: 2026-09-01
+Last updated: 2026-10-19
 
 ## What lives here
 
@@ -16,7 +16,10 @@ data layer directly — ViewModels are the only path between the two.
 
 ## Key components
 
-- `JournalViewModel` — the journal feed and entry editing flows.
+- `JournalViewModel` — the journal feed and entry editing flows, plus the
+  Drive-sync state mapped from WorkManager progress: status text, the
+  manual-sync spinner gate, and an auth-required flag the Settings screen
+  turns into an in-place re-authorize action.
 - `BodyMeasurementViewModel` / `BodyAnalyticsViewModel` — measurement capture and
   the weight/trend analytics the measurements screens render.
 - `PersonalCardViewModel` — the personal-card feature.
