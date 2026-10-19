@@ -63,6 +63,7 @@ fun SettingsScreen(viewModel: IJournalViewModel, onBack: () -> Unit) {
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     val userEmail by viewModel.userEmail.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()
+    val authRequired by viewModel.authRequired.collectAsState()
 
     val authorizationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
@@ -197,6 +198,26 @@ fun SettingsScreen(viewModel: IJournalViewModel, onBack: () -> Unit) {
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
+                }
+                if (authRequired) {
+                    // A restored session can keep the email while the
+                    // Play-services Drive grant is gone; without this action
+                    // the only recovery was sign out + sign in, which loses
+                    // nothing but is far from discoverable.
+                    Button(
+                        onClick = {
+                            viewModel.requestDriveAuth { pendingIntent ->
+                                authorizationLauncher.launch(
+                                    IntentSenderRequest.Builder(pendingIntent).build()
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("settings_reauth")
+                    ) {
+                        Text(stringResource(R.string.settings_reauth_drive))
+                    }
                 }
                 Button(
                     onClick = { viewModel.signOut() },
