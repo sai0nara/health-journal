@@ -4,7 +4,7 @@
 > the JVM ViewModel tests, Room DAO tests, and the instrumented Add Entry screen
 > tests.
 
-Last updated: 2026-09-10
+Last updated: 2026-10-18
 
 ## Automated coverage
 

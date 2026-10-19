@@ -195,7 +195,10 @@ class AddEntryScreenTest {
             composeTestRule.onNodeWithText("Camera").assertIsDisplayed().assertIsEnabled()
             composeTestRule.onNodeWithText("Gallery").assertIsDisplayed().assertIsEnabled()
             composeTestRule.onNodeWithText("File").assertIsDisplayed().assertIsEnabled()
-            composeTestRule.onNodeWithText("Health").assertIsDisplayed().assertIsEnabled()
+            // Match by test tag: the journal-tag chip row renders a chip with the
+            // same "Health" label, so a text matcher is ambiguous.
+            composeTestRule.onNodeWithTag("enrichment_sync_health")
+                .assertIsDisplayed().assertIsEnabled()
             allureScreenshot("enrichment_buttons_visible_in_screen")
         }
 
@@ -204,7 +207,7 @@ class AddEntryScreenTest {
             // intent (Camera/Gallery/File open system pickers which would replace the
             // compose test host activity). The fake reports SDK_UNAVAILABLE, so this
             // shows a toast and returns without launching the permissions flow.
-            composeTestRule.onNodeWithText("Health")
+            composeTestRule.onNodeWithTag("enrichment_sync_health")
                 .performScrollTo()
                 .performClick()
             composeTestRule.waitForIdle()
@@ -226,7 +229,9 @@ class AddEntryScreenTest {
         }
 
         step("Verify Sync Health action is not actionable") {
-            composeTestRule.onNodeWithText("Health").assertDoesNotExist()
+            // Target the panel action by test tag: the journal-tag chip row always
+            // renders its own "Health" chip regardless of the sync setting.
+            composeTestRule.onNodeWithTag("enrichment_sync_health").assertDoesNotExist()
             allureScreenshot("health_hidden_when_disabled")
         }
     }

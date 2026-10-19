@@ -5,7 +5,7 @@
 > enforce parity, externalization, and taxonomy labels at build time, while
 > device-locale rendering is covered by instrumented and manual checks.
 
-Last updated: 2026-09-26
+Last updated: 2026-10-18
 
 ## Automated coverage
 
@@ -15,9 +15,9 @@ Last updated: 2026-09-26
 | JVM unit | `app/src/test/java/com/example/healthjournal/localization/HardcodedStringAuditTest.kt` | no user-facing `Text/placeholder/contentDescription/showSnackbar/Toast` literals in UI sources |
 | JVM unit | `app/src/test/java/com/example/healthjournal/localization/EnumLabelResTest.kt` | taxonomy `labelRes` ids are distinct (25) and exist in both catalogs |
 | JVM unit (app suite) | full `:app:testDebugUnitTest` | regression safety after externalization (validation, viewmodel, converter suites) |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/SettingsScreenTest.kt` | settings renders, dropdown options via resource-backed labels |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/PermissionsRationaleActivityTest.kt` | rationale activity renders localized text |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/ComponentPreviewScreenTest.kt` | component gallery renders with resources resolved |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/SettingsScreenTest.kt` | settings renders; expected strings resolved from app resources so the suite passes under any device locale |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/PermissionsRationaleActivityTest.kt` | rationale activity renders; expected strings resolved from app resources (any device locale) |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/ComponentPreviewScreenTest.kt` | component gallery renders; expected strings resolved from app resources (any device locale) |
 
 ## Test cases
 
