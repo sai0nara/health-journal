@@ -4,7 +4,7 @@
 > (workouts → Fitness), `#words` typed into entry text become tags on save,
 > and all of it filters through the existing tag search.
 
-Last updated: 2026-10-05
+Last updated: 2026-10-19
 
 > **Status: BUILT.** All functional requirements below are implemented:
 > kind auto-tags and inline `#word` parsing feed the shared tag table,

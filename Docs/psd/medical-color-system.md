@@ -6,7 +6,7 @@
 > transparent window; a source audit forbids hardcoded colors outside the theme
 > package.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-19
 
 ## Overview
 

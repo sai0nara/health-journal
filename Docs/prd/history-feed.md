@@ -4,7 +4,7 @@
 > archive (archive by swipe, restore, or permanently delete) from the History
 > and Archive screens. The History overflow menu also opens the workout hub.
 
-Last updated: 2026-09-08
+Last updated: 2026-10-19
 
 ## Overview
 

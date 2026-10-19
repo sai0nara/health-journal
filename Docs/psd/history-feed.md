@@ -5,7 +5,7 @@
 > tag filters over the archived rows and adds multi-select delete/restore. A
 > Workouts overflow-menu action opens the workout hub.
 
-Last updated: 2026-09-08
+Last updated: 2026-10-19
 
 ## Overview
 
@@ -13,8 +13,9 @@ Both History and Archive are thin Compose layers over `StateFlow<List<JournalEnt
 derived from the current search query and selected tags. The DAO filters by the
 `isArchived` flag so the two surfaces never overlap. Archiving merely flips the
 flag (plus a `lastModified` bump); permanent deletion is the only destructive
-path and leaves a tombstone. An overflow-menu item (`FitnessCenter`) opens the
-workout hub, giving the top-level entry point to the workout feature.
+path and leaves a tombstone. The History top bar is back arrow, title, and an
+actions-only overflow (Sync/Sort/About); destination shortcuts — Workouts
+included — live on the dashboard tiles (`Docs/psd/main-page-tiles.md`).
 
 ## Architecture
 
@@ -44,7 +45,7 @@ workout hub, giving the top-level entry point to the workout feature.
 
 | Component | File | Responsibility |
 |---|---|---|
-| History screen | `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` | feed, search/sort/tag, swipe-archive + undo, pull-to-refresh |
+| History screen | `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` | feed, search/sort/tag, swipe-archive + undo, pull-to-refresh; top bar: back + title + actions-only overflow |
 | Archive screen | `app/src/main/java/com/example/healthjournal/ui/screens/ArchiveScreen.kt` | archived feed, multi-select, restore/delete/empty |
 | Journal ViewModel | `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` | feed composition, archive/restore/delete actions |
 | Journal repository | `app/src/main/java/com/example/healthjournal/data/JournalRepository.kt` | archive-status, tombstone, file cleanup |

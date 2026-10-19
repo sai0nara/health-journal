@@ -2,7 +2,7 @@
 
 > Host the unchanged measurement capture sheet behind a new FAB on the Measurements screen and strip all capture wiring from History, keeping one creation action per screen.
 
-Last updated: 2026-10-16
+Last updated: 2026-10-19
 
 ## Overview
 

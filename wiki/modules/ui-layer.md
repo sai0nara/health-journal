@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-09-18
+Last updated: 2026-10-19
 
 ## What lives here
 
@@ -55,8 +55,11 @@ The summary and controls are driven from the viewmodel's `WorkoutUiState` (see
 Long journal entries are truncated in the list with a "Show More" interaction point,
 exercised by the truncation UI test on the instrumented stack.
 
-The History top app bar carries the bundled app logo (`app/src/main/res/drawable-nodpi/app_logo.png`)
-next to the title; the same artwork backs the launcher icon via the `mipmap-*` resources.
+The dashboard (`MainScreen`) top app bar carries the bundled app logo
+(`app/src/main/res/drawable-nodpi/app_logo.png`) next to the title; the same artwork
+backs the launcher icon via the `mipmap-*` resources. The History top bar is back
+arrow, title, and the actions-only overflow — destination shortcuts live on the
+dashboard tiles.
 
 ## Cross-references
 
@@ -67,6 +70,7 @@ next to the title; the same artwork backs the launcher icon via the `mipmap-*` r
 ## Sources
 
 - `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` — the main history feed screen.
+- `app/src/main/java/com/example/healthjournal/ui/screens/MainScreen.kt` — the dashboard screen and its branded top bar.
 - `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` — the workout hub, session screen, and manual-log dialog.
 - `app/src/main/java/com/example/healthjournal/ui/theme` — theme and color system sources.
 
