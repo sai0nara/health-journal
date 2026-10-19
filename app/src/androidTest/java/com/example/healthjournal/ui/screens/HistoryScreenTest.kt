@@ -49,8 +49,7 @@ class HistoryScreenTest {
                     HistoryScreen(
                         viewModel = viewModel,
                         onAddEntryClick = {},
-                        onEntryClick = {},
-                        onExportClick = {}
+                        onEntryClick = {}
                     )
                 }
             }
@@ -77,8 +76,7 @@ class HistoryScreenTest {
                     HistoryScreen(
                         viewModel = viewModel,
                         onAddEntryClick = {},
-                        onEntryClick = {},
-                        onExportClick = {}
+                        onEntryClick = {}
                     )
                 }
             }
@@ -102,8 +100,7 @@ class HistoryScreenTest {
                     HistoryScreen(
                         viewModel = viewModel,
                         onAddEntryClick = {},
-                        onEntryClick = {},
-                        onExportClick = {}
+                        onEntryClick = {}
                     )
                 }
             }
@@ -133,8 +130,7 @@ class HistoryScreenTest {
                     HistoryScreen(
                         viewModel = viewModel,
                         onAddEntryClick = {},
-                        onEntryClick = {},
-                        onExportClick = {}
+                        onEntryClick = {}
                     )
                 }
             }
@@ -163,8 +159,7 @@ class HistoryScreenTest {
                     HistoryScreen(
                         viewModel = viewModel,
                         onAddEntryClick = {},
-                        onEntryClick = {},
-                        onExportClick = {}
+                        onEntryClick = {}
                     )
                 }
             }
@@ -190,8 +185,7 @@ class HistoryScreenTest {
                     HistoryScreen(
                         viewModel = viewModel,
                         onAddEntryClick = {},
-                        onEntryClick = {},
-                        onExportClick = {}
+                        onEntryClick = {}
                     )
                 }
             }
@@ -238,8 +232,7 @@ class HistoryScreenTest {
                         HistoryScreen(
                             viewModel = viewModel,
                             onAddEntryClick = {},
-                            onEntryClick = {},
-                            onExportClick = {}
+                            onEntryClick = {}
                         )
                     }
                 }
@@ -281,8 +274,7 @@ class HistoryScreenTest {
                     HistoryScreen(
                         viewModel = viewModel,
                         onAddEntryClick = {},
-                        onEntryClick = {},
-                        onExportClick = {}
+                        onEntryClick = {}
                     )
                 }
             }
@@ -311,8 +303,7 @@ class HistoryScreenTest {
                     HistoryScreen(
                         viewModel = viewModel,
                         onAddEntryClick = {},
-                        onEntryClick = {},
-                        onExportClick = {}
+                        onEntryClick = {}
                     )
                 }
             }
@@ -344,8 +335,7 @@ class HistoryScreenTest {
                     HistoryScreen(
                         viewModel = viewModel,
                         onAddEntryClick = {},
-                        onEntryClick = {},
-                        onExportClick = {}
+                        onEntryClick = {}
                     )
                 }
             }

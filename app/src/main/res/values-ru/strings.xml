@@ -9,7 +9,6 @@
     <string name="error_weight_out_of_range">Вес должен быть от %1$s до %2$s</string>
 
     <string name="personal_card_title">Личная карточка</string>
-    <string name="cd_open_personal_card">Открыть личную карточку</string>
     <string name="cd_app_logo">Логотип Health Journal</string>
     <string name="action_back">Назад</string>
     <string name="action_cancel">Отмена</string>
@@ -111,8 +110,6 @@
     <string name="history_entry_archived">Запись архивирована</string>
     <string name="history_undo">Отменить</string>
     <string name="history_search_placeholder">Поиск по журналу…</string>
-    <string name="history_cd_measurements">Показать измерения</string>
-    <string name="history_cd_export">Экспорт данных</string>
     <string name="history_cd_more">Другие действия</string>
     <string name="history_cd_add_measurements">Добавить измерения тела</string>
     <string name="history_cd_add_entry">Добавить запись</string>
