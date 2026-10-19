@@ -1,0 +1,8 @@
+{
+  "track_id": "trim_history_actions_move_logo_20261019",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-10-19T09:19:29Z",
+  "updated_at": "2026-10-19T09:19:29Z",
+  "description": "Remove personal card, measurements and export buttons from history screen. Move logo to main screen."
+}
