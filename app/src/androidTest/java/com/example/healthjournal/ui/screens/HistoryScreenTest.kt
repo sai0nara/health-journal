@@ -94,7 +94,7 @@ class HistoryScreenTest {
         }
     }
     @Test
-    fun testHistoryScreen_ShowsAppLogoInTopBar() {
+    fun testHistoryScreen_topBarHasNoLogoOrDestinationShortcuts() {
         step("Open History Screen") {
             viewModel.allEntries.value = emptyList()
             composeTestRule.setContent {
@@ -110,12 +110,16 @@ class HistoryScreenTest {
             composeTestRule.waitForIdle()
         }
 
-        step("Verify app logo is displayed in the top app bar") {
-            composeTestRule.onNodeWithTag("app_logo").assertExists()
-            composeTestRule.onNodeWithTag("app_logo").assertIsDisplayed()
+        step("Verify the logo and destination shortcuts are gone from the top bar") {
+            composeTestRule.onNodeWithTag("app_logo").assertDoesNotExist()
+            composeTestRule.onNodeWithTag("measurements_chart_icon").assertDoesNotExist()
+            // Literal English: these content descriptions belong to the removed actions,
+            // and their string resources are deleted alongside them.
+            composeTestRule.onNodeWithContentDescription("Open Personal Card").assertDoesNotExist()
+            composeTestRule.onNodeWithContentDescription("Export Data").assertDoesNotExist()
         }
 
-        step("Verify the title text is still displayed next to the logo") {
+        step("Verify the screen title is still displayed") {
             composeTestRule.onNodeWithText("Health Journal").assertExists()
             composeTestRule.onNodeWithText("Health Journal").assertIsDisplayed()
         }
@@ -150,37 +154,6 @@ class HistoryScreenTest {
             composeTestRule.onNodeWithText("About App").assertExists()
         }
     }
-    @Test
-    fun testHistoryScreen_MeasurementsAction_usesChartIconAndNavigates() {
-        var measurementsClicked = false
-        step("Open History Screen") {
-            viewModel.allEntries.value = emptyList()
-            composeTestRule.setContent {
-                HealthJournalTheme {
-                    HistoryScreen(
-                        viewModel = viewModel,
-                        onAddEntryClick = {},
-                        onEntryClick = {},
-                        onExportClick = {},
-                        onMeasurementsClick = { measurementsClicked = true }
-                    )
-                }
-            }
-            composeTestRule.waitForIdle()
-        }
-
-        step("Verify the new chart icon drives measurements navigation") {
-            composeTestRule.onNodeWithTag("measurements_chart_icon").assertExists()
-            composeTestRule.onNodeWithTag("measurements_chart_icon").assertIsDisplayed()
-            composeTestRule.onNodeWithTag("measurements_chart_icon").performClick()
-            composeTestRule.waitForIdle()
-            org.junit.Assert.assertTrue(
-                "onMeasurementsClick was not invoked from the chart action",
-                measurementsClicked
-            )
-        }
-    }
-
     @Test
     fun testHistoryScreen_hasSingleEntryFabAndNoMeasurementAction() {
         step("Open History Screen") {
