@@ -35,7 +35,11 @@ fun AboutAppDialog(onDismiss: () -> Unit) {
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
-                        text = "${BuildConfig.VERSION_NAME} (Build: ${BuildConfig.BUILD_TIMESTAMP})",
+                        text = stringResource(
+                            R.string.about_version_format,
+                            BuildConfig.VERSION_NAME,
+                            BuildConfig.BUILD_TIMESTAMP
+                        ),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }

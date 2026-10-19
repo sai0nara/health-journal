@@ -6,13 +6,15 @@
 > dependency-free chart, and both rows and goals sync as Drive snapshots
 > with tombstone + last-write-wins merge.
 
-Last updated: 2026-09-21
+Last updated: 2026-10-18
 
 ## Overview
 
 Body measurements are a sibling domain in Room and Drive. Capture is a
-`ModalBottomSheet` whose form state lives in the ViewModel (so it survives
-rotation) and whose `canSave` matrix combines per-field errors, the at-least-one
+`ModalBottomSheet` that opens fully expanded — the seven-field form is taller
+than the partial anchor, which would leave Save off-screen behind a drag
+gesture — with form state living in the ViewModel (so it survives
+rotation) and a `canSave` matrix combining per-field errors, the at-least-one
 rule, and a future-date guard. Display is a paged tab per parameter: a
 dependency-free `Canvas` line chart with a goal line, and a chronological card
 list. Goals are one target per parameter with LWW sync; measurements delete via
@@ -34,8 +36,8 @@ a tombstone-first path.
 
 ## Data flow
 
-1. Secondary FAB on History opens the sheet; or the top bar opens the
-   measurements screen.
+1. The add button on the Measurements screen opens the sheet; History's
+   top bar opens the measurements screen.
 2. User enters values in display units; each keystroke validates in display
    units; save is enabled only when `canSave` (no errors, ≥1 value, not
    future, not already saving).
@@ -49,7 +51,7 @@ a tombstone-first path.
 
 | Component | File | Responsibility |
 |---|---|---|
-| Measurements screen | `app/src/main/java/com/example/healthjournal/ui/screens/MeasurementsScreen.kt` | tabs, chart, history list, delete/undo, goals entry |
+| Measurements screen | `app/src/main/java/com/example/healthjournal/ui/screens/MeasurementsScreen.kt` | tabs, chart, history list, delete/undo, goals entry, add FAB |
 | Capture sheet | `app/src/main/java/com/example/healthjournal/ui/components/MeasurementEntrySheet.kt` | field input + save |
 | Goal sheet | `app/src/main/java/com/example/healthjournal/ui/components/GoalSheet.kt` | goal set/clear |
 | Trend chart | `app/src/main/java/com/example/healthjournal/ui/components/ParamTrendChart.kt` | dependency-free line/goal chart |

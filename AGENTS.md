@@ -35,6 +35,7 @@ export JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Con
 - Install debug build on a device/emulator: `./gradlew installDebug`
 - JVM unit tests: `./gradlew :app:testDebugUnitTest`
 - Instrumented tests (require a connected device/emulator): `./gradlew connectedAndroidTest`
+- Always shut the emulator down after tests: `adb emu kill`.
 - `wiki/lint.py` and related scripts use stock `python3` + `git`; no test framework.
 
 ## Documentation

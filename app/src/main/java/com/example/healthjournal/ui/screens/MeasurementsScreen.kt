@@ -18,12 +18,11 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.CloudSync
-import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -65,6 +64,7 @@ import com.example.healthjournal.domain.MeasurementField
 import com.example.healthjournal.domain.toParamTrend
 import com.example.healthjournal.domain.valueFor
 import com.example.healthjournal.ui.components.GoalSheet
+import com.example.healthjournal.ui.components.MeasurementEntrySheet
 import com.example.healthjournal.ui.components.ParamTrendChart
 import com.example.healthjournal.viewmodel.BodyAnalyticsViewModel
 import com.example.healthjournal.viewmodel.BodyMeasurementViewModel
@@ -108,6 +108,7 @@ fun MeasurementsScreen(
     }
 
     var sheetField by remember { mutableStateOf<MeasurementField?>(null) }
+    var showMeasurementSheet by remember { mutableStateOf(false) }
     sheetField?.let { field ->
         GoalSheet(
             field = field,
@@ -125,6 +126,13 @@ fun MeasurementsScreen(
         )
     }
 
+    if (showMeasurementSheet) {
+        MeasurementEntrySheet(
+            viewModel = viewModel,
+            onDismiss = { showMeasurementSheet = false }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -135,6 +143,14 @@ fun MeasurementsScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showMeasurementSheet = true }) {
+                Icon(
+                    Icons.Default.Straighten,
+                    contentDescription = stringResource(R.string.history_cd_add_measurements)
+                )
+            }
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->

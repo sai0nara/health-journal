@@ -264,9 +264,10 @@
     <string name="measurements_title">Body measurements</string>
     <string name="measurements_param_empty_format">No %1$s data yet</string>
     <string name="measurements_empty_title">No body measurements yet</string>
-    <string name="measurements_empty_hint">Tap the ruler button on the History screen to log your first entry.</string>
+    <string name="measurements_empty_hint">Tap the add button to log your first entry.</string>
     <string name="measurements_snackbar_deleted">Measurement deleted</string>
     <string name="measurements_goal_header_format">%1$s · Goal %2$s %3$s</string>
+    <string name="measurements_trend_goal_format">Goal %1$s %2$s</string>
     <string name="measurements_cd_set_goal_format">Set %1$s goal</string>
     <string name="measurements_weight_value_format">%1$s %2$s</string>
     <string name="measurements_param_value_format">%1$s %2$s %3$s</string>
@@ -311,6 +312,11 @@
     <string name="entry_edited">(Edited)</string>
     <string name="entry_show_more">Show More</string>
     <string name="entry_show_less">Show Less</string>
+    <string name="entry_enrich_title">Enrich Your Entry</string>
+    <string name="entry_enrich_camera">Camera</string>
+    <string name="entry_enrich_gallery">Gallery</string>
+    <string name="entry_enrich_file">File</string>
+    <string name="entry_enrich_health">Health</string>
 
     <!-- Goal -->
     <string name="goal_title_format">%1$s goal</string>
@@ -322,6 +328,7 @@
     <string name="about_title">About Health Journal</string>
     <string name="about_body">A modern health journal for personal event logging and health metric tracking.</string>
     <string name="about_version_label">Version:\u0020</string>
+    <string name="about_version_format">%1$s (Build: %2$s)</string>
     <string name="about_build_type_format">Build Type: %1$s</string>
 
     <!-- Permissions -->
@@ -415,6 +422,12 @@
     <string name="auto_tag_fitness">Fitness</string>
     <string name="auto_tag_health">Health</string>
     <string name="auto_tag_medication">Medication</string>
+
+    <!-- Journal tags -->
+    <string name="tag_illness">Illness</string>
+    <string name="tag_checkup">Checkup</string>
+    <string name="tag_doctor">Doctor</string>
+    <string name="tag_exercises">Exercises</string>
 
     <!-- Main dashboard -->
     <string name="main_title">Health Journal</string>

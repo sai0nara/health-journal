@@ -10,7 +10,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.healthjournal.R
 
 @Composable
 fun EnrichmentPanel(
@@ -34,7 +36,7 @@ fun EnrichmentPanel(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Enrich Your Entry",
+                text = stringResource(R.string.entry_enrich_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -54,7 +56,7 @@ fun EnrichmentPanel(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Camera", style = MaterialTheme.typography.labelSmall)
+                    Text(text = stringResource(R.string.entry_enrich_camera), style = MaterialTheme.typography.labelSmall)
                 }
 
                 OutlinedButton(
@@ -68,7 +70,7 @@ fun EnrichmentPanel(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Gallery", style = MaterialTheme.typography.labelSmall)
+                    Text(text = stringResource(R.string.entry_enrich_gallery), style = MaterialTheme.typography.labelSmall)
                 }
             }
 
@@ -87,7 +89,7 @@ fun EnrichmentPanel(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "File", style = MaterialTheme.typography.labelSmall)
+                    Text(text = stringResource(R.string.entry_enrich_file), style = MaterialTheme.typography.labelSmall)
                 }
                 
                 if (showSyncHealth) {
@@ -104,7 +106,7 @@ fun EnrichmentPanel(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = "Health", style = MaterialTheme.typography.labelSmall)
+                        Text(text = stringResource(R.string.entry_enrich_health), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }

@@ -4,8 +4,10 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import com.example.healthjournal.R
 import com.example.healthjournal.util.FakeJournalViewModel
 import com.example.healthjournal.util.HtmlParser
+import com.example.healthjournal.util.targetString
 import com.example.healthjournal.ui.theme.HealthJournalTheme
 import io.qameta.allure.kotlin.Feature
 import org.junit.Assert.assertTrue
@@ -35,10 +37,10 @@ class CyrillicSpacingTest {
             }
         }
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("How are you feeling today?")
+        composeTestRule.onNodeWithText(targetString(R.string.entry_hint_feeling))
             .performTextInput(text)
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Save Entry").performClick()
+        composeTestRule.onNodeWithText(targetString(R.string.entry_save)).performClick()
         composeTestRule.waitUntil(5000) { backCalled }
         return viewModel.addEntryCalledWith?.description ?: ""
     }

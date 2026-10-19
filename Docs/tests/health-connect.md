@@ -4,7 +4,7 @@
 > direct Health Connect SDK reads are exercised indirectly (there is no
 > dedicated manager test today).
 
-Last updated: 2026-10-09
+Last updated: 2026-10-18
 
 ## Automated coverage
 

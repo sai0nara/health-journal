@@ -5,7 +5,7 @@
 > taxonomies through resource ids, and localizes the PDF report — with parity,
 > audit, and enum-label tests enforcing the contract.
 
-Last updated: 2026-09-26
+Last updated: 2026-10-18
 
 ## Overview
 
@@ -27,13 +27,16 @@ The design decisions:
   `name` attribute or AAPT2 strips it from the build, silently removing every
   variant (review finding, fixed).
 - **Taxonomy via enum `labelRes`.** Domain enums whose labels are user-facing
-  (`WorkoutType`, measurement kinds, presets) expose a `@StringRes labelRes`
-  instead of returning strings, so the UI resolves them through resources.
+  (`WorkoutType`, measurement kinds, presets, journal tags) expose a
+  `@StringRes labelRes` instead of returning strings, so the UI resolves them
+  through resources. Stored journal-tag names resolve case-insensitively to
+  `JournalTag.labelRes`, so legacy/uppercase names keep localized chip labels.
 - **Parity as an automated contract.** The JVM parity test reconstructs the
   key sets of both catalogs (including `<plurals>`) and fails if `values-ru`
   misses a default key or the catalogs drift.
-- **Hardcoded-text audit.** A regex-based JVM test fails on any `Text("...")`,
-  `placeholder="..."`, `contentDescription="..."`, `showSnackbar("...")`, or
+- **Hardcoded-text audit.** A regex-based JVM test fails on any `Text("...")`
+  or named-argument `text = "..."`, `placeholder="..."`,
+  `contentDescription="..."`, `showSnackbar("...")`, or
   `Toast.makeText(..., "...")` literal in UI sources, keeping the
   externalization rule enforceable rather than by eye.
 
@@ -43,7 +46,7 @@ The design decisions:
   `pluralStringResource`, `context.getString`) is the only resolution
   mechanism. Non-Compose code (PDF export, `PermissionsRationaleActivity`)
   receives a `Context` already held and calls `context.getString`.
-- Catalogs: `values/strings.xml` (English default, 342 strings + 5 plurals)
+- Catalogs: `values/strings.xml` (English default, 367 strings + 5 plurals)
   and `values-ru/strings.xml` (complete translation, same shape). No third
   locale exists, so default == English fallback.
 - Empty-state and dialog surfaces that previously embedded literals now read
@@ -84,7 +87,7 @@ The design decisions:
 | English catalog | `app/src/main/res/values/strings.xml` | default strings + named plurals |
 | Russian catalog | `app/src/main/res/values-ru/strings.xml` | full `ru` translation + one/few/many plurals |
 | Screen/component UI | `app/src/main/java/com/example/healthjournal/ui/screens/*.kt`, `ui/components/*.kt` | resolve all user-facing text via resources |
-| Taxonomy labels | `app/src/main/java/com/example/healthjournal/domain/WorkoutType.kt`, `ValidateMeasurements.kt`, `WorkoutPreset.kt` | `labelRes` on user-facing enums |
+| Taxonomy labels | `app/src/main/java/com/example/healthjournal/domain/WorkoutType.kt`, `ValidateMeasurements.kt`, `WorkoutPreset.kt`, `app/src/main/java/com/example/healthjournal/data/JournalTag.kt` | `labelRes` on user-facing enums |
 | PDF localization | `app/src/main/java/com/example/healthjournal/export/PdfExportUseCase.kt` | localized title, locale-aware dates |
 | Restore worker | `app/src/main/java/com/example/healthjournal/sync/RestoreWorker.kt` | localized sync/restore status via resource ids |
 | Activity context | `app/src/main/java/com/example/healthjournal/PermissionsRationaleActivity.kt` | localized rationale via `Context.getString` |
@@ -119,6 +122,8 @@ The design decisions:
 - `app/src/main/res/values-ru/strings.xml` — Russian catalog and plurals.
 - `app/src/main/java/com/example/healthjournal/ui/screens/*.kt`, `ui/components/*.kt` — resource-resolved UI.
 - `app/src/main/java/com/example/healthjournal/domain/WorkoutType.kt`, `ValidateMeasurements.kt`, `WorkoutPreset.kt` — `labelRes` enums.
+- `app/src/main/java/com/example/healthjournal/data/JournalTag.kt` — journal-tag `labelRes` enum.
+- `app/src/main/java/com/example/healthjournal/ui/components/TagSelectionRow.kt` — stored tag names resolve case-insensitively to `JournalTag.labelRes`.
 - `app/src/main/java/com/example/healthjournal/export/PdfExportUseCase.kt` — localized PDF report.
 - `app/src/test/java/com/example/healthjournal/localization/LocalizationParityTest.kt` — parity contract.
 - `app/src/test/java/com/example/healthjournal/localization/HardcodedStringAuditTest.kt` — externalization audit.

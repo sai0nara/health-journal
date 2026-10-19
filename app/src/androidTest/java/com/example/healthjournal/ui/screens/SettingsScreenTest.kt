@@ -10,9 +10,11 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.healthjournal.R
 import com.example.healthjournal.data.local.HealthSyncSettings
 import com.example.healthjournal.ui.theme.HealthJournalTheme
 import com.example.healthjournal.util.FakeJournalViewModel
+import com.example.healthjournal.util.targetString
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -25,23 +27,23 @@ class SettingsScreenTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun settingsScreen_rendersExternalizedEnglishStrings() {
+    fun settingsScreen_rendersExternalizedStrings() {
         composeTestRule.setContent {
             HealthJournalTheme {
                 SettingsScreen(viewModel = FakeJournalViewModel(), onBack = {})
             }
         }
 
-        composeTestRule.onNodeWithText("Settings").assertIsDisplayed()
-        composeTestRule.onNodeWithText("General").assertIsDisplayed()
-        composeTestRule.onNodeWithContentDescription("Back").assertExists()
+        composeTestRule.onNodeWithText(targetString(R.string.settings_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(targetString(R.string.settings_section_general)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(targetString(R.string.action_back_label)).assertExists()
         composeTestRule.onNodeWithTag("settings_unit_system").performClick()
         composeTestRule.onNodeWithTag("settings_unit_system_metric")
             .assertIsDisplayed()
-            .assertTextEquals("Metric (kg/cm)")
+            .assertTextEquals(targetString(R.string.unit_system_metric))
         composeTestRule.onNodeWithTag("settings_unit_system_imperial")
             .assertIsDisplayed()
-            .assertTextEquals("Imperial (lbs/in)")
+            .assertTextEquals(targetString(R.string.unit_system_imperial))
     }
 
     @Test
@@ -79,7 +81,7 @@ class SettingsScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText("Account").assertIsDisplayed()
+        composeTestRule.onNodeWithText(targetString(R.string.settings_section_account)).assertIsDisplayed()
         composeTestRule.onNodeWithTag("settings_sign_in").assertIsDisplayed().performClick()
         assertTrue(viewModel.signInCalled)
     }

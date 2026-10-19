@@ -1,5 +1,6 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasTestTag
@@ -8,14 +9,15 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthjournal.data.BodyMeasurementRepository
+import com.example.healthjournal.data.GoalsRepository
 import com.example.healthjournal.data.local.UnitSettings
 import com.example.healthjournal.data.local.UnitSystem
-import com.example.healthjournal.util.FakeJournalViewModel
+import com.example.healthjournal.viewmodel.BodyAnalyticsViewModel
 import com.example.healthjournal.viewmodel.BodyMeasurementViewModel
 import io.mockk.*
 import io.qameta.allure.android.rules.ScreenshotRule
@@ -50,18 +52,21 @@ class MeasurementEntrySheetTest {
     }
 
     private fun setContent(darkTheme: Boolean = false) {
+        val goalsDao = mockk<com.example.healthjournal.data.local.GoalDao>(relaxed = true)
+        every { goalsDao.observeAll() } returns kotlinx.coroutines.flow.MutableStateFlow(
+            emptyList<com.example.healthjournal.data.local.GoalEntity>()
+        )
+        val analyticsViewModel = BodyAnalyticsViewModel(
+            measurementRepository,
+            GoalsRepository(goalsDao),
+            kotlinx.coroutines.test.UnconfinedTestDispatcher()
+        )
         composeTestRule.setContent {
             com.example.healthjournal.ui.theme.HealthJournalTheme(darkTheme = darkTheme) {
-                HistoryScreen(
-                    viewModel = FakeJournalViewModel(),
-                    measurementViewModelFactory = object : ViewModelProvider.Factory {
-                        @Suppress("UNCHECKED_CAST")
-                        override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                            measurementViewModel as T
-                    },
-                    onAddEntryClick = {},
-                    onEntryClick = {},
-                    onExportClick = {}
+                MeasurementsScreen(
+                    viewModel = measurementViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    onBack = {}
                 )
             }
         }
@@ -70,7 +75,7 @@ class MeasurementEntrySheetTest {
 
     private fun openSheet(darkTheme: Boolean = false) {
         setContent(darkTheme)
-        step("Open the measurement capture sheet via the tape-measure FAB") {
+        step("Open the measurement capture sheet via the add FAB") {
             composeTestRule
                 .onNodeWithContentDescription("Add body measurements")
                 .performClick()
@@ -84,7 +89,7 @@ class MeasurementEntrySheetTest {
 
         step("Verify sheet renders under light palette") {
             composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithText("Body measurements").assertExists()
+            composeTestRule.onNodeWithTag("bm_field_WEIGHT").assertExists()
             composeTestRule.onNodeWithTag("bm_save").assertExists()
         }
     }
@@ -95,20 +100,30 @@ class MeasurementEntrySheetTest {
 
         step("Verify sheet renders under dark palette") {
             composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithText("Body measurements").assertExists()
+            composeTestRule.onNodeWithTag("bm_field_WEIGHT").assertExists()
             composeTestRule.onNodeWithTag("bm_save").assertExists()
         }
     }
 
     @Test
-    fun secondaryFab_opensMeasurementSheet() {
+    fun addFab_opensMeasurementSheet() {
         openSheet()
 
         step("Verify sheet content appears") {
             composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithText("Body measurements").assertExists()
+            composeTestRule.onNodeWithTag("bm_field_WEIGHT").assertExists()
             composeTestRule.onNodeWithTag("bm_field_WAIST").assertExists()
             composeTestRule.onNodeWithTag("bm_save").assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun saveButton_isReachableWithoutDraggingTheSheet() {
+        openSheet()
+
+        step("Verify the whole form including Save is visible right after opening") {
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithTag("bm_save").assertIsDisplayed()
         }
     }
 
@@ -119,10 +134,13 @@ class MeasurementEntrySheetTest {
         step("Enter waist only and save") {
             composeTestRule.onNodeWithTag("bm_field_WAIST").performTextInput("85")
             composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithTag("bm_save").assertIsEnabled()
-            androidx.test.espresso.Espresso.closeSoftKeyboard()
+            Espresso.closeSoftKeyboard()
             composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithTag("bm_save").performClick()
+            composeTestRule.onNodeWithTag("bm_save")
+                .performScrollTo()
+                .assertIsDisplayed()
+                .assertIsEnabled()
+                .performClick()
         }
 
         step("Verify insert persisted and sheet dismissed") {
@@ -237,10 +255,14 @@ class MeasurementEntrySheetTest {
             step("Enter weight in lb and save") {
                 composeTestRule.onNodeWithTag("bm_field_WEIGHT").performTextInput("154.3")
                 composeTestRule.waitForIdle()
-                composeTestRule.onNodeWithTag("bm_save").assertIsEnabled()
-                androidx.test.espresso.Espresso.closeSoftKeyboard()
+                Espresso.closeSoftKeyboard()
                 composeTestRule.waitForIdle()
-                composeTestRule.onNodeWithTag("bm_save").performClick()
+                // Scroll Save into view (see partialEntry_savesAndDismissesSheet)
+                composeTestRule.onNodeWithTag("bm_save")
+                    .performScrollTo()
+                    .assertIsDisplayed()
+                    .assertIsEnabled()
+                    .performClick()
             }
 
             step("Verify metric kg persisted and sheet dismissed") {

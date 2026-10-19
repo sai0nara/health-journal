@@ -87,7 +87,6 @@ class MainActivity : ComponentActivity() {
                     composable("history") {
                         HistoryScreen(
                             viewModel = viewModel,
-                            measurementViewModelFactory = measurementViewModelFactory,
                             onAddEntryClick = { navController.navigate("add_entry") },
                             onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") },
                             onExportClick = { navController.navigate("export") },
