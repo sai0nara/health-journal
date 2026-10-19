@@ -46,6 +46,7 @@ interface IJournalViewModel {
     val syncStatus: StateFlow<String?>
     val userEmail: StateFlow<String?>
     val isManualSyncActive: StateFlow<Boolean>
+    val authRequired: StateFlow<Boolean>
     val searchQuery: StateFlow<String>
     val archiveSearchQuery: StateFlow<String>
     val isAscending: StateFlow<Boolean>
@@ -66,6 +67,7 @@ interface IJournalViewModel {
     fun updateEntry(entry: JournalEntry, tags: Set<String> = emptySet())
     suspend fun getEntryById(entryId: String): JournalEntry?
     fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit)
+    fun requestDriveAuth(onResolutionRequired: (android.app.PendingIntent) -> Unit)
     fun syncNow()
     fun signOut()
 
@@ -185,6 +187,9 @@ class JournalViewModel(
      */
     private val _isManualSyncActive = MutableStateFlow(false)
     override val isManualSyncActive: StateFlow<Boolean> = _isManualSyncActive.asStateFlow()
+
+    private val _authRequired = MutableStateFlow(false)
+    override val authRequired: StateFlow<Boolean> = _authRequired.asStateFlow()
 
     private val TAG = "JournalViewModel"
 
@@ -343,7 +348,7 @@ class JournalViewModel(
         }
     }
 
-    fun requestDriveAuth(onResolutionRequired: (android.app.PendingIntent) -> Unit) {
+    override fun requestDriveAuth(onResolutionRequired: (android.app.PendingIntent) -> Unit) {
         val email = sessionManager.getUserEmail() ?: return
         
         Log.d(TAG, "Requesting Drive authorization for $email")

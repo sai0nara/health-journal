@@ -466,6 +466,60 @@ class JournalViewModelTest {
         assertEquals("Re-authorization required", viewModel.syncStatus.value)
     }
 
+    @Test
+    fun authRequired_surfacesWhileManualWorkBlockedOnAuthorization() = runTest {
+        val workManager = mockk<WorkManager>(relaxed = true)
+        val info = workInfo(WorkInfo.State.ENQUEUED).also {
+            every { it.progress } returns androidx.work.workDataOf(SyncWorker.KEY_AUTH_REQUIRED to true)
+        }
+        every { WorkManager.getInstance(any()) } returns workManager
+        every { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_periodic") } returns MutableStateFlow(emptyList())
+        every { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_manual") } returns MutableStateFlow(listOf(info))
+
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.authRequired.value)
+    }
+
+    @Test
+    fun authRequired_clearsOnceManualWorkSucceeds() = runTest {
+        val workManager = mockk<WorkManager>(relaxed = true)
+        val blocked = workInfo(WorkInfo.State.ENQUEUED).also {
+            every { it.progress } returns androidx.work.workDataOf(SyncWorker.KEY_AUTH_REQUIRED to true)
+        }
+        val workFlow = MutableStateFlow(listOf(blocked))
+        every { WorkManager.getInstance(any()) } returns workManager
+        every { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_periodic") } returns MutableStateFlow(emptyList())
+        every { workManager.getWorkInfosForUniqueWorkFlow("journal_sync_manual") } returns workFlow
+
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertTrue(viewModel.authRequired.value)
+
+        workFlow.value = listOf(workInfo(WorkInfo.State.SUCCEEDED))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.authRequired.value)
+    }
+
+    @Test
+    fun requestDriveAuth_forwardsResolutionRequiredPendingIntent() = runTest {
+        var capturedResolution: ((android.app.PendingIntent) -> Unit)? = null
+        every { authManager.requestDriveAuthorization(any(), any()) } answers {
+            capturedResolution = firstArg()
+            secondArg<(String) -> Unit>()
+        }
+
+        viewModel = JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService, testDispatcher)
+        var forwarded = false
+        viewModel.requestDriveAuth { forwarded = true }
+
+        capturedResolution?.invoke(mockk(relaxed = true))
+
+        assertTrue(forwarded)
+    }
+
     private fun workInfo(state: WorkInfo.State): WorkInfo {
         val info = mockk<WorkInfo>()
         every { info.state } returns state

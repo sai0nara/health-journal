@@ -284,6 +284,7 @@
     <string name="settings_section_account">Account</string>
     <string name="settings_sign_in">Sign In</string>
     <string name="settings_sign_out">Sign Out</string>
+    <string name="settings_reauth_drive">Re-authorize Google Drive</string>
 
     <!-- Entry -->
     <string name="entry_title_add">Add Entry</string>

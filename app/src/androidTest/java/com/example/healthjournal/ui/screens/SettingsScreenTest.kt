@@ -104,4 +104,37 @@ class SettingsScreenTest {
         composeTestRule.onNodeWithTag("settings_sign_out").assertIsDisplayed().performClick()
         assertTrue(viewModel.signOutCalled)
     }
+
+    @Test
+    fun settingsScreen_signedInAuthRequired_showsReauthorizeAndCallsViewModel() {
+        val viewModel = FakeJournalViewModel()
+        viewModel.isUserSignedIn.value = true
+        viewModel.userEmail.value = "test@example.com"
+        viewModel.authRequired.value = true
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                SettingsScreen(viewModel = viewModel, onBack = {})
+            }
+        }
+
+        composeTestRule.onNodeWithTag("settings_reauth")
+            .assertIsDisplayed()
+            .assertTextEquals(targetString(R.string.settings_reauth_drive))
+            .performClick()
+        assertTrue(viewModel.requestDriveAuthCalled)
+    }
+
+    @Test
+    fun settingsScreen_signedInWithoutAuthRequired_hidesReauthorize() {
+        val viewModel = FakeJournalViewModel()
+        viewModel.isUserSignedIn.value = true
+        viewModel.userEmail.value = "test@example.com"
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                SettingsScreen(viewModel = viewModel, onBack = {})
+            }
+        }
+
+        composeTestRule.onNodeWithTag("settings_reauth").assertDoesNotExist()
+    }
 }

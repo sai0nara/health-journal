@@ -282,6 +282,7 @@
     <string name="settings_section_account">Учётная запись</string>
     <string name="settings_sign_in">Войти</string>
     <string name="settings_sign_out">Выйти</string>
+    <string name="settings_reauth_drive">Повторно авторизовать Google Drive</string>
 
     <!-- Entry -->
     <string name="entry_title_add">Добавить запись</string>
