@@ -14,6 +14,7 @@ Last updated: 2026-10-19
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/JournalRepositoryTest.kt` | tombstone grace-period cleanup, tag/query delegation, import |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` | feed display, swipe-to-archive + undo, trimmed top bar |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/ArchiveScreenTest.kt` | multi-select batch delete, empty-archive flow, search |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryFeedDeletionP0Test.kt` | P0 deletion flows on the real viewmodel over in-memory Room: selection vs filters, confirmed delete + tombstones, sandbox media cleanup, cancel/dismiss purity, empty archive, History gesture guards, no resurrection |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/JournalDaoTest.kt` | sort asc/desc, LIKE search, tag AND-filter, tag lifecycle |
 
 ## Test cases
@@ -32,7 +33,7 @@ Last updated: 2026-10-19
 
 ## Manual checks
 
-- Haptic feedback on archive swipe and on batch operations.
+- Physical feel of haptics (the P0 suite asserts which gestures request feedback).
 - Empty-archive confirmation copy and destructive-action color.
 - Search behavior with multi-word queries and leading/trailing spaces.
 
@@ -49,6 +50,7 @@ Last updated: 2026-10-19
 - `app/src/test/java/com/example/healthjournal/data/JournalRepositoryTest.kt` — tombstone/tag logic.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` — feed + swipe/undo.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/ArchiveScreenTest.kt` — multi-select/delete/empty/search.
+- `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryFeedDeletionP0Test.kt` — P0 deletion flows (selectors in `pages`, haptic recorder in `util`).
 - `app/src/androidTest/java/com/example/healthjournal/data/local/JournalDaoTest.kt` — query-level behavior.
 - `Docs/prd/history-feed.md` — requirements.
 - `Docs/psd/history-feed.md` — design.

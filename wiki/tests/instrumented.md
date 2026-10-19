@@ -2,7 +2,7 @@
 
 > The on-device test stack under `app/src/androidTest` — Compose UI tests plus Room DAO and migration tests that need the Android framework.
 
-Last updated: 2026-10-15
+Last updated: 2026-10-19
 
 ## What this stack is
 
@@ -21,6 +21,12 @@ including the workout set-matrix (14→15) and interval-state (15→16) columns.
 
 This is the second of two test stacks. Unlike the [[unit-tests]] JVM stack, it
 requires a running device and cannot run in a plain JVM context.
+
+The History/Archive deletion P0 suite (`ui/screens/HistoryFeedDeletionP0Test`)
+runs the real `JournalViewModel` over a fresh in-memory Room database, so oracles
+read persisted rows, tombstones and files rather than mock call logs. Selectors
+live in page objects under `pages`, and gesture haptics are captured with a
+recording `LocalHapticFeedback` under `util`.
 
 ## The compose runner flag (important)
 
@@ -69,6 +75,8 @@ fatal at boot, not as a test failure.
 ## Sources
 
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens` — Compose screen tests live here (including the workout hub/session screens).
+- `app/src/androidTest/java/com/example/healthjournal/pages` — page objects for the deletion suites (selectors and actions only).
+- `app/src/androidTest/java/com/example/healthjournal/util/RecordingHapticFeedback.kt` — recording `LocalHapticFeedback` used to assert gesture feedback.
 - `app/src/androidTest/java/com/example/healthjournal/data/local` — DAO and migration tests live here.
 - `app/build.gradle.kts` — the instrumented test dependencies and the compose-runner listener switch.
 
