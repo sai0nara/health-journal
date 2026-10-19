@@ -6,13 +6,15 @@
 > dependency-free chart, and both rows and goals sync as Drive snapshots
 > with tombstone + last-write-wins merge.
 
-Last updated: 2026-10-16
+Last updated: 2026-10-18
 
 ## Overview
 
 Body measurements are a sibling domain in Room and Drive. Capture is a
-`ModalBottomSheet` whose form state lives in the ViewModel (so it survives
-rotation) and whose `canSave` matrix combines per-field errors, the at-least-one
+`ModalBottomSheet` that opens fully expanded — the seven-field form is taller
+than the partial anchor, which would leave Save off-screen behind a drag
+gesture — with form state living in the ViewModel (so it survives
+rotation) and a `canSave` matrix combining per-field errors, the at-least-one
 rule, and a future-date guard. Display is a paged tab per parameter: a
 dependency-free `Canvas` line chart with a goal line, and a chronological card
 list. Goals are one target per parameter with LWW sync; measurements delete via

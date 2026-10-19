@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -73,7 +74,12 @@ fun MeasurementEntrySheet(
         }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    // Opens fully expanded: the form (7 fields + Save) is taller than the
+    // half-screen partial anchor, which would leave Save off-screen behind a
+    // drag gesture.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

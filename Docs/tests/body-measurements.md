@@ -4,7 +4,7 @@
 > the JVM unit level, plus the sheet and screen behaviors (including light/dark)
 > at the instrumented level.
 
-Last updated: 2026-09-21
+Last updated: 2026-10-18
 
 ## Automated coverage
 
@@ -18,7 +18,7 @@ Last updated: 2026-09-21
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/BodyMeasurementRepositoryTest.kt` | persistence + tombstone ordering |
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/GoalsRepositoryTest.kt` | goal upsert/clear |
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/local/BodyMeasurementEntryTest.kt` | entity defaults/partial |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/MeasurementEntrySheetTest.kt` | sheet render, partial save, errors, future-date, date picker, imperial entry |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/MeasurementEntrySheetTest.kt` | sheet render + save-button reachability on open, partial save, errors, future-date, date picker, imperial entry |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/MeasurementScreenTest.kt` | empty/newest/chart/delete-undo/goals/tabs/light-dark, imperial history/chart/goal sheet |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/BodyMeasurementDaoTest.kt` | Room roundtrip/order/pending |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/GoalDaoTest.kt` | goal DAO |
@@ -41,6 +41,7 @@ Last updated: 2026-09-21
 | T-11 | AC-2 | Imperial validation | lb/in input over metric caps | display-unit cap messages; save disabled |
 | T-12 | AC-1 | Imperial entry round trip | lb/in entry saved | metric stored; history renders lb/in |
 | T-13 | AC-4 | Imperial chart + goal | goal set in lb | converted line/label; metric target stored |
+| T-14 | AC-1 | Save reachable on open | sheet freshly opened | Save button displayed without dragging or scrolling |
 
 ## Manual checks
 

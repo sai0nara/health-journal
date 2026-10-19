@@ -1,5 +1,6 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasTestTag
@@ -8,7 +9,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthjournal.data.BodyMeasurementRepository
 import com.example.healthjournal.data.GoalsRepository
@@ -115,14 +118,29 @@ class MeasurementEntrySheetTest {
     }
 
     @Test
+    fun saveButton_isReachableWithoutDraggingTheSheet() {
+        openSheet()
+
+        step("Verify the whole form including Save is visible right after opening") {
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithTag("bm_save").assertIsDisplayed()
+        }
+    }
+
+    @Test
     fun partialEntry_savesAndDismissesSheet() {
         openSheet()
 
         step("Enter waist only and save") {
             composeTestRule.onNodeWithTag("bm_field_WAIST").performTextInput("85")
             composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithTag("bm_save").assertIsEnabled()
-            composeTestRule.onNodeWithTag("bm_save").performClick()
+            Espresso.closeSoftKeyboard()
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithTag("bm_save")
+                .performScrollTo()
+                .assertIsDisplayed()
+                .assertIsEnabled()
+                .performClick()
         }
 
         step("Verify insert persisted and sheet dismissed") {
@@ -237,8 +255,14 @@ class MeasurementEntrySheetTest {
             step("Enter weight in lb and save") {
                 composeTestRule.onNodeWithTag("bm_field_WEIGHT").performTextInput("154.3")
                 composeTestRule.waitForIdle()
-                composeTestRule.onNodeWithTag("bm_save").assertIsEnabled()
-                composeTestRule.onNodeWithTag("bm_save").performClick()
+                Espresso.closeSoftKeyboard()
+                composeTestRule.waitForIdle()
+                // Scroll Save into view (see partialEntry_savesAndDismissesSheet)
+                composeTestRule.onNodeWithTag("bm_save")
+                    .performScrollTo()
+                    .assertIsDisplayed()
+                    .assertIsEnabled()
+                    .performClick()
             }
 
             step("Verify metric kg persisted and sheet dismissed") {
