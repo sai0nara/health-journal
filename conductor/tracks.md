@@ -46,5 +46,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Trim history top bar and move logo to main screen**
+- [x] **Track: Trim history top bar and move logo to main screen**
   *Link: [./tracks/trim_history_actions_move_logo_20261019/](./tracks/trim_history_actions_move_logo_20261019/)*
