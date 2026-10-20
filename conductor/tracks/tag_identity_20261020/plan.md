@@ -29,9 +29,9 @@
     - [ ] `TagSelectionRow`: selected state and toggle use the canonical value; display unchanged
     - [ ] Update expectations that encoded old spellings: `JournalViewModelTest`, `BodyMeasurementViewModelTest`, `WorkoutViewModelTest`, `HashtagParserTest`, `SyncMergeTest`, `TagLabelResTest` comments
     - [ ] Re-run Phase 1 JVM tests green; refactor and re-run
-- [ ] Task: Room migration v18→19
-    - [ ] Implement `MIGRATION_18_19` (transactional Kotlin pass: canonicalize, `INSERT OR IGNORE` dedupe, delete variants, memberships preserved); bump `CURRENT_SCHEMA_VERSION` to 19; register in the builder; export schema 19
-    - [ ] Re-run `MigrationTest` + `TagSchemaTest` on device; green
+- [x] Task: Room migration v18→19 (04c8628)
+    - [x] Implement `MIGRATION_18_19` (transactional Kotlin pass: canonicalize, `INSERT OR IGNORE` dedupe, delete variants, memberships preserved); bump `CURRENT_SCHEMA_VERSION` to 19; register in the builder; export schema 19
+    - [x] Re-run `MigrationTest` + `TagSchemaTest` on device; green
 - [ ] Task: Sync + restore normalization
     - [ ] Apply canonicalization in `SyncWorker` tag persistence (`SyncWorker.kt:159`) and `RestoreRepository` tag import (`RestoreRepository.kt:69`); re-run JVM tests green
 - [ ] Task: Instrumented picker/filter green
