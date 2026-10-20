@@ -5,10 +5,10 @@
 - [x] Task: Canonical identity helper tests (3474205)
     - [x] Add `app/src/test/java/com/example/healthjournal/domain/TagIdentityTest.kt`: Locale.ROOT lowercasing (Cyrillic, Turkish dotted İ), case-insensitive dedupe, known-tag variants (`FITNESS`/`Fitness`/`fitness` → `fitness`), blank input dropped, idempotence
     - [x] Run `./gradlew :app:testDebugUnitTest` (JAVA_HOME JDK 21); confirm Red
-- [ ] Task: Save-path failing tests (JVM)
-    - [ ] `JournalViewModelTest`: `addEntry` with preset `FITNESS` plus `#Fitness` in the description records exactly one tag, `fitness`
-    - [ ] `JournalViewModelTest`: `updateEntry` collapses `FITNESS`/`fitness`/`Fitness` to one cross-ref and keeps system tags; `toggleEntryTag("EXERCISES")` stores `exercises`
-    - [ ] Run and confirm Red
+- [x] Task: Save-path failing tests (JVM) (e0199da)
+    - [x] `JournalViewModelTest`: `addEntry` with preset `FITNESS` plus `#Fitness` in the description records exactly one tag, `fitness`
+    - [x] `JournalViewModelTest`: `updateEntry` collapses `FITNESS`/`fitness`/`Fitness` to one cross-ref and keeps system tags; `toggleEntryTag("EXERCISES")` stores `exercises`
+    - [x] Run and confirm Red
 - [ ] Task: Migration failing test (instrumented)
     - [ ] Extend `data/local/MigrationTest.kt`: v18 fixture with `FITNESS`/`fitness`/`Fitness` on one entry and an unrelated tag on a second; run to v19 via `JournalDatabase.MIGRATION_18_19`; expect one `fitness` row and untouched second entry (Red = unresolved reference until Phase 2, matching the repo's migration-test pattern)
 - [ ] Task: Sync/restore ingestion failing tests (JVM)
