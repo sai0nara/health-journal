@@ -2,8 +2,10 @@ package com.example.healthjournal.export
 
 import androidx.room.withTransaction
 import com.example.healthjournal.data.local.AttachmentData
+import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.domain.TagIdentity
 import java.io.File
 
 /** Summary returned by [RestoreRepository.restore] for the confirmation UI. */
@@ -47,6 +49,12 @@ class RestoreRepository(
     suspend fun restore(data: BackupData, mediaStagingDir: File?): RestoreResult {
         val (remappedEntries, mediaCount, copiedFiles) = reimportMedia(data.journalEntries, mediaStagingDir)
         val dataToWrite = data.copy(journalEntries = remappedEntries)
+        val canonicalTags = dataToWrite.entryTags
+            .groupBy { it.entryId }
+            .flatMap { (entryId, refs) ->
+                TagIdentity.canonicalDistinct(refs.map { it.tag })
+                    .map { EntryTagCrossRef(entryId, it) }
+            }
 
         try {
             runInTransaction {
@@ -66,7 +74,7 @@ class RestoreRepository(
 
                 journalDao.insertAll(dataToWrite.journalEntries)
                 journalDao.insertAllDeletedEntries(dataToWrite.deletedEntries)
-                journalDao.insertAllTags(dataToWrite.entryTags)
+                journalDao.insertAllTags(canonicalTags)
                 bodyDao.replaceAll(dataToWrite.bodyMeasurements)
                 goalDao.importAll(dataToWrite.goals)
                 dataToWrite.personalCards.forEach { personalCardDao.insertOrUpdate(it) }
@@ -82,7 +90,7 @@ class RestoreRepository(
             bodyMeasurementCount = data.bodyMeasurements.size,
             goalCount = data.goals.size,
             deletedEntryCount = data.deletedEntries.size,
-            tagCount = data.entryTags.size,
+            tagCount = canonicalTags.size,
             mediaFileCount = mediaCount,
             workoutCount = data.workoutSessions.size
         )

@@ -20,7 +20,6 @@ import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
-import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
@@ -155,8 +154,10 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             // must not have local tags wiped.
             mergedEntries.forEach { entry ->
                 entry.tags?.let { tags ->
+                    val refs = SyncMerge.canonicalTagRefs(entry.entry_id, tags)
                     dao.deleteAllTagsForEntry(entry.entry_id)
-                    tags.forEach { tag -> dao.insertTag(EntryTagCrossRef(entry.entry_id, tag)) }
+                    refs.forEach { dao.insertTag(it) }
+                    entry.tags = refs.map { it.tag }
                 }
             }
 

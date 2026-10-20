@@ -36,6 +36,7 @@ class RestoreRepositoryTest {
     private data class Harness(
         val repo: RestoreRepository,
         val db: JournalDatabase,
+        val journalDao: JournalDao,
         val fileName: String,
         val published: MutableList<List<JournalEntry>> = mutableListOf()
     )
@@ -77,7 +78,7 @@ class RestoreRepositoryTest {
         }
 
         val repo = RestoreRepository(db, filesDir, runInTransaction = { block -> block() })
-        return Harness(repo, db, fileName = "restore", published = published)
+        return Harness(repo, db, journalDao, fileName = "restore", published = published)
     }
 
     private val sampleData = BackupData(
@@ -150,7 +151,7 @@ class RestoreRepositoryTest {
         val result = harness.repo.restore(data, mediaStagingDir = null)
 
         coVerify {
-            harness.db.journalDao().insertAllTags(
+            harness.journalDao.insertAllTags(
                 listOf(
                     EntryTagCrossRef("e1", "fitness"),
                     EntryTagCrossRef("e2", "sleep")
