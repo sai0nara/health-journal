@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.annotation.StringRes
 import com.example.healthjournal.R
 import com.example.healthjournal.data.JournalTag
+import com.example.healthjournal.domain.TagIdentity
 
 /**
  * Resource for a stored tag value: journal-chip enum names ("HEALTH") and
@@ -37,6 +38,7 @@ fun TagSelectionRow(
     onTagToggle: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val canonicalSelected = selectedTags.mapTo(mutableSetOf()) { TagIdentity.canonical(it) }
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -45,8 +47,8 @@ fun TagSelectionRow(
     ) {
         JournalTag.entries.forEach { tag ->
             FilterChip(
-                selected = selectedTags.contains(tag.name),
-                onClick = { onTagToggle(tag.name) },
+                selected = canonicalSelected.contains(tag.canonical),
+                onClick = { onTagToggle(tag.canonical) },
                 label = { Text(tagDisplayName(tag.name)) }
             )
         }

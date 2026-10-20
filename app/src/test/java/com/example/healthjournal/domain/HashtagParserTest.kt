@@ -59,16 +59,16 @@ class HashtagParserTest {
 
     @Test
     fun workoutKind_mapsToFitness() {
-        assertEquals("Fitness", EntryKindTag.forWorkout())
+        assertEquals("fitness", EntryKindTag.forWorkout())
     }
 
     @Test
     fun measurementKind_mapsToHealth() {
-        assertEquals("Health", EntryKindTag.forMeasurement())
+        assertEquals("health", EntryKindTag.forMeasurement())
     }
 
     @Test
     fun medicationKind_mapsToMedication() {
-        assertEquals("Medication", EntryKindTag.forMedication())
+        assertEquals("medication", EntryKindTag.forMedication())
     }
 }

@@ -18,6 +18,7 @@ import com.example.healthjournal.data.local.HealthSyncSettings
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.domain.EntryKindTag
 import com.example.healthjournal.domain.HashtagParser
+import com.example.healthjournal.domain.TagIdentity
 import com.example.healthjournal.health.HealthConnectManager
 import com.example.healthjournal.media.AndroidMediaCompressionService
 import com.example.healthjournal.media.MediaCompressionService
@@ -306,7 +307,9 @@ class JournalViewModel(
             )
             repository.insert(newEntry)
 
-            val finalTags = tags + HashtagParser.extractHashtags(description)
+            val finalTags = TagIdentity.canonicalDistinct(
+                tags + HashtagParser.extractHashtags(description)
+            )
             finalTags.forEach { tag ->
                 repository.addTag(newEntry.entry_id, tag)
             }
@@ -329,9 +332,11 @@ class JournalViewModel(
             existingTags.forEach { tag ->
                 repository.removeTag(entry.entry_id, tag)
             }
-            val finalTags = tags +
-                HashtagParser.extractHashtags(entry.description) +
-                existingTags.intersect(EntryKindTag.SYSTEM_TAGS)
+            val finalTags = TagIdentity.canonicalDistinct(
+                tags +
+                    HashtagParser.extractHashtags(entry.description) +
+                    existingTags.intersect(EntryKindTag.SYSTEM_TAGS)
+            )
             finalTags.forEach { tag ->
                 repository.addTag(entry.entry_id, tag)
             }
@@ -423,21 +428,23 @@ class JournalViewModel(
     }
 
     override fun toggleTag(tag: String) {
+        val canonical = TagIdentity.canonical(tag)
         val current = _selectedTags.value
-        if (current.contains(tag)) {
-            _selectedTags.value = current - tag
+        if (current.contains(canonical)) {
+            _selectedTags.value = current - canonical
         } else {
-            _selectedTags.value = current + tag
+            _selectedTags.value = current + canonical
         }
     }
 
     fun toggleEntryTag(entryId: String, tag: String) {
         viewModelScope.launch {
+            val canonical = TagIdentity.canonical(tag)
             val tags = repository.getTagsForEntry(entryId)
-            if (tags.contains(tag)) {
-                repository.removeTag(entryId, tag)
+            if (tags.contains(canonical)) {
+                repository.removeTag(entryId, canonical)
             } else {
-                repository.addTag(entryId, tag)
+                repository.addTag(entryId, canonical)
             }
             // Spec §4: tag changes must set PENDING_SYNC and bump lastModified
             repository.markEntryDirty(entryId)

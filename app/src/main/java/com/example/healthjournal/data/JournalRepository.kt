@@ -5,6 +5,7 @@ import com.example.healthjournal.data.local.DeletedEntry
 import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.JournalDao
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.domain.TagIdentity
 import kotlinx.coroutines.flow.Flow
 
 class JournalRepository(private val journalDao: JournalDao) {
@@ -164,11 +165,13 @@ class JournalRepository(private val journalDao: JournalDao) {
     }
 
     suspend fun addTag(entryId: String, tag: String) {
-        journalDao.insertTag(EntryTagCrossRef(entryId, tag))
+        val canonical = TagIdentity.canonical(tag)
+        if (canonical.isEmpty()) return
+        journalDao.insertTag(EntryTagCrossRef(entryId, canonical))
     }
 
     suspend fun removeTag(entryId: String, tag: String) {
-        journalDao.deleteTag(entryId, tag)
+        journalDao.deleteTag(entryId, TagIdentity.canonical(tag))
     }
 
     suspend fun getTagsForEntry(entryId: String): List<String> {

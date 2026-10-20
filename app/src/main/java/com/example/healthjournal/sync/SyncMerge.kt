@@ -1,9 +1,11 @@
 package com.example.healthjournal.sync
 
 import com.example.healthjournal.data.local.BodyMeasurementEntry
+import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.domain.TagIdentity
 
 /**
  * Pure merge logic for bidirectional journal sync.
@@ -14,6 +16,11 @@ import com.example.healthjournal.data.local.PersonalCard
  *   merge per last-write-wins when the cloud copy is the winner.
  */
 object SyncMerge {
+
+    /** Cross-refs for [entryId] in canonical form, one per distinct tag. */
+    fun canonicalTagRefs(entryId: String, tags: Iterable<String>): List<EntryTagCrossRef> =
+        TagIdentity.canonicalDistinct(tags).map { EntryTagCrossRef(entryId, it) }
+
     suspend fun merge(
         cloudEntries: List<JournalEntry>,
         localEntries: List<JournalEntry>,

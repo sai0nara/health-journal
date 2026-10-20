@@ -155,7 +155,7 @@ class JournalViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify { repository.addTag(any(), "recovery") }
-        coVerify { repository.addTag(any(), "DOCTOR") }
+        coVerify { repository.addTag(any(), "doctor") }
     }
 
     @Test
@@ -194,7 +194,7 @@ class JournalViewModelTest {
     fun updateEntry_reparsesHashtagsAndPreservesAutoTags() = runTest {
         val entry = JournalEntry(entry_id = "e1", description = "Old #stale text")
         coEvery { repository.insert(any()) } returns Unit
-        coEvery { repository.getTagsForEntry("e1") } returns listOf("Fitness", "DOCTOR", "stale")
+        coEvery { repository.getTagsForEntry("e1") } returns listOf("fitness", "DOCTOR", "stale")
         coEvery { repository.removeTag(any(), any()) } returns Unit
         coEvery { repository.addTag(any(), any()) } returns Unit
 
@@ -202,7 +202,7 @@ class JournalViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify { repository.addTag("e1", "sleep") }
-        coVerify { repository.addTag("e1", "Fitness") }
+        coVerify { repository.addTag("e1", "fitness") }
         coVerify(exactly = 0) { repository.addTag("e1", "stale") }
     }
 
@@ -396,8 +396,8 @@ class JournalViewModelTest {
     @Test
     fun toggleEntryTag_marksEntryDirtyAndTriggersSync() = runTest {
         val entryId = "tagged_entry"
-        coEvery { repository.getTagsForEntry(entryId) } returns listOf("DOCTOR")
-        coEvery { repository.removeTag(entryId, "DOCTOR") } returns Unit
+        coEvery { repository.getTagsForEntry(entryId) } returns listOf("doctor")
+        coEvery { repository.removeTag(entryId, "doctor") } returns Unit
         coEvery { repository.addTag(entryId, any()) } returns Unit
         coEvery { repository.updateSyncStatus(entryId, "PENDING_SYNC") } returns Unit
         coEvery { repository.markEntryDirty(entryId) } returns Unit
@@ -405,7 +405,7 @@ class JournalViewModelTest {
         viewModel.toggleEntryTag(entryId, "DOCTOR")
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { repository.removeTag(entryId, "DOCTOR") }
+        coVerify { repository.removeTag(entryId, "doctor") }
         coVerify { repository.markEntryDirty(entryId) }
         verify { SyncManager.enqueuePeriodicSync(any()) }
     }

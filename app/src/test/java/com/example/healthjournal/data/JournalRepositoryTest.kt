@@ -96,7 +96,7 @@ class JournalRepositoryTest {
     @Test
     fun addTagCallsDao() = runBlocking {
         val entryId = "test_id"
-        val tag = "HEALTH"
+        val tag = "health"
         coEvery { journalDao.insertTag(any()) } returns Unit
         
         repository.addTag(entryId, tag)
@@ -107,7 +107,7 @@ class JournalRepositoryTest {
     @Test
     fun removeTagCallsDao() = runBlocking {
         val entryId = "test_id"
-        val tag = "HEALTH"
+        val tag = "health"
         coEvery { journalDao.deleteTag(any(), any()) } returns Unit
         
         repository.removeTag(entryId, tag)

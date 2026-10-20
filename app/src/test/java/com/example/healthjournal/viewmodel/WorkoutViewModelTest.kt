@@ -348,7 +348,7 @@ class WorkoutViewModelTest {
             assertTrue(entry.description.contains("Run"))
             assertTrue(entry.description.contains("30"))
         }) }
-        coVerify { journalRepository.addTag(any(), "Fitness") }
+        coVerify { journalRepository.addTag(any(), "fitness") }
         assertEquals(1, healthSource.storedRecords().size)
         assertTrue(haptics.contains(WorkoutHaptic.STOP))
     }
@@ -510,7 +510,7 @@ class WorkoutViewModelTest {
         coVerify { journalRepository.insert(withArg { entry ->
             assertTrue(entry.description.contains("Fitness"))
         }) }
-        coVerify { journalRepository.addTag(any(), "Fitness") }
+        coVerify { journalRepository.addTag(any(), "fitness") }
     }
 
     @Test
