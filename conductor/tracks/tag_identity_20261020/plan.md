@@ -19,7 +19,7 @@
     - [x] `AddEntryScreenTest`: select the Fitness chip, type `#Fitness`, save; assert `addEntryCalledWith.tags == setOf("fitness")`
     - [x] New `ui/screens/TagFilterIdentityTest` (real in-memory Room + real `JournalViewModel`): preset Fitness chip filters entries tagged through hashtag, auto-tag, and manual selection
     - [x] Run on SM-F936B, one class per invocation (`-PcomposeRunner=true`); confirm Red
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Failing tests (Red)' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Failing tests (Red)' (Protocol in workflow.md) 3c76a3a
 
 ## Phase 2: Implementation (Green + Refactor)
 
