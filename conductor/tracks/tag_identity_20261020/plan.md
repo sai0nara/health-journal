@@ -1,6 +1,6 @@
 # Track tag_identity_20261020 — Implementation Plan
 
-## Phase 1: Failing tests (Red)
+## Phase 1: Failing tests (Red) [checkpoint: 3c76a3a]
 
 - [x] Task: Canonical identity helper tests (3474205)
     - [x] Add `app/src/test/java/com/example/healthjournal/domain/TagIdentityTest.kt`: Locale.ROOT lowercasing (Cyrillic, Turkish dotted İ), case-insensitive dedupe, known-tag variants (`FITNESS`/`Fitness`/`fitness` → `fitness`), blank input dropped, idempotence
