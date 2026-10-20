@@ -1,0 +1,51 @@
+# Track tag_identity_20261020 — Implementation Plan
+
+## Phase 1: Failing tests (Red)
+
+- [ ] Task: Canonical identity helper tests
+    - [ ] Add `app/src/test/java/com/example/healthjournal/domain/TagIdentityTest.kt`: Locale.ROOT lowercasing (Cyrillic, Turkish dotted İ), case-insensitive dedupe, known-tag variants (`FITNESS`/`Fitness`/`fitness` → `fitness`), blank input dropped, idempotence
+    - [ ] Run `./gradlew :app:testDebugUnitTest` (JAVA_HOME JDK 21); confirm Red
+- [ ] Task: Save-path failing tests (JVM)
+    - [ ] `JournalViewModelTest`: `addEntry` with preset `FITNESS` plus `#Fitness` in the description records exactly one tag, `fitness`
+    - [ ] `JournalViewModelTest`: `updateEntry` collapses `FITNESS`/`fitness`/`Fitness` to one cross-ref and keeps system tags; `toggleEntryTag("EXERCISES")` stores `exercises`
+    - [ ] Run and confirm Red
+- [ ] Task: Migration failing test (instrumented)
+    - [ ] Extend `data/local/MigrationTest.kt`: v18 fixture with `FITNESS`/`fitness`/`Fitness` on one entry and an unrelated tag on a second; run to v19 via `JournalDatabase.MIGRATION_18_19`; expect one `fitness` row and untouched second entry (Red = unresolved reference until Phase 2, matching the repo's migration-test pattern)
+- [ ] Task: Sync/restore ingestion failing tests (JVM)
+    - [ ] `RestoreRepositoryTest`: backup tags `FITNESS`/`Fitness`/`fitness` → one `fitness` cross-ref
+    - [ ] Cover sync persistence normalization as a pure helper (new JVM test) so `SyncWorker` has no untested normalization branch
+    - [ ] Run and confirm Red
+- [ ] Task: Picker + filter UI failing tests (instrumented)
+    - [ ] `AddEntryScreenTest`: select the Fitness chip, type `#Fitness`, save; assert `addEntryCalledWith.tags == setOf("fitness")`
+    - [ ] New `ui/screens/TagFilterIdentityTest` (real in-memory Room + real `JournalViewModel`): preset Fitness chip filters entries tagged through hashtag, auto-tag, and manual selection
+    - [ ] Run on SM-F936B, one class per invocation (`-PcomposeRunner=true`); confirm Red
+- [ ] Task: Conductor - User Manual Verification 'Phase 1: Failing tests (Red)' (Protocol in workflow.md)
+
+## Phase 2: Implementation (Green + Refactor)
+
+- [ ] Task: Canonical identity helper and all write paths
+    - [ ] Add `domain/TagIdentity.kt` as the single canonicalization point; `JournalTag` exposes a derived canonical value, `EntryKindTag` constants become canonical
+    - [ ] Route `JournalRepository.addTag`/`removeTag`, `JournalViewModel.addEntry`/`updateEntry`/`toggleTag`/`toggleEntryTag` unions through it
+    - [ ] `TagSelectionRow`: selected state and toggle use the canonical value; display unchanged
+    - [ ] Update expectations that encoded old spellings: `JournalViewModelTest`, `BodyMeasurementViewModelTest`, `WorkoutViewModelTest`, `HashtagParserTest`, `SyncMergeTest`, `TagLabelResTest` comments
+    - [ ] Re-run Phase 1 JVM tests green; refactor and re-run
+- [ ] Task: Room migration v18→19
+    - [ ] Implement `MIGRATION_18_19` (transactional Kotlin pass: canonicalize, `INSERT OR IGNORE` dedupe, delete variants, memberships preserved); bump `CURRENT_SCHEMA_VERSION` to 19; register in the builder; export schema 19
+    - [ ] Re-run `MigrationTest` + `TagSchemaTest` on device; green
+- [ ] Task: Sync + restore normalization
+    - [ ] Apply canonicalization in `SyncWorker` tag persistence (`SyncWorker.kt:159`) and `RestoreRepository` tag import (`RestoreRepository.kt:69`); re-run JVM tests green
+- [ ] Task: Instrumented picker/filter green
+    - [ ] Re-run `AddEntryScreenTest` and `TagFilterIdentityTest` on device; adjust tag selectors (`entry_tag_fitness`) if needed
+- [ ] Task: Conductor - User Manual Verification 'Phase 2: Implementation (Green + Refactor)' (Protocol in workflow.md)
+
+## Phase 3: UI tests, docs, verification (Blue + gates)
+
+- [ ] Task: Device UI verification (Blue)
+    - [ ] Run one class per invocation: `AddEntryScreenTest`, `TagFilterIdentityTest`, `HistoryScreenTest`, `ArchiveScreenTest`, `MigrationTest`, `TagSchemaTest`
+    - [ ] Manual check: Fitness chip + `#Fitness` yields one chip; preset filter finds hashtag and workout entries; an upgraded v18 database keeps its tags filterable
+- [ ] Task: Docs + wiki
+    - [ ] Update `Docs/prd/hashtags.md` (FR-2/FR-3 canonical storage), `Docs/psd/hashtags.md`, `Docs/tests/hashtags.md` (new cases)
+    - [ ] Update wiki pages citing changed sources (`wiki/modules/data-layer.md`, `ui-layer.md`, `viewmodel-layer.md` as applicable) and bump dates
+- [ ] Task: Full verification
+    - [ ] `./gradlew :app:testDebugUnitTest` green, `./gradlew build` green, `python3 wiki/lint.py` exits 0
+- [ ] Task: Conductor - User Manual Verification 'Phase 3: UI tests, docs, verification (Blue + gates)' (Protocol in workflow.md)

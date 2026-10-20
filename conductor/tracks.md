@@ -48,3 +48,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Trim history top bar and move logo to main screen**
   *Link: [./tracks/trim_history_actions_move_logo_20261019/](./tracks/trim_history_actions_move_logo_20261019/)*
+
+---
+
+- [ ] **Track: Unify tag identity across presets, hashtags and auto-tags**
+  *Link: [./tracks/tag_identity_20261020/](./tracks/tag_identity_20261020/)*
