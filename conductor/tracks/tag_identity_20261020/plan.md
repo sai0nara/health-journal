@@ -15,10 +15,10 @@
     - [x] `RestoreRepositoryTest`: backup tags `FITNESS`/`Fitness`/`fitness` → one `fitness` cross-ref
     - [x] Cover sync persistence normalization as a pure helper (new JVM test) so `SyncWorker` has no untested normalization branch
     - [x] Run and confirm Red
-- [ ] Task: Picker + filter UI failing tests (instrumented)
-    - [ ] `AddEntryScreenTest`: select the Fitness chip, type `#Fitness`, save; assert `addEntryCalledWith.tags == setOf("fitness")`
-    - [ ] New `ui/screens/TagFilterIdentityTest` (real in-memory Room + real `JournalViewModel`): preset Fitness chip filters entries tagged through hashtag, auto-tag, and manual selection
-    - [ ] Run on SM-F936B, one class per invocation (`-PcomposeRunner=true`); confirm Red
+- [x] Task: Picker + filter UI failing tests (instrumented) (c6ca769)
+    - [x] `AddEntryScreenTest`: select the Fitness chip, type `#Fitness`, save; assert `addEntryCalledWith.tags == setOf("fitness")`
+    - [x] New `ui/screens/TagFilterIdentityTest` (real in-memory Room + real `JournalViewModel`): preset Fitness chip filters entries tagged through hashtag, auto-tag, and manual selection
+    - [x] Run on SM-F936B, one class per invocation (`-PcomposeRunner=true`); confirm Red
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Failing tests (Red)' (Protocol in workflow.md)
 
 ## Phase 2: Implementation (Green + Refactor)
