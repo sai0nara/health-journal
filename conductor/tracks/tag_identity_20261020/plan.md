@@ -32,8 +32,8 @@
 - [x] Task: Room migration v18→19 (04c8628)
     - [x] Implement `MIGRATION_18_19` (transactional Kotlin pass: canonicalize, `INSERT OR IGNORE` dedupe, delete variants, memberships preserved); bump `CURRENT_SCHEMA_VERSION` to 19; register in the builder; export schema 19
     - [x] Re-run `MigrationTest` + `TagSchemaTest` on device; green
-- [ ] Task: Sync + restore normalization
-    - [ ] Apply canonicalization in `SyncWorker` tag persistence (`SyncWorker.kt:159`) and `RestoreRepository` tag import (`RestoreRepository.kt:69`); re-run JVM tests green
+- [x] Task: Sync + restore normalization (818b818)
+    - [x] Apply canonicalization in `SyncWorker` tag persistence (`SyncWorker.kt:159`) and `RestoreRepository` tag import (`RestoreRepository.kt:69`); re-run JVM tests green
 - [ ] Task: Instrumented picker/filter green
     - [ ] Re-run `AddEntryScreenTest` and `TagFilterIdentityTest` on device; adjust tag selectors (`entry_tag_fitness`) if needed
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Implementation (Green + Refactor)' (Protocol in workflow.md)
