@@ -1,14 +1,15 @@
 package com.example.healthjournal.ui.components
 
 import com.example.healthjournal.R
+import com.example.healthjournal.data.JournalTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * Stored tag values arrive either as capitalized system auto-tags ("Health")
- * or as journal-chip enum names ("HEALTH"); both must resolve to the same
- * localized label, and free-form user tags must fall through to the
+ * Stored tag values arrive as canonical lowercase ("health") or, from older
+ * builds, capitalized auto-tags or enum names ("HEALTH"); all must resolve to
+ * the same localized label, and free-form user tags must fall through to the
  * capitalized-raw fallback (null resource).
  */
 class TagLabelResTest {
@@ -29,6 +30,12 @@ class TagLabelResTest {
         assertEquals(R.string.auto_tag_health, tagLabelRes("Health"))
         assertEquals(R.string.auto_tag_fitness, tagLabelRes("fitness"))
         assertEquals(R.string.auto_tag_medication, tagLabelRes("Medication"))
+    }
+
+    @Test
+    fun journalTagCanonical_isLowercaseName() {
+        assertEquals("fitness", JournalTag.FITNESS.canonical)
+        assertEquals("illness", JournalTag.ILLNESS.canonical)
     }
 
     @Test
