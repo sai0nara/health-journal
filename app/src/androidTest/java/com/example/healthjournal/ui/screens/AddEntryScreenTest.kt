@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.junit.Rule
 import org.junit.Test
+import org.junit.Assert.assertEquals
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.test.rule.GrantPermissionRule
@@ -273,6 +274,35 @@ class AddEntryScreenTest {
                 )
             }
             composeTestRule.waitForIdle()
+        }
+    }
+
+    @Test
+    fun testAddEntryScreen_PresetAndHashtag_SaveOneCanonicalTag() {
+        step("Open Add Entry Screen") {
+            composeTestRule.setContent {
+                AddEntryScreen(viewModel = viewModel, onBack = {})
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Select the Fitness preset chip") {
+            val fitnessChip = composeTestRule.onNode(hasText("Fitness") and isSelectable())
+            fitnessChip.performScrollTo()
+            fitnessChip.performClick()
+            fitnessChip.assertIsSelected()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Type the same tag as a hashtag and save") {
+            composeTestRule.onNodeWithText("How are you feeling today?")
+                .performTextInput("#Fitness")
+            composeTestRule.onNodeWithText("Save Entry").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify one canonical tag was saved") {
+            assertEquals(setOf("fitness"), viewModel.addEntryCalledWith?.tags)
         }
     }
 
