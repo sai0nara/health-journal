@@ -131,6 +131,36 @@ class RestoreRepositoryTest {
     }
 
     @Test
+    fun restore_canonicalizesTagVariantsBeforeInsert() = runTest {
+        val filesDir = tempFolder.newFolder("files")
+        val harness = mockRepository(filesDir)
+        val data = BackupData(
+            journalEntries = listOf(
+                JournalEntry(entry_id = "e1", description = "x"),
+                JournalEntry(entry_id = "e2", description = "y")
+            ),
+            entryTags = listOf(
+                EntryTagCrossRef("e1", "FITNESS"),
+                EntryTagCrossRef("e1", "fitness"),
+                EntryTagCrossRef("e1", "Fitness"),
+                EntryTagCrossRef("e2", "Sleep")
+            )
+        )
+
+        val result = harness.repo.restore(data, mediaStagingDir = null)
+
+        coVerify {
+            harness.db.journalDao().insertAllTags(
+                listOf(
+                    EntryTagCrossRef("e1", "fitness"),
+                    EntryTagCrossRef("e2", "sleep")
+                )
+            )
+        }
+        assertEquals(2, result.tagCount)
+    }
+
+    @Test
     fun restore_reimportsMedia_andRemapsPhotoAndAttachmentUris() = runTest {
         val filesDir = tempFolder.newFolder("files")
         val staging = tempFolder.newFolder("stage")
