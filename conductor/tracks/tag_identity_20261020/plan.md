@@ -11,10 +11,10 @@
     - [x] Run and confirm Red
 - [x] Task: Migration failing test (instrumented) (2095148)
     - [x] Extend `data/local/MigrationTest.kt`: v18 fixture with `FITNESS`/`fitness`/`Fitness` on one entry and an unrelated tag on a second; run to v19 via `JournalDatabase.MIGRATION_18_19`; expect one `fitness` row and untouched second entry (Red = unresolved reference until Phase 2, matching the repo's migration-test pattern)
-- [ ] Task: Sync/restore ingestion failing tests (JVM)
-    - [ ] `RestoreRepositoryTest`: backup tags `FITNESS`/`Fitness`/`fitness` → one `fitness` cross-ref
-    - [ ] Cover sync persistence normalization as a pure helper (new JVM test) so `SyncWorker` has no untested normalization branch
-    - [ ] Run and confirm Red
+- [x] Task: Sync/restore ingestion failing tests (JVM) (c3b95b6)
+    - [x] `RestoreRepositoryTest`: backup tags `FITNESS`/`Fitness`/`fitness` → one `fitness` cross-ref
+    - [x] Cover sync persistence normalization as a pure helper (new JVM test) so `SyncWorker` has no untested normalization branch
+    - [x] Run and confirm Red
 - [ ] Task: Picker + filter UI failing tests (instrumented)
     - [ ] `AddEntryScreenTest`: select the Fitness chip, type `#Fitness`, save; assert `addEntryCalledWith.tags == setOf("fitness")`
     - [ ] New `ui/screens/TagFilterIdentityTest` (real in-memory Room + real `JournalViewModel`): preset Fitness chip filters entries tagged through hashtag, auto-tag, and manual selection
