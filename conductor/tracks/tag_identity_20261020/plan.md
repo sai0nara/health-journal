@@ -23,12 +23,12 @@
 
 ## Phase 2: Implementation (Green + Refactor)
 
-- [ ] Task: Canonical identity helper and all write paths
-    - [ ] Add `domain/TagIdentity.kt` as the single canonicalization point; `JournalTag` exposes a derived canonical value, `EntryKindTag` constants become canonical
-    - [ ] Route `JournalRepository.addTag`/`removeTag`, `JournalViewModel.addEntry`/`updateEntry`/`toggleTag`/`toggleEntryTag` unions through it
-    - [ ] `TagSelectionRow`: selected state and toggle use the canonical value; display unchanged
-    - [ ] Update expectations that encoded old spellings: `JournalViewModelTest`, `BodyMeasurementViewModelTest`, `WorkoutViewModelTest`, `HashtagParserTest`, `SyncMergeTest`, `TagLabelResTest` comments
-    - [ ] Re-run Phase 1 JVM tests green; refactor and re-run
+- [x] Task: Canonical identity helper and all write paths (4a6a1d1)
+    - [x] Add `domain/TagIdentity.kt` as the single canonicalization point; `JournalTag` exposes a derived canonical value, `EntryKindTag` constants become canonical
+    - [x] Route `JournalRepository.addTag`/`removeTag`, `JournalViewModel.addEntry`/`updateEntry`/`toggleTag`/`toggleEntryTag` unions through it
+    - [x] `TagSelectionRow`: selected state and toggle use the canonical value; display unchanged
+    - [x] Update expectations that encoded old spellings: `JournalViewModelTest`, `BodyMeasurementViewModelTest`, `WorkoutViewModelTest`, `HashtagParserTest`, `SyncMergeTest`, `TagLabelResTest` comments
+    - [x] Re-run Phase 1 JVM tests green; refactor and re-run
 - [x] Task: Room migration v18→19 (04c8628)
     - [x] Implement `MIGRATION_18_19` (transactional Kotlin pass: canonicalize, `INSERT OR IGNORE` dedupe, delete variants, memberships preserved); bump `CURRENT_SCHEMA_VERSION` to 19; register in the builder; export schema 19
     - [x] Re-run `MigrationTest` + `TagSchemaTest` on device; green
