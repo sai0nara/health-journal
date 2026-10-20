@@ -34,8 +34,8 @@
     - [x] Re-run `MigrationTest` + `TagSchemaTest` on device; green
 - [x] Task: Sync + restore normalization (818b818)
     - [x] Apply canonicalization in `SyncWorker` tag persistence (`SyncWorker.kt:159`) and `RestoreRepository` tag import (`RestoreRepository.kt:69`); re-run JVM tests green
-- [ ] Task: Instrumented picker/filter green
-    - [ ] Re-run `AddEntryScreenTest` and `TagFilterIdentityTest` on device; adjust tag selectors (`entry_tag_fitness`) if needed
+- [x] Task: Instrumented picker/filter green (818b818)
+    - [x] Re-run `AddEntryScreenTest` and `TagFilterIdentityTest` on device; adjust tag selectors (`entry_tag_fitness`) if needed
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Implementation (Green + Refactor)' (Protocol in workflow.md)
 
 ## Phase 3: UI tests, docs, verification (Blue + gates)
