@@ -33,6 +33,4 @@ object EntryKindTag {
 
     fun forMedication(): String = MEDICATION
 
-    /** Tags owned by the system; preserved across edits, never user-removed. */
-    val SYSTEM_TAGS: Set<String> = setOf(FITNESS, HEALTH, MEDICATION)
 }

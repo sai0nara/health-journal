@@ -171,15 +171,15 @@ class JournalViewModelTest {
     }
 
     @Test
-    fun updateEntry_collapsesStoredCaseVariantsAndKeepsSystemTags() = runTest {
-        val entry = JournalEntry(entry_id = "e2", description = "New #sleep text")
+    fun updateEntry_collapsesSelectedCaseVariantsToOneTag() = runTest {
+        val entry = JournalEntry(entry_id = "e2", description = "New #Fitness text")
         coEvery { repository.insert(any()) } returns Unit
         coEvery { repository.getTagsForEntry("e2") } returns
             listOf("FITNESS", "fitness", "Fitness", "DOCTOR", "stale")
         coEvery { repository.removeTag(any(), any()) } returns Unit
         coEvery { repository.addTag(any(), any()) } returns Unit
 
-        viewModel.updateEntry(entry, setOf("DOCTOR"))
+        viewModel.updateEntry(entry, setOf("FITNESS", "Fitness", "DOCTOR"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) { repository.addTag("e2", "fitness") }
@@ -191,19 +191,34 @@ class JournalViewModelTest {
     }
 
     @Test
-    fun updateEntry_reparsesHashtagsAndPreservesAutoTags() = runTest {
+    fun updateEntry_reparsesHashtagsAndKeepsSelectedAutoTag() = runTest {
         val entry = JournalEntry(entry_id = "e1", description = "Old #stale text")
         coEvery { repository.insert(any()) } returns Unit
         coEvery { repository.getTagsForEntry("e1") } returns listOf("fitness", "DOCTOR", "stale")
         coEvery { repository.removeTag(any(), any()) } returns Unit
         coEvery { repository.addTag(any(), any()) } returns Unit
 
-        viewModel.updateEntry(entry.copy(description = "New #sleep text"), setOf("DOCTOR"))
+        viewModel.updateEntry(entry.copy(description = "New #sleep text"), setOf("DOCTOR", "fitness"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify { repository.addTag("e1", "sleep") }
         coVerify { repository.addTag("e1", "fitness") }
         coVerify(exactly = 0) { repository.addTag("e1", "stale") }
+    }
+
+    @Test
+    fun updateEntry_removesDeselectedSystemTag() = runTest {
+        val entry = JournalEntry(entry_id = "e3", description = "Workout logged")
+        coEvery { repository.insert(any()) } returns Unit
+        coEvery { repository.getTagsForEntry("e3") } returns listOf("fitness", "recovery")
+        coEvery { repository.removeTag(any(), any()) } returns Unit
+        coEvery { repository.addTag(any(), any()) } returns Unit
+
+        viewModel.updateEntry(entry, tags = setOf("recovery"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.addTag("e3", "fitness") }
+        coVerify { repository.addTag("e3", "recovery") }
     }
 
     @Test

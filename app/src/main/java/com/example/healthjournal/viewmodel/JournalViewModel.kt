@@ -16,7 +16,6 @@ import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.HealthSyncSettings
 import com.example.healthjournal.data.local.JournalEntry
-import com.example.healthjournal.domain.EntryKindTag
 import com.example.healthjournal.domain.HashtagParser
 import com.example.healthjournal.domain.TagIdentity
 import com.example.healthjournal.health.HealthConnectManager
@@ -326,16 +325,15 @@ class JournalViewModel(
             // Keep the original timestamp (creation date)
             repository.insert(entry.copy(syncStatus = "PENDING_SYNC", lastModified = System.currentTimeMillis()))
             
-            // Refresh tags: remove all existing and add current selection,
-            // re-parsed hashtags, plus sticky system auto-tags.
+            // Refresh tags: remove all existing and add the current chip
+            // selection plus re-parsed hashtags. Inline text still wins: a
+            // #word left in the text keeps its tag even if the chip is off.
             val existingTags = repository.getTagsForEntry(entry.entry_id)
             existingTags.forEach { tag ->
                 repository.removeTag(entry.entry_id, tag)
             }
             val finalTags = TagIdentity.canonicalDistinct(
-                tags +
-                    HashtagParser.extractHashtags(entry.description) +
-                    existingTags.intersect(EntryKindTag.SYSTEM_TAGS)
+                tags + HashtagParser.extractHashtags(entry.description)
             )
             finalTags.forEach { tag ->
                 repository.addTag(entry.entry_id, tag)

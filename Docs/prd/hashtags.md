@@ -4,7 +4,7 @@
 > (workouts → Fitness), `#words` typed into entry text become tags on save,
 > and all of it filters through the existing tag search.
 
-Last updated: 2026-10-19
+Last updated: 2026-10-20
 
 > **Status: BUILT.** All functional requirements below are implemented:
 > kind auto-tags and inline `#word` parsing feed the shared tag table,
@@ -66,9 +66,10 @@ them identically:
 - FR-3: Auto, inline, and manual tags are stored identically in the entry
   tag table and are indistinguishable to filter, search, sync, backup,
   and restore.
-- FR-4: Auto-tags are system-owned: they follow the entry kind and cannot
-  be removed manually. Inline tags are removed by deleting the `#word`
-  from the text.
+- FR-4: Auto-tags are applied at creation but are removable afterwards:
+  deselecting the tag's chip removes it on save, as does deleting its
+  `#word` from the text. Inline text still wins — a `#word` left in the
+  text keeps the tag even when the chip is off.
 - FR-5: Auto-tag display labels resolve via string resources with full
   `values-ru` parity; inline tags are stored verbatim in the user's own
   language.
@@ -92,7 +93,8 @@ them identically:
 - AC-3 (FR-5): Russian auto-tag labels render; Cyrillic inline tags stored
   verbatim.
 - AC-4 (FR-4): Editing text to drop `#word` removes that tag on save;
-  auto-tag remains.
+  deselecting a preset or auto-tag chip removes it, unless the text still
+  contains its `#word`.
 - AC-5: JVM suite green; wiki lint exits 0.
 
 ## Out of scope

@@ -28,8 +28,9 @@ through the other spellings. This track makes the stored value canonical
 - FR2 Create path: selecting Fitness and typing "#Fitness" yields exactly one
   tag and one chip.
 - FR3 Edit path: an entry carrying the canonical tag from any source opens with
-  the Fitness chip selected; saving keeps one cross-ref per tag and keeps
-  system-owned auto-tags (workout/measurement/medication) sticky.
+  the Fitness chip selected; saving writes exactly the selected chips plus
+  re-parsed hashtags, so deselecting the chip removes the tag (auto-tags
+  included).
 - FR4 Filtering: tapping the preset Fitness chip returns entries tagged Fitness
   from any source; entry chips pass the canonical value into the filter.
 - FR5 Display unchanged: known tags resolve via string resources (ru parity);
