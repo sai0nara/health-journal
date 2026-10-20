@@ -2,9 +2,9 @@
 
 ## Phase 1: Failing tests (Red)
 
-- [ ] Task: Canonical identity helper tests
-    - [ ] Add `app/src/test/java/com/example/healthjournal/domain/TagIdentityTest.kt`: Locale.ROOT lowercasing (Cyrillic, Turkish dotted İ), case-insensitive dedupe, known-tag variants (`FITNESS`/`Fitness`/`fitness` → `fitness`), blank input dropped, idempotence
-    - [ ] Run `./gradlew :app:testDebugUnitTest` (JAVA_HOME JDK 21); confirm Red
+- [x] Task: Canonical identity helper tests (3474205)
+    - [x] Add `app/src/test/java/com/example/healthjournal/domain/TagIdentityTest.kt`: Locale.ROOT lowercasing (Cyrillic, Turkish dotted İ), case-insensitive dedupe, known-tag variants (`FITNESS`/`Fitness`/`fitness` → `fitness`), blank input dropped, idempotence
+    - [x] Run `./gradlew :app:testDebugUnitTest` (JAVA_HOME JDK 21); confirm Red
 - [ ] Task: Save-path failing tests (JVM)
     - [ ] `JournalViewModelTest`: `addEntry` with preset `FITNESS` plus `#Fitness` in the description records exactly one tag, `fitness`
     - [ ] `JournalViewModelTest`: `updateEntry` collapses `FITNESS`/`fitness`/`Fitness` to one cross-ref and keeps system tags; `toggleEntryTag("EXERCISES")` stores `exercises`
