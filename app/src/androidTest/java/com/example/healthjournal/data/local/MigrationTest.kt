@@ -376,4 +376,39 @@ class MigrationTest {
             org.junit.Assert.assertEquals("Before 13 to 14", cursor.getString(2))
         }
     }
+
+    @Test
+    fun migrate18To19_CanonicalizesTagValuesAndDedupesCrossRefs() {
+        helper.createDatabase("$dbName-18-19", 18).apply {
+            execSQL(
+                "INSERT INTO journal_entries (entry_id, timestamp, lastModified, description, photo_urls, attachments, bp_systolic, bp_diastolic, heart_rate_avg, sleep_hours, ai_advice, isArchived, isSynced, syncStatus) " +
+                    "VALUES ('mixed_tags', 1000, 1000, 'Mixed case tags', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 'PENDING_SYNC')"
+            )
+            execSQL(
+                "INSERT INTO journal_entries (entry_id, timestamp, lastModified, description, photo_urls, attachments, bp_systolic, bp_diastolic, heart_rate_avg, sleep_hours, ai_advice, isArchived, isSynced, syncStatus) " +
+                    "VALUES ('other_tags', 2000, 2000, 'Already canonical', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 'PENDING_SYNC')"
+            )
+            execSQL(
+                "INSERT INTO EntryTagCrossRef (entryId, tag) VALUES " +
+                    "('mixed_tags', 'FITNESS'), ('mixed_tags', 'fitness'), ('mixed_tags', 'Fitness'), " +
+                    "('mixed_tags', 'DOCTOR'), ('other_tags', 'sleep')"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-18-19",
+            19,
+            true,
+            JournalDatabase.MIGRATION_18_19
+        )
+
+        org.junit.Assert.assertEquals(listOf("doctor", "fitness"), tagsFor(db, "mixed_tags"))
+        org.junit.Assert.assertEquals(listOf("sleep"), tagsFor(db, "other_tags"))
+    }
+
+    private fun tagsFor(db: androidx.sqlite.db.SupportSQLiteDatabase, entryId: String): List<String> =
+        db.query("SELECT tag FROM EntryTagCrossRef WHERE entryId = ? ORDER BY tag", arrayOf(entryId)).use { cursor ->
+            buildList { while (cursor.moveToNext()) add(cursor.getString(0)) }
+        }
 }
