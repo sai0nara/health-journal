@@ -9,8 +9,8 @@
     - [x] `JournalViewModelTest`: `addEntry` with preset `FITNESS` plus `#Fitness` in the description records exactly one tag, `fitness`
     - [x] `JournalViewModelTest`: `updateEntry` collapses `FITNESS`/`fitness`/`Fitness` to one cross-ref and keeps system tags; `toggleEntryTag("EXERCISES")` stores `exercises`
     - [x] Run and confirm Red
-- [ ] Task: Migration failing test (instrumented)
-    - [ ] Extend `data/local/MigrationTest.kt`: v18 fixture with `FITNESS`/`fitness`/`Fitness` on one entry and an unrelated tag on a second; run to v19 via `JournalDatabase.MIGRATION_18_19`; expect one `fitness` row and untouched second entry (Red = unresolved reference until Phase 2, matching the repo's migration-test pattern)
+- [x] Task: Migration failing test (instrumented) (2095148)
+    - [x] Extend `data/local/MigrationTest.kt`: v18 fixture with `FITNESS`/`fitness`/`Fitness` on one entry and an unrelated tag on a second; run to v19 via `JournalDatabase.MIGRATION_18_19`; expect one `fitness` row and untouched second entry (Red = unresolved reference until Phase 2, matching the repo's migration-test pattern)
 - [ ] Task: Sync/restore ingestion failing tests (JVM)
     - [ ] `RestoreRepositoryTest`: backup tags `FITNESS`/`Fitness`/`fitness` → one `fitness` cross-ref
     - [ ] Cover sync persistence normalization as a pure helper (new JVM test) so `SyncWorker` has no untested normalization branch
