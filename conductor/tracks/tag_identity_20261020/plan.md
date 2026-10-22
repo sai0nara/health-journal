@@ -43,9 +43,9 @@
 
 ## Phase 3: UI tests, docs, verification (Blue + gates)
 
-- [~] Task: Device UI verification (Blue)
-    - [ ] Run one class per invocation: `AddEntryScreenTest`, `TagFilterIdentityTest`, `HistoryScreenTest`, `ArchiveScreenTest`, `MigrationTest`, `TagSchemaTest`
-    - [ ] Manual check: Fitness chip + `#Fitness` yields one chip; preset filter finds hashtag and workout entries; an upgraded v18 database keeps its tags filterable
+- [x] Task: Device UI verification (Blue) (c978e94)
+    - [x] Run one class per invocation: `AddEntryScreenTest`, `TagFilterIdentityTest`, `TagEditRemovalTest`, `HistoryScreenTest`, `ArchiveScreenTest`, `MigrationTest`, `TagSchemaTest`
+    - [x] Manual check: Fitness chip + `#Fitness` yields one chip; preset filter finds hashtag and workout entries; an upgraded v18 database keeps its tags filterable
 - [x] Task: Docs + wiki (1f5f18c)
     - [x] Update `Docs/prd/hashtags.md` (FR-2/FR-3 canonical storage), `Docs/psd/hashtags.md`, `Docs/tests/hashtags.md` (new cases)
     - [x] Update wiki pages citing changed sources (`wiki/modules/data-layer.md`, `ui-layer.md`, `viewmodel-layer.md` as applicable) and bump dates
