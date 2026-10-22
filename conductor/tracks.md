@@ -51,5 +51,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Finish routine prompt after the last planned set**
+- [~] **Track: Finish routine prompt after the last planned set**
   *Link: [./tracks/finish_routine_prompt_20261022/](./tracks/finish_routine_prompt_20261022/)*

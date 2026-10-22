@@ -8,17 +8,17 @@
 
 ## Phase 1: Failing tests (Red)
 
-- [ ] Task: JVM tests for prompt lifecycle
-    - [ ] Extend `WorkoutViewModelTest`: completing the last planned set exposes the prompt; partial completion does not
-    - [ ] Manual strength, HIIT, empty routine, and resumed/recovered sessions never expose it
-    - [ ] Dismiss leaves the session Active and rest timer intact; unchecking clears eligibility; re-completing shows it again
-    - [ ] Finish from the prompt produces Summary, a persisted `COMPLETED` session, and one linked Fitness entry
-    - [ ] Run `:app:testDebugUnitTest --tests '*WorkoutViewModelTest'`; confirm expected failures
+- [x] Task: JVM tests for prompt lifecycle
+    - [x] Extend `WorkoutViewModelTest`: completing the last planned set exposes the prompt; partial completion does not
+    - [x] Manual strength, HIIT, empty routine, and resumed/recovered sessions never expose it
+    - [x] Dismiss leaves the session Active and rest timer intact; unchecking clears eligibility; re-completing shows it again
+    - [x] Finish from the prompt produces Summary, a persisted `COMPLETED` session, and one linked Fitness entry
+    - [x] Run `:app:testDebugUnitTest --tests '*WorkoutViewModelTest'`; confirm expected failures
 - [ ] Task: Instrumented UI tests
-    - [ ] New `FinishRoutinePromptTest`: after the final set, dialog shows title “Finish routine?”, body, Finish and Keep going
-    - [ ] Keep going dismisses and leaves Active; Finish reaches Summary
-    - [ ] No dialog for partial sets, manual strength, or HIIT; manual Finish bypasses the prompt
-    - [ ] Run one class per invocation on SM-F936B; confirm Red
+    - [x] New `FinishRoutinePromptTest`: after the final set, dialog shows title “Finish routine?”, body, Finish and Keep going
+    - [x] Keep going dismisses and leaves Active; Finish reaches Summary
+    - [x] No dialog for partial sets, manual strength, or HIIT; manual Finish bypasses the prompt
+    - [x] Run one class per invocation on SM-F936B; confirm Red
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Failing tests (Red)' (Protocol in workflow.md)
 
 ## Phase 2: Implementation (Green + Refactor)
