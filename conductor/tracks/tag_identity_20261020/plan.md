@@ -43,7 +43,7 @@
 
 ## Phase 3: UI tests, docs, verification (Blue + gates)
 
-- [ ] Task: Device UI verification (Blue)
+- [~] Task: Device UI verification (Blue)
     - [ ] Run one class per invocation: `AddEntryScreenTest`, `TagFilterIdentityTest`, `HistoryScreenTest`, `ArchiveScreenTest`, `MigrationTest`, `TagSchemaTest`
     - [ ] Manual check: Fitness chip + `#Fitness` yields one chip; preset filter finds hashtag and workout entries; an upgraded v18 database keeps its tags filterable
 - [ ] Task: Docs + wiki
