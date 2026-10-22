@@ -128,16 +128,29 @@ class RestoreCoordinatorTest {
     }
 
     @Test
-    fun run_versionMismatch_returnsFailure_andDoesNotRestore() = runTest {
+    fun run_newerSchemaVersion_returnsFailure_andDoesNotRestore() = runTest {
+        val scratch = tempFolder.newFolder("scratch")
+        val (coordinator, repo) = harness(scratch)
+        val future = buildPlainBackup(schema = schemaVersion + 1)
+
+        val outcome = coordinator.run(future, passphrase = null)
+
+        assertTrue(outcome is RestoreCoordinator.Outcome.Failure)
+        assertTrue((outcome as RestoreCoordinator.Outcome.Failure).error is RestoreError.VersionMismatch)
+        coVerify(inverse = true) { repo.restore(any(), any()) }
+        assertFalse(scratch.exists())
+    }
+
+    @Test
+    fun run_olderSchemaVersion_isAccepted() = runTest {
         val scratch = tempFolder.newFolder("scratch")
         val (coordinator, repo) = harness(scratch)
         val legacy = buildPlainBackup(schema = schemaVersion - 1)
 
         val outcome = coordinator.run(legacy, passphrase = null)
 
-        assertTrue(outcome is RestoreCoordinator.Outcome.Failure)
-        assertTrue((outcome as RestoreCoordinator.Outcome.Failure).error is RestoreError.VersionMismatch)
-        coVerify(inverse = true) { repo.restore(any(), any()) }
+        assertTrue(outcome is RestoreCoordinator.Outcome.Success)
+        coVerify { repo.restore(any(), any()) }
         assertFalse(scratch.exists())
     }
 

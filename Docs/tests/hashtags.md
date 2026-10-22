@@ -26,13 +26,13 @@ Last updated: 2026-10-20
 |---|---|---|---|---|
 | T-1 | Extraction contract | — | run `HashtagParserTest` | 10 cases green |
 | T-2 | Save unions tags | — | save entry `#Recovery` + manual `DOCTOR` | both tags written |
-| T-3 | Edit re-derives tags | entry tagged Fitness | edit text, save | kept chips stay; dropped `#words` gone |
+| T-3 | Edit re-derives tags | entry tagged Fitness | deselect Fitness chip, save | only selected chips + re-parsed `#words` remain |
 | T-4 | Workout auto-tag | — | finish routine / manual log | linked entry tagged Fitness |
 | T-5 | Measurement link | — | save measurement | linked entry tagged Health |
 | T-6 | Plain-text parse | device | type `#hashtag` in editor, save | chip appears on feed item |
 | T-7 | Chip filters | tagged entry in feed | tap chip | history filters to tag |
 | T-8 | RU labels | `ru` device | open filter row | Fitness/Health/Medication in Russian |
-| T-9 | Cyrillic inline | `ru` device | save `#тренировка` | stored verbatim, chip filters |
+| T-9 | Cyrillic inline | `ru` device | save `#тренировка` | stored lowercase canonical, chip filters |
 | T-10 | Full verification | — | JVM suite, androidTest compile + device spot checks, wiki lint | all green, lint exits 0 |
 | T-11 | Edit removes selected auto-tag | entry tagged Fitness + recovery | deselect Fitness chip, save | only recovery remains |
 
@@ -41,7 +41,7 @@ Last updated: 2026-10-20
 - Save entry with `#hashtag` line → chip on the feed item; tap → filtered.
 - Finish a workout → linked entry carries Fitness.
 - Log a measurement → linked entry carries Health.
-- `ru` device: auto-tag labels Russian; Cyrillic inline tags verbatim.
+- `ru` device: auto-tag labels Russian; Cyrillic inline tags stored lowercase canonical.
 - Edit entry to remove `#word` → tag gone on save; a deselected auto-tag chip is removed too.
 
 ## Cross-references

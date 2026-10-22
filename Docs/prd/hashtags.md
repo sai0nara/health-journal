@@ -67,12 +67,11 @@ them identically:
   tag table and are indistinguishable to filter, search, sync, backup,
   and restore.
 - FR-4: Auto-tags are applied at creation but are removable afterwards:
-  deselecting the tag's chip removes it on save, as does deleting its
-  `#word` from the text. Inline text still wins — a `#word` left in the
-  text keeps the tag even when the chip is off.
+  deselecting the tag's chip removes it on save. Inline text still wins — a
+  `#word` left in the text keeps the tag even when the chip is off.
 - FR-5: Auto-tag display labels resolve via string resources with full
-  `values-ru` parity; inline tags are stored verbatim in the user's own
-  language.
+  `values-ru` parity; inline tags are stored in lowercase canonical form,
+  preserving the user's language and script.
 - FR-6: Tapping a tag chip anywhere filters history to that tag.
 - FR-7: Parsing runs on save only (no live re-parse while typing); tagged
   state recomputes on edit-and-save.
@@ -91,7 +90,7 @@ them identically:
 - AC-2 (FR-2/FR-3): Entry saved with `#Recovery and #recovery` yields one
   tag; chip filters.
 - AC-3 (FR-5): Russian auto-tag labels render; Cyrillic inline tags stored
-  verbatim.
+  lowercase canonical.
 - AC-4 (FR-4): Editing text to drop `#word` removes that tag on save;
   deselecting a preset or auto-tag chip removes it, unless the text still
   contains its `#word`.

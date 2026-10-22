@@ -18,7 +18,7 @@ object HashtagParser {
 }
 
 /**
- * System-owned auto-tags by entry kind, stored in canonical lowercase form.
+ * Auto-tags by entry kind, stored in canonical lowercase form.
  * Display resolution (including Russian) happens at the UI layer.
  */
 object EntryKindTag {

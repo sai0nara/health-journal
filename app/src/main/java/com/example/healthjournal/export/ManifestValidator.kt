@@ -14,7 +14,9 @@ sealed class ManifestValidation {
  *
  * Rules:
  *  - Backup format version newer than [supportedFormatVersion] -> [RestoreError.UnsupportedFormat].
- *  - Schema version must equal [currentSchemaVersion] -> otherwise [RestoreError.VersionMismatch].
+ *  - Schema version newer than [currentSchemaVersion], or unknown (below 1),
+ *    -> [RestoreError.VersionMismatch]. Older known versions are restored as-is;
+ *    missing tables default to empty and the restore path canonicalizes values.
  */
 class ManifestValidator(
     private val currentSchemaVersion: Int,
@@ -27,7 +29,7 @@ class ManifestValidator(
                 RestoreError.UnsupportedFormat(manifest.formatVersion)
             )
         }
-        if (manifest.schemaVersion != currentSchemaVersion) {
+        if (manifest.schemaVersion !in 1..currentSchemaVersion) {
             return ManifestValidation.Invalid(
                 RestoreError.VersionMismatch(
                     backupSchemaVersion = manifest.schemaVersion,

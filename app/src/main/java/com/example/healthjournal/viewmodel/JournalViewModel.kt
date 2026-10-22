@@ -64,7 +64,8 @@ interface IJournalViewModel {
         sleepHours: Float? = null,
         tags: Set<String> = emptySet()
     )
-    fun updateEntry(entry: JournalEntry, tags: Set<String> = emptySet())
+    /** Saves [entry] with exactly [tags] plus hashtags re-parsed from its text; callers must pass the complete chip selection. */
+    fun updateEntry(entry: JournalEntry, tags: Set<String>)
     suspend fun getEntryById(entryId: String): JournalEntry?
     fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit)
     fun requestDriveAuth(onResolutionRequired: (android.app.PendingIntent) -> Unit)

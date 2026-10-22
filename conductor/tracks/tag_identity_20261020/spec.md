@@ -63,7 +63,7 @@ through the other spellings. This track makes the stored value canonical
 - AC2 filter: preset Fitness chip matches hashtag-tagged, auto-tagged and
   manually tagged entries (instrumented DAO + History screen).
 - AC3 edit: chip state reflects canonical membership; no duplicates after save;
-  system tags survive (JVM).
+  deselected auto-tags are removed (JVM).
 - AC4 migration: v18 with `FITNESS` + `fitness` on one entry yields one
   `fitness` row; other entries' tags untouched (migration test).
 - AC5 sync/restore: mixed-case incoming tags collapse to canonical (JVM).

@@ -39,8 +39,8 @@ stored HTML. See `Docs/prd/hashtags.md` for the requirements.
 
 1. User saves an entry: screen parses plain text, unions with manual
    tags, calls `addEntry`/`updateEntry`.
-2. ViewModel re-parses defensively, unions manual + inline + sticky
-   auto-tags, writes via `EntryTagCrossRef`.
+2. ViewModel re-parses defensively, unions selected chips + inline tags
+   (no sticky set), canonicalizes, and writes via `EntryTagCrossRef`.
 3. Workout finish/manual log inserts the linked entry, then tags it
    Fitness; measurement save inserts its entry, then tags it Health.
 4. History collects the tags map; feed items render `#chips`; tap
@@ -51,7 +51,7 @@ stored HTML. See `Docs/prd/hashtags.md` for the requirements.
 | Component | File | Responsibility |
 |---|---|---|
 | Tag parser + mapping | `app/src/main/java/com/example/healthjournal/domain/HashtagParser.kt` | `#word` extraction, kind→tag constants |
-| Save/update union | `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` | parsed + manual + sticky auto-tags; `tagsByEntry` map |
+| Save/update union | `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` | selected chips + parsed hashtags, canonicalized; `tagsByEntry` map |
 | Workout auto-tag | `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutViewModel.kt` | Fitness tag on linked entries (finish + manual) |
 | Measurement link | `app/src/main/java/com/example/healthjournal/viewmodel/BodyMeasurementViewModel.kt` | linked entry + Health tag on save |
 | Tag categories | `app/src/main/java/com/example/healthjournal/data/JournalTag.kt` | enum incl. new auto-tag categories |
@@ -67,7 +67,7 @@ stored HTML. See `Docs/prd/hashtags.md` for the requirements.
 | Duplicate/differing-case tags | lowercased + deduped (`#Recovery` + `#recovery` → one tag) |
 | Auto-tagged entry edited | chips seed from stored tags; deselected tags are removed, inline tags follow current text |
 | Lone `#` / `C#` | no word characters → no tag |
-| Cyrillic tags | `\p{L}` matches; stored verbatim; filter compares raw strings |
+| Cyrillic tags | `\p{L}` matches; stored lowercase canonical; filter compares canonical values |
 | Unparseable stored tag data | existing per-site fallbacks unchanged (empty list, never crash) |
 
 ## Dependencies

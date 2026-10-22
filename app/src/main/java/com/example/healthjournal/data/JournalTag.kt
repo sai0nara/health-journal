@@ -1,8 +1,8 @@
 package com.example.healthjournal.data
 
 import androidx.annotation.StringRes
-import com.example.healthjournal.domain.TagIdentity
 import com.example.healthjournal.R
+import com.example.healthjournal.domain.TagIdentity
 
 /**
  * Represents the predefined categories for health journal entries.
