@@ -35,11 +35,11 @@
 
 ## Phase 3: UI tests, docs, verification
 
-- [ ] Task: Device UI verification (Blue)
-    - [ ] Run `FinishRoutinePromptTest`, `RoutineExecutionScreenTest`, and workout hub tests; fix selectors/flakiness
-- [ ] Task: Docs + wiki
-    - [ ] Update `Docs/prd/workout-presets.md` (FR/AC), `Docs/psd/workout-presets.md` (state/dialog), `Docs/tests/workout-presets.md` (cases + coverage)
-    - [ ] Update wiki pages cited by changed `WorkoutScreen`/`WorkoutViewModel` sources; bump dates
-- [ ] Task: Full verification
-    - [ ] JVM suite green, `./gradlew build` green, touched instrumented classes green, `python3 wiki/lint.py` exit 0
+- [x] Task: Device UI verification (Blue)
+    - [x] Run `FinishRoutinePromptTest`, `RoutineExecutionScreenTest`, and workout hub tests; fix selectors/flakiness
+- [x] Task: Docs + wiki
+    - [x] Update `Docs/prd/workout-presets.md` (FR/AC), `Docs/psd/workout-presets.md` (state/dialog), `Docs/tests/workout-presets.md` (cases + coverage)
+    - [x] Update wiki pages cited by changed `WorkoutScreen`/`WorkoutViewModel` sources; bump dates
+- [x] Task: Full verification
+    - [x] JVM suite green, `./gradlew build` green, touched instrumented classes green, `python3 wiki/lint.py` exit 0
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: UI tests, docs, verification' (Protocol in workflow.md)

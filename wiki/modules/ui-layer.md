@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-10-19
+Last updated: 2026-10-22
 
 ## What lives here
 
@@ -33,7 +33,10 @@ session, and the summary:
   set blocks the ones after it), the +/- quick-increment pad acts on the last
   focused set even while its field is focused, swapping takes the swapped-in
   movement's catalog default plan, and the routine's preset name is stored on the
-  session for its history/journal card.
+  session for its history/journal card. Completing the last pending planned set
+  opens a "Finish routine?" dialog: Finish runs the normal finish flow, Keep
+  going only dismisses; the dialog is transient and never shown for manual
+  strength, HIIT, or recovered sessions.
 - **Summary** — elapsed time and calories, plus Fitness tonnage and HIIT
   rounds/intervals, with the finished session also journaled.
 - **Manual log** — logging a past workout, with per-type extras (laps for Swimming,
