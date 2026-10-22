@@ -49,6 +49,6 @@
 - [x] Task: Docs + wiki (1f5f18c)
     - [x] Update `Docs/prd/hashtags.md` (FR-2/FR-3 canonical storage), `Docs/psd/hashtags.md`, `Docs/tests/hashtags.md` (new cases)
     - [x] Update wiki pages citing changed sources (`wiki/modules/data-layer.md`, `ui-layer.md`, `viewmodel-layer.md` as applicable) and bump dates
-- [ ] Task: Full verification
+- [~] Task: Full verification
     - [ ] `./gradlew :app:testDebugUnitTest` green, `./gradlew build` green, `python3 wiki/lint.py` exits 0
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: UI tests, docs, verification (Blue + gates)' (Protocol in workflow.md)
