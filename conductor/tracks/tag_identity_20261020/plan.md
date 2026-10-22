@@ -41,7 +41,7 @@
     - [x] Re-run `AddEntryScreenTest` and `TagFilterIdentityTest` on device; adjust tag selectors (`entry_tag_fitness`) if needed
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Implementation (Green + Refactor)' (Protocol in workflow.md) 62642c0
 
-## Phase 3: UI tests, docs, verification (Blue + gates)
+## Phase 3: UI tests, docs, verification (Blue + gates) [checkpoint: 5f24d38]
 
 - [x] Task: Device UI verification (Blue) (c978e94)
     - [x] Run one class per invocation: `AddEntryScreenTest`, `TagFilterIdentityTest`, `TagEditRemovalTest`, `HistoryScreenTest`, `ArchiveScreenTest`, `MigrationTest`, `TagSchemaTest`
@@ -51,4 +51,4 @@
     - [x] Update wiki pages citing changed sources (`wiki/modules/data-layer.md`, `ui-layer.md`, `viewmodel-layer.md` as applicable) and bump dates
 - [x] Task: Full verification (80815e4)
     - [x] `./gradlew :app:testDebugUnitTest` green, `./gradlew build` green, `python3 wiki/lint.py` exits 0
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: UI tests, docs, verification (Blue + gates)' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: UI tests, docs, verification (Blue + gates)' (Protocol in workflow.md) 5f24d38
