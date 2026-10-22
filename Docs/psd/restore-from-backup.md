@@ -83,6 +83,7 @@ feature wrote, optionally wrapped in an outer AES-256 container. The pipeline is
 | Archive is encrypted but no passphrase | treated as needing a passphrase; never read past the container |
 | Wrong passphrase | `WrongPassphrase`; data intact; screen offers retry with the passphrase field |
 | Schema version newer than app or unknown | `VersionMismatch`; data intact |
+| Schema version older than app | accepted; absent data reads as empty, tags canonicalized on restore |
 | Corrupt container / unreadable manifest | `CorruptedFile`; data intact |
 | Archive is not a backup at all | `UnsupportedFormat`; data intact |
 | Storage insufficient for staging or re-import | `InsufficientStorage`; staging cleaned up, data intact |

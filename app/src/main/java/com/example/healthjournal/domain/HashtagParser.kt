@@ -18,14 +18,14 @@ object HashtagParser {
 }
 
 /**
- * System-owned auto-tags by entry kind. Labels are canonical English;
- * display resolution (including Russian) happens at the UI layer.
+ * Auto-tags by entry kind, stored in canonical lowercase form.
+ * Display resolution (including Russian) happens at the UI layer.
  */
 object EntryKindTag {
 
-    const val FITNESS = "Fitness"
-    const val HEALTH = "Health"
-    const val MEDICATION = "Medication"
+    const val FITNESS = "fitness"
+    const val HEALTH = "health"
+    const val MEDICATION = "medication"
 
     fun forWorkout(): String = FITNESS
 
@@ -33,6 +33,4 @@ object EntryKindTag {
 
     fun forMedication(): String = MEDICATION
 
-    /** Tags owned by the system; preserved across edits, never user-removed. */
-    val SYSTEM_TAGS: Set<String> = setOf(FITNESS, HEALTH, MEDICATION)
 }

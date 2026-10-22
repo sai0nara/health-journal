@@ -6,8 +6,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import java.util.Locale
 
-@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class, WorkoutPreset::class, ExerciseCatalogItem::class], version = 18, exportSchema = true)
+@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class, WorkoutPreset::class, ExerciseCatalogItem::class], version = 19, exportSchema = true)
 @androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
@@ -29,7 +30,7 @@ abstract class JournalDatabase : RoomDatabase() {
         private var INSTANCE: JournalDatabase? = null
 
         /** Current Room database schema version; single-sourced for restore validation. */
-        const val CURRENT_SCHEMA_VERSION: Int = 18
+        const val CURRENT_SCHEMA_VERSION: Int = 19
 
         // v1 -> v2: add isSynced
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -267,6 +268,49 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        // v18 -> v19: fold case variants of a tag onto one canonical lowercase
+        // value per entry. The canonical form is computed in Kotlin with
+        // Locale.ROOT because SQLite's LOWER is ASCII-only; the logic is
+        // deliberately frozen here so later helper changes cannot alter what
+        // this migration does to already-upgraded databases.
+        val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                val rows = mutableListOf<Pair<String, String>>()
+                database.query("SELECT `entryId`, `tag` FROM `EntryTagCrossRef`").use { cursor ->
+                    while (cursor.moveToNext()) {
+                        rows += cursor.getString(0) to cursor.getString(1)
+                    }
+                }
+
+                database.beginTransaction()
+                try {
+                    rows.forEach { (entryId, tag) ->
+                        val canonical = tag.trim().lowercase(Locale.ROOT)
+                        if (canonical.isEmpty()) {
+                            database.execSQL(
+                                "DELETE FROM `EntryTagCrossRef` WHERE `entryId` = ? AND `tag` = ?",
+                                arrayOf(entryId, tag)
+                            )
+                        } else {
+                            database.execSQL(
+                                "INSERT OR IGNORE INTO `EntryTagCrossRef` (`entryId`, `tag`) VALUES (?, ?)",
+                                arrayOf(entryId, canonical)
+                            )
+                            if (canonical != tag) {
+                                database.execSQL(
+                                    "DELETE FROM `EntryTagCrossRef` WHERE `entryId` = ? AND `tag` = ?",
+                                    arrayOf(entryId, tag)
+                                )
+                            }
+                        }
+                    }
+                    database.setTransactionSuccessful()
+                } finally {
+                    database.endTransaction()
+                }
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -279,7 +323,8 @@ abstract class JournalDatabase : RoomDatabase() {
                     MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
                     MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
                     MIGRATION_16_17,
-                    MIGRATION_17_18
+                    MIGRATION_17_18,
+                    MIGRATION_18_19
                 ).build()
                 INSTANCE = instance
                 instance

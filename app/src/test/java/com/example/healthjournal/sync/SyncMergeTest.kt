@@ -1,5 +1,6 @@
 package com.example.healthjournal.sync
 
+import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.JournalEntry
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -70,6 +71,20 @@ class SyncMergeTest {
 
         assertEquals("Cloud Only", merged.single().description)
         assertEquals(listOf("CHECKUP"), merged.single().tags)
+    }
+
+    @Test
+    fun canonicalTagRefs_collapsesVariantsAndDropsBlanks() {
+        assertEquals(
+            listOf(
+                EntryTagCrossRef("e1", "fitness"),
+                EntryTagCrossRef("e1", "sleep")
+            ),
+            SyncMerge.canonicalTagRefs(
+                "e1",
+                listOf("FITNESS", "fitness", "Fitness", "", "Sleep", "SLEEP")
+            )
+        )
     }
 
     @Test

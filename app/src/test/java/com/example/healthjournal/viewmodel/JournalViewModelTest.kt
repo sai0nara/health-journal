@@ -155,23 +155,70 @@ class JournalViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify { repository.addTag(any(), "recovery") }
-        coVerify { repository.addTag(any(), "DOCTOR") }
+        coVerify { repository.addTag(any(), "doctor") }
     }
 
     @Test
-    fun updateEntry_reparsesHashtagsAndPreservesAutoTags() = runTest {
-        val entry = JournalEntry(entry_id = "e1", description = "Old #stale text")
+    fun addEntry_canonicalizesPresetAndHashtagToSingleTag() = runTest {
         coEvery { repository.insert(any()) } returns Unit
-        coEvery { repository.getTagsForEntry("e1") } returns listOf("Fitness", "DOCTOR", "stale")
+        coEvery { repository.addTag(any(), any()) } returns Unit
+
+        viewModel.addEntry("Morning #Fitness", tags = setOf("FITNESS"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.addTag(any(), "fitness") }
+        coVerify(exactly = 1) { repository.addTag(any(), any()) }
+    }
+
+    @Test
+    fun updateEntry_collapsesSelectedCaseVariantsToOneTag() = runTest {
+        val entry = JournalEntry(entry_id = "e2", description = "New #Fitness text")
+        coEvery { repository.insert(any()) } returns Unit
+        coEvery { repository.getTagsForEntry("e2") } returns
+            listOf("FITNESS", "fitness", "Fitness", "DOCTOR", "stale")
         coEvery { repository.removeTag(any(), any()) } returns Unit
         coEvery { repository.addTag(any(), any()) } returns Unit
 
-        viewModel.updateEntry(entry.copy(description = "New #sleep text"), setOf("DOCTOR"))
+        viewModel.updateEntry(entry, setOf("FITNESS", "Fitness", "DOCTOR"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.addTag("e2", "fitness") }
+        coVerify(exactly = 1) { repository.addTag("e2", "doctor") }
+        coVerify(exactly = 0) { repository.addTag("e2", "FITNESS") }
+        coVerify(exactly = 0) { repository.addTag("e2", "Fitness") }
+        coVerify(exactly = 0) { repository.addTag("e2", "DOCTOR") }
+        coVerify(exactly = 0) { repository.addTag("e2", "stale") }
+    }
+
+    @Test
+    fun updateEntry_reparsesHashtagsAndKeepsSelectedAutoTag() = runTest {
+        val entry = JournalEntry(entry_id = "e1", description = "Old #stale text")
+        coEvery { repository.insert(any()) } returns Unit
+        coEvery { repository.getTagsForEntry("e1") } returns listOf("fitness", "DOCTOR", "stale")
+        coEvery { repository.removeTag(any(), any()) } returns Unit
+        coEvery { repository.addTag(any(), any()) } returns Unit
+
+        viewModel.updateEntry(entry.copy(description = "New #sleep text"), setOf("DOCTOR", "fitness"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify { repository.addTag("e1", "sleep") }
-        coVerify { repository.addTag("e1", "Fitness") }
+        coVerify { repository.addTag("e1", "fitness") }
         coVerify(exactly = 0) { repository.addTag("e1", "stale") }
+    }
+
+    @Test
+    fun updateEntry_removesDeselectedSystemTag() = runTest {
+        val entry = JournalEntry(entry_id = "e3", description = "Workout logged")
+        coEvery { repository.insert(any()) } returns Unit
+        coEvery { repository.getTagsForEntry("e3") } returns listOf("fitness", "recovery")
+        coEvery { repository.removeTag(any(), any()) } returns Unit
+        coEvery { repository.addTag(any(), any()) } returns Unit
+
+        viewModel.updateEntry(entry, tags = setOf("recovery"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.addTag("e3", "fitness") }
+        coVerify { repository.addTag("e3", "recovery") }
     }
 
     @Test
@@ -364,8 +411,8 @@ class JournalViewModelTest {
     @Test
     fun toggleEntryTag_marksEntryDirtyAndTriggersSync() = runTest {
         val entryId = "tagged_entry"
-        coEvery { repository.getTagsForEntry(entryId) } returns listOf("DOCTOR")
-        coEvery { repository.removeTag(entryId, "DOCTOR") } returns Unit
+        coEvery { repository.getTagsForEntry(entryId) } returns listOf("doctor")
+        coEvery { repository.removeTag(entryId, "doctor") } returns Unit
         coEvery { repository.addTag(entryId, any()) } returns Unit
         coEvery { repository.updateSyncStatus(entryId, "PENDING_SYNC") } returns Unit
         coEvery { repository.markEntryDirty(entryId) } returns Unit
@@ -373,7 +420,7 @@ class JournalViewModelTest {
         viewModel.toggleEntryTag(entryId, "DOCTOR")
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { repository.removeTag(entryId, "DOCTOR") }
+        coVerify { repository.removeTag(entryId, "doctor") }
         coVerify { repository.markEntryDirty(entryId) }
         verify { SyncManager.enqueuePeriodicSync(any()) }
     }
@@ -383,15 +430,22 @@ class JournalViewModelTest {
         val entryId = "untagged_entry"
         coEvery { repository.getTagsForEntry(entryId) } returns emptyList()
         coEvery { repository.removeTag(any(), any()) } returns Unit
-        coEvery { repository.addTag(entryId, "EXERCISES") } returns Unit
+        coEvery { repository.addTag(entryId, "exercises") } returns Unit
         coEvery { repository.updateSyncStatus(entryId, "PENDING_SYNC") } returns Unit
         coEvery { repository.markEntryDirty(entryId) } returns Unit
 
         viewModel.toggleEntryTag(entryId, "EXERCISES")
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { repository.addTag(entryId, "EXERCISES") }
+        coVerify { repository.addTag(entryId, "exercises") }
         coVerify { repository.markEntryDirty(entryId) }
+    }
+
+    @Test
+    fun toggleTag_canonicalizesFilterSelection() = runTest {
+        viewModel.toggleTag("FITNESS")
+
+        assertEquals(setOf("fitness"), viewModel.selectedTags.value)
     }
 
     @Test

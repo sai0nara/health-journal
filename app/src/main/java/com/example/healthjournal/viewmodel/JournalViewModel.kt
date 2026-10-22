@@ -16,8 +16,8 @@ import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.HealthSyncSettings
 import com.example.healthjournal.data.local.JournalEntry
-import com.example.healthjournal.domain.EntryKindTag
 import com.example.healthjournal.domain.HashtagParser
+import com.example.healthjournal.domain.TagIdentity
 import com.example.healthjournal.health.HealthConnectManager
 import com.example.healthjournal.media.AndroidMediaCompressionService
 import com.example.healthjournal.media.MediaCompressionService
@@ -64,7 +64,8 @@ interface IJournalViewModel {
         sleepHours: Float? = null,
         tags: Set<String> = emptySet()
     )
-    fun updateEntry(entry: JournalEntry, tags: Set<String> = emptySet())
+    /** Saves [entry] with exactly [tags] plus hashtags re-parsed from its text; callers must pass the complete chip selection. */
+    fun updateEntry(entry: JournalEntry, tags: Set<String>)
     suspend fun getEntryById(entryId: String): JournalEntry?
     fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit)
     fun requestDriveAuth(onResolutionRequired: (android.app.PendingIntent) -> Unit)
@@ -306,7 +307,9 @@ class JournalViewModel(
             )
             repository.insert(newEntry)
 
-            val finalTags = tags + HashtagParser.extractHashtags(description)
+            val finalTags = TagIdentity.canonicalDistinct(
+                tags + HashtagParser.extractHashtags(description)
+            )
             finalTags.forEach { tag ->
                 repository.addTag(newEntry.entry_id, tag)
             }
@@ -323,15 +326,16 @@ class JournalViewModel(
             // Keep the original timestamp (creation date)
             repository.insert(entry.copy(syncStatus = "PENDING_SYNC", lastModified = System.currentTimeMillis()))
             
-            // Refresh tags: remove all existing and add current selection,
-            // re-parsed hashtags, plus sticky system auto-tags.
+            // Refresh tags: remove all existing and add the current chip
+            // selection plus re-parsed hashtags. Inline text still wins: a
+            // #word left in the text keeps its tag even if the chip is off.
             val existingTags = repository.getTagsForEntry(entry.entry_id)
             existingTags.forEach { tag ->
                 repository.removeTag(entry.entry_id, tag)
             }
-            val finalTags = tags +
-                HashtagParser.extractHashtags(entry.description) +
-                existingTags.intersect(EntryKindTag.SYSTEM_TAGS)
+            val finalTags = TagIdentity.canonicalDistinct(
+                tags + HashtagParser.extractHashtags(entry.description)
+            )
             finalTags.forEach { tag ->
                 repository.addTag(entry.entry_id, tag)
             }
@@ -423,21 +427,23 @@ class JournalViewModel(
     }
 
     override fun toggleTag(tag: String) {
+        val canonical = TagIdentity.canonical(tag)
         val current = _selectedTags.value
-        if (current.contains(tag)) {
-            _selectedTags.value = current - tag
+        if (current.contains(canonical)) {
+            _selectedTags.value = current - canonical
         } else {
-            _selectedTags.value = current + tag
+            _selectedTags.value = current + canonical
         }
     }
 
     fun toggleEntryTag(entryId: String, tag: String) {
         viewModelScope.launch {
+            val canonical = TagIdentity.canonical(tag)
             val tags = repository.getTagsForEntry(entryId)
-            if (tags.contains(tag)) {
-                repository.removeTag(entryId, tag)
+            if (tags.contains(canonical)) {
+                repository.removeTag(entryId, canonical)
             } else {
-                repository.addTag(entryId, tag)
+                repository.addTag(entryId, canonical)
             }
             // Spec §4: tag changes must set PENDING_SYNC and bump lastModified
             repository.markEntryDirty(entryId)

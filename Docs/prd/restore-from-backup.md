@@ -71,7 +71,9 @@ file never destroys current data.
   encrypted container uses AES-256.
 - Offline: the whole restore runs without a network connection.
 - Robustness: unzipping is bounded (per-entry and cumulative expansion caps).
-- Versioning: a backup from a newer schema version is refused, not guessed at.
+- Versioning: a backup from a newer schema version is refused, not guessed at;
+  older backups are accepted, with absent data read as empty and stored tags
+  canonicalized on restore.
 
 ## Acceptance criteria
 

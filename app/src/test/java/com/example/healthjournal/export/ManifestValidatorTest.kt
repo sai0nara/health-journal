@@ -37,14 +37,29 @@ class ManifestValidatorTest {
     }
 
     @Test
-    fun validate_schemaMismatch_isVersionMismatch() {
-        val result = ManifestValidator(currentSchemaVersion = 12).validate(manifest(schemaVersion = 11))
+    fun validate_newerSchema_isVersionMismatch() {
+        val result = ManifestValidator(currentSchemaVersion = 12).validate(manifest(schemaVersion = 13))
 
         val invalid = result as com.example.healthjournal.export.ManifestValidation.Invalid
         assertTrue(invalid.error is RestoreError.VersionMismatch)
         val vm = invalid.error as RestoreError.VersionMismatch
-        assertEquals(11, vm.backupSchemaVersion)
+        assertEquals(13, vm.backupSchemaVersion)
         assertEquals(12, vm.currentSchemaVersion)
+    }
+
+    @Test
+    fun validate_olderSchema_isValid() {
+        val result = ManifestValidator(currentSchemaVersion = 12).validate(manifest(schemaVersion = 11))
+
+        assertTrue(result is com.example.healthjournal.export.ManifestValidation.Valid)
+    }
+
+    @Test
+    fun validate_unknownSchemaVersion_isVersionMismatch() {
+        val result = ManifestValidator(currentSchemaVersion = 12).validate(manifest(schemaVersion = 0))
+
+        assertTrue(result is com.example.healthjournal.export.ManifestValidation.Invalid)
+        assertTrue((result as com.example.healthjournal.export.ManifestValidation.Invalid).error is RestoreError.VersionMismatch)
     }
 
     @Test

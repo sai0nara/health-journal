@@ -5,14 +5,14 @@
 > driven and runs without Android), and instrumented tests for the screen and
 > the end-to-end database swap with real Room + MediaStore.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-22
 
 ## Automated coverage
 
 | Stack | Test file | Scope |
 |---|---|---|
 | JVM unit | `app/src/test/java/com/example/healthjournal/export/RestoreViewModelTest.kt` | MVI transitions: picker→validating→confirm/passphrase→processing→success/error |
-| JVM unit | `app/src/test/java/com/example/healthjournal/export/RestoreCoordinatorTest.kt` | orchestration: plain success, encrypted success, wrong passphrase, version mismatch, unsupported archive, zip-slip, restore failure, staging cleanup |
+| JVM unit | `app/src/test/java/com/example/healthjournal/export/RestoreCoordinatorTest.kt` | orchestration: plain/older-schema success, encrypted success, wrong passphrase, newer-schema rejection, unsupported archive, zip-slip, restore failure, staging cleanup |
 | JVM unit | `app/src/test/java/com/example/healthjournal/export/RestoreRepositoryTest.kt` | atomic wipe+reinsert; media re-import + URI remap; no-op without staging; rollback on failure |
 | JVM unit | `app/src/test/java/com/example/healthjournal/export/SafeBackupExtractorTest.kt` | normal extraction; traversal / absolute-path entries rejected; per-entry and cumulative expansion caps |
 | JVM unit | `app/src/test/java/com/example/healthjournal/export/BackupEncryptorTest.kt` | AES-256 container readable round-trip; wrong passphrase fails to open |
@@ -30,6 +30,7 @@ Last updated: 2026-09-02
 | T-2 | AC-2 | Restore an encrypted archive | valid encrypted backup; correct passphrase | passphrase gate shown; restore succeeds |
 | T-3 | AC-3 | Wrong passphrase | encrypted backup; wrong passphrase | `WrongPassphrase`; current data unchanged; retry offered |
 | T-4 | AC-4 | Newer/unknown schema | archive with higher schema version | `VersionMismatch`; data unchanged |
+| T-11 | AC-4 | Older schema | archive from an earlier app version | restore succeeds; absent data defaults empty |
 | T-5 | AC-5 | Corrupt / foreign file | non-backup or truncated `.zip` | `CorruptedFile`/`UnsupportedFormat`; data unchanged |
 | T-6 | AC-6 | Zip-slip / zip-bomb | archive with `../` entry or over-limit expansion | extraction rejected; no partial writes; data unchanged |
 | T-7 | AC-7 | Post-restore sync | successful restore; Drive configured | manual sync enqueued after worker success |

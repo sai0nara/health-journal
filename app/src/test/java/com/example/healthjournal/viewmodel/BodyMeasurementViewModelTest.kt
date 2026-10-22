@@ -151,7 +151,7 @@ class BodyMeasurementViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify { journalRepository.insert(match { it.description.isNotBlank() }) }
-        coVerify { journalRepository.addTag(any(), "Health") }
+        coVerify { journalRepository.addTag(any(), "health") }
     }
 
     @Test

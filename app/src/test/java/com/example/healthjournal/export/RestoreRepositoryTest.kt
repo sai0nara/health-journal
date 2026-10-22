@@ -36,6 +36,7 @@ class RestoreRepositoryTest {
     private data class Harness(
         val repo: RestoreRepository,
         val db: JournalDatabase,
+        val journalDao: JournalDao,
         val fileName: String,
         val published: MutableList<List<JournalEntry>> = mutableListOf()
     )
@@ -77,7 +78,7 @@ class RestoreRepositoryTest {
         }
 
         val repo = RestoreRepository(db, filesDir, runInTransaction = { block -> block() })
-        return Harness(repo, db, fileName = "restore", published = published)
+        return Harness(repo, db, journalDao, fileName = "restore", published = published)
     }
 
     private val sampleData = BackupData(
@@ -128,6 +129,36 @@ class RestoreRepositoryTest {
         assertEquals(0, result.mediaFileCount)
         assertEquals(1, result.workoutCount)
         assertEquals(6, result.totalRecords)
+    }
+
+    @Test
+    fun restore_canonicalizesTagVariantsBeforeInsert() = runTest {
+        val filesDir = tempFolder.newFolder("files")
+        val harness = mockRepository(filesDir)
+        val data = BackupData(
+            journalEntries = listOf(
+                JournalEntry(entry_id = "e1", description = "x"),
+                JournalEntry(entry_id = "e2", description = "y")
+            ),
+            entryTags = listOf(
+                EntryTagCrossRef("e1", "FITNESS"),
+                EntryTagCrossRef("e1", "fitness"),
+                EntryTagCrossRef("e1", "Fitness"),
+                EntryTagCrossRef("e2", "Sleep")
+            )
+        )
+
+        val result = harness.repo.restore(data, mediaStagingDir = null)
+
+        coVerify {
+            harness.journalDao.insertAllTags(
+                listOf(
+                    EntryTagCrossRef("e1", "fitness"),
+                    EntryTagCrossRef("e2", "sleep")
+                )
+            )
+        }
+        assertEquals(2, result.tagCount)
     }
 
     @Test

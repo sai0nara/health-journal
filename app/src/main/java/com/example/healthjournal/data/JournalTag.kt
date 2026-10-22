@@ -2,6 +2,7 @@ package com.example.healthjournal.data
 
 import androidx.annotation.StringRes
 import com.example.healthjournal.R
+import com.example.healthjournal.domain.TagIdentity
 
 /**
  * Represents the predefined categories for health journal entries.
@@ -16,5 +17,8 @@ enum class JournalTag(@StringRes val labelRes: Int) {
     EXERCISES(R.string.tag_exercises),
     FITNESS(R.string.auto_tag_fitness),
     HEALTH(R.string.auto_tag_health),
-    MEDICATION(R.string.auto_tag_medication)
+    MEDICATION(R.string.auto_tag_medication);
+
+    /** Canonical stored value; enum names stay stable identifiers. */
+    val canonical: String get() = TagIdentity.canonical(name)
 }

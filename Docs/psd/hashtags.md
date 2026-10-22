@@ -5,7 +5,7 @@
 > encodes `#` as `&num;`), the ViewModels union tags at save, and feed
 > items render tappable chips.
 
-Last updated: 2026-10-05
+Last updated: 2026-10-20
 
 ## Overview
 
@@ -23,9 +23,10 @@ stored HTML. See `Docs/prd/hashtags.md` for the requirements.
 - No new layers: domain owns parsing/mapping; `JournalViewModel` unions
   tags at the single save/update choke point; `WorkoutViewModel` and
   `BodyMeasurementViewModel` attach kind tags to the entries they create.
-- Auto-tags are sticky without schema change: on edit, existing tags in
-  the known `SYSTEM_TAGS` set are preserved while inline tags re-derive
-  from current text.
+- Tags on edit are exactly the chip selection plus tags re-parsed from the
+  current text; there is no separate sticky set. Auto-tags are applied at
+  creation but a deselected auto-tag is removed like any other tag, so no
+  schema change is needed.
 - Feed chips read a reactive `entryId → tags` map (`observeAllTags` flow,
   single query); tapping toggles the existing History tag filter.
 - Display labels for the three auto-tags resolve via resources (Russian
@@ -38,8 +39,8 @@ stored HTML. See `Docs/prd/hashtags.md` for the requirements.
 
 1. User saves an entry: screen parses plain text, unions with manual
    tags, calls `addEntry`/`updateEntry`.
-2. ViewModel re-parses defensively, unions manual + inline + sticky
-   auto-tags, writes via `EntryTagCrossRef`.
+2. ViewModel re-parses defensively, unions selected chips + inline tags
+   (no sticky set), canonicalizes, and writes via `EntryTagCrossRef`.
 3. Workout finish/manual log inserts the linked entry, then tags it
    Fitness; measurement save inserts its entry, then tags it Health.
 4. History collects the tags map; feed items render `#chips`; tap
@@ -50,7 +51,7 @@ stored HTML. See `Docs/prd/hashtags.md` for the requirements.
 | Component | File | Responsibility |
 |---|---|---|
 | Tag parser + mapping | `app/src/main/java/com/example/healthjournal/domain/HashtagParser.kt` | `#word` extraction, kind→tag constants |
-| Save/update union | `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` | parsed + manual + sticky auto-tags; `tagsByEntry` map |
+| Save/update union | `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` | selected chips + parsed hashtags, canonicalized; `tagsByEntry` map |
 | Workout auto-tag | `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutViewModel.kt` | Fitness tag on linked entries (finish + manual) |
 | Measurement link | `app/src/main/java/com/example/healthjournal/viewmodel/BodyMeasurementViewModel.kt` | linked entry + Health tag on save |
 | Tag categories | `app/src/main/java/com/example/healthjournal/data/JournalTag.kt` | enum incl. new auto-tag categories |
@@ -64,9 +65,9 @@ stored HTML. See `Docs/prd/hashtags.md` for the requirements.
 |---|---|
 | `#` typed in editor | stored as `&num;` in HTML, renders as `#`; parsing uses plain text so nothing is missed |
 | Duplicate/differing-case tags | lowercased + deduped (`#Recovery` + `#recovery` → one tag) |
-| Auto-tagged entry edited | auto-tag preserved via known-set stickiness; inline tags follow current text |
+| Auto-tagged entry edited | chips seed from stored tags; deselected tags are removed, inline tags follow current text |
 | Lone `#` / `C#` | no word characters → no tag |
-| Cyrillic tags | `\p{L}` matches; stored verbatim; filter compares raw strings |
+| Cyrillic tags | `\p{L}` matches; stored lowercase canonical; filter compares canonical values |
 | Unparseable stored tag data | existing per-site fallbacks unchanged (empty list, never crash) |
 
 ## Dependencies
