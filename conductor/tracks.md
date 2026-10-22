@@ -51,5 +51,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Unify tag identity across presets, hashtags and auto-tags**
+- [x] **Track: Unify tag identity across presets, hashtags and auto-tags**
   *Link: [./tracks/tag_identity_20261020/](./tracks/tag_identity_20261020/)*
