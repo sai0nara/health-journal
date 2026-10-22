@@ -139,6 +139,9 @@
     <string name="workout_paused">Paused</string>
     <string name="workout_pause">Pause</string>
     <string name="workout_finish">Finish</string>
+    <string name="workout_finish_prompt_title">Finish routine?</string>
+    <string name="workout_finish_prompt_text">All exercises are complete.</string>
+    <string name="workout_finish_prompt_keep_going">Keep going</string>
     <string name="workout_phase_work">Work</string>
     
     <string name="workout_next_interval">Next interval</string>

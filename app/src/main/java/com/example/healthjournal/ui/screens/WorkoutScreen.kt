@@ -168,28 +168,58 @@ fun WorkoutScreen(
                     secondsRemaining = state.secondsRemaining
                 )
 
-                is WorkoutUiState.Active -> SessionContent(
-                    session = state.session,
-                    paused = false,
-                    keepScreenOn = state.keepScreenOn,
-                    restSeconds = state.restSeconds,
-                    setMatrixError = state.setMatrixError,
-                    catalogExercises = catalogExercises,
-                    unitSystem = unitSystem,
-                    onPauseResume = { viewModel.pauseSession() },
-                    onFinish = { viewModel.finishSession() },
-                    onAdvanceInterval = { viewModel.advanceInterval() },
-                    onAddExercise = { name -> viewModel.addExercise(name) },
-                    onAddSet = { exerciseId, kg, reps -> viewModel.addSet(exerciseId, kg, reps) },
-                    onToggleSetCompleted = { ex, set -> viewModel.toggleSetCompleted(ex, set) },
-                    onUpdateRoutineSet = { ex, set, kg, reps ->
-                        viewModel.updateRoutineSet(ex, set, kg, reps)
-                    },
-                    onSwapExercise = { ex, exerciseId, name ->
-                        viewModel.swapRoutineExercise(ex, exerciseId, name)
-                    },
-                    onAddRoutineSet = { ex -> viewModel.addRoutineSet(ex) }
-                )
+                is WorkoutUiState.Active -> {
+                    SessionContent(
+                        session = state.session,
+                        paused = false,
+                        keepScreenOn = state.keepScreenOn,
+                        restSeconds = state.restSeconds,
+                        setMatrixError = state.setMatrixError,
+                        catalogExercises = catalogExercises,
+                        unitSystem = unitSystem,
+                        onPauseResume = { viewModel.pauseSession() },
+                        onFinish = { viewModel.finishSession() },
+                        onAdvanceInterval = { viewModel.advanceInterval() },
+                        onAddExercise = { name -> viewModel.addExercise(name) },
+                        onAddSet = { exerciseId, kg, reps -> viewModel.addSet(exerciseId, kg, reps) },
+                        onToggleSetCompleted = { ex, set -> viewModel.toggleSetCompleted(ex, set) },
+                        onUpdateRoutineSet = { ex, set, kg, reps ->
+                            viewModel.updateRoutineSet(ex, set, kg, reps)
+                        },
+                        onSwapExercise = { ex, exerciseId, name ->
+                            viewModel.swapRoutineExercise(ex, exerciseId, name)
+                        },
+                        onAddRoutineSet = { ex -> viewModel.addRoutineSet(ex) }
+                    )
+                    if (state.finishPromptVisible) {
+                        AlertDialog(
+                            onDismissRequest = { viewModel.dismissFinishPrompt() },
+                            modifier = Modifier.testTag("finish_routine_prompt"),
+                            title = {
+                                Text(stringResource(R.string.workout_finish_prompt_title))
+                            },
+                            text = {
+                                Text(stringResource(R.string.workout_finish_prompt_text))
+                            },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = { viewModel.finishSession() },
+                                    modifier = Modifier.testTag("finish_routine_confirm")
+                                ) {
+                                    Text(stringResource(R.string.workout_finish))
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = { viewModel.dismissFinishPrompt() },
+                                    modifier = Modifier.testTag("finish_routine_keep_going")
+                                ) {
+                                    Text(stringResource(R.string.workout_finish_prompt_keep_going))
+                                }
+                            }
+                        )
+                    }
+                }
 
                 is WorkoutUiState.Paused -> SessionContent(
                     session = state.session,

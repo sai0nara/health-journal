@@ -23,15 +23,15 @@
 
 ## Phase 2: Implementation (Green + Refactor)
 
-- [ ] Task: Prompt state and lifecycle
-    - [ ] Add a transient prompt flag to `WorkoutUiState.Active`
-    - [ ] Set it in `toggleSetCompleted` only on the final set’s completion transition; clear it when any set is unchecked
-    - [ ] Add `dismissFinishPrompt()`; ensure manual Finish and recovery paths are unchanged
-    - [ ] Add EN/RU strings for title, body, and “Keep going”
-- [ ] Task: Compose dialog
-    - [ ] Render the `AlertDialog` in the Active state; Finish → `finishSession()`, Keep going/back/outside → dismiss only
-    - [ ] Re-run JVM tests green; refactor without behavior change
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Implementation (Green + Refactor)' (Protocol in workflow.md)
+- [x] Task: Prompt state and lifecycle
+    - [x] Add a transient prompt flag to `WorkoutUiState.Active`
+    - [x] Set it in `toggleSetCompleted` only on the final set’s completion transition; clear it when any set is unchecked
+    - [x] Add `dismissFinishPrompt()`; ensure manual Finish and recovery paths are unchanged
+    - [x] Add EN/RU strings for title, body, and “Keep going”
+- [x] Task: Compose dialog
+    - [x] Render the `AlertDialog` in the Active state; Finish → `finishSession()`, Keep going/back/outside → dismiss only
+    - [x] Re-run JVM tests green; refactor without behavior change
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Implementation (Green + Refactor)' (Protocol in workflow.md)
 
 ## Phase 3: UI tests, docs, verification
 

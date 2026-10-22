@@ -28,7 +28,9 @@ sealed interface WorkoutUiState {
         /** Seconds left in the between-sets rest timer; 0 = not resting. */
         val restSeconds: Int = 0,
         /** Inline validation error from the latest set-matrix edit, if any. */
-        val setMatrixError: String? = null
+        val setMatrixError: String? = null,
+        /** Transient prompt shown when the last planned set is completed. */
+        val finishPromptVisible: Boolean = false
     ) : WorkoutUiState {
         /** True when this Active session was started from a preset routine
          *  (at least one exercise carries planned targets). */

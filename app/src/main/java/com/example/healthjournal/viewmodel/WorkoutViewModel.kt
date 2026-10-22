@@ -228,7 +228,8 @@ class WorkoutViewModel(
                 _uiState.value = WorkoutUiState.Active(
                     session = advanced,
                     restSeconds = restSeconds,
-                    setMatrixError = current.setMatrixError
+                    setMatrixError = current.setMatrixError,
+                    finishPromptVisible = current.finishPromptVisible
                 )
                 if (current.restSeconds > 0 && restSeconds == 0) {
                     onHaptic(WorkoutHaptic.REST_ENDED)
@@ -423,6 +424,7 @@ class WorkoutViewModel(
             }
             val updated = current.session.copy(setMatrix = matrix)
             repository.saveSession(updated)
+            val allComplete = matrix.all { planned -> planned.sets.all { it.completed } }
             _uiState.value = current.copy(
                 session = updated,
                 setMatrixError = null,
@@ -431,7 +433,8 @@ class WorkoutViewModel(
                 } else {
                     // Unchecking stops the rest period; a later re-check restarts it.
                     0
-                }
+                },
+                finishPromptVisible = newCompleted && current.isRoutine && allComplete
             )
             if (newCompleted) {
                 onHaptic(WorkoutHaptic.SET_COMPLETE)
@@ -440,6 +443,16 @@ class WorkoutViewModel(
                 }
             }
         }
+    }
+
+    /**
+     * Closes the end-of-routine prompt without finishing the session.
+     * The prompt reappears only after a set is unchecked and completed again.
+     */
+    fun dismissFinishPrompt() {
+        val current = _uiState.value as? WorkoutUiState.Active ?: return
+        if (!current.finishPromptVisible) return
+        _uiState.value = current.copy(finishPromptVisible = false)
     }
 
     /**
