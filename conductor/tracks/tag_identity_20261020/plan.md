@@ -21,7 +21,7 @@
     - [x] Run on SM-F936B, one class per invocation (`-PcomposeRunner=true`); confirm Red
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Failing tests (Red)' (Protocol in workflow.md) 3c76a3a
 
-## Phase 2: Implementation (Green + Refactor)
+## Phase 2: Implementation (Green + Refactor) [checkpoint: 62642c0]
 
 - [x] Task: Canonical identity helper and all write paths (4a6a1d1)
     - [x] Add `domain/TagIdentity.kt` as the single canonicalization point; `JournalTag` exposes a derived canonical value, `EntryKindTag` constants become canonical
@@ -39,7 +39,7 @@
     - [x] Red JVM test `updateEntry_removesDeselectedSystemTag`; instrumented `TagEditRemovalTest` green on device
 - [x] Task: Instrumented picker/filter green (818b818)
     - [x] Re-run `AddEntryScreenTest` and `TagFilterIdentityTest` on device; adjust tag selectors (`entry_tag_fitness`) if needed
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Implementation (Green + Refactor)' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Implementation (Green + Refactor)' (Protocol in workflow.md) 62642c0
 
 ## Phase 3: UI tests, docs, verification (Blue + gates)
 
