@@ -52,3 +52,15 @@
 - [x] Task: Full verification (80815e4)
     - [x] `./gradlew :app:testDebugUnitTest` green, `./gradlew build` green, `python3 wiki/lint.py` exits 0
 - [x] Task: Conductor - User Manual Verification 'Phase 3: UI tests, docs, verification (Blue + gates)' (Protocol in workflow.md) 5f24d38
+
+## Phase 4: Review Fixes
+
+- [x] Task: Accept older-schema backups without weakening validation (aa34256)
+    - [x] `ManifestValidator`: accept schema versions `1..current`; reject newer and unknown (0)
+    - [x] Tests: older accepted, newer rejected, unknown rejected (`ManifestValidatorTest`, `RestoreCoordinatorTest`)
+    - [x] Restore PRD/PSD/tests document the policy (T-11)
+- [x] Task: Align track/docs with implemented tag behavior (aa34256)
+    - [x] Spec AC3 no longer claims system tags survive; hashtags PRD/PSD/tests drop sticky/verbatim claims (T-3/T-9)
+    - [x] `updateEntry` default removed; KDoc/import/comment nits
+- [x] Task: Re-verify (aa34256)
+    - [x] `:app:testDebugUnitTest` 633/0; `./gradlew build` green; `python3 wiki/lint.py` exit 0
