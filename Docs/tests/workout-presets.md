@@ -4,7 +4,7 @@
 > verification. The "Automated coverage" table cites the real test files; keep
 > it in sync when coverage moves.
 
-Last updated: 2026-10-22
+Last updated: 2026-10-23
 
 ## Automated coverage
 
@@ -12,7 +12,7 @@ Last updated: 2026-10-22
 |---|---|---|
 | JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/PresetViewModelTest.kt` | preset CRUD, validation rules, UI-state transitions |
 | JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/RoutineExecutionTest.kt` | routine start, ordered completion, swap-to-catalog-defaults, rest/haptics, recovery, history-card content |
-| JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/WorkoutViewModelTest.kt` | finish-prompt lifecycle: final-set trigger, dismiss, re-show, recovery, manual/HIIT/empty exclusion |
+| JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/WorkoutViewModelTest.kt` | finish-prompt lifecycle: final-set trigger, planned-only completion, dismiss with rest-timer continuation, re-show, recovery, manual/HIIT/empty exclusion |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/CalculateOneRepMaxUseCaseTest.kt` | Epley single/best-estimate + bounds |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/ConvertAlternativeExerciseWeightUseCaseTest.kt` | ratio from history, default-coefficient fallback, bounds |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/StrengthExerciseTest.kt` | planned rows, `isPlanned`, tonnage |

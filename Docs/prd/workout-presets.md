@@ -5,7 +5,7 @@
 > with ordered completion, a searchable exercise catalog, and (planned) weight
 > analytics with alternative-exercise weight conversion.
 
-Last updated: 2026-10-22
+Last updated: 2026-10-23
 
 ## Overview
 

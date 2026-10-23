@@ -6,7 +6,7 @@
 > movements to catalog defaults, and finishes into the journal + Health Connect
 > — with (planned) use cases for 1RM and alternative-exercise conversion.
 
-Last updated: 2026-10-22
+Last updated: 2026-10-23
 
 ## Overview
 
