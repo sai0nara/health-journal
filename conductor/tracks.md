@@ -48,3 +48,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Trim history top bar and move logo to main screen**
   *Link: [./tracks/trim_history_actions_move_logo_20261019/](./tracks/trim_history_actions_move_logo_20261019/)*
+
+---
+
+- [ ] **Track: Add a warm up to routine presets**
+  *Link: [./tracks/warm_up_20261023/](./tracks/warm_up_20261023/)*
