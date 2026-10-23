@@ -11,19 +11,19 @@
 
 ## Phase 1: Warm-up data and persistence
 
-- [ ] Task: Write failing tests for warm-up data and validation
-    - [ ] Add `ValidatePreset` boundary tests: blank name, 60-char limit, 1/60-minute bounds, invalid values
-    - [ ] Add repository round-trip tests for preset warm-up fields and nullable defaults
-    - [ ] Add `MigrationTest` 19→20 coverage for both tables and existing rows
-    - [ ] Run targeted JVM and migration tests; confirm expected failures
-- [ ] Task: Implement model and schema 19→20
-    - [ ] Add preset warm-up fields and session warm-up fields with nullable defaults
-    - [ ] Add the `WarmupOutcome` domain enum and validation rules
-    - [ ] Add `MIGRATION_19_20`, bump the database to version 20, and export the schema
-    - [ ] Run targeted tests until green
-- [ ] Task: Refactor without behavior change
-    - [ ] Keep validation and persistence helpers small and covered
-    - [ ] Re-run the full JVM suite
+- [x] Task: Write failing tests for warm-up data and validation (a5becf8)
+    - [x] Add `ValidatePreset` boundary tests: blank name, 60-char limit, 1/60-minute bounds, invalid values
+    - [x] Add repository round-trip tests for preset warm-up fields and nullable defaults
+    - [x] Add `MigrationTest` 19→20 coverage for both tables and existing rows
+    - [x] Run targeted JVM and migration tests; confirm expected failures
+- [x] Task: Implement model and schema 19→20 (a5becf8)
+    - [x] Add preset warm-up fields and session warm-up fields with nullable defaults
+    - [x] Add the `WarmupOutcome` domain enum and validation rules
+    - [x] Add `MIGRATION_19_20`, bump the database to version 20, and export the schema
+    - [x] Run targeted tests until green
+- [x] Task: Refactor without behavior change (a5becf8)
+    - [x] Keep validation and persistence helpers small and covered
+    - [x] Re-run the full JVM suite
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Warm-up data and persistence' (Protocol in workflow.md)
 
 ## Phase 2: Preset editor and library
