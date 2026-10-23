@@ -424,7 +424,9 @@ class WorkoutViewModel(
             }
             val updated = current.session.copy(setMatrix = matrix)
             repository.saveSession(updated)
-            val allComplete = matrix.all { planned -> planned.sets.all { it.completed } }
+            val allComplete = matrix
+                .filter { it.isPlanned }
+                .all { planned -> planned.sets.all { it.completed } }
             _uiState.value = current.copy(
                 session = updated,
                 setMatrixError = null,

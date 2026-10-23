@@ -105,7 +105,7 @@ exercises instead of a bare tonnage figure.
   shows a confirmation with Finish and Keep going. Keep going dismisses only
   the prompt (session stays active, rest timer continues, nothing is saved);
   Finish runs the normal finish flow. The prompt appears only on the transition
-  to all sets complete, never on load/recovery, and never for manual strength or
+  to all planned sets complete, never on load/recovery, and never for manual strength or
   HIIT sessions. Manual Finish remains immediate and bypasses the prompt.
 
 ## Non-functional requirements

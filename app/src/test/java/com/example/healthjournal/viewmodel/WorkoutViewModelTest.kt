@@ -822,6 +822,23 @@ class WorkoutViewModelTest {
     }
 
     @Test
+    fun toggleSetCompleted_finalPlannedSet_ignoresUnplannedPendingSet() = runTest {
+        val vm = newRoutineViewModel(presetSets = 1)
+        startRoutine(vm)
+
+        vm.addExercise("Manual lift")
+        dispatcher.scheduler.advanceUntilIdle()
+        val manual = (vm.uiState.value as WorkoutUiState.Active).session.setMatrix!!.last()
+        vm.addSet(manual.id, kg = 20.0, reps = 10)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue((vm.uiState.value as WorkoutUiState.Active).finishPromptVisible)
+    }
+
+    @Test
     fun dismissFinishPrompt_keepsRoutineActiveAndRestTimer() = runTest {
         val vm = newRoutineViewModel(presetSets = 1)
         startRoutine(vm)
@@ -836,6 +853,10 @@ class WorkoutViewModelTest {
         assertFalse(state.finishPromptVisible)
         assertEquals(WorkoutStatus.ACTIVE.name, state.session.status)
         assertEquals(90, state.restSeconds)
+
+        vm.advanceTime(10)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(80, (vm.uiState.value as WorkoutUiState.Active).restSeconds)
     }
 
     @Test
