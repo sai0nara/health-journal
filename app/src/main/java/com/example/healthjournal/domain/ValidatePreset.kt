@@ -13,10 +13,34 @@ object ValidatePreset {
     const val ERROR_REPS_POSITIVE = "Reps must be at least 1"
     const val ERROR_WEIGHT_POSITIVE = "Weight must be greater than zero"
     const val ERROR_REST_NON_NEGATIVE = "Rest cannot be negative"
+    const val ERROR_WARMUP_NAME_REQUIRED = "Warm-up name is required"
+    const val ERROR_WARMUP_NAME_TOO_LONG = "Warm-up name must be 60 characters or fewer"
+    const val ERROR_WARMUP_DURATION_RANGE = "Warm-up duration must be between 1 and 60 minutes"
+
+    const val WARMUP_NAME_MAX_LENGTH = 60
+    const val WARMUP_MIN_MINUTES = 1
+    const val WARMUP_MAX_MINUTES = 60
+    const val WARMUP_DEFAULT_MINUTES = 5
 
     /** Null when [name] is a usable preset name, else the inline error. */
     fun validateName(name: String): String? =
         if (name.isBlank()) ERROR_NAME_REQUIRED else null
+
+    /** Null when [name] is a usable warm-up name, else the inline error. */
+    fun validateWarmupName(name: String): String? =
+        when {
+            name.isBlank() -> ERROR_WARMUP_NAME_REQUIRED
+            name.trim().length > WARMUP_NAME_MAX_LENGTH -> ERROR_WARMUP_NAME_TOO_LONG
+            else -> null
+        }
+
+    /** Null when [minutes] is within the supported warm-up range. */
+    fun validateWarmupDuration(minutes: Int): String? =
+        if (minutes !in WARMUP_MIN_MINUTES..WARMUP_MAX_MINUTES) {
+            ERROR_WARMUP_DURATION_RANGE
+        } else {
+            null
+        }
 
     /** Null when the preset carries at least one exercise, else the inline error. */
     fun validateExercises(exercises: List<PresetExercise>): String? =

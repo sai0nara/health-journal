@@ -44,6 +44,28 @@ class WorkoutRepositoryTest {
     }
 
     @Test
+    fun saveSession_preservesWarmupMetadata() = runBlocking {
+        val session = WorkoutSession(
+            warmupName = "Rowing",
+            warmupDurationSeconds = 300,
+            warmupElapsedSeconds = 180,
+            warmupOutcome = "SKIPPED"
+        )
+        coEvery { dao.upsertSession(any()) } returns Unit
+
+        repository.saveSession(session)
+
+        coVerify {
+            dao.upsertSession(withArg { saved ->
+                assertEquals("Rowing", saved.warmupName)
+                assertEquals(300, saved.warmupDurationSeconds)
+                assertEquals(180, saved.warmupElapsedSeconds)
+                assertEquals("SKIPPED", saved.warmupOutcome)
+            })
+        }
+    }
+
+    @Test
     fun sessions_exposesDaoFlow() = runBlocking {
         val sessions = listOf(WorkoutSession(), WorkoutSession())
         coEvery { dao.getAllSessions() } returns flowOf(sessions)
