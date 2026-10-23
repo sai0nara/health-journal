@@ -1,0 +1,8 @@
+{
+  "track_id": "finish_routine_prompt_20261022",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-10-22T11:45:15Z",
+  "updated_at": "2026-10-22T11:45:15Z",
+  "description": "When all exercises are finished in a preset routine, a 'Finish routine?' confirmation window should appear."
+}

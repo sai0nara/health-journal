@@ -9,17 +9,26 @@ import com.example.healthjournal.health.FakeWorkoutHealthDataSource
 import com.example.healthjournal.health.HealthExerciseType
 import com.example.healthjournal.domain.WorkoutIntervalPhase
 import com.example.healthjournal.data.JournalRepository
+import com.example.healthjournal.data.PresetRepository
+import com.example.healthjournal.data.local.ExerciseCatalogItem
+import com.example.healthjournal.data.local.FakeExerciseCatalogDao
+import com.example.healthjournal.data.local.FakeWorkoutPresetDao
+import com.example.healthjournal.data.local.WorkoutPreset
+import com.example.healthjournal.domain.PresetExercise
+import com.example.healthjournal.domain.ScheduledDay
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -746,4 +755,213 @@ class WorkoutViewModelTest {
         assertEquals(2, summary.intervalIntervals)
         assertEquals(HealthExerciseType.HIIT, healthSource.storedRecords().single().exerciseType)
     }
+    /** Builds a VM backed by one catalog exercise and a preset with [presetSets] sets. */
+    private fun newRoutineViewModel(presetSets: Int = 2): WorkoutViewModel {
+        val presetDao = FakeWorkoutPresetDao()
+        val catalogDao = FakeExerciseCatalogDao()
+        runBlocking {
+            catalogDao.insertAll(
+                listOf(ExerciseCatalogItem(id = "squat", name = "Squat", muscleCategory = "Quads"))
+            )
+            presetDao.insertAll(
+                listOf(
+                    WorkoutPreset(
+                        id = "leg-day",
+                        name = "Leg Day",
+                        scheduledDay = ScheduledDay.ANY.name,
+                        exercises = listOf(
+                            PresetExercise(
+                                exerciseId = "squat",
+                                targetSets = presetSets,
+                                defaultReps = 5,
+                                defaultWeightKg = 60.0,
+                                restSeconds = 90
+                            )
+                        )
+                    )
+                )
+            )
+        }
+        return WorkoutViewModel(
+            repository = repository,
+            healthSource = healthSource,
+            journalRepository = journalRepository,
+            dispatcher = dispatcher,
+            onHaptic = { haptics.add(it) },
+            clock = { nowMillis },
+            presetRepository = PresetRepository(presetDao),
+            catalogDao = catalogDao,
+            healthSyncEnabled = true
+        )
+    }
+
+    private fun startRoutine(vm: WorkoutViewModel, presetId: String = "leg-day") {
+        vm.startPreset(presetId)
+        dispatcher.scheduler.advanceUntilIdle()
+        while (vm.uiState.value is WorkoutUiState.Countdown) {
+            vm.advanceTime(1)
+            dispatcher.scheduler.advanceUntilIdle()
+        }
+    }
+
+    @Test
+    fun toggleSetCompleted_finalPlannedSet_showsFinishPrompt() = runTest {
+        val vm = newRoutineViewModel(presetSets = 2)
+        startRoutine(vm)
+
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertFalse((vm.uiState.value as WorkoutUiState.Active).finishPromptVisible)
+
+        vm.toggleSetCompleted(0, 1)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value as WorkoutUiState.Active
+        assertTrue(state.finishPromptVisible)
+        assertTrue(state.session.setMatrix!!.single().sets.all { it.completed })
+    }
+
+    @Test
+    fun toggleSetCompleted_finalPlannedSet_ignoresUnplannedPendingSet() = runTest {
+        val vm = newRoutineViewModel(presetSets = 1)
+        startRoutine(vm)
+
+        vm.addExercise("Manual lift")
+        dispatcher.scheduler.advanceUntilIdle()
+        val manual = (vm.uiState.value as WorkoutUiState.Active).session.setMatrix!!.last()
+        vm.addSet(manual.id, kg = 20.0, reps = 10)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue((vm.uiState.value as WorkoutUiState.Active).finishPromptVisible)
+    }
+
+    @Test
+    fun dismissFinishPrompt_keepsRoutineActiveAndRestTimer() = runTest {
+        val vm = newRoutineViewModel(presetSets = 1)
+        startRoutine(vm)
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue((vm.uiState.value as WorkoutUiState.Active).finishPromptVisible)
+
+        vm.dismissFinishPrompt()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value as WorkoutUiState.Active
+        assertFalse(state.finishPromptVisible)
+        assertEquals(WorkoutStatus.ACTIVE.name, state.session.status)
+        assertEquals(90, state.restSeconds)
+
+        vm.advanceTime(10)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(80, (vm.uiState.value as WorkoutUiState.Active).restSeconds)
+    }
+
+    @Test
+    fun finishPrompt_reappearsOnlyAfterUncheckingAndRecompleting() = runTest {
+        val vm = newRoutineViewModel(presetSets = 1)
+        startRoutine(vm)
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.dismissFinishPrompt()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertFalse((vm.uiState.value as WorkoutUiState.Active).finishPromptVisible)
+
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue((vm.uiState.value as WorkoutUiState.Active).finishPromptVisible)
+    }
+
+    @Test
+    fun finishSession_fromPrompt_reachesSummaryAndSavesOnce() = runTest {
+        val vm = newRoutineViewModel(presetSets = 1)
+        startRoutine(vm)
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue((vm.uiState.value as WorkoutUiState.Active).finishPromptVisible)
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val summary = vm.uiState.value as WorkoutUiState.Summary
+        assertEquals(WorkoutStatus.COMPLETED.name, summary.session.status)
+        assertEquals(
+            WorkoutStatus.COMPLETED.name,
+            runBlocking { dao.getSessionById(summary.session.session_id)!!.status }
+        )
+        coVerify(exactly = 1) { journalRepository.insert(any()) }
+    }
+
+    @Test
+    fun finishSession_beforeCompletion_doesNotShowPrompt() = runTest {
+        val vm = newRoutineViewModel(presetSets = 2)
+        startRoutine(vm)
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(vm.uiState.value is WorkoutUiState.Summary)
+    }
+
+    @Test
+    fun manualStrengthSetCompletion_neverShowsFinishPrompt() = runTest {
+        val vm = startActiveSession(WorkoutType.FITNESS, "30")
+        vm.addExercise("Squat")
+        dispatcher.scheduler.advanceUntilIdle()
+        val exerciseId = (vm.uiState.value as WorkoutUiState.Active)
+            .session.setMatrix!!.single().id
+        vm.addSet(exerciseId, 60.0, 5)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse((vm.uiState.value as WorkoutUiState.Active).finishPromptVisible)
+    }
+
+    @Test
+    fun nonFitnessSession_neverShowsFinishPrompt() = runTest {
+        val vm = startActiveSession(WorkoutType.HIIT, "20")
+
+        vm.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse((vm.uiState.value as WorkoutUiState.Active).finishPromptVisible)
+    }
+
+    @Test
+    fun emptyRoutine_neverShowsFinishPrompt() = runTest {
+        val vm = newRoutineViewModel(presetSets = 0)
+        startRoutine(vm)
+
+        val state = vm.uiState.value as WorkoutUiState.Active
+        assertTrue(state.session.setMatrix.isNullOrEmpty())
+        assertFalse(state.finishPromptVisible)
+    }
+
+    @Test
+    fun resumeRecovery_withCompletedRoutine_doesNotShowPrompt() = runTest {
+        val first = newRoutineViewModel(presetSets = 1)
+        startRoutine(first)
+        first.toggleSetCompleted(0, 0)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue((first.uiState.value as WorkoutUiState.Active).finishPromptVisible)
+
+        val recovered = newRoutineViewModel(presetSets = 1)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(recovered.uiState.value is WorkoutUiState.RecoveryRequired)
+
+        recovered.resumeRecovery()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse((recovered.uiState.value as WorkoutUiState.Active).finishPromptVisible)
+    }
+
 }

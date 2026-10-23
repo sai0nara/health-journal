@@ -4,7 +4,7 @@
 > verification. The "Automated coverage" table cites the real test files; keep
 > it in sync when coverage moves.
 
-Last updated: 2026-10-15
+Last updated: 2026-10-23
 
 ## Automated coverage
 
@@ -12,12 +12,14 @@ Last updated: 2026-10-15
 |---|---|---|
 | JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/PresetViewModelTest.kt` | preset CRUD, validation rules, UI-state transitions |
 | JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/RoutineExecutionTest.kt` | routine start, ordered completion, swap-to-catalog-defaults, rest/haptics, recovery, history-card content |
+| JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/WorkoutViewModelTest.kt` | finish-prompt lifecycle: final-set trigger, planned-only completion, dismiss with rest-timer continuation, re-show, recovery, manual/HIIT/empty exclusion |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/CalculateOneRepMaxUseCaseTest.kt` | Epley single/best-estimate + bounds |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/ConvertAlternativeExerciseWeightUseCaseTest.kt` | ratio from history, default-coefficient fallback, bounds |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/StrengthExerciseTest.kt` | planned rows, `isPlanned`, tonnage |
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/WorkoutRepositoryTest.kt` | session persistence (crash-recovery rows) |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/PresetLibraryScreenTest.kt` | preset list/create/edit/delete + dropdown |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/RoutineExecutionScreenTest.kt` | set matrix, rest timer, pad-while-focused, 1 kg dumbbell step (metric + imperial), ordered-completion disable, swap, many-sets reachability, haptics |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/FinishRoutinePromptTest.kt` | prompt copy, Keep going, confirm-to-Summary, manual Finish bypass, manual/HIIT exclusion |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/WorkoutScreenTest.kt` | hub → preset start → execution flow |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/MigrationTest.kt` | schema migration preserving workout data + new routine-name column |
 
@@ -51,6 +53,8 @@ Last updated: 2026-10-15
 | T-24 | Countdown not skippable | routine starting | observe countdown UI | runs to zero; no skip/cancel control |
 | T-25 | Catalog search semantics | library open, catalog seeded | type mixed-case substring / clear to blank | case-insensitive substring matches; blank shows no results |
 | T-26 | Dumbbell step | active routine, 60 kg set, metric units | pad +1 kg → 61; pad −1 kg twice → 59 | weight adjusts by exactly 1 kg per tap (2.5 lb in imperial) |
+| T-27 | Finish prompt trigger | active preset routine, partial completion | check the final pending set | dialog with "Finish routine?", body, Finish and Keep going; Keep going leaves the session Active with the rest timer running |
+| T-28 | Finish prompt scope and re-show | preset routine / manual strength / HIIT | confirm Finish → Summary; uncheck and recheck the final set; complete manual/HIIT sets; resume a recovered complete routine | Finish persists COMPLETED and writes one journal entry; prompt returns only after uncheck→recheck; no prompt for manual, HIIT, or recovery |
 
 ## Manual checks
 
@@ -71,12 +75,14 @@ Last updated: 2026-10-15
 
 - `app/src/test/java/com/example/healthjournal/viewmodel/PresetViewModelTest.kt` — preset unit coverage.
 - `app/src/test/java/com/example/healthjournal/viewmodel/RoutineExecutionTest.kt` — routine unit coverage.
+- `app/src/test/java/com/example/healthjournal/viewmodel/WorkoutViewModelTest.kt` — finish-prompt lifecycle coverage.
 - `app/src/test/java/com/example/healthjournal/domain/CalculateOneRepMaxUseCaseTest.kt` — 1RM coverage.
 - `app/src/test/java/com/example/healthjournal/domain/ConvertAlternativeExerciseWeightUseCaseTest.kt` — conversion coverage.
 - `app/src/test/java/com/example/healthjournal/domain/StrengthExerciseTest.kt` — set model coverage.
 - `app/src/test/java/com/example/healthjournal/data/WorkoutRepositoryTest.kt` — persistence coverage.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/PresetLibraryScreenTest.kt` — library UI coverage.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/RoutineExecutionScreenTest.kt` — execution UI coverage.
+- `app/src/androidTest/java/com/example/healthjournal/ui/screens/FinishRoutinePromptTest.kt` — finish-prompt UI coverage.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/WorkoutScreenTest.kt` — hub flow coverage.
 - `app/src/androidTest/java/com/example/healthjournal/data/local/MigrationTest.kt` — migration coverage.
 - `Docs/prd/workout-presets.md` — requirements under test.

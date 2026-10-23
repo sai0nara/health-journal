@@ -6,7 +6,7 @@
 > movements to catalog defaults, and finishes into the journal + Health Connect
 > — with (planned) use cases for 1RM and alternative-exercise conversion.
 
-Last updated: 2026-09-18
+Last updated: 2026-10-23
 
 ## Overview
 
@@ -15,8 +15,9 @@ Gson-serialized row (exercises as JSON), keeping a preset atomic. Starting a
 preset turns its planned exercises into `StrengthExercise` rows whose set list
 is prefilled from the preset defaults. The `WorkoutUiState.Active` machine owns
 an ordered-completion guard (VM enforces, UI disables), immediate persistence
-on every set toggle, and the rest timer. Progress is journaled on finish with
-the routine name and per-exercise summaries. The design keeps the v2 manual
+on every set toggle, the rest timer, and a transient finish prompt once every
+planned set is complete. Progress is journaled on finish with the routine name
+and per-exercise summaries. The design keeps the v2 manual
 set-matrix and HIIT flows intact beside the routine path.
 
 ## Architecture
@@ -34,6 +35,12 @@ set-matrix and HIIT flows intact beside the routine path.
   add paths all require the `Active` state, so mutations issued while `Paused`
   are silent no-ops — the paused screen wires the same callbacks but only
   Resume/Finish take effect.
+- `WorkoutUiState.Active.finishPromptVisible` is transient ViewModel state. It is
+  set only when a preset routine's final pending set is checked, cleared when a
+  set is unchecked, and carried through `advanceTime` so timer ticks do not hide
+  a visible dialog. `dismissFinishPrompt` closes it without touching the session;
+  it is never persisted, so starting, pausing/resuming, or recovering a session
+  never replays it.
 - `WorkoutViewModel.startPreset` skips planned exercises with an unresolvable
   catalog name or non-positive target sets; an all-skipped preset still yields
   an `ACTIVE` session with an empty matrix, followed by the unskippable 3 s
@@ -41,7 +48,9 @@ set-matrix and HIIT flows intact beside the routine path.
   `CountdownContent`).
 - `WorkoutViewModel.finishSession` writes the session row and journal entry
   first, then attempts the Health Connect record inside try/catch: failure sets
-  `healthSynced = false` on the `Summary` state, never blocking completion.
+  `healthSynced = false` on the `Summary` state, never blocking completion. The
+  finish prompt's confirm button calls this same path; Keep going only clears
+  `finishPromptVisible`.
 - `resumeRecovery` re-activates the unfinished session; `discardRecovery` marks
   it `DISCARDED` and returns to `Idle`. No other recovery transition exists.
 - Library search (`ExerciseSearchDropdown`) filters with a case-insensitive
@@ -73,12 +82,13 @@ set-matrix and HIIT flows intact beside the routine path.
    planned matrix, stores `routineName` on the session, saves, enters the 3-2-1
    countdown.
 3. Each set toggle → ordered-completion guard → persist immediately → rest timer
-   + `SET_COMPLETE` haptic; final set per exercise → `EXERCISE_COMPLETE` haptic.
+   + `SET_COMPLETE` haptic; final set per exercise → `EXERCISE_COMPLETE` haptic;
+   completing the routine's last pending set sets `finishPromptVisible`.
 4. Weight/reps edits validate inline; the quick pad adjusts the persisted value
    so focused fields re-seed from the set (cursor preserved on no-op).
 5. Swap → `swapRoutineExercise` rebuilds the row from `defaultPlanFor` targets.
-6. Finish → journal entry (routine name + per-exercise "name: N sets · X kg")
-   and Health Connect EXERCISE record.
+6. Finish (button or prompt confirm) → journal entry (routine name +
+   per-exercise "name: N sets · X kg") and Health Connect EXERCISE record.
 7. Interrupted session → recovery surfaces the last persisted state.
 
 ## Components
@@ -86,9 +96,9 @@ set-matrix and HIIT flows intact beside the routine path.
 | Component | File | Responsibility |
 |---|---|---|
 | Preset library screen | `app/src/main/java/com/example/healthjournal/ui/screens/PresetLibraryScreen.kt` | list/create/edit/delete + dropdown |
-| Workout screen | `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` | hub, routine execution, pad, swap, summary |
+| Workout screen | `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` | hub, routine execution, pad, swap, finish prompt, summary |
 | Preset ViewModel | `app/src/main/java/com/example/healthjournal/viewmodel/PresetViewModel.kt` | CRUD + validation state |
-| Workout ViewModel | `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutViewModel.kt` | routine start/complete/swap/finish, rest timer, journaling |
+| Workout ViewModel | `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutViewModel.kt` | routine start/complete/swap/finish, rest timer, finish prompt, journaling |
 | UI state | `app/src/main/java/com/example/healthjournal/viewmodel/PresetUiState.kt`, `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutUiState.kt` | Idle/Editing/List and Isolations/Active/Paused/Recovery |
 | Preset repository | `app/src/main/java/com/example/healthjournal/data/PresetRepository.kt` | preset CRUD |
 | Preset entity | `app/src/main/java/com/example/healthjournal/data/local/WorkoutPreset.kt` | atomic JSON-backed preset row |
@@ -112,6 +122,8 @@ set-matrix and HIIT flows intact beside the routine path.
 | Routine from before v18 | `routineName` null → journal card omits the routine-name line |
 | Process kill mid-set | last persisted toggle is the resume point |
 | Uncheck a completed set | allowed: persists pending, rest timer zeroed, no error |
+| Last planned set completed | `finishPromptVisible` shows Finish/Keep going; Keep going only dismisses; Finish runs the normal finish flow |
+| Reopen/recover a fully complete routine | no prompt (flag is transient, not persisted) |
 | Mutation while paused | silently ignored (VM requires `Active`); Resume/Finish only |
 | Countdown visible | runs 3 s to zero; no skip/cancel control |
 | Start with all exercises unresolvable | empty-matrix `ACTIVE` session still created |

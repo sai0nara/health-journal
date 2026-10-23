@@ -5,7 +5,7 @@
 > with ordered completion, a searchable exercise catalog, and (planned) weight
 > analytics with alternative-exercise weight conversion.
 
-Last updated: 2026-09-18
+Last updated: 2026-10-23
 
 ## Overview
 
@@ -28,7 +28,8 @@ exercises instead of a bare tonnage figure.
 - Swap an exercise mid-routine via a searchable dropdown; the swapped-in
   movement starts from its catalog default plan.
 - Finish a routine into the journal + Health Connect, with the routine name and
-  per-exercise summaries on the history card.
+  per-exercise summaries on the history card, and offer a confirmation when the
+  last planned set is completed.
 - Recover an interrupted session to the last completed set.
 - (Planned, Phase 5) Per-exercise weight trend analytics (Epley 1RM, max volume)
   and alternative-movement weight conversion from logged history.
@@ -100,6 +101,12 @@ exercises instead of a bare tonnage figure.
 - FR-10: (Planned) Alternative conversion — convert a working weight to an
   alternative movement using the user's historical 1RM ratio, with a default
   coefficient fallback of 0.6 when history is insufficient.
+- FR-11: Finish prompt — completing the final pending set of a preset routine
+  shows a confirmation with Finish and Keep going. Keep going dismisses only
+  the prompt (session stays active, rest timer continues, nothing is saved);
+  Finish runs the normal finish flow. The prompt appears only on the transition
+  to all planned sets complete, never on load/recovery, and never for manual strength or
+  HIIT sessions. Manual Finish remains immediate and bypasses the prompt.
 
 ## Non-functional requirements
 
@@ -124,6 +131,10 @@ exercises instead of a bare tonnage figure.
 - AC-6: An unfinished session survives a process kill at the last completed set.
 - AC-7: (Planned) A weight trend chart and alternative conversion render from
   logged history, with a sensible fallback for a fresh user.
+- AC-8: Completing the last planned set of a preset routine shows the finish
+  prompt; Keep going leaves it active, Finish reaches Summary, unchecking and
+  re-checking the set shows it again, and manual strength, HIIT, recovered, and
+  partially complete sessions do not show it.
 
 ## Out of scope
 
