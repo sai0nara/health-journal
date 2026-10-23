@@ -9,7 +9,7 @@
 - Pause is disabled during the warm-up; Finish and Skip remain available. Recovery from process death skips the warm-up.
 - No new libraries or tech-stack changes.
 
-## Phase 1: Warm-up data and persistence
+## Phase 1: Warm-up data and persistence [checkpoint: 786ca6c]
 
 - [x] Task: Write failing tests for warm-up data and validation (a5becf8)
     - [x] Add `ValidatePreset` boundary tests: blank name, 60-char limit, 1/60-minute bounds, invalid values
@@ -24,7 +24,7 @@
 - [x] Task: Refactor without behavior change (a5becf8)
     - [x] Keep validation and persistence helpers small and covered
     - [x] Re-run the full JVM suite
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Warm-up data and persistence' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Warm-up data and persistence' (Protocol in workflow.md)
 
 ## Phase 2: Preset editor and library
 
