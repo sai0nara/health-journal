@@ -1,6 +1,8 @@
 package com.example.healthjournal.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -18,6 +20,7 @@ import com.example.healthjournal.data.local.UnitConverter
 import com.example.healthjournal.data.local.UnitSettings
 import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.data.local.WorkoutPreset
+import com.example.healthjournal.domain.PresetExercise
 import com.example.healthjournal.domain.ScheduledDay
 import com.example.healthjournal.ui.theme.HealthJournalTheme
 import com.example.healthjournal.util.FakeExerciseCatalogDao
@@ -72,6 +75,158 @@ class PresetLibraryScreenTest {
             }
         }
         composeTestRule.waitForIdle()
+    }
+
+
+    @Test
+    fun createForm_warmupToggle_revealsFields_withFiveMinuteDefault() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_warmup_name").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("preset_warmup_duration").assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag("preset_warmup_toggle").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_warmup_name").assertExists()
+        composeTestRule.onNodeWithTag("preset_warmup_duration")
+            .assertTextContains("5", substring = true)
+    }
+
+    @Test
+    fun createForm_warmupBlankName_showsInlineError() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_name_field").performTextInput("Leg Day")
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Squat")
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("exercise_search_result").performClick()
+        composeTestRule.onNodeWithTag("preset_warmup_toggle").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Save Preset").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Warm-up name is required").assertExists()
+        composeTestRule.onNodeWithTag("preset_name_field").assertExists()
+    }
+
+    @Test
+    fun createForm_warmupInvalidDuration_showsInlineError() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_name_field").performTextInput("Leg Day")
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Squat")
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("exercise_search_result").performClick()
+        composeTestRule.onNodeWithTag("preset_warmup_toggle").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("preset_warmup_name").performTextInput("Rowing")
+        composeTestRule.onNodeWithTag("preset_warmup_duration").performTextClearance()
+        composeTestRule.onNodeWithTag("preset_warmup_duration").performTextInput("61")
+
+        composeTestRule.onNodeWithText("Save Preset").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Warm-up duration must be between 1 and 60 minutes")
+            .assertExists()
+        composeTestRule.onNodeWithTag("preset_name_field").assertExists()
+    }
+
+    @Test
+    fun createPreset_withWarmup_savesAndShowsLibrarySummary() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_name_field").performTextInput("Leg Day")
+        composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Squat")
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("exercise_search_result").performClick()
+        composeTestRule.onNodeWithTag("preset_warmup_toggle").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("preset_warmup_name").performTextInput("Rowing")
+
+        composeTestRule.onNodeWithText("Save Preset").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_library_list").assertExists()
+        composeTestRule.onNodeWithText("Warm-up · 5 min").assertExists()
+        val saved = runBlocking { repository.presets.first() }.single()
+        assertEquals("Rowing", saved.warmupName)
+        assertEquals(300, saved.warmupDurationSeconds)
+    }
+
+    @Test
+    fun libraryCard_showsWarmupSummaryOnlyWhenConfigured() {
+        runBlocking {
+            repository.savePreset(
+                WorkoutPreset(
+                    id = "with-warmup",
+                    name = "Leg Day",
+                    warmupName = "Rowing",
+                    warmupDurationSeconds = 300
+                )
+            )
+            repository.savePreset(WorkoutPreset(id = "without-warmup", name = "Push Day"))
+        }
+        openScreen()
+
+        composeTestRule.onNodeWithTag("preset_warmup_summary_with-warmup", useUnmergedTree = true).assertExists()
+        composeTestRule.onNodeWithTag("preset_warmup_summary_without-warmup", useUnmergedTree = true).assertDoesNotExist()
+        composeTestRule.onNodeWithText("Warm-up · 5 min").assertExists()
+    }
+
+    @Test
+    fun editPreset_loadsWarmup_andCanRemoveIt() {
+        runBlocking {
+            repository.savePreset(
+                WorkoutPreset(
+                    id = "p1",
+                    name = "Leg Day",
+                    exercises = listOf(
+                        PresetExercise(
+                            exerciseId = "barbell-squat",
+                            targetSets = 3,
+                            defaultReps = 5,
+                            defaultWeightKg = 40.0,
+                            restSeconds = 120
+                        )
+                    ),
+                    warmupName = "Rowing",
+                    warmupDurationSeconds = 300
+                )
+            )
+        }
+        openScreen()
+
+        composeTestRule.onNodeWithText("Leg Day").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_warmup_toggle").assertIsOn()
+        composeTestRule.onNodeWithTag("preset_warmup_name")
+            .assertTextContains("Rowing", substring = true)
+        composeTestRule.onNodeWithTag("preset_warmup_duration")
+            .assertTextContains("5", substring = true)
+
+        composeTestRule.onNodeWithTag("preset_warmup_toggle").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("preset_warmup_toggle").assertIsOff()
+        composeTestRule.onNodeWithTag("preset_warmup_name").assertDoesNotExist()
+
+        composeTestRule.onNodeWithText("Save Preset").performClick()
+        composeTestRule.waitForIdle()
+
+        val saved = runBlocking { repository.presets.first() }.single()
+        assertEquals(null, saved.warmupName)
+        assertEquals(null, saved.warmupDurationSeconds)
+        composeTestRule.onNodeWithTag("preset_warmup_summary_p1", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test

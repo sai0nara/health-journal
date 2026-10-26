@@ -72,7 +72,13 @@ class PresetViewModel(
                     name = preset.name,
                     scheduledDay = runCatching { ScheduledDay.valueOf(preset.scheduledDay) }
                         .getOrDefault(ScheduledDay.ANY),
-                    exercises = preset.exercises
+                    exercises = preset.exercises,
+                    warmupEnabled = preset.warmupName != null &&
+                        preset.warmupDurationSeconds != null,
+                    warmupName = preset.warmupName.orEmpty(),
+                    warmupDurationMinutes = preset.warmupDurationSeconds
+                        ?.let { (it / 60).toString() }
+                        ?: ValidatePreset.WARMUP_DEFAULT_MINUTES.toString()
                 )
             }
         }
@@ -86,6 +92,40 @@ class PresetViewModel(
     fun updateScheduledDay(day: ScheduledDay) {
         val current = _uiState.value as? PresetUiState.Editing ?: return
         _uiState.value = current.copy(scheduledDay = day)
+    }
+
+    /** Enabling starts from the defaults; disabling clears the hidden values. */
+    fun setWarmupEnabled(enabled: Boolean) {
+        val current = _uiState.value as? PresetUiState.Editing ?: return
+        _uiState.value = if (enabled) {
+            current.copy(
+                warmupEnabled = true,
+                warmupNameError = null,
+                warmupDurationError = null
+            )
+        } else {
+            current.copy(
+                warmupEnabled = false,
+                warmupName = "",
+                warmupDurationMinutes =
+                    ValidatePreset.WARMUP_DEFAULT_MINUTES.toString(),
+                warmupNameError = null,
+                warmupDurationError = null
+            )
+        }
+    }
+
+    fun updateWarmupName(text: String) {
+        val current = _uiState.value as? PresetUiState.Editing ?: return
+        _uiState.value = current.copy(warmupName = text, warmupNameError = null)
+    }
+
+    fun updateWarmupDuration(text: String) {
+        val current = _uiState.value as? PresetUiState.Editing ?: return
+        _uiState.value = current.copy(
+            warmupDurationMinutes = text,
+            warmupDurationError = null
+        )
     }
 
     /**
@@ -142,10 +182,29 @@ class PresetViewModel(
         val current = _uiState.value as? PresetUiState.Editing ?: return
         val nameError = ValidatePreset.validateName(current.name)
         val exerciseError = ValidatePreset.validateExercises(current.exercises)
-        if (nameError != null || exerciseError != null) {
+        val durationMinutes = current.warmupDurationMinutes.toIntOrNull()
+        val warmupNameError = if (current.warmupEnabled) {
+            ValidatePreset.validateWarmupName(current.warmupName)
+        } else {
+            null
+        }
+        val warmupDurationError = if (current.warmupEnabled) {
+            if (durationMinutes == null) {
+                ValidatePreset.ERROR_WARMUP_DURATION_RANGE
+            } else {
+                ValidatePreset.validateWarmupDuration(durationMinutes)
+            }
+        } else {
+            null
+        }
+        if (nameError != null || exerciseError != null ||
+            warmupNameError != null || warmupDurationError != null
+        ) {
             _uiState.value = current.copy(
                 nameError = nameError,
-                exerciseError = exerciseError
+                exerciseError = exerciseError,
+                warmupNameError = warmupNameError,
+                warmupDurationError = warmupDurationError
             )
             return
         }
@@ -155,7 +214,17 @@ class PresetViewModel(
                     id = current.presetId ?: UUID.randomUUID().toString(),
                     name = current.name.trim(),
                     scheduledDay = current.scheduledDay.name,
-                    exercises = current.exercises
+                    exercises = current.exercises,
+                    warmupName = if (current.warmupEnabled) {
+                        current.warmupName.trim()
+                    } else {
+                        null
+                    },
+                    warmupDurationSeconds = if (current.warmupEnabled) {
+                        durationMinutes!! * 60
+                    } else {
+                        null
+                    }
                 )
             )
             _uiState.value = PresetUiState.Library

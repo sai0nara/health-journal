@@ -2,6 +2,7 @@ package com.example.healthjournal.viewmodel
 
 import com.example.healthjournal.domain.PresetExercise
 import com.example.healthjournal.domain.ScheduledDay
+import com.example.healthjournal.domain.ValidatePreset
 
 /**
  * MVI states for the preset-management flow. The library renders the
@@ -22,6 +23,12 @@ sealed interface PresetUiState {
         val scheduledDay: ScheduledDay = ScheduledDay.ANY,
         val exercises: List<PresetExercise> = emptyList(),
         val nameError: String? = null,
-        val exerciseError: String? = null
+        val exerciseError: String? = null,
+        val warmupEnabled: Boolean = false,
+        val warmupName: String = "",
+        val warmupDurationMinutes: String =
+            ValidatePreset.WARMUP_DEFAULT_MINUTES.toString(),
+        val warmupNameError: String? = null,
+        val warmupDurationError: String? = null
     ) : PresetUiState
 }

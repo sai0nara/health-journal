@@ -184,6 +184,11 @@
     <string name="preset_cd_delete">Delete preset</string>
     <string name="preset_name_label">Preset name</string>
     <string name="preset_exercises_title">Exercises</string>
+    <string name="preset_warmup_title">Warm-up</string>
+    <string name="preset_warmup_hint">Optional timed warm-up before the work sets</string>
+    <string name="preset_warmup_name_label">Warm-up name</string>
+    <string name="preset_warmup_duration_label">Duration (min)</string>
+    <string name="preset_warmup_summary">Warm-up · %1$d min</string>
     <string name="preset_save">Save Preset</string>
     <string name="preset_search_label">Search exercises</string>
     <string name="preset_cd_remove">Remove exercise</string>
