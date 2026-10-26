@@ -21,6 +21,7 @@ import com.example.healthjournal.domain.StrengthSet
 import com.example.healthjournal.domain.TonnageCalculator
 import com.example.healthjournal.domain.ValidateStrengthExercise
 import com.example.healthjournal.domain.ValidateWorkout
+import com.example.healthjournal.domain.WarmupOutcome
 import com.example.healthjournal.domain.WorkoutIntervalSession
 import com.example.healthjournal.domain.WorkoutType
 import com.example.healthjournal.domain.formatCompact
@@ -175,6 +176,7 @@ class WorkoutViewModel(
 
     fun pauseSession() {
         val current = _uiState.value as? WorkoutUiState.Active ?: return
+        if (current.isWarmupActive) return
         viewModelScope.launch(dispatcher) {
             val paused = current.session.copy(status = WorkoutStatus.PAUSED.name)
             repository.saveSession(paused)
@@ -216,25 +218,53 @@ class WorkoutViewModel(
             is WorkoutUiState.Countdown -> {
                 val remaining = current.secondsRemaining - delta.toInt()
                 if (remaining <= 0) {
-                    _uiState.value = WorkoutUiState.Active(current.session)
+                    _uiState.value = WorkoutUiState.Active(
+                        session = current.session,
+                        warmupSecondsRemaining =
+                            current.session.warmupDurationSeconds ?: 0
+                    )
                 } else {
                     _uiState.value = current.copy(secondsRemaining = remaining)
                 }
             }
             is WorkoutUiState.Active -> viewModelScope.launch(dispatcher) {
                 val elapsed = current.session.elapsedSeconds + delta
-                val advanced = current.session.copy(elapsedSeconds = elapsed)
+                val warmupActive = current.isWarmupActive
+                val warmupRemaining = if (warmupActive) {
+                    (current.warmupSecondsRemaining - delta.toInt()).coerceAtLeast(0)
+                } else {
+                    0
+                }
+                val warmupCompleted = warmupActive && warmupRemaining == 0
+                val warmupElapsed = if (warmupActive) {
+                    minOf(
+                        current.session.warmupDurationSeconds ?: 0,
+                        (current.session.warmupElapsedSeconds ?: 0) + delta.toInt()
+                    )
+                } else {
+                    current.session.warmupElapsedSeconds
+                }
+                val advanced = current.session.copy(
+                    elapsedSeconds = elapsed,
+                    warmupElapsedSeconds = warmupElapsed,
+                    warmupOutcome = if (warmupCompleted) {
+                        WarmupOutcome.COMPLETED.name
+                    } else {
+                        current.session.warmupOutcome
+                    }
+                )
                 val restSeconds = (current.restSeconds - delta).coerceAtLeast(0L).toInt()
                 _uiState.value = WorkoutUiState.Active(
                     session = advanced,
                     restSeconds = restSeconds,
                     setMatrixError = current.setMatrixError,
-                    finishPromptVisible = current.finishPromptVisible
+                    finishPromptVisible = current.finishPromptVisible,
+                    warmupSecondsRemaining = warmupRemaining
                 )
                 if (current.restSeconds > 0 && restSeconds == 0) {
                     onHaptic(WorkoutHaptic.REST_ENDED)
                 }
-                if (elapsed % PERSIST_EVERY_SECONDS == 0L) {
+                if (warmupCompleted || elapsed % PERSIST_EVERY_SECONDS == 0L) {
                     repository.saveSession(advanced)
                 }
             }
@@ -357,12 +387,17 @@ class WorkoutViewModel(
                     )
                 }
             }
+            val hasWarmup = preset.warmupName != null &&
+                preset.warmupDurationSeconds != null
             val session = WorkoutSession(
                 type = WorkoutType.FITNESS.name,
                 status = WorkoutStatus.ACTIVE.name,
                 startTimestamp = clock(),
                 setMatrix = matrix,
-                routineName = preset.name
+                routineName = preset.name,
+                warmupName = preset.warmupName.takeIf { hasWarmup },
+                warmupDurationSeconds = preset.warmupDurationSeconds.takeIf { hasWarmup },
+                warmupElapsedSeconds = if (hasWarmup) 0 else null
             )
             lastTickMillis = clock()
             repository.saveSession(session)
@@ -371,6 +406,23 @@ class WorkoutViewModel(
                 secondsRemaining = COUNTDOWN_SECONDS
             )
             onHaptic(WorkoutHaptic.START)
+        }
+    }
+
+    /** Ends the warm-up early, records its elapsed time, and reveals work sets. */
+    fun skipWarmup() {
+        val current = _uiState.value as? WorkoutUiState.Active ?: return
+        if (!current.isWarmupActive) return
+        viewModelScope.launch(dispatcher) {
+            val updated = current.session.copy(
+                warmupElapsedSeconds = current.session.warmupElapsedSeconds ?: 0,
+                warmupOutcome = WarmupOutcome.SKIPPED.name
+            )
+            repository.saveSession(updated)
+            _uiState.value = current.copy(
+                session = updated,
+                warmupSecondsRemaining = 0
+            )
         }
     }
 
@@ -587,11 +639,23 @@ class WorkoutViewModel(
                 type = WorkoutType.fromName(current.type) ?: WorkoutType.FITNESS,
                 durationMinutes = current.elapsedSeconds / 60.0
             )
+            val warmupUnfinished = current.warmupName != null &&
+                current.warmupOutcome == null
             val completed = current.copy(
                 status = WorkoutStatus.COMPLETED.name,
                 endTimestamp = end,
                 elapsedSeconds = current.elapsedSeconds,
-                calories = calories
+                calories = calories,
+                warmupElapsedSeconds = if (warmupUnfinished) {
+                    current.warmupElapsedSeconds ?: 0
+                } else {
+                    current.warmupElapsedSeconds
+                },
+                warmupOutcome = if (warmupUnfinished) {
+                    WarmupOutcome.SKIPPED.name
+                } else {
+                    current.warmupOutcome
+                }
             )
             repository.saveSession(completed)
             val linkedEntry = JournalEntry(
@@ -678,10 +742,24 @@ class WorkoutViewModel(
     fun resumeRecovery() {
         val current = _uiState.value as? WorkoutUiState.RecoveryRequired ?: return
         viewModelScope.launch(dispatcher) {
-            val active = current.session.copy(status = WorkoutStatus.ACTIVE.name)
+            val interruptedWarmup = current.session.warmupName != null &&
+                current.session.warmupOutcome == null
+            val recovered = current.session.copy(
+                status = WorkoutStatus.ACTIVE.name,
+                warmupElapsedSeconds = if (interruptedWarmup) {
+                    current.session.warmupElapsedSeconds ?: 0
+                } else {
+                    current.session.warmupElapsedSeconds
+                },
+                warmupOutcome = if (interruptedWarmup) {
+                    WarmupOutcome.SKIPPED.name
+                } else {
+                    current.session.warmupOutcome
+                }
+            )
             lastTickMillis = clock()
-            repository.saveSession(active)
-            _uiState.value = WorkoutUiState.Active(active)
+            repository.saveSession(recovered)
+            _uiState.value = WorkoutUiState.Active(recovered)
             onHaptic(WorkoutHaptic.START)
         }
     }

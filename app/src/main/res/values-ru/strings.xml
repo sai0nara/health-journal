@@ -136,6 +136,8 @@
     <string name="workout_start">Начать</string>
     <string name="workout_log_past_instead">Записать прошедшую тренировку: %1$s</string>
     <string name="workout_get_ready">Приготовьтесь</string>
+    <string name="workout_warmup_title">Разминка</string>
+    <string name="workout_warmup_skip">Пропустить разминку</string>
     <string name="workout_paused">Пауза</string>
     <string name="workout_pause">Пауза</string>
     <string name="workout_finish">Завершить</string>

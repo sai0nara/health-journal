@@ -30,7 +30,9 @@ sealed interface WorkoutUiState {
         /** Inline validation error from the latest set-matrix edit, if any. */
         val setMatrixError: String? = null,
         /** Transient prompt shown when the last planned set is completed. */
-        val finishPromptVisible: Boolean = false
+        val finishPromptVisible: Boolean = false,
+        /** Seconds left in the routine warm-up; 0 once done, skipped, or absent. */
+        val warmupSecondsRemaining: Int = 0
     ) : WorkoutUiState {
         /** True when this Active session was started from a preset routine
          *  (at least one exercise carries planned targets). */
@@ -38,6 +40,12 @@ sealed interface WorkoutUiState {
 
         /** Keep the display awake while a routine runs. */
         val keepScreenOn: Boolean get() = isRoutine
+
+        /** True while the routine warm-up is counting down. */
+        val isWarmupActive: Boolean
+            get() = warmupSecondsRemaining > 0 &&
+                session.warmupName != null &&
+                session.warmupOutcome == null
     }
 
     data class Paused(val session: WorkoutSession) : WorkoutUiState

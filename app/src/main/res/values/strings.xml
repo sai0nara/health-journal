@@ -136,6 +136,8 @@
     <string name="workout_start">Start</string>
     <string name="workout_log_past_instead">Log past %1$s instead</string>
     <string name="workout_get_ready">Get ready</string>
+    <string name="workout_warmup_title">Warm-up</string>
+    <string name="workout_warmup_skip">Skip warm-up</string>
     <string name="workout_paused">Paused</string>
     <string name="workout_pause">Pause</string>
     <string name="workout_finish">Finish</string>
