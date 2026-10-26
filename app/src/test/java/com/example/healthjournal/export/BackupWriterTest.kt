@@ -6,6 +6,7 @@ import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
 import com.google.gson.Gson
 import java.io.File
@@ -73,7 +74,24 @@ class BackupWriterTest {
             EntryTagCrossRef(entryId = "e1", tag = "health")
         ),
         workoutSessions = listOf(
-            WorkoutSession(session_id = "w1", type = "RUN", startTimestamp = 10L)
+            WorkoutSession(
+                session_id = "w1",
+                type = "RUN",
+                startTimestamp = 10L,
+                warmupName = "Rowing",
+                warmupDurationSeconds = 300,
+                warmupElapsedSeconds = 300,
+                warmupOutcome = "COMPLETED"
+            )
+        ),
+        presets = listOf(
+            WorkoutPreset(
+                id = "p1",
+                name = "Leg day",
+                warmupName = "Rowing",
+                warmupDurationSeconds = 300,
+                lastModified = 3L
+            )
         )
     )
 
@@ -93,6 +111,7 @@ class BackupWriterTest {
         assertTrue(manifest.contents.contains(BackupWriter.EntityFile.GOALS))
         assertTrue(manifest.contents.contains(BackupWriter.EntityFile.PERSONAL_CARD))
         assertTrue(manifest.contents.contains(BackupWriter.EntityFile.WORKOUTS))
+        assertTrue(manifest.contents.contains(BackupWriter.EntityFile.PRESETS))
     }
 
     @Test
@@ -142,6 +161,17 @@ class BackupWriterTest {
         )
         assertEquals(1, workouts.size)
         assertEquals("w1", workouts[0].session_id)
+        assertEquals("Rowing", workouts[0].warmupName)
+        assertEquals(300, workouts[0].warmupElapsedSeconds)
+
+        val presets = gson.fromJson(
+            readEntryText(zip, BackupWriter.EntityFile.PRESETS)!!,
+            Array<WorkoutPreset>::class.java
+        )
+        assertEquals(1, presets.size)
+        assertEquals("Leg day", presets[0].name)
+        assertEquals("Rowing", presets[0].warmupName)
+        assertEquals(300, presets[0].warmupDurationSeconds)
     }
 
     @Test
@@ -168,7 +198,8 @@ class BackupWriterTest {
             personalCards = emptyList(),
             deletedEntries = emptyList(),
             entryTags = emptyList(),
-            workoutSessions = emptyList()
+            workoutSessions = emptyList(),
+            presets = emptyList()
         )
         val zip = createBackup(empty)
 

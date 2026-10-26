@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-10-22
+Last updated: 2026-10-26
 
 ## What lives here
 
@@ -26,19 +26,25 @@ session, and the summary:
   the HIIT screen shows the interval phase indicator and round counter with a
   "Next interval" button; the Fitness screen shows the set-matrix editor
   (add exercise, per-exercise weight/reps and "Add set") plus the between-sets rest
-  timer; the rest rely on the elapsed-time timer and pause.
+  timer; the rest rely on the elapsed-time timer and pause. A routine's optional
+  warm-up appears as a timed panel with its name, remaining time, and Skip;
+  Pause is disabled while the warm-up is running.
 - **Preset routine execution** — starting a preset builds a planned set matrix
   (planned targets + catalog defaults per exercise); each set row edits
   weight/reps and checks off completion. Sets must complete in order (a skipped
   set blocks the ones after it), the +/- quick-increment pad acts on the last
   focused set even while its field is focused, swapping takes the swapped-in
   movement's catalog default plan, and the routine's preset name is stored on the
-  session for its history/journal card. Completing the last pending planned set
-  opens a "Finish routine?" dialog: Finish runs the normal finish flow, Keep
-  going only dismisses; the dialog is transient and never shown for manual
-  strength, HIIT, or recovered sessions.
+  session for its history/journal card. The preset editor carries an optional
+  warm-up section (enable toggle, name, duration in minutes) with inline
+  validation; the library row shows a compact warm-up summary. Completing the
+  last pending planned set opens a "Finish routine?" dialog: Finish runs the
+  normal finish flow, Keep going only dismisses; the dialog is transient and
+  never shown for manual strength, HIIT, or recovered sessions.
 - **Summary** — elapsed time and calories, plus Fitness tonnage and HIIT
-  rounds/intervals, with the finished session also journaled.
+  rounds/intervals, with the finished session also journaled. When the routine
+  had a warm-up, one line shows its name, planned minutes, and completed/skipped
+  outcome.
 - **Manual log** — logging a past workout, with per-type extras (laps for Swimming,
   movement counts for Calisthenics).
 
@@ -74,7 +80,8 @@ dashboard tiles.
 
 - `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` — the main history feed screen.
 - `app/src/main/java/com/example/healthjournal/ui/screens/MainScreen.kt` — the dashboard screen and its branded top bar.
-- `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` — the workout hub, session screen, and manual-log dialog.
+- `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` — the workout hub, session screen, warm-up panel, summary, and manual-log dialog.
+- `app/src/main/java/com/example/healthjournal/ui/screens/PresetLibraryScreen.kt` — the preset library and warm-up editor.
 - `app/src/main/java/com/example/healthjournal/ui/theme` — theme and color system sources.
 
 Back to [[overview]]

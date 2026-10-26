@@ -4,11 +4,11 @@
 > user-facing string externalized to resources with a complete `values-ru`
 > translation, Russian plural rules, and locale-aware dates and numbers.
 >
-Last updated: 2026-10-19
+Last updated: 2026-10-26
 >
 > **Status: BUILT.** All functional requirements below are implemented: both
-> catalogs hold 365 strings plus 5 named plurals with enforced parity,
-> taxonomy enums resolve through `labelRes`, and the PDF report
+> catalogs hold the complete externalized string set plus named plurals with
+> enforced parity, taxonomy enums resolve through `labelRes`, and the PDF report
 > localizes. See `Docs/psd/russian-localization.md` for the design and
 > `Docs/tests/russian-localization.md` for the verification.
 

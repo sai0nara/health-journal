@@ -3,7 +3,7 @@
 > How this repo reads wearable health metrics (steps, heart rate, sleep) from
 > Android Health Connect and writes completed workouts as exercise records.
 
-Last updated: 2026-10-09
+Last updated: 2026-10-26
 
 ## Opt-in gate
 
@@ -40,6 +40,8 @@ mapping lives on the `WorkoutHealthDataSource` seam ([JVM-tested](../tests/unit-
   failure when permission is missing or the write throws (airplane mode).
 - The viewmodel-layer always completes the journal write and summary regardless
   of Health Connect availability, so denial or offline never blocks logging.
+- A routine warm-up shares the session's single exercise record; it does not
+  create an extra record or change the mapped exercise type.
 
 ## What this repo holds
 

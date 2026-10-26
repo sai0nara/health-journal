@@ -624,6 +624,70 @@ class WorkoutViewModelTest {
         assertTrue(vm.uiState.value is WorkoutUiState.Idle)
     }
 
+
+    @Test
+    fun finishSession_withCompletedWarmup_journalDescriptionHasOneWarmupLine() = runTest {
+        val vm = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60
+        )
+        startRoutine(vm)
+        vm.advanceTime(60)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { journalRepository.insert(withArg { entry ->
+            val warmupLines = entry.description.lines().filter { it.startsWith("Warm-up:") }
+            assertEquals(1, warmupLines.size)
+            assertEquals("Warm-up: Rowing · 1 min · Completed", warmupLines.single())
+        }) }
+    }
+
+    @Test
+    fun finishSession_withSkippedWarmup_journalDescriptionShowsSkipped() = runTest {
+        val vm = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60
+        )
+        startRoutine(vm)
+        vm.advanceTime(15)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.skipWarmup()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { journalRepository.insert(withArg { entry ->
+            val warmupLines = entry.description.lines().filter { it.startsWith("Warm-up:") }
+            assertEquals(1, warmupLines.size)
+            assertEquals("Warm-up: Rowing · 1 min · Skipped", warmupLines.single())
+        }) }
+    }
+
+    @Test
+    fun finishSession_withWarmup_keepsOneHealthRecordAndPlannedSets() = runTest {
+        val vm = newRoutineViewModel(
+            presetSets = 2,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60
+        )
+        startRoutine(vm)
+        vm.advanceTime(60)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val summary = vm.uiState.value as WorkoutUiState.Summary
+        assertEquals(2, summary.session.setMatrix!!.single().sets.size)
+        assertEquals(1, healthSource.storedRecords().size)
+    }
+
     @Test
     fun finishSession_journalDescriptionCarriesTonnage() = runTest {
         val vm = startActiveSession(WorkoutType.FITNESS, "30")

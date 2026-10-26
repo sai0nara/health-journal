@@ -809,6 +809,7 @@ class WorkoutViewModel(
         }
         val base = "Workout: $typeLabel, $minutesText, $caloriesText"
         val details = buildList {
+            warmupLine(session)?.let { add(it) }
             val matrix = session.setMatrix
             if (matrix != null && matrix.any { it.isPlanned }) {
                 session.routineName?.let { add(it) }
@@ -840,6 +841,21 @@ class WorkoutViewModel(
         }
         val withDetails = if (details.isEmpty()) base else (listOf(base) + details).joinToString("\n")
         return if (session.notes.isNotBlank()) "$withDetails\n${session.notes}" else withDetails
+    }
+
+    private fun warmupLine(session: WorkoutSession): String? {
+        val name = session.warmupName?.takeIf { it.isNotBlank() } ?: return null
+        val seconds = session.warmupDurationSeconds ?: return null
+        val minutesText = if (seconds % 60 == 0) {
+            "${seconds / 60} min"
+        } else {
+            "%.1f min".format(seconds / 60.0)
+        }
+        val outcome = when (session.warmupOutcome) {
+            WarmupOutcome.COMPLETED.name -> "Completed"
+            else -> "Skipped"
+        }
+        return "Warm-up: $name · $minutesText · $outcome"
     }
 
     /**

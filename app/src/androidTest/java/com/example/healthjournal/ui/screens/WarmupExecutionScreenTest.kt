@@ -161,6 +161,8 @@ class WarmupExecutionScreenTest {
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Workout Complete").assertExists()
+        composeTestRule.onNodeWithTag("summary_warmup").assertTextContains("Rowing", substring = true)
+        composeTestRule.onNodeWithTag("summary_warmup").assertTextContains("Skipped", substring = true)
         val completed = runBlocking { sessionDao.getSessionById(sessionId)!! }
         assertEquals(WarmupOutcome.SKIPPED.name, completed.warmupOutcome)
     }

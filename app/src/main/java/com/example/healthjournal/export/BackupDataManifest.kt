@@ -6,6 +6,7 @@ import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
 
 /**
@@ -19,7 +20,8 @@ data class BackupData(
     val personalCards: List<PersonalCard> = emptyList(),
     val deletedEntries: List<DeletedEntry> = emptyList(),
     val entryTags: List<EntryTagCrossRef> = emptyList(),
-    val workoutSessions: List<WorkoutSession> = emptyList()
+    val workoutSessions: List<WorkoutSession> = emptyList(),
+    val presets: List<WorkoutPreset> = emptyList()
 )
 
 /**

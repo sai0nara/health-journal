@@ -4,7 +4,7 @@
 > come back - completely replacing local data - either from a plain archive or
 > from an encrypted one unlocked by a user passphrase.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-26
 
 ## Overview
 
@@ -78,7 +78,7 @@ file never destroys current data.
 ## Acceptance criteria
 
 - AC-1: A valid plain archive replaces all local journal data, measurements,
-  personal cards, tombstones, and media.
+  personal cards, tombstones, workout sessions, routine presets, and media.
 - AC-2: A valid encrypted archive is restored after the correct passphrase is
   entered.
 - AC-3: An encrypted archive with an incorrect passphrase fails with a

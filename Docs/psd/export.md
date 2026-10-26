@@ -4,7 +4,7 @@
 > report) and full ZIP backup — producing a `FileProvider` URI that the Export
 > screen hands to the system share sheet.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-26
 
 ## Overview
 
@@ -12,7 +12,8 @@ The feature is a Compose screen (two tabs: Export and Restore) backed by
 `ExportViewModel`. On the Export tab the user picks a format and the PDF-only
 date range, then `exportData` runs the matching use case in a coroutine and
 emits a ready-to-share URI. The ZIP path writes a versioned manifest plus JSON
-snapshots and media, which is exactly the layout the restore feature reads back.
+snapshots for every restorable entity — including workout sessions and routine
+presets — and media, which is exactly the layout the restore feature reads back.
 
 ## Architecture
 
@@ -29,8 +30,10 @@ snapshots and media, which is exactly the layout the restore feature reads back.
 2. `exportData(startDate, endDate, format)` runs in `viewModelScope`.
 3. PDF: `PdfExportUseCase.execute(range)` filters entries to the range, newest-
    first, and builds a PDF (downsampling photos via `ImageResizer`).
-4. ZIP: `FullBackupUseCase.execute()` collects every data domain + media and
-   writes the versioned manifest and snapshots via `BackupWriter`.
+4. ZIP: `FullBackupUseCase.execute()` collects every data domain (journal,
+   measurements, goals, personal card, tombstones, tags, workout sessions,
+   presets) + media and writes the versioned manifest and snapshots via
+   `BackupWriter`.
 5. The resulting file is exposed as a `FileProvider` URI → `ReadyToShare`.
 6. The screen opens the share sheet; `ExportService` cleans cache on expiry.
 

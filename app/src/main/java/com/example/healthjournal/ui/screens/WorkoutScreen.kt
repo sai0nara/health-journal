@@ -68,6 +68,7 @@ import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.StrengthSet
 import com.example.healthjournal.domain.ValidateWorkout
 import com.example.healthjournal.domain.WorkoutIntervalSession
+import com.example.healthjournal.domain.WarmupOutcome
 import com.example.healthjournal.domain.WorkoutType
 import com.example.healthjournal.domain.formatCompact
 import com.example.healthjournal.domain.validation.DateInputMask
@@ -253,6 +254,9 @@ fun WorkoutScreen(
                     tonnageKg = state.tonnageKg,
                     intervalRounds = state.intervalRounds,
                     intervalIntervals = state.intervalIntervals,
+                    warmupName = state.session.warmupName,
+                    warmupDurationSeconds = state.session.warmupDurationSeconds,
+                    warmupOutcome = state.session.warmupOutcome,
                     unitSystem = unitSystem,
                     onDone = { viewModel.closeSummary() }
                 )
@@ -1150,6 +1154,9 @@ private fun SummaryContent(
     tonnageKg: Double?,
     intervalRounds: Int,
     intervalIntervals: Int,
+    warmupName: String? = null,
+    warmupDurationSeconds: Int? = null,
+    warmupOutcome: String? = null,
     unitSystem: UnitSystem = UnitSystem.METRIC,
     onDone: () -> Unit
 ) {
@@ -1179,6 +1186,25 @@ private fun SummaryContent(
             Text(
                 stringResource(R.string.workout_rounds_intervals, intervalRounds, intervalIntervals),
                 style = MaterialTheme.typography.titleMedium
+            )
+        }
+        if (warmupName != null && warmupDurationSeconds != null) {
+            val outcome = stringResource(
+                if (warmupOutcome == WarmupOutcome.COMPLETED.name) {
+                    R.string.warmup_outcome_completed
+                } else {
+                    R.string.warmup_outcome_skipped
+                }
+            )
+            Text(
+                stringResource(
+                    R.string.workout_warmup_summary,
+                    warmupName,
+                    (warmupDurationSeconds + 59) / 60,
+                    outcome
+                ),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.testTag("summary_warmup")
             )
         }
         Text(

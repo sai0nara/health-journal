@@ -246,6 +246,7 @@ private fun RestoreSuccessContent(result: com.example.healthjournal.export.Resto
                 MetadataRow(stringResource(R.string.restore_meta_deleted), result.deletedEntryCount.toString())
                 MetadataRow(stringResource(R.string.restore_meta_tags), result.tagCount.toString())
                 MetadataRow(stringResource(R.string.restore_meta_workouts), result.workoutCount.toString())
+                MetadataRow(stringResource(R.string.restore_meta_presets), result.presetCount.toString())
                 MetadataRow(stringResource(R.string.restore_meta_media), result.mediaFileCount.toString())
                 MetadataRow(stringResource(R.string.restore_meta_total), result.totalRecords.toString())
             }

@@ -5,7 +5,7 @@
 > behind a WorkManager job so every step (passphrase, swap, media re-import) is
 > individually testable and the replace survives process death.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-26
 
 ## Overview
 
@@ -52,10 +52,12 @@ feature wrote, optionally wrapped in an outer AES-256 container. The pipeline is
       (zip-slip + expansion-cap guards here);
    d. maps the staged backup data to local DTOs via `BackupDataReader`;
    e. calls `RestoreRepository.restore(...)`: one transaction wipes all tables
-      and reinserts the imported data, then media is copied into app storage and
-      every media URI is remapped from archive path to local URI;
+      (including workout presets) and reinserts the imported data, then media is
+      copied into app storage and every media URI is remapped from archive path
+      to local URI;
    f. calls `onRestoreFinished`, then deletes the staging directory (finally).
-6. On success the worker returns entity/reference counts and enqueues a manual
+6. On success the worker returns entity/reference counts (journal, measurements,
+   goals, tombstones, tags, media, workouts, presets) and enqueues a manual
    Drive sync so the cloud reflects the restored state. On failure it returns
    the typed error for the screen to show with a retry path.
 
@@ -84,6 +86,7 @@ feature wrote, optionally wrapped in an outer AES-256 container. The pipeline is
 | Wrong passphrase | `WrongPassphrase`; data intact; screen offers retry with the passphrase field |
 | Schema version newer than app or unknown | `VersionMismatch`; data intact |
 | Schema version older than app | accepted; absent data reads as empty, tags canonicalized on restore |
+| Backup predates presets or warm-up columns | `presets.json`/fields absent; restore leaves them empty/null |
 | Corrupt container / unreadable manifest | `CorruptedFile`; data intact |
 | Archive is not a backup at all | `UnsupportedFormat`; data intact |
 | Storage insufficient for staging or re-import | `InsufficientStorage`; staging cleaned up, data intact |

@@ -2,7 +2,7 @@
 
 > The on-device test stack under `app/src/androidTest` — Compose UI tests plus Room DAO and migration tests that need the Android framework.
 
-Last updated: 2026-10-22
+Last updated: 2026-10-26
 
 ## What this stack is
 
@@ -13,12 +13,12 @@ under `data/local`. Its dependencies come from the module build file's
 `androidTestImplementation` block.
 
 The workout session screens are exercised end-to-end here: the catalog,
-per-type configuration, active-session controls (countdown, HIIT phase/round,
-set-matrix editor with rest timer), the end-of-routine finish prompt, summary
-composition, and manual-log extras, driven deterministically through the
-viewmodel's `advanceTime`. The migration
-tests alongside verify the full schema chain up to the current version,
-including the workout set-matrix (14→15) and interval-state (15→16) columns.
+per-type configuration, preset warm-up editor/panel/timer, active-session
+controls (countdown, HIIT phase/round, set-matrix editor with rest timer), the
+end-of-routine finish prompt, summary composition, and manual-log extras, driven
+deterministically through the viewmodel's `advanceTime`. The migration tests
+alongside verify the full schema chain up to the current version, including the
+workout set-matrix (14→15), interval-state (15→16), and warm-up (19→20) columns.
 
 This is the second of two test stacks. Unlike the [[unit-tests]] JVM stack, it
 requires a running device and cannot run in a plain JVM context.
@@ -75,7 +75,8 @@ fatal at boot, not as a test failure.
 
 ## Sources
 
-- `app/src/androidTest/java/com/example/healthjournal/ui/screens` — Compose screen tests live here (including the workout hub/session screens).
+- `app/src/androidTest/java/com/example/healthjournal/ui/screens` — Compose screen tests live here, including the workout hub/session screens, preset warm-up editor, execution panel, and summary.
+- `app/src/androidTest/java/com/example/healthjournal/export/RestoreIntegrationTest.kt` — full restore against a real Room database, including preset warm-up fields.
 - `app/src/androidTest/java/com/example/healthjournal/pages` — page objects for the deletion suites (selectors and actions only).
 - `app/src/androidTest/java/com/example/healthjournal/util/RecordingHapticFeedback.kt` — recording `LocalHapticFeedback` used to assert gesture feedback.
 - `app/src/androidTest/java/com/example/healthjournal/data/local` — DAO and migration tests live here.

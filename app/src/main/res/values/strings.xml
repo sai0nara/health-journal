@@ -166,6 +166,9 @@
     <string name="workout_calories">%1$s kcal</string>
     <string name="workout_tonnage">Tonnage: %1$s %2$s</string>
     <string name="workout_rounds_intervals">Rounds: %1$d · Intervals: %2$d</string>
+    <string name="workout_warmup_summary">Warm-up: %1$s · %2$d min · %3$s</string>
+    <string name="warmup_outcome_completed">Completed</string>
+    <string name="warmup_outcome_skipped">Skipped</string>
     <string name="workout_synced">Synced to Health Connect</string>
     <string name="workout_saved_locally">Saved locally</string>
     <string name="workout_log_past_title">Log Past %1$s</string>
@@ -244,6 +247,7 @@
     <string name="restore_meta_deleted">Deleted entries</string>
     <string name="restore_meta_tags">Tags</string>
     <string name="restore_meta_workouts">Workouts</string>
+    <string name="restore_meta_presets">Routine presets</string>
     <string name="restore_meta_media">Media files</string>
     <string name="restore_meta_total">Total records</string>
     <string name="restore_failed_title">Restore Failed</string>

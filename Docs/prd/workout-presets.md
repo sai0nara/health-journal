@@ -5,7 +5,7 @@
 > with ordered completion, a searchable exercise catalog, and (planned) weight
 > analytics with alternative-exercise weight conversion.
 
-Last updated: 2026-10-23
+Last updated: 2026-10-26
 
 ## Overview
 
@@ -31,6 +31,8 @@ exercises instead of a bare tonnage figure.
   per-exercise summaries on the history card, and offer a confirmation when the
   last planned set is completed.
 - Recover an interrupted session to the last completed set.
+- Configure one optional timed warm-up per routine and run it before the work
+  sets, with a visible timer and skip control.
 - (Planned, Phase 5) Per-exercise weight trend analytics (Epley 1RM, max volume)
   and alternative-movement weight conversion from logged history.
 
@@ -51,6 +53,8 @@ exercises instead of a bare tonnage figure.
   values, so I can adapt without mental math.
 - As a lifter, I want to see which exercises and weights I did on a routine's
   history card, so past sessions read as a plan, not a tonnage total.
+- As a lifter, I want a short warm-up timer attached to my routine, so I can
+  start moving without tracking it separately.
 
 ## Functional requirements
 
@@ -107,14 +111,26 @@ exercises instead of a bare tonnage figure.
   Finish runs the normal finish flow. The prompt appears only on the transition
   to all planned sets complete, never on load/recovery, and never for manual strength or
   HIIT sessions. Manual Finish remains immediate and bypasses the prompt.
+- FR-12: Warm-up — a preset may define one optional warm-up name and a
+  duration in whole minutes (1–60). A preset with warm-up enabled requires a
+  non-blank name and a valid duration; disabling it stores no warm-up. Starting
+  such a preset runs the normal countdown, then the warm-up timer, then the
+  planned sets. The user can skip at any time; Finish and interrupted-session
+  recovery also end the warm-up as skipped. The warm-up is not a strength set:
+  it contributes no tonnage, PR/analytics input, finish-prompt trigger, or
+  separate Health Connect record. The session stores its name, planned duration,
+  actual elapsed duration, and `COMPLETED`/`SKIPPED` outcome; the summary and
+  history description show one warm-up line when configured. Full backup and
+  restore round-trip preset and session warm-up fields, and records without
+  them restore with nulls.
 
 ## Non-functional requirements
 
 - Offline-first local persistence (Room), consistent with the rest of the app.
 - >80% coverage on new code; a UI test per user-facing flow.
 - Keyed lazy lists and timer/math off the main thread.
-- Schema migrations are explicit and validated; a routine session's name column
-  is added via a versioned migration with schema export.
+- Schema migrations are explicit and validated; routine name and warm-up
+  columns are added via versioned migrations with schema export.
 - Medical color system / Material 3; haptics for set/exercise completion;
   keep-screen-on during an active routine.
 
@@ -135,6 +151,12 @@ exercises instead of a bare tonnage figure.
   prompt; Keep going leaves it active, Finish reaches Summary, unchecking and
   re-checking the set shows it again, and manual strength, HIIT, recovered, and
   partially complete sessions do not show it.
+- AC-9: A preset warm-up can be configured, edited, disabled, started, skipped,
+  and completed. Completing or skipping it records the planned and actual
+  duration plus the outcome, shows the warm-up in the summary and one history
+  line, and leaves tonnage, set count, finish-prompt state, and Health Connect
+  records unchanged. A pre-warm-up preset or backup still opens and restores
+  with no warm-up.
 
 ## Out of scope
 

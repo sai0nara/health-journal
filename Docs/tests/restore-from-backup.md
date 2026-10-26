@@ -17,8 +17,8 @@ Last updated: 2026-10-22
 | JVM unit | `app/src/test/java/com/example/healthjournal/export/SafeBackupExtractorTest.kt` | normal extraction; traversal / absolute-path entries rejected; per-entry and cumulative expansion caps |
 | JVM unit | `app/src/test/java/com/example/healthjournal/export/BackupEncryptorTest.kt` | AES-256 container readable round-trip; wrong passphrase fails to open |
 | JVM unit | `app/src/test/java/com/example/healthjournal/export/BackupReaderTest.kt` | plain vs encrypted manifest read; detection of the outer container |
-| JVM unit | `app/src/test/java/com/example/healthjournal/export/BackupDataReaderTest.kt` | staged archive data mapped to local DTOs |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/export/RestoreIntegrationTest.kt` | real-DB atomic replace incl. media re-import; encrypted success; wrong passphrase leaves data intact; version mismatch leaves data intact |
+| JVM unit | `app/src/test/java/com/example/healthjournal/export/BackupDataReaderTest.kt` | staged archive data mapped to local DTOs, including legacy null warm-up fields |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/export/RestoreIntegrationTest.kt` | real-DB atomic replace incl. media re-import and preset warm-up fields; encrypted success; wrong passphrase leaves data intact; version mismatch leaves data intact |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/RestoreScreenTest.kt` | idle/validating/confirmation/passphrase/error states render and buttons dispatch |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/RestoreScreenThemeTest.kt` | light + dark rendering of key screen states |
 
@@ -26,7 +26,7 @@ Last updated: 2026-10-22
 
 | ID | Criterion | Scenario | Preconditions | Expected |
 |---|---|---|---|---|
-| T-1 | AC-1 | Restore a plain archive | valid plain backup; app has existing data | all data replaced atomically; counts reported; media accessible |
+| T-1 | AC-1 | Restore a plain archive | valid plain backup; app has existing data | all data replaced atomically (including presets and session warm-up fields); counts reported; media accessible |
 | T-2 | AC-2 | Restore an encrypted archive | valid encrypted backup; correct passphrase | passphrase gate shown; restore succeeds |
 | T-3 | AC-3 | Wrong passphrase | encrypted backup; wrong passphrase | `WrongPassphrase`; current data unchanged; retry offered |
 | T-4 | AC-4 | Newer/unknown schema | archive with higher schema version | `VersionMismatch`; data unchanged |
