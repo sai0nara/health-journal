@@ -28,25 +28,25 @@
 
 ## Phase 2: Preset editor and library
 
-- [ ] Task: Write failing JVM tests for preset warm-up editing
-    - [ ] Create/edit draft defaults: disabled, 5-minute default when enabled
-    - [ ] Update name/duration, toggle off clears values, validation blocks save
-    - [ ] Saving and reopening a preset preserves the warm-up
-    - [ ] Run `PresetViewModelTest`; confirm expected failures
-- [ ] Task: Implement preset warm-up draft state and ViewModel actions
-    - [ ] Extend `PresetUiState.Editing` with enabled/name/duration/error fields
-    - [ ] Load warm-up in `openEdit` and persist it in `save`
-    - [ ] Add EN/RU labels, hints, and validation messages
-    - [ ] Run targeted JVM tests until green
-- [ ] Task: Write failing Compose tests for the editor and library
-    - [ ] Toggle reveals name/duration fields; invalid values show inline errors
-    - [ ] Create, edit, remove, and reopen a warm-up
-    - [ ] Library card shows the warm-up summary only when configured
-    - [ ] Run `PresetLibraryScreenTest`; confirm expected failures
-- [ ] Task: Implement the editor section and library summary
-    - [ ] Add the optional Warm-up section to the create/edit form
-    - [ ] Add the library card summary and test tags
-    - [ ] Run targeted instrumented tests until green
+- [x] Task: Write failing JVM tests for preset warm-up editing (93952b7)
+    - [x] Create/edit draft defaults: disabled, 5-minute default when enabled
+    - [x] Update name/duration, toggle off clears values, validation blocks save
+    - [x] Saving and reopening a preset preserves the warm-up
+    - [x] Run `PresetViewModelTest`; confirm expected failures
+- [x] Task: Implement preset warm-up draft state and ViewModel actions (93952b7)
+    - [x] Extend `PresetUiState.Editing` with enabled/name/duration/error fields
+    - [x] Load warm-up in `openEdit` and persist it in `save`
+    - [x] Add EN/RU labels, hints, and validation messages
+    - [x] Run targeted JVM tests until green
+- [x] Task: Write failing Compose tests for the editor and library (93952b7)
+    - [x] Toggle reveals name/duration fields; invalid values show inline errors
+    - [x] Create, edit, remove, and reopen a warm-up
+    - [x] Library card shows the warm-up summary only when configured
+    - [x] Run `PresetLibraryScreenTest`; confirm expected failures
+- [x] Task: Implement the editor section and library summary (93952b7)
+    - [x] Add the optional Warm-up section to the create/edit form
+    - [x] Add the library card summary and test tags
+    - [x] Run targeted instrumented tests until green
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Preset editor and library' (Protocol in workflow.md)
 
 ## Phase 3: Routine execution, recovery, and warm-up lifecycle
