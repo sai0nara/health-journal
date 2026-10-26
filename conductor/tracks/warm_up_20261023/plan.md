@@ -49,7 +49,7 @@
     - [x] Run targeted instrumented tests until green
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Preset editor and library' (Protocol in workflow.md)
 
-## Phase 3: Routine execution, recovery, and warm-up lifecycle
+## Phase 3: Routine execution, recovery, and warm-up lifecycle [checkpoint: c697617]
 
 - [x] Task: Write failing JVM tests for the active warm-up (d853a95)
     - [x] Starting a configured preset copies the warm-up and initializes the remaining time
@@ -74,7 +74,7 @@
     - [x] Hide work-set controls until the warm-up ends or is skipped
     - [x] Wire Skip and Finish; disable Pause during the warm-up
     - [x] Run targeted instrumented tests until green
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Routine execution and recovery' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Routine execution and recovery' (Protocol in workflow.md)
 
 ## Phase 4: History, backup, docs, and verification
 
