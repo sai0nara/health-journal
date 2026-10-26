@@ -78,20 +78,20 @@
 
 ## Phase 4: History, backup, docs, and verification
 
-- [ ] Task: Write failing integration tests
-    - [ ] Finished history includes one warm-up line with name, duration, and outcome
-    - [ ] Warm-up adds no tonnage, strength set, PR/analytics input, or separate Health Connect record
-    - [ ] Full backup/restore round-trips preset and session warm-up fields
-    - [ ] Old backups/presets without warm-up fields restore with nulls
-    - [ ] Run targeted JVM tests; confirm expected failures
-- [ ] Task: Implement history, summary, and backup compatibility
-    - [ ] Add the warm-up line to `describe()` and the Summary when present
-    - [ ] Confirm backup/restore handles nullable warm-up fields
-    - [ ] Run targeted JVM tests until green
-- [ ] Task: Update docs and wiki
-    - [ ] Update `Docs/prd/workout-presets.md` (FR/AC), `Docs/psd/workout-presets.md` (state/schema/flow), and `Docs/tests/workout-presets.md` (cases)
-    - [ ] Update cited wiki pages and run `python3 wiki/lint.py` to exit 0
+- [x] Task: Write failing integration tests (2f98261)
+    - [x] Finished history includes one warm-up line with name, duration, and outcome
+    - [x] Warm-up adds no tonnage, strength set, PR/analytics input, or separate Health Connect record
+    - [x] Full backup/restore round-trips preset and session warm-up fields
+    - [x] Old backups/presets without warm-up fields restore with nulls
+    - [x] Run targeted JVM tests; confirm expected failures
+- [x] Task: Implement history, summary, and backup compatibility (2f98261)
+    - [x] Add the warm-up line to `describe()` and the Summary when present
+    - [x] Confirm backup/restore handles nullable warm-up fields
+    - [x] Run targeted JVM tests until green
+- [x] Task: Update docs and wiki (2f98261)
+    - [x] Update `Docs/prd/workout-presets.md` (FR/AC), `Docs/psd/workout-presets.md` (state/schema/flow), and `Docs/tests/workout-presets.md` (cases)
+    - [x] Update cited wiki pages and run `python3 wiki/lint.py` to exit 0
 - [ ] Task: Full verification
-    - [ ] JVM suite green, `./gradlew build` green, touched instrumented suites green
+    - [x] JVM suite green, `./gradlew build` green, touched instrumented suites green
     - [ ] Manual device pass: create/edit warm-up, start, complete/skip, Finish during warm-up, history, old preset
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: History, backup, docs, and verification' (Protocol in workflow.md)
