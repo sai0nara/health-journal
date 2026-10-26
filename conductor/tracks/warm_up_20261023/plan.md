@@ -26,7 +26,7 @@
     - [x] Re-run the full JVM suite
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Warm-up data and persistence' (Protocol in workflow.md)
 
-## Phase 2: Preset editor and library
+## Phase 2: Preset editor and library [checkpoint: 17b846e]
 
 - [x] Task: Write failing JVM tests for preset warm-up editing (93952b7)
     - [x] Create/edit draft defaults: disabled, 5-minute default when enabled
@@ -47,7 +47,7 @@
     - [x] Add the optional Warm-up section to the create/edit form
     - [x] Add the library card summary and test tags
     - [x] Run targeted instrumented tests until green
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Preset editor and library' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Preset editor and library' (Protocol in workflow.md)
 
 ## Phase 3: Routine execution, recovery, and warm-up lifecycle
 
