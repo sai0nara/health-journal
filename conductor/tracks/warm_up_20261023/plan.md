@@ -51,29 +51,29 @@
 
 ## Phase 3: Routine execution, recovery, and warm-up lifecycle
 
-- [ ] Task: Write failing JVM tests for the active warm-up
-    - [ ] Starting a configured preset copies the warm-up and initializes the remaining time
-    - [ ] `advanceTime` completes the warm-up at zero and records elapsed/outcome
-    - [ ] Skip advances immediately and records skipped
-    - [ ] Pause is ignored while warming up; Finish during warm-up records skipped
-    - [ ] Recovery starts at work sets and records skipped
-    - [ ] Warm-up completion does not show the finish prompt
-    - [ ] Run `WorkoutViewModelTest`; confirm expected failures
-- [ ] Task: Implement warm-up state and lifecycle
-    - [ ] Extend `WorkoutUiState.Active` with warm-up remaining time
-    - [ ] Initialize from the preset in `startPreset` after the countdown
-    - [ ] Handle completion, skip, pause guard, finish, and recovery
-    - [ ] Run targeted JVM tests until green
-- [ ] Task: Write failing Compose tests for the warm-up panel
-    - [ ] Panel shows name, remaining time, and Skip before work sets
-    - [ ] Skipping reveals the work sets; zero countdown reveals them automatically
-    - [ ] Pause is unavailable during the warm-up; Finish still works
-    - [ ] Presets without a warm-up remain unchanged
-    - [ ] Run the new/extended instrumented class; confirm expected failures
-- [ ] Task: Implement the active warm-up panel
-    - [ ] Hide work-set controls until the warm-up ends or is skipped
-    - [ ] Wire Skip and Finish; disable Pause during the warm-up
-    - [ ] Run targeted instrumented tests until green
+- [x] Task: Write failing JVM tests for the active warm-up (d853a95)
+    - [x] Starting a configured preset copies the warm-up and initializes the remaining time
+    - [x] `advanceTime` completes the warm-up at zero and records elapsed/outcome
+    - [x] Skip advances immediately and records skipped
+    - [x] Pause is ignored while warming up; Finish during warm-up records skipped
+    - [x] Recovery starts at work sets and records skipped
+    - [x] Warm-up completion does not show the finish prompt
+    - [x] Run `WorkoutViewModelTest`; confirm expected failures
+- [x] Task: Implement warm-up state and lifecycle (d853a95)
+    - [x] Extend `WorkoutUiState.Active` with warm-up remaining time
+    - [x] Initialize from the preset in `startPreset` after the countdown
+    - [x] Handle completion, skip, pause guard, finish, and recovery
+    - [x] Run targeted JVM tests until green
+- [x] Task: Write failing Compose tests for the warm-up panel (d853a95)
+    - [x] Panel shows name, remaining time, and Skip before work sets
+    - [x] Skipping reveals the work sets; zero countdown reveals them automatically
+    - [x] Pause is unavailable during the warm-up; Finish still works
+    - [x] Presets without a warm-up remain unchanged
+    - [x] Run the new/extended instrumented class; confirm expected failures
+- [x] Task: Implement the active warm-up panel (d853a95)
+    - [x] Hide work-set controls until the warm-up ends or is skipped
+    - [x] Wire Skip and Finish; disable Pause during the warm-up
+    - [x] Run targeted instrumented tests until green
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Routine execution and recovery' (Protocol in workflow.md)
 
 ## Phase 4: History, backup, docs, and verification
