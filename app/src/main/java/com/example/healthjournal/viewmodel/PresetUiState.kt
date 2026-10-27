@@ -1,5 +1,6 @@
 package com.example.healthjournal.viewmodel
 
+import androidx.annotation.StringRes
 import com.example.healthjournal.domain.PresetExercise
 import com.example.healthjournal.domain.ScheduledDay
 import com.example.healthjournal.domain.ValidatePreset
@@ -28,7 +29,7 @@ sealed interface PresetUiState {
         val warmupName: String = "",
         val warmupDurationMinutes: String =
             ValidatePreset.WARMUP_DEFAULT_MINUTES.toString(),
-        val warmupNameError: String? = null,
-        val warmupDurationError: String? = null
+        @get:StringRes val warmupNameError: Int? = null,
+        @get:StringRes val warmupDurationError: Int? = null
     ) : PresetUiState
 }

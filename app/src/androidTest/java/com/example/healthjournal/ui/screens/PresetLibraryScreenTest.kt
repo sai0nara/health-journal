@@ -1,5 +1,9 @@
 package com.example.healthjournal.ui.screens
 
+import android.content.res.Configuration
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -33,6 +37,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.util.Locale
 
 class PresetLibraryScreenTest {
 
@@ -137,6 +142,43 @@ class PresetLibraryScreenTest {
         composeTestRule.onNodeWithText("Warm-up duration must be between 1 and 60 minutes")
             .assertExists()
         composeTestRule.onNodeWithTag("preset_name_field").assertExists()
+    }
+
+    @Test
+    fun warmupValidationError_rendersRussian_whenLocaleIsRu() {
+        viewModel.openCreate()
+        viewModel.updateName("Leg Day")
+        viewModel.addExercise(
+            PresetExercise(
+                exerciseId = "barbell-squat",
+                targetSets = 3,
+                defaultReps = 5,
+                defaultWeightKg = 40.0,
+                restSeconds = 120
+            )
+        )
+        viewModel.setWarmupEnabled(true)
+        viewModel.savePreset()
+
+        val base = InstrumentationRegistry.getInstrumentation().targetContext
+        val configuration = Configuration(base.resources.configuration).apply {
+            setLocale(Locale("ru", "RU"))
+        }
+        val ruContext = base.createConfigurationContext(configuration)
+        composeTestRule.setContent {
+            CompositionLocalProvider(
+                LocalContext provides ruContext,
+                LocalConfiguration provides configuration
+            ) {
+                HealthJournalTheme {
+                    PresetLibraryScreen(viewModel = viewModel, onBack = {})
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Введите название разминки").assertExists()
+        composeTestRule.onNodeWithText("Warm-up name is required").assertDoesNotExist()
     }
 
     @Test

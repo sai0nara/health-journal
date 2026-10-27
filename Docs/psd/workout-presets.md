@@ -7,7 +7,7 @@
 > into the journal + Health Connect — with (planned) use cases for 1RM and
 > alternative-exercise conversion.
 
-Last updated: 2026-10-26
+Last updated: 2026-10-27
 
 ## Overview
 
@@ -38,9 +38,9 @@ outcome.
   `WorkoutUiState.Active.warmupSecondsRemaining` drives the panel and
   `isWarmupActive` gates Pause.
 - `PresetUiState.Editing` holds `warmupEnabled`, `warmupName`, and
-  `warmupDurationMinutes` as text plus inline errors; save validates 1–60 whole
-  minutes and stores `null` fields when disabled. Library edit reloads the
-  persisted values.
+  `warmupDurationMinutes` as text plus inline errors; warm-up messages are
+  `@StringRes` ids resolved by the editor. Save validates 1–60 whole minutes and
+  stores `null` fields when disabled. Library edit reloads the persisted values.
 - `WorkoutViewModel.advanceTime` completes the warm-up when its timer reaches
   zero, and `skipWarmup` ends it early; both persist the current elapsed seconds
   and `WarmupOutcome`. Finish during the warm-up and recovery of an interrupted
@@ -112,9 +112,10 @@ outcome.
    so focused fields re-seed from the set (cursor preserved on no-op).
 6. Swap → `swapRoutineExercise` rebuilds the row from `defaultPlanFor` targets.
 7. Finish (button or prompt confirm) → journal entry (routine name +
-   per-exercise "name: N sets · X kg", plus one
-   `Warm-up: <name> · <minutes> min · <Completed|Skipped>` line when configured)
-   and one Health Connect EXERCISE record.
+   per-exercise "name: N sets · X kg", plus one localized warm-up line when
+   configured; the English template is
+   `Warm-up: <name> · <minutes> min · <Completed|Skipped>`) and one Health
+   Connect EXERCISE record.
 8. Interrupted session → recovery surfaces the last persisted state; a warm-up
    that had not completed is marked skipped.
 
@@ -155,6 +156,8 @@ or without the columns restore with nulls.
 | Set domain | `app/src/main/java/com/example/healthjournal/domain/StrengthExercise.kt` | planned targets, `isPlanned`, tonnage |
 | Validation | `app/src/main/java/com/example/healthjournal/domain/ValidatePreset.kt` | preset, per-exercise, and warm-up rules |
 | Warm-up outcome | `app/src/main/java/com/example/healthjournal/domain/WarmupOutcome.kt` | completed/skipped outcome enum |
+| Warm-up history formatter seam | `app/src/main/java/com/example/healthjournal/domain/WarmupHistoryFormatter.kt` | locale-aware persisted history line; English default for JVM callers |
+| Android warm-up formatter | `app/src/main/java/com/example/healthjournal/ui/format/AndroidWarmupHistoryFormatter.kt` | resource-backed implementation selected at app construction |
 | 1RM use case | `app/src/main/java/com/example/healthjournal/domain/CalculateOneRepMaxUseCase.kt` | Epley estimate (planned wiring) |
 | Conversion use case | `app/src/main/java/com/example/healthjournal/domain/ConvertAlternativeExerciseWeightUseCase.kt` | history-based ratio + fallback (planned wiring) |
 
@@ -220,7 +223,9 @@ or without the columns restore with nulls.
 - `app/src/main/java/com/example/healthjournal/data/local/BuiltInExerciseCatalog.kt` — seeds/defaults.
 - `app/src/main/java/com/example/healthjournal/domain/StrengthExercise.kt` — set model.
 - `app/src/main/java/com/example/healthjournal/domain/WorkoutPreset.kt` — scheduled-day enum + preset exercise model.
-- `app/src/main/java/com/example/healthjournal/domain/ValidatePreset.kt` — validation.
+- `app/src/main/java/com/example/healthjournal/domain/ValidatePreset.kt` — validation, including resource-backed warm-up errors.
+- `app/src/main/java/com/example/healthjournal/domain/WarmupHistoryFormatter.kt` — formatter seam for the persisted warm-up line.
+- `app/src/main/java/com/example/healthjournal/ui/format/AndroidWarmupHistoryFormatter.kt` — resource-backed formatter.
 - `app/src/main/java/com/example/healthjournal/domain/WarmupOutcome.kt` — warm-up outcome.
 - `app/src/main/java/com/example/healthjournal/export/BackupDataManifest.kt` — backup snapshot shape.
 - `app/src/main/java/com/example/healthjournal/export/FullBackupUseCase.kt` — full backup entity collection.

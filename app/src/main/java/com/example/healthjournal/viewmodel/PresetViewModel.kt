@@ -3,6 +3,7 @@ package com.example.healthjournal.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.healthjournal.R
 import com.example.healthjournal.data.PresetRepository
 import com.example.healthjournal.data.local.ExerciseCatalogDao
 import com.example.healthjournal.data.local.ExerciseCatalogItem
@@ -190,7 +191,7 @@ class PresetViewModel(
         }
         val warmupDurationError = if (current.warmupEnabled) {
             if (durationMinutes == null) {
-                ValidatePreset.ERROR_WARMUP_DURATION_RANGE
+                R.string.preset_warmup_error_duration_range
             } else {
                 ValidatePreset.validateWarmupDuration(durationMinutes)
             }

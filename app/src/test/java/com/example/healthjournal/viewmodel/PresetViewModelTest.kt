@@ -1,5 +1,6 @@
 package com.example.healthjournal.viewmodel
 
+import com.example.healthjournal.R
 import com.example.healthjournal.data.PresetRepository
 import com.example.healthjournal.data.local.ExerciseCatalogItem
 import com.example.healthjournal.data.local.FakeExerciseCatalogDao
@@ -130,7 +131,7 @@ class PresetViewModelTest {
         dispatcher.scheduler.advanceUntilIdle()
 
         val state = vm.uiState.value as PresetUiState.Editing
-        assertEquals(ValidatePreset.ERROR_WARMUP_NAME_REQUIRED, state.warmupNameError)
+        assertEquals(R.string.preset_warmup_error_name_required, state.warmupNameError)
         assertTrue(presetDao.visiblePresets().isEmpty())
     }
 
@@ -149,7 +150,7 @@ class PresetViewModelTest {
         dispatcher.scheduler.advanceUntilIdle()
 
         val state = vm.uiState.value as PresetUiState.Editing
-        assertEquals(ValidatePreset.ERROR_WARMUP_DURATION_RANGE, state.warmupDurationError)
+        assertEquals(R.string.preset_warmup_error_duration_range, state.warmupDurationError)
         assertTrue(presetDao.visiblePresets().isEmpty())
     }
 
@@ -168,7 +169,7 @@ class PresetViewModelTest {
         dispatcher.scheduler.advanceUntilIdle()
 
         val state = vm.uiState.value as PresetUiState.Editing
-        assertEquals(ValidatePreset.ERROR_WARMUP_DURATION_RANGE, state.warmupDurationError)
+        assertEquals(R.string.preset_warmup_error_duration_range, state.warmupDurationError)
         assertTrue(presetDao.visiblePresets().isEmpty())
     }
 

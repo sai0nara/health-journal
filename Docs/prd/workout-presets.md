@@ -5,7 +5,7 @@
 > with ordered completion, a searchable exercise catalog, and (planned) weight
 > analytics with alternative-exercise weight conversion.
 
-Last updated: 2026-10-26
+Last updated: 2026-10-27
 
 ## Overview
 
@@ -120,7 +120,7 @@ exercises instead of a bare tonnage figure.
   it contributes no tonnage, PR/analytics input, finish-prompt trigger, or
   separate Health Connect record. The session stores its name, planned duration,
   actual elapsed duration, and `COMPLETED`/`SKIPPED` outcome; the summary and
-  history description show one warm-up line when configured. Full backup and
+  history description show one localized warm-up line when configured. Full backup and
   restore round-trip preset and session warm-up fields, and records without
   them restore with nulls.
 
@@ -153,8 +153,8 @@ exercises instead of a bare tonnage figure.
   partially complete sessions do not show it.
 - AC-9: A preset warm-up can be configured, edited, disabled, started, skipped,
   and completed. Completing or skipping it records the planned and actual
-  duration plus the outcome, shows the warm-up in the summary and one history
-  line, and leaves tonnage, set count, finish-prompt state, and Health Connect
+  duration plus the outcome, shows the warm-up in the summary and one localized
+  history line, and leaves tonnage, set count, finish-prompt state, and Health Connect
   records unchanged. A pre-warm-up preset or backup still opens and restores
   with no warm-up.
 
@@ -185,6 +185,7 @@ exercises instead of a bare tonnage figure.
 - `app/src/main/java/com/example/healthjournal/domain/StrengthExercise.kt` — planned set row model + tonnage.
 - `app/src/main/java/com/example/healthjournal/domain/WorkoutPreset.kt` — scheduled-day enum + preset exercise model.
 - `app/src/main/java/com/example/healthjournal/domain/ValidatePreset.kt` — preset validation.
+- `app/src/main/java/com/example/healthjournal/domain/WarmupHistoryFormatter.kt` — locale-aware persisted warm-up history line.
 - `app/src/main/java/com/example/healthjournal/domain/CalculateOneRepMaxUseCase.kt` — Epley 1RM.
 - `app/src/main/java/com/example/healthjournal/domain/ConvertAlternativeExerciseWeightUseCase.kt` — conversion.
 - `Docs/psd/workout-presets.md` — specification.

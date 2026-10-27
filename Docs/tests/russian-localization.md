@@ -5,7 +5,7 @@
 > enforce parity, externalization, and taxonomy labels at build time, while
 > device-locale rendering is covered by instrumented and manual checks.
 
-Last updated: 2026-10-19
+Last updated: 2026-10-27
 
 ## Automated coverage
 
@@ -18,6 +18,7 @@ Last updated: 2026-10-19
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/SettingsScreenTest.kt` | settings renders; expected strings resolved from app resources so the suite passes under any device locale |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/PermissionsRationaleActivityTest.kt` | rationale activity renders; expected strings resolved from app resources (any device locale) |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/ComponentPreviewScreenTest.kt` | component gallery renders; expected strings resolved from app resources (any device locale) |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/localization/WarmupLocalizationTest.kt` | warm-up validation messages and persisted history line resolve in Russian and English |
 
 ## Test cases
 
@@ -33,6 +34,7 @@ Last updated: 2026-10-19
 | T-8 | Locale-aware dates in PDF | RU device | export PDF report | title and dates in Russian/locale format; entry text byte-identical |
 | T-9 | Longer RU strings | small screen, RU device | open dialog/detail screens | no clipped action buttons; overflow behaviour unchanged (worst acceptable) |
 | T-10 | Full verification | — | JVM suite, each UI class in isolation, wiki lint | all green, lint exits 0 |
+| T-11 | Warm-up text localizes | RU device | open the preset editor with an invalid warm-up; finish a warm-up session | validation error and persisted history line are Russian |
 
 ## Manual checks
 
@@ -56,5 +58,6 @@ Last updated: 2026-10-19
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/SettingsScreenTest.kt` — settings rendering.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/PermissionsRationaleActivityTest.kt` — rationale rendering.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/ComponentPreviewScreenTest.kt` — component gallery.
+- `app/src/androidTest/java/com/example/healthjournal/localization/WarmupLocalizationTest.kt` — warm-up validation and history localization.
 - `Docs/prd/russian-localization.md` — requirements under test.
 - `Docs/psd/russian-localization.md` — design the cases verify.

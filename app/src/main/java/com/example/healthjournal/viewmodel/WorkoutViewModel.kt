@@ -21,6 +21,7 @@ import com.example.healthjournal.domain.StrengthSet
 import com.example.healthjournal.domain.TonnageCalculator
 import com.example.healthjournal.domain.ValidateStrengthExercise
 import com.example.healthjournal.domain.ValidateWorkout
+import com.example.healthjournal.domain.WarmupHistoryFormatter
 import com.example.healthjournal.domain.WarmupOutcome
 import com.example.healthjournal.domain.WorkoutIntervalSession
 import com.example.healthjournal.domain.WorkoutType
@@ -70,7 +71,8 @@ class WorkoutViewModel(
      * (privacy-first); production passes the persisted setting from
      * `HealthSyncSettings` at construction.
      */
-    healthSyncEnabled: Boolean = false
+    healthSyncEnabled: Boolean = false,
+    private val warmupHistoryFormatter: WarmupHistoryFormatter = WarmupHistoryFormatter.English
 ) : ViewModel() {
 
     /** Observable mirror of [healthSyncEnabled] for UI gating. */
@@ -846,16 +848,11 @@ class WorkoutViewModel(
     private fun warmupLine(session: WorkoutSession): String? {
         val name = session.warmupName?.takeIf { it.isNotBlank() } ?: return null
         val seconds = session.warmupDurationSeconds ?: return null
-        val minutesText = if (seconds % 60 == 0) {
-            "${seconds / 60} min"
-        } else {
-            "%.1f min".format(seconds / 60.0)
-        }
-        val outcome = when (session.warmupOutcome) {
-            WarmupOutcome.COMPLETED.name -> "Completed"
-            else -> "Skipped"
-        }
-        return "Warm-up: $name · $minutesText · $outcome"
+        return warmupHistoryFormatter.format(
+            name = name,
+            durationSeconds = seconds,
+            completed = session.warmupOutcome == WarmupOutcome.COMPLETED.name
+        )
     }
 
     /**
@@ -884,7 +881,8 @@ class WorkoutViewModelFactory(
     private val onHaptic: (WorkoutHaptic) -> Unit = {},
     private val presetRepository: PresetRepository? = null,
     private val catalogDao: ExerciseCatalogDao? = null,
-    private val healthSyncEnabled: Boolean = false
+    private val healthSyncEnabled: Boolean = false,
+    private val warmupHistoryFormatter: WarmupHistoryFormatter = WarmupHistoryFormatter.English
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(WorkoutViewModel::class.java)) {
@@ -896,7 +894,8 @@ class WorkoutViewModelFactory(
                 onHaptic = onHaptic,
                 presetRepository = presetRepository,
                 catalogDao = catalogDao,
-                healthSyncEnabled = healthSyncEnabled
+                healthSyncEnabled = healthSyncEnabled,
+                warmupHistoryFormatter = warmupHistoryFormatter
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

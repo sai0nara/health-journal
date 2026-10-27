@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.ExerciseCatalogSeeder
 import com.example.healthjournal.data.local.JournalDatabase
+import com.example.healthjournal.ui.format.AndroidWarmupHistoryFormatter
 import com.example.healthjournal.ui.screens.AddEntryScreen
 import com.example.healthjournal.ui.screens.ArchiveScreen
 import com.example.healthjournal.ui.screens.HistoryScreen
@@ -134,7 +135,8 @@ class MainActivity : ComponentActivity() {
                                 presetRepository = com.example.healthjournal.data.PresetRepository(
                                     database.workoutPresetDao()
                                 ),
-                                catalogDao = database.exerciseCatalogDao()
+                                catalogDao = database.exerciseCatalogDao(),
+                                warmupHistoryFormatter = AndroidWarmupHistoryFormatter(this@MainActivity)
                             )
                         }
                         val workoutViewModel: com.example.healthjournal.viewmodel.WorkoutViewModel =

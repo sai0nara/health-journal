@@ -1,5 +1,6 @@
 package com.example.healthjournal.domain
 
+import com.example.healthjournal.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -9,7 +10,7 @@ class ValidatePresetTest {
     @Test
     fun validateWarmupName_blank_isRejected() {
         assertEquals(
-            ValidatePreset.ERROR_WARMUP_NAME_REQUIRED,
+            R.string.preset_warmup_error_name_required,
             ValidatePreset.validateWarmupName("   ")
         )
     }
@@ -22,7 +23,7 @@ class ValidatePresetTest {
     @Test
     fun validateWarmupName_rejectsSixtyOneCharacters() {
         assertEquals(
-            ValidatePreset.ERROR_WARMUP_NAME_TOO_LONG,
+            R.string.preset_warmup_error_name_too_long,
             ValidatePreset.validateWarmupName("a".repeat(61))
         )
     }
@@ -36,11 +37,11 @@ class ValidatePresetTest {
     @Test
     fun validateWarmupDuration_rejectsOutOfRange() {
         assertEquals(
-            ValidatePreset.ERROR_WARMUP_DURATION_RANGE,
+            R.string.preset_warmup_error_duration_range,
             ValidatePreset.validateWarmupDuration(0)
         )
         assertEquals(
-            ValidatePreset.ERROR_WARMUP_DURATION_RANGE,
+            R.string.preset_warmup_error_duration_range,
             ValidatePreset.validateWarmupDuration(61)
         )
     }

@@ -2,7 +2,7 @@
 
 > The MVVM state holders: each feature's ViewModel exposes `StateFlow` state and orchestrates calls into the data layer.
 
-Last updated: 2026-10-26
+Last updated: 2026-10-27
 
 ## What lives here
 
@@ -31,7 +31,9 @@ data layer directly — ViewModels are the only path between the two.
   after the countdown, and records planned/actual elapsed time plus a
   `COMPLETED`/`SKIPPED` outcome. Skip, Finish, and recovery mark it skipped; Pause
   is blocked while it runs. It is never a strength set, so it contributes no
-  tonnage, PR input, finish-prompt trigger, or Health Connect record.
+  tonnage, PR input, finish-prompt trigger, or Health Connect record. The
+  persisted history line is produced through an injected
+  `WarmupHistoryFormatter`, so it follows the device locale at finish time.
 - The export/restore feature adds its own ViewModels (export and restore), which the
   [[export-restore]] page describes.
 
@@ -47,5 +49,6 @@ data layer directly — ViewModels are the only path between the two.
 - `app/src/main/java/com/example/healthjournal/viewmodel/BodyMeasurementViewModel.kt` — measurement capture state.
 - `app/src/main/java/com/example/healthjournal/viewmodel/PresetViewModel.kt` — routine preset editor state.
 - `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutViewModel.kt` — workout session and warm-up state machine.
+- `app/src/main/java/com/example/healthjournal/domain/WarmupHistoryFormatter.kt` — formatter seam for the persisted warm-up history line.
 
 Back to [[overview]]

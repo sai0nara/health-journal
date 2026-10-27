@@ -167,6 +167,9 @@
     <string name="workout_tonnage">Tonnage: %1$s %2$s</string>
     <string name="workout_rounds_intervals">Rounds: %1$d · Intervals: %2$d</string>
     <string name="workout_warmup_summary">Warm-up: %1$s · %2$d min · %3$s</string>
+    <string name="workout_warmup_history">Warm-up: %1$s · %2$s · %3$s</string>
+    <string name="workout_minutes_whole">%1$d min</string>
+    <string name="workout_minutes_fractional">%1$s min</string>
     <string name="warmup_outcome_completed">Completed</string>
     <string name="warmup_outcome_skipped">Skipped</string>
     <string name="workout_synced">Synced to Health Connect</string>
@@ -192,7 +195,10 @@
     <string name="preset_warmup_title">Warm-up</string>
     <string name="preset_warmup_hint">Optional timed warm-up before the work sets</string>
     <string name="preset_warmup_name_label">Warm-up name</string>
+    <string name="preset_warmup_error_name_required">Warm-up name is required</string>
+    <string name="preset_warmup_error_name_too_long">Warm-up name must be 60 characters or fewer</string>
     <string name="preset_warmup_duration_label">Duration (min)</string>
+    <string name="preset_warmup_error_duration_range">Warm-up duration must be between 1 and 60 minutes</string>
     <string name="preset_warmup_summary">Warm-up · %1$d min</string>
     <string name="preset_save">Save Preset</string>
     <string name="preset_search_label">Search exercises</string>

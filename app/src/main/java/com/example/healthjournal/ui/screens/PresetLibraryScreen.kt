@@ -350,7 +350,7 @@ private fun WarmupSection(
                 value = state.warmupName,
                 onValueChange = onUpdateName,
                 label = { Text(stringResource(R.string.preset_warmup_name_label)) },
-                supportingText = state.warmupNameError?.let { { Text(it) } },
+                supportingText = state.warmupNameError?.let { { Text(stringResource(it)) } },
                 isError = state.warmupNameError != null,
                 singleLine = true,
                 modifier = Modifier
@@ -361,7 +361,7 @@ private fun WarmupSection(
                 value = state.warmupDurationMinutes,
                 onValueChange = onUpdateDuration,
                 label = { Text(stringResource(R.string.preset_warmup_duration_label)) },
-                supportingText = state.warmupDurationError?.let { { Text(it) } },
+                supportingText = state.warmupDurationError?.let { { Text(stringResource(it)) } },
                 isError = state.warmupDurationError != null,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

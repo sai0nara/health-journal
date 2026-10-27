@@ -1,5 +1,8 @@
 package com.example.healthjournal.domain
 
+import androidx.annotation.StringRes
+import com.example.healthjournal.R
+
 /**
  * Validation for workout-preset editing, mirroring [ValidateStrengthExercise]
  * conventions: a preset needs a name and at least one exercise, and every
@@ -13,9 +16,6 @@ object ValidatePreset {
     const val ERROR_REPS_POSITIVE = "Reps must be at least 1"
     const val ERROR_WEIGHT_POSITIVE = "Weight must be greater than zero"
     const val ERROR_REST_NON_NEGATIVE = "Rest cannot be negative"
-    const val ERROR_WARMUP_NAME_REQUIRED = "Warm-up name is required"
-    const val ERROR_WARMUP_NAME_TOO_LONG = "Warm-up name must be 60 characters or fewer"
-    const val ERROR_WARMUP_DURATION_RANGE = "Warm-up duration must be between 1 and 60 minutes"
 
     const val WARMUP_NAME_MAX_LENGTH = 60
     const val WARMUP_MIN_MINUTES = 1
@@ -26,18 +26,21 @@ object ValidatePreset {
     fun validateName(name: String): String? =
         if (name.isBlank()) ERROR_NAME_REQUIRED else null
 
-    /** Null when [name] is a usable warm-up name, else the inline error. */
-    fun validateWarmupName(name: String): String? =
+    /** Null when [name] is a usable warm-up name, else the inline error resource. */
+    @StringRes
+    fun validateWarmupName(name: String): Int? =
         when {
-            name.isBlank() -> ERROR_WARMUP_NAME_REQUIRED
-            name.trim().length > WARMUP_NAME_MAX_LENGTH -> ERROR_WARMUP_NAME_TOO_LONG
+            name.isBlank() -> R.string.preset_warmup_error_name_required
+            name.trim().length > WARMUP_NAME_MAX_LENGTH ->
+                R.string.preset_warmup_error_name_too_long
             else -> null
         }
 
     /** Null when [minutes] is within the supported warm-up range. */
-    fun validateWarmupDuration(minutes: Int): String? =
+    @StringRes
+    fun validateWarmupDuration(minutes: Int): Int? =
         if (minutes !in WARMUP_MIN_MINUTES..WARMUP_MAX_MINUTES) {
-            ERROR_WARMUP_DURATION_RANGE
+            R.string.preset_warmup_error_duration_range
         } else {
             null
         }

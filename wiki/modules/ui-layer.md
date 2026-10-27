@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-10-26
+Last updated: 2026-10-27
 
 ## What lives here
 
@@ -37,7 +37,8 @@ session, and the summary:
   movement's catalog default plan, and the routine's preset name is stored on the
   session for its history/journal card. The preset editor carries an optional
   warm-up section (enable toggle, name, duration in minutes) with inline
-  validation; the library row shows a compact warm-up summary. Completing the
+  validation resolved through string resources; the library row shows a compact
+  warm-up summary. Completing the
   last pending planned set opens a "Finish routine?" dialog: Finish runs the
   normal finish flow, Keep going only dismisses; the dialog is transient and
   never shown for manual strength, HIIT, or recovered sessions.
@@ -82,6 +83,7 @@ dashboard tiles.
 - `app/src/main/java/com/example/healthjournal/ui/screens/MainScreen.kt` — the dashboard screen and its branded top bar.
 - `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` — the workout hub, session screen, warm-up panel, summary, and manual-log dialog.
 - `app/src/main/java/com/example/healthjournal/ui/screens/PresetLibraryScreen.kt` — the preset library and warm-up editor.
+- `app/src/main/java/com/example/healthjournal/ui/format/AndroidWarmupHistoryFormatter.kt` — resource-backed formatter for the persisted warm-up history line.
 - `app/src/main/java/com/example/healthjournal/ui/theme` — theme and color system sources.
 
 Back to [[overview]]

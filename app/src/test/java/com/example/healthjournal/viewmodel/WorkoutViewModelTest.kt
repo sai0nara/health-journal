@@ -16,6 +16,7 @@ import com.example.healthjournal.data.local.FakeWorkoutPresetDao
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.domain.PresetExercise
 import com.example.healthjournal.domain.ScheduledDay
+import com.example.healthjournal.domain.WarmupHistoryFormatter
 import com.example.healthjournal.domain.WarmupOutcome
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -670,6 +671,32 @@ class WorkoutViewModelTest {
     }
 
     @Test
+    fun finishSession_usesInjectedWarmupHistoryFormatter() = runTest {
+        val formatter = WarmupHistoryFormatter { name, seconds, completed ->
+            "localized|$name|$seconds|$completed"
+        }
+        val vm = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60,
+            warmupHistoryFormatter = formatter
+        )
+        startRoutine(vm)
+        vm.advanceTime(60)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { journalRepository.insert(withArg { entry ->
+            assertTrue(
+                "Description was: ${entry.description}",
+                entry.description.lines().contains("localized|Rowing|60|true")
+            )
+        }) }
+    }
+
+    @Test
     fun finishSession_withWarmup_keepsOneHealthRecordAndPlannedSets() = runTest {
         val vm = newRoutineViewModel(
             presetSets = 2,
@@ -825,7 +852,8 @@ class WorkoutViewModelTest {
     private fun newRoutineViewModel(
         presetSets: Int = 2,
         warmupName: String? = null,
-        warmupDurationSeconds: Int? = null
+        warmupDurationSeconds: Int? = null,
+        warmupHistoryFormatter: WarmupHistoryFormatter = WarmupHistoryFormatter.English
     ): WorkoutViewModel {
         val presetDao = FakeWorkoutPresetDao()
         val catalogDao = FakeExerciseCatalogDao()
@@ -863,7 +891,8 @@ class WorkoutViewModelTest {
             clock = { nowMillis },
             presetRepository = PresetRepository(presetDao),
             catalogDao = catalogDao,
-            healthSyncEnabled = true
+            healthSyncEnabled = true,
+            warmupHistoryFormatter = warmupHistoryFormatter
         )
     }
 
