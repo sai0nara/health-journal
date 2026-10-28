@@ -76,7 +76,7 @@
     - [x] Run targeted instrumented tests until green
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Routine execution and recovery' (Protocol in workflow.md)
 
-## Phase 4: History, backup, docs, and verification
+## Phase 4: History, backup, docs, and verification [checkpoint: 78df25d]
 
 - [x] Task: Write failing integration tests (2f98261)
     - [x] Finished history includes one warm-up line with name, duration, and outcome
@@ -91,10 +91,10 @@
 - [x] Task: Update docs and wiki (2f98261)
     - [x] Update `Docs/prd/workout-presets.md` (FR/AC), `Docs/psd/workout-presets.md` (state/schema/flow), and `Docs/tests/workout-presets.md` (cases)
     - [x] Update cited wiki pages and run `python3 wiki/lint.py` to exit 0
-- [ ] Task: Full verification
+- [x] Task: Full verification (2f98261)
     - [x] JVM suite green, `./gradlew build` green, touched instrumented suites green
-    - [ ] Manual device pass: create/edit warm-up, start, complete/skip, Finish during warm-up, history, old preset
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: History, backup, docs, and verification' (Protocol in workflow.md)
+    - [x] Manual device pass: create/edit warm-up, start, complete/skip, Finish during warm-up, history, old preset (RFCT719Y8BP; 2026-10-28)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: History, backup, docs, and verification' (Protocol in workflow.md) [78df25d: report in git note, user approved commit/PR after manual pass]
 
 ## Phase: Review Fixes
 
@@ -104,7 +104,7 @@
     - [x] Add EN/RU resources and tests for Russian rendering
 - [x] Task: Correct the warm-up test matrix (fb6f744)
     - [x] Update `Docs/tests/workout-presets.md` recovery coverage claims
-- [~] Task: Full verification (fb6f744)
+- [x] Task: Full verification (fb6f744)
     - [x] JVM suite green, `./gradlew build` green, touched instrumented suites green
-    - [ ] Manual device pass: validation and history line render in Russian
-- [ ] Task: Conductor - User Manual Verification 'Review Fixes' (Protocol in workflow.md)
+    - [x] Manual device pass: validation and history line render in Russian (RFCT719Y8BP; 2026-10-28)
+- [x] Task: Conductor - User Manual Verification 'Review Fixes' (Protocol in workflow.md) [78df25d: report in git note, user approved commit/PR after manual pass]

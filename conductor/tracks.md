@@ -51,5 +51,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Add a warm up to routine presets**
-  *Link: [./tracks/warm_up_20261023/](./tracks/warm_up_20261023/)*
+- [x] **Track: Add a warm up to routine presets**
+  *Link: [./archive/warm_up_20261023/](./archive/warm_up_20261023/)*
