@@ -5,7 +5,7 @@
 > taxonomies through resource ids, and localizes the PDF report — with parity,
 > audit, and enum-label tests enforcing the contract.
 
-Last updated: 2026-10-19
+Last updated: 2026-10-26
 
 ## Overview
 
@@ -46,8 +46,8 @@ The design decisions:
   `pluralStringResource`, `context.getString`) is the only resolution
   mechanism. Non-Compose code (PDF export, `PermissionsRationaleActivity`)
   receives a `Context` already held and calls `context.getString`.
-- Catalogs: `values/strings.xml` (English default, 365 strings + 5 plurals)
-  and `values-ru/strings.xml` (complete translation, same shape). No third
+- Catalogs: `values/strings.xml` (English default) and `values-ru/strings.xml`
+  (complete translation, same keys and plurals). No third
   locale exists, so default == English fallback.
 - Empty-state and dialog surfaces that previously embedded literals now read
   resources through the same ViewModel-verified string keys; ViewModel-driven

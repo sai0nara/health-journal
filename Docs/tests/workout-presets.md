@@ -4,24 +4,29 @@
 > verification. The "Automated coverage" table cites the real test files; keep
 > it in sync when coverage moves.
 
-Last updated: 2026-10-23
+Last updated: 2026-10-27
 
 ## Automated coverage
 
 | Stack | Test file | Scope |
 |---|---|---|
-| JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/PresetViewModelTest.kt` | preset CRUD, validation rules, UI-state transitions |
+| JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/PresetViewModelTest.kt` | preset CRUD, validation rules (including warm-up name/duration), UI-state transitions |
 | JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/RoutineExecutionTest.kt` | routine start, ordered completion, swap-to-catalog-defaults, rest/haptics, recovery, history-card content |
-| JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/WorkoutViewModelTest.kt` | finish-prompt lifecycle: final-set trigger, planned-only completion, dismiss with rest-timer continuation, re-show, recovery, manual/HIIT/empty exclusion |
+| JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/WorkoutViewModelTest.kt` | finish-prompt lifecycle, warm-up timer/skip/finish/recovery, history line, and no extra set/tonnage/Health Connect record |
+| JVM unit | `app/src/test/java/com/example/healthjournal/domain/ValidatePresetTest.kt` | warm-up and preset validation bounds |
+| JVM unit | `app/src/test/java/com/example/healthjournal/export/BackupWriterTest.kt`, `BackupDataReaderTest.kt`, `FullBackupUseCaseTest.kt`, `RestoreRepositoryTest.kt` | preset/session warm-up backup round-trip and legacy null fields |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/CalculateOneRepMaxUseCaseTest.kt` | Epley single/best-estimate + bounds |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/ConvertAlternativeExerciseWeightUseCaseTest.kt` | ratio from history, default-coefficient fallback, bounds |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/StrengthExerciseTest.kt` | planned rows, `isPlanned`, tonnage |
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/WorkoutRepositoryTest.kt` | session persistence (crash-recovery rows) |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/PresetLibraryScreenTest.kt` | preset list/create/edit/delete + dropdown |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/PresetLibraryScreenTest.kt` | preset list/create/edit/delete + dropdown + warm-up editor and library summary |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/RoutineExecutionScreenTest.kt` | set matrix, rest timer, pad-while-focused, 1 kg dumbbell step (metric + imperial), ordered-completion disable, swap, many-sets reachability, haptics |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/FinishRoutinePromptTest.kt` | prompt copy, Keep going, confirm-to-Summary, manual Finish bypass, manual/HIIT exclusion |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/WarmupExecutionScreenTest.kt` | warm-up panel/timer, Skip, Finish, Pause disabled, summary line |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/localization/WarmupLocalizationTest.kt` | warm-up validation messages and persisted history line in Russian and English |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/export/RestoreIntegrationTest.kt` | preset warm-up fields round-trip through a real Room database |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/WorkoutScreenTest.kt` | hub → preset start → execution flow |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/MigrationTest.kt` | schema migration preserving workout data + new routine-name column |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/MigrationTest.kt` | schema migrations preserving workout data + routine-name and warm-up columns |
 
 ## Test cases
 
@@ -55,14 +60,21 @@ Last updated: 2026-10-23
 | T-26 | Dumbbell step | active routine, 60 kg set, metric units | pad +1 kg → 61; pad −1 kg twice → 59 | weight adjusts by exactly 1 kg per tap (2.5 lb in imperial) |
 | T-27 | Finish prompt trigger | active preset routine, partial completion | check the final pending set | dialog with "Finish routine?", body, Finish and Keep going; Keep going leaves the session Active with the rest timer running |
 | T-28 | Finish prompt scope and re-show | preset routine / manual strength / HIIT | confirm Finish → Summary; uncheck and recheck the final set; complete manual/HIIT sets; resume a recovered complete routine | Finish persists COMPLETED and writes one journal entry; prompt returns only after uncheck→recheck; no prompt for manual, HIIT, or recovery |
+| T-29 | Configure a warm-up | preset editor | enable warm-up → name "Rowing" → duration 5 → save | library summary shows "Warm-up · 5 min"; reopening the editor restores the values |
+| T-30 | Warm-up validation | preset editor, warm-up enabled | blank name / duration 0 / 61 / non-numeric | inline error; save blocked; disabling clears the fields |
+| T-31 | Warm-up countdown and completion | preset with 1-minute warm-up | Start Routine → wait out 3-2-1 → advance 60 s | panel shows timer; work sets appear only after completion; no warm-up set in the matrix |
+| T-32 | Skip and Finish during warm-up | active warm-up | Skip; repeat and press Finish | outcome SKIPPED with elapsed retained; Finish reaches Summary with a warm-up line |
+| T-33 | No tonnage, set, or Health Connect side effects | preset with warm-up and planned sets | complete warm-up → finish without completing work sets | set count and tonnage unchanged; one Health Connect record; no finish prompt from warm-up |
+| T-34 | Pause and crash recovery | active warm-up | press Pause; separately kill/recover during warm-up | Pause disabled (Compose); recovery resumes Active with the warm-up marked SKIPPED (JVM) |
+| T-35 | History and summary line | completed/skipped warm-up session | open Summary and history | exactly one localized warm-up line containing name, planned duration, and Completed/Skipped outcome (English template: `Warm-up: <name> · <min> min · <Completed / Skipped>`); absent for presets without warm-up |
+| T-36 | Backup and legacy restore | preset/session with warm-up; legacy archive without presets file or warm-up keys | full backup → restore; restore legacy archive | warm-up fields survive; legacy presets/sessions restore with null warm-up fields |
 
 ## Manual checks
 
 - Rest timer countdown feels correct on device (see `WorkoutScreenTest` for
   automated countdown coverage).
-- Cloud sync of presets/catalog/alternative mappings and Drive full-backup
-  round-trip — covered by Phase 6 of `conductor/tracks/workout_presets_20260914/plan.md`
-  (work to follow).
+- Cloud sync of presets/catalog/alternative mappings; full-backup round-trip is
+  covered by the JVM backup tests and `RestoreIntegrationTest`.
 
 ## Cross-references
 
@@ -75,7 +87,8 @@ Last updated: 2026-10-23
 
 - `app/src/test/java/com/example/healthjournal/viewmodel/PresetViewModelTest.kt` — preset unit coverage.
 - `app/src/test/java/com/example/healthjournal/viewmodel/RoutineExecutionTest.kt` — routine unit coverage.
-- `app/src/test/java/com/example/healthjournal/viewmodel/WorkoutViewModelTest.kt` — finish-prompt lifecycle coverage.
+- `app/src/test/java/com/example/healthjournal/viewmodel/WorkoutViewModelTest.kt` — finish-prompt, warm-up execution, history-line, and side-effect coverage.
+- `app/src/test/java/com/example/healthjournal/domain/ValidatePresetTest.kt` — warm-up validation bounds.
 - `app/src/test/java/com/example/healthjournal/domain/CalculateOneRepMaxUseCaseTest.kt` — 1RM coverage.
 - `app/src/test/java/com/example/healthjournal/domain/ConvertAlternativeExerciseWeightUseCaseTest.kt` — conversion coverage.
 - `app/src/test/java/com/example/healthjournal/domain/StrengthExerciseTest.kt` — set model coverage.
@@ -83,7 +96,10 @@ Last updated: 2026-10-23
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/PresetLibraryScreenTest.kt` — library UI coverage.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/RoutineExecutionScreenTest.kt` — execution UI coverage.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/FinishRoutinePromptTest.kt` — finish-prompt UI coverage.
+- `app/src/androidTest/java/com/example/healthjournal/ui/screens/WarmupExecutionScreenTest.kt` — warm-up panel, skip/finish, Pause-disabled, and summary coverage.
+- `app/src/androidTest/java/com/example/healthjournal/localization/WarmupLocalizationTest.kt` — warm-up validation and history-line localization.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/WorkoutScreenTest.kt` — hub flow coverage.
 - `app/src/androidTest/java/com/example/healthjournal/data/local/MigrationTest.kt` — migration coverage.
+- `app/src/androidTest/java/com/example/healthjournal/export/RestoreIntegrationTest.kt` — preset warm-up restore integration.
 - `Docs/prd/workout-presets.md` — requirements under test.
 - `Docs/psd/workout-presets.md` — design the cases verify.

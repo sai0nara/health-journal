@@ -3,7 +3,7 @@
 > Export journal data as a PDF medical report or a full ZIP backup of the raw
 > data and media, delivering the output through the system share sheet.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-26
 
 ## Overview
 
@@ -43,7 +43,8 @@ for the restore flow. The shared sheet hands the generated file to the user.
   entries and is ignored for a full ZIP backup.
 - FR-3: PDF export sorts entries newest-first within the range.
 - FR-4: ZIP export bundles a versioned manifest, JSON snapshots of entries,
-  measurements, goals, personal card, tombstones, and tags, plus the media files.
+  measurements, goals, personal card, tombstones, tags, workout sessions, and
+  routine presets (including optional warm-up fields), plus the media files.
 - FR-5: Output is a `FileProvider` URI that triggers the share sheet.
 - FR-6: A progress/error state is shown while generating.
 
@@ -58,7 +59,8 @@ for the restore flow. The shared sheet hands the generated file to the user.
 
 - AC-1: Selecting PDF and a date range generates a shareable PDF of that range.
 - AC-2: Selecting ZIP generates a shareable full backup regardless of the range.
-- AC-3: The ZIP contains all data domains + media referenced by the manifest.
+- AC-3: The ZIP contains all data domains (including workout sessions and
+  routine presets) + media referenced by the manifest.
 - AC-4: Export state survives a configuration change (rotation).
 - AC-5: Errors surface rather than silently failing.
 

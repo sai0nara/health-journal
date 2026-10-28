@@ -1,5 +1,6 @@
 package com.example.healthjournal.viewmodel
 
+import com.example.healthjournal.R
 import com.example.healthjournal.data.PresetRepository
 import com.example.healthjournal.data.local.ExerciseCatalogItem
 import com.example.healthjournal.data.local.FakeExerciseCatalogDao
@@ -81,6 +82,161 @@ class PresetViewModelTest {
         assertEquals("", state.name)
         assertEquals(ScheduledDay.ANY, state.scheduledDay)
         assertTrue(state.exercises.isEmpty())
+    }
+
+
+    @Test
+    fun openCreate_startsWithWarmupDisabled_andFiveMinuteDefault() = runTest {
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.openCreate()
+
+        val state = vm.uiState.value as PresetUiState.Editing
+        assertEquals(false, state.warmupEnabled)
+        assertEquals("", state.warmupName)
+        assertEquals(ValidatePreset.WARMUP_DEFAULT_MINUTES.toString(), state.warmupDurationMinutes)
+    }
+
+    @Test
+    fun create_withWarmup_persistsTrimmedNameAndSeconds() = runTest {
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+        vm.updateName("Leg Day")
+        vm.addExercise(benchPress)
+        vm.setWarmupEnabled(true)
+        vm.updateWarmupName("  Rowing  ")
+        vm.updateWarmupDuration("10")
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(vm.uiState.value is PresetUiState.Library)
+        val saved = presetDao.visiblePresets().single()
+        assertEquals("Rowing", saved.warmupName)
+        assertEquals(600, saved.warmupDurationSeconds)
+    }
+
+    @Test
+    fun savePreset_withWarmupEnabledAndBlankName_surfacesError_andDoesNotPersist() = runTest {
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+        vm.updateName("Leg Day")
+        vm.addExercise(benchPress)
+        vm.setWarmupEnabled(true)
+        vm.updateWarmupName("   ")
+
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value as PresetUiState.Editing
+        assertEquals(R.string.preset_warmup_error_name_required, state.warmupNameError)
+        assertTrue(presetDao.visiblePresets().isEmpty())
+    }
+
+    @Test
+    fun savePreset_withWarmupDurationOutOfRange_surfacesError_andDoesNotPersist() = runTest {
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+        vm.updateName("Leg Day")
+        vm.addExercise(benchPress)
+        vm.setWarmupEnabled(true)
+        vm.updateWarmupName("Rowing")
+        vm.updateWarmupDuration("61")
+
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value as PresetUiState.Editing
+        assertEquals(R.string.preset_warmup_error_duration_range, state.warmupDurationError)
+        assertTrue(presetDao.visiblePresets().isEmpty())
+    }
+
+    @Test
+    fun savePreset_withWarmupDurationNotNumeric_surfacesRangeError() = runTest {
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+        vm.updateName("Leg Day")
+        vm.addExercise(benchPress)
+        vm.setWarmupEnabled(true)
+        vm.updateWarmupName("Rowing")
+        vm.updateWarmupDuration("")
+
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value as PresetUiState.Editing
+        assertEquals(R.string.preset_warmup_error_duration_range, state.warmupDurationError)
+        assertTrue(presetDao.visiblePresets().isEmpty())
+    }
+
+    @Test
+    fun disableWarmup_clearsValues_andPersistsNulls() = runTest {
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.openCreate()
+        vm.updateName("Leg Day")
+        vm.addExercise(benchPress)
+        vm.setWarmupEnabled(true)
+        vm.updateWarmupName("Rowing")
+        vm.updateWarmupDuration("10")
+
+        vm.setWarmupEnabled(false)
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val saved = presetDao.visiblePresets().single()
+        assertNull(saved.warmupName)
+        assertNull(saved.warmupDurationSeconds)
+    }
+
+    @Test
+    fun openEdit_loadsWarmup_andSaveEdit_preservesIt() = runTest {
+        repository.savePreset(
+            WorkoutPreset(
+                id = "p1",
+                name = "Leg Day",
+                exercises = listOf(benchPress),
+                warmupName = "Rowing",
+                warmupDurationSeconds = 300
+            )
+        )
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.openEdit("p1")
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value as PresetUiState.Editing
+        assertTrue(state.warmupEnabled)
+        assertEquals("Rowing", state.warmupName)
+        assertEquals("5", state.warmupDurationMinutes)
+
+        vm.updateWarmupDuration("8")
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val updated = presetDao.visiblePresets().single()
+        assertEquals("Rowing", updated.warmupName)
+        assertEquals(480, updated.warmupDurationSeconds)
+    }
+
+    @Test
+    fun openEdit_presetWithoutWarmup_keepsSectionDisabled() = runTest {
+        repository.savePreset(WorkoutPreset(id = "p1", name = "Leg Day", exercises = listOf(benchPress)))
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.openEdit("p1")
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value as PresetUiState.Editing
+        assertEquals(false, state.warmupEnabled)
+        assertNull(state.warmupNameError)
+        assertNull(state.warmupDurationError)
     }
 
     @Test

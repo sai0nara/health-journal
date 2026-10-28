@@ -3,13 +3,13 @@
 > Verifies the export use cases at JVM level and the Export screen's format,
 > range-visibility, and state-restoration behavior at the instrumented level.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-26
 
 ## Automated coverage
 
 | Stack | Test file | Scope |
 |---|---|---|
-| JVM unit | `app/src/test/java/com/example/healthjournal/export/FullBackupUseCaseTest.kt` | full backup with all entities, schema version, media inclusion |
+| JVM unit | `app/src/test/java/com/example/healthjournal/export/FullBackupUseCaseTest.kt` | full backup with all entities (sessions, presets), schema version, media inclusion |
 | JVM unit | `app/src/test/java/com/example/healthjournal/export/BackupWriterTest.kt` | ZIP layout, media entries, manifest |
 | JVM unit | `app/src/test/java/com/example/healthjournal/export/BackupDataReaderTest.kt` | reading the backup data back |
 | JVM unit | `app/src/test/java/com/example/healthjournal/export/ExportServiceTest.kt` | generated-file cache cleanup |
@@ -21,7 +21,7 @@ Last updated: 2026-09-02
 
 | ID | Criterion | Scenario | Preconditions | Expected |
 |---|---|---|---|---|
-| T-1 | AC-3 | Full backup content | entries + measurements + goals + card + tombstones + tags + media | all domains in ZIP; manifest references them |
+| T-1 | AC-3 | Full backup content | entries + measurements + goals + card + tombstones + tags + workouts + presets + media | all domains in ZIP, including preset/session warm-up fields; manifest references them |
 | T-2 | AC-3 | Schema version in manifest | current DB | manifest `schemaVersion` reflects DB version |
 | T-3 | AC-3 | Media included | entry with attachments/photos | files under `media/`, deduped |
 | T-4 | AC-1 | PDF range visibility | PDF selected | date-range card visible; ZIP hides it |

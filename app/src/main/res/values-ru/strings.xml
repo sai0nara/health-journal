@@ -136,6 +136,8 @@
     <string name="workout_start">Начать</string>
     <string name="workout_log_past_instead">Записать прошедшую тренировку: %1$s</string>
     <string name="workout_get_ready">Приготовьтесь</string>
+    <string name="workout_warmup_title">Разминка</string>
+    <string name="workout_warmup_skip">Пропустить разминку</string>
     <string name="workout_paused">Пауза</string>
     <string name="workout_pause">Пауза</string>
     <string name="workout_finish">Завершить</string>
@@ -162,6 +164,12 @@
     <string name="workout_calories">%1$s kcal</string>
     <string name="workout_tonnage">Тоннаж: %1$s %2$s</string>
     <string name="workout_rounds_intervals">Раунды: %1$d · Интервалы: %2$d</string>
+    <string name="workout_warmup_summary">Разминка: %1$s · %2$d мин · %3$s</string>
+    <string name="workout_warmup_history">Разминка: %1$s · %2$s · %3$s</string>
+    <string name="workout_minutes_whole">%1$d мин</string>
+    <string name="workout_minutes_fractional">%1$s мин</string>
+    <string name="warmup_outcome_completed">Завершена</string>
+    <string name="warmup_outcome_skipped">Пропущена</string>
     <string name="workout_synced">Синхронизировано с Health Connect</string>
     <string name="workout_saved_locally">Сохранено локально</string>
     <string name="workout_log_past_title">Записать прошедшую тренировку: %1$s</string>
@@ -182,6 +190,14 @@
     <string name="preset_cd_delete">Удалить пресет</string>
     <string name="preset_name_label">Название пресета</string>
     <string name="preset_exercises_title">Упражнения</string>
+    <string name="preset_warmup_title">Разминка</string>
+    <string name="preset_warmup_hint">Необязательная разминка по таймеру перед рабочими подходами</string>
+    <string name="preset_warmup_name_label">Название разминки</string>
+    <string name="preset_warmup_error_name_required">Введите название разминки</string>
+    <string name="preset_warmup_error_name_too_long">Название разминки должно быть не длиннее 60 символов</string>
+    <string name="preset_warmup_duration_label">Длительность (мин)</string>
+    <string name="preset_warmup_error_duration_range">Длительность разминки должна быть от 1 до 60 минут</string>
+    <string name="preset_warmup_summary">Разминка · %1$d мин</string>
     <string name="preset_save">Сохранить пресет</string>
     <string name="preset_search_label">Поиск упражнений</string>
     <string name="preset_cd_remove">Удалить упражнение</string>
@@ -235,6 +251,7 @@
     <string name="restore_meta_deleted">Удалённые записи</string>
     <string name="restore_meta_tags">Теги</string>
     <string name="restore_meta_workouts">Тренировки</string>
+    <string name="restore_meta_presets">Шаблоны тренировок</string>
     <string name="restore_meta_media">Медиафайлы</string>
     <string name="restore_meta_total">Всего записей</string>
     <string name="restore_failed_title">Ошибка восстановления</string>

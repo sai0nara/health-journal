@@ -6,10 +6,12 @@ import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
 import com.google.gson.Gson
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -33,7 +35,20 @@ class BackupDataReaderTest {
         personalCards = listOf(PersonalCard(id = "pc")),
         deletedEntries = listOf(DeletedEntry(entry_id = "d1")),
         entryTags = listOf(EntryTagCrossRef("e1", "health")),
-        workoutSessions = listOf(WorkoutSession(session_id = "w1", type = "RUN", startTimestamp = 10L))
+        workoutSessions = listOf(
+            WorkoutSession(
+                session_id = "w1",
+                type = "RUN",
+                startTimestamp = 10L,
+                warmupName = "Rowing",
+                warmupDurationSeconds = 300,
+                warmupElapsedSeconds = 300,
+                warmupOutcome = "COMPLETED"
+            )
+        ),
+        presets = listOf(
+            WorkoutPreset(id = "p1", name = "Leg day", warmupName = "Rowing", warmupDurationSeconds = 300)
+        )
     )
 
     @Test
@@ -46,6 +61,7 @@ class BackupDataReaderTest {
         writeJson(staging, BackupWriter.EntityFile.DELETED_ENTRIES, entities.deletedEntries)
         writeJson(staging, BackupWriter.EntityFile.ENTRY_TAGS, entities.entryTags)
         writeJson(staging, BackupWriter.EntityFile.WORKOUTS, entities.workoutSessions)
+        writeJson(staging, BackupWriter.EntityFile.PRESETS, entities.presets)
 
         val result = BackupDataReader(gson).read(staging)
 
@@ -59,6 +75,26 @@ class BackupDataReaderTest {
         val result = BackupDataReader(gson).read(staging)
 
         assertEquals(BackupData(), result)
+    }
+
+    @Test
+    fun read_legacyPresetAndSessionWithoutWarmupFields_restoresNulls() {
+        val staging = tempFolder.newFolder("legacy_stage")
+        File(staging, BackupWriter.EntityFile.PRESETS).writeText(
+            """[{"id":"p1","name":"Legacy","lastModified":1}]"""
+        )
+        File(staging, BackupWriter.EntityFile.WORKOUTS).writeText(
+            """[{"session_id":"w1","type":"RUN","startTimestamp":1}]"""
+        )
+
+        val result = BackupDataReader(gson).read(staging)
+
+        assertNull(result.presets.single().warmupName)
+        assertNull(result.presets.single().warmupDurationSeconds)
+        assertNull(result.workoutSessions.single().warmupName)
+        assertNull(result.workoutSessions.single().warmupDurationSeconds)
+        assertNull(result.workoutSessions.single().warmupElapsedSeconds)
+        assertNull(result.workoutSessions.single().warmupOutcome)
     }
 
     @Test

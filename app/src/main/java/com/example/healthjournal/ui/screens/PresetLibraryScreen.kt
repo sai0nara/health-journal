@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -113,6 +114,9 @@ fun PresetLibraryScreen(
                 unitSystem = UnitSettings.read(LocalContext.current),
                 onUpdateName = { viewModel.updateName(it) },
                 onUpdateDay = { viewModel.updateScheduledDay(it) },
+                onToggleWarmup = { viewModel.setWarmupEnabled(it) },
+                onUpdateWarmupName = { viewModel.updateWarmupName(it) },
+                onUpdateWarmupDuration = { viewModel.updateWarmupDuration(it) },
                 onAddExercise = { viewModel.addExercise(it) },
                 onRemoveExercise = { viewModel.removeExercise(it) },
                 onUpdateExercise = { idx, ex -> viewModel.updateExercise(idx, ex) },
@@ -211,6 +215,16 @@ private fun PresetCard(
                     ),
                     style = MaterialTheme.typography.bodySmall
                 )
+                if (preset.warmupName != null && preset.warmupDurationSeconds != null) {
+                    Text(
+                        stringResource(
+                            R.string.preset_warmup_summary,
+                            preset.warmupDurationSeconds / 60
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.testTag("preset_warmup_summary_${preset.id}")
+                    )
+                }
             }
             IconButton(onClick = onDelete, modifier = Modifier.testTag("preset_delete_${preset.id}")) {
                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.preset_cd_delete))
@@ -226,6 +240,9 @@ private fun EditingContent(
     unitSystem: UnitSystem,
     onUpdateName: (String) -> Unit,
     onUpdateDay: (ScheduledDay) -> Unit,
+    onToggleWarmup: (Boolean) -> Unit,
+    onUpdateWarmupName: (String) -> Unit,
+    onUpdateWarmupDuration: (String) -> Unit,
     onAddExercise: (PresetExercise) -> Unit,
     onRemoveExercise: (Int) -> Unit,
     onUpdateExercise: (Int, PresetExercise) -> Unit,
@@ -253,6 +270,12 @@ private fun EditingContent(
         DayDropdown(
             selectedDay = state.scheduledDay,
             onSelect = onUpdateDay
+        )
+        WarmupSection(
+            state = state,
+            onToggle = onToggleWarmup,
+            onUpdateName = onUpdateWarmupName,
+            onUpdateDuration = onUpdateWarmupDuration
         )
         if (state.exerciseError != null) {
             Text(state.exerciseError!!, color = MaterialTheme.colorScheme.error)
@@ -290,6 +313,62 @@ private fun EditingContent(
             ) {
                 Text(stringResource(R.string.preset_save))
             }
+        }
+    }
+}
+
+@Composable
+private fun WarmupSection(
+    state: PresetUiState.Editing,
+    onToggle: (Boolean) -> Unit,
+    onUpdateName: (String) -> Unit,
+    onUpdateDuration: (String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.preset_warmup_title),
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Text(
+                    stringResource(R.string.preset_warmup_hint),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Switch(
+                checked = state.warmupEnabled,
+                onCheckedChange = onToggle,
+                modifier = Modifier.testTag("preset_warmup_toggle")
+            )
+        }
+        if (state.warmupEnabled) {
+            OutlinedTextField(
+                value = state.warmupName,
+                onValueChange = onUpdateName,
+                label = { Text(stringResource(R.string.preset_warmup_name_label)) },
+                supportingText = state.warmupNameError?.let { { Text(stringResource(it)) } },
+                isError = state.warmupNameError != null,
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("preset_warmup_name")
+            )
+            OutlinedTextField(
+                value = state.warmupDurationMinutes,
+                onValueChange = onUpdateDuration,
+                label = { Text(stringResource(R.string.preset_warmup_duration_label)) },
+                supportingText = state.warmupDurationError?.let { { Text(stringResource(it)) } },
+                isError = state.warmupDurationError != null,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("preset_warmup_duration")
+            )
         }
     }
 }

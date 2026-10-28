@@ -3,10 +3,11 @@
 > A preset repository + library screen manage named routines; the workout
 > ViewModel expands a preset into a planned set matrix, enforces ordered set
 > completion with immediate persistence and rest/haptic side effects, swaps
-> movements to catalog defaults, and finishes into the journal + Health Connect
-> — with (planned) use cases for 1RM and alternative-exercise conversion.
+> movements to catalog defaults, runs an optional timed warm-up, and finishes
+> into the journal + Health Connect — with (planned) use cases for 1RM and
+> alternative-exercise conversion.
 
-Last updated: 2026-10-23
+Last updated: 2026-10-27
 
 ## Overview
 
@@ -18,7 +19,11 @@ an ordered-completion guard (VM enforces, UI disables), immediate persistence
 on every set toggle, the rest timer, and a transient finish prompt once every
 planned set is complete. Progress is journaled on finish with the routine name
 and per-exercise summaries. The design keeps the v2 manual
-set-matrix and HIIT flows intact beside the routine path.
+set-matrix and HIIT flows intact beside the routine path. A preset may carry one
+optional warm-up (`warmupName`, `warmupDurationSeconds`); starting it runs that
+timer between the countdown and the work sets, and the finished session records
+the name, planned duration, actual elapsed time, and `COMPLETED`/`SKIPPED`
+outcome.
 
 ## Architecture
 
@@ -26,8 +31,22 @@ set-matrix and HIIT flows intact beside the routine path.
   constructed manually via per-ViewModel `Factory` classes reading DAOs off the
   singleton `JournalDatabase`.
 - `PresetRepository` owns preset CRUD over `WorkoutPresetDao`.
-- `WorkoutViewModel.startPreset` expands a preset into a planned matrix (catalog
-  names resolved via `ExerciseCatalogDao`, unknown/empty exercises skipped).
+- `WorkoutViewModel.startPreset` copies the preset's optional warm-up onto the
+  session and, after the countdown, enters the warm-up phase before expanding the
+  work timer. The warm-up's elapsed seconds are included in the session's total
+  elapsed time; the session's `warmupElapsedSeconds` tracks only the warm-up.
+  `WorkoutUiState.Active.warmupSecondsRemaining` drives the panel and
+  `isWarmupActive` gates Pause.
+- `PresetUiState.Editing` holds `warmupEnabled`, `warmupName`, and
+  `warmupDurationMinutes` as text plus inline errors; warm-up messages are
+  `@StringRes` ids resolved by the editor. Save validates 1–60 whole minutes and
+  stores `null` fields when disabled. Library edit reloads the persisted values.
+- `WorkoutViewModel.advanceTime` completes the warm-up when its timer reaches
+  zero, and `skipWarmup` ends it early; both persist the current elapsed seconds
+  and `WarmupOutcome`. Finish during the warm-up and recovery of an interrupted
+  warm-up persist `SKIPPED`. The warm-up never enters the set matrix, so it adds
+  no tonnage, strength set, PR input, finish-prompt trigger, or Health Connect
+  record.
 - `WorkoutViewModel.toggleSetCompleted` implements the ordered-completion guard
   (completion only; unchecking bypasses it) and, on success, persistence + rest
   start + haptics; unchecking persists pending and zeroes the rest timer.
@@ -60,7 +79,9 @@ set-matrix and HIIT flows intact beside the routine path.
 - Validation (`ValidatePreset`, `StrengthExercise.ValidateStrengthExercise`)
   enforces lower bounds only (name non-blank; sets/reps ≥ 1; weight > 0;
   rest ≥ 0; RPE 1..10 where applicable) — no upper bounds anywhere, and the
-  preset name column carries no length constraint.
+  preset name column carries no length constraint. Warm-up is the exception:
+  when enabled, its name must be non-blank and its duration must be a whole
+  number of minutes in `1..60`; a disabled warm-up clears both fields.
 - The weight pad steps `1.25` kg metric / `5` lb converted to kg imperial
   (`padStepWeightKg`), plus a dumbbell step of `1` kg / `2.5` lb
   (`padSmallStepWeightKg`); typed entry is free decimal text with no fixed step.
@@ -79,33 +100,64 @@ set-matrix and HIIT flows intact beside the routine path.
 1. Library screen → `PresetViewModel` validates (name + ≥1 exercise + usable
    defaults per `ValidatePreset`) and upserts/deletes via `PresetRepository`.
 2. User taps Start Routine → `startPreset` resolves catalog names, builds the
-   planned matrix, stores `routineName` on the session, saves, enters the 3-2-1
-   countdown.
-3. Each set toggle → ordered-completion guard → persist immediately → rest timer
+   planned matrix, stores `routineName` and the optional warm-up on the session,
+   saves, enters the 3-2-1 countdown.
+3. After the countdown, a configured warm-up starts its timer. Countdown ticks do
+   not advance it; the warm-up completes to `COMPLETED`, or becomes `SKIPPED`
+   through Skip, Finish, or recovery. The work timer then runs as usual.
+4. Each set toggle → ordered-completion guard → persist immediately → rest timer
    + `SET_COMPLETE` haptic; final set per exercise → `EXERCISE_COMPLETE` haptic;
    completing the routine's last pending set sets `finishPromptVisible`.
-4. Weight/reps edits validate inline; the quick pad adjusts the persisted value
+5. Weight/reps edits validate inline; the quick pad adjusts the persisted value
    so focused fields re-seed from the set (cursor preserved on no-op).
-5. Swap → `swapRoutineExercise` rebuilds the row from `defaultPlanFor` targets.
-6. Finish (button or prompt confirm) → journal entry (routine name +
-   per-exercise "name: N sets · X kg") and Health Connect EXERCISE record.
-7. Interrupted session → recovery surfaces the last persisted state.
+6. Swap → `swapRoutineExercise` rebuilds the row from `defaultPlanFor` targets.
+7. Finish (button or prompt confirm) → journal entry (routine name +
+   per-exercise "name: N sets · X kg", plus one localized warm-up line when
+   configured; the English template is
+   `Warm-up: <name> · <minutes> min · <Completed|Skipped>`) and one Health
+   Connect EXERCISE record.
+8. Interrupted session → recovery surfaces the last persisted state; a warm-up
+   that had not completed is marked skipped.
+
+## Warm-up state and schema
+
+The warm-up is copied from the preset at start, so later preset edits do not
+alter a running session. The nullable columns are:
+
+| Entity | Column | Meaning |
+|---|---|---|
+| `WorkoutPreset` | `warmupName` | Optional configured warm-up name |
+| `WorkoutPreset` | `warmupDurationSeconds` | Planned duration in seconds |
+| `WorkoutSession` | `warmupName` | Snapshot at start |
+| `WorkoutSession` | `warmupDurationSeconds` | Planned duration snapshot |
+| `WorkoutSession` | `warmupElapsedSeconds` | Actual elapsed warm-up time |
+| `WorkoutSession` | `warmupOutcome` | `COMPLETED` / `SKIPPED`; null while pending |
+
+Schema version 20 adds these columns via an explicit migration. The session's
+`elapsedSeconds` includes warm-up time; `warmupElapsedSeconds` is the warm-up
+subset. The summary reuses the session fields, and history formats one line;
+both treat null warm-up columns as absent. Full backup includes presets and
+sessions, so Gson round-trips the fields; older archives without `presets.json`
+or without the columns restore with nulls.
 
 ## Components
 
 | Component | File | Responsibility |
 |---|---|---|
 | Preset library screen | `app/src/main/java/com/example/healthjournal/ui/screens/PresetLibraryScreen.kt` | list/create/edit/delete + dropdown |
-| Workout screen | `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` | hub, routine execution, pad, swap, finish prompt, summary |
+| Workout screen | `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` | hub, routine execution, warm-up panel, pad, swap, finish prompt, summary |
 | Preset ViewModel | `app/src/main/java/com/example/healthjournal/viewmodel/PresetViewModel.kt` | CRUD + validation state |
-| Workout ViewModel | `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutViewModel.kt` | routine start/complete/swap/finish, rest timer, finish prompt, journaling |
+| Workout ViewModel | `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutViewModel.kt` | routine start/warm-up/complete/swap/finish, timers, finish prompt, journaling |
 | UI state | `app/src/main/java/com/example/healthjournal/viewmodel/PresetUiState.kt`, `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutUiState.kt` | Idle/Editing/List and Isolations/Active/Paused/Recovery |
 | Preset repository | `app/src/main/java/com/example/healthjournal/data/PresetRepository.kt` | preset CRUD |
 | Preset entity | `app/src/main/java/com/example/healthjournal/data/local/WorkoutPreset.kt` | atomic JSON-backed preset row |
 | Catalog entity | `app/src/main/java/com/example/healthjournal/data/local/ExerciseCatalogItem.kt` | movement, category, alternatives |
 | Catalog source | `app/src/main/java/com/example/healthjournal/data/local/BuiltInExerciseCatalog.kt` | curated seeds + `defaultPlanFor` |
 | Set domain | `app/src/main/java/com/example/healthjournal/domain/StrengthExercise.kt` | planned targets, `isPlanned`, tonnage |
-| Validation | `app/src/main/java/com/example/healthjournal/domain/ValidatePreset.kt` | preset + per-exercise rules |
+| Validation | `app/src/main/java/com/example/healthjournal/domain/ValidatePreset.kt` | preset, per-exercise, and warm-up rules |
+| Warm-up outcome | `app/src/main/java/com/example/healthjournal/domain/WarmupOutcome.kt` | completed/skipped outcome enum |
+| Warm-up history formatter seam | `app/src/main/java/com/example/healthjournal/domain/WarmupHistoryFormatter.kt` | locale-aware persisted history line; English default for JVM callers |
+| Android warm-up formatter | `app/src/main/java/com/example/healthjournal/ui/format/AndroidWarmupHistoryFormatter.kt` | resource-backed implementation selected at app construction |
 | 1RM use case | `app/src/main/java/com/example/healthjournal/domain/CalculateOneRepMaxUseCase.kt` | Epley estimate (planned wiring) |
 | Conversion use case | `app/src/main/java/com/example/healthjournal/domain/ConvertAlternativeExerciseWeightUseCase.kt` | history-based ratio + fallback (planned wiring) |
 
@@ -131,12 +183,20 @@ set-matrix and HIIT flows intact beside the routine path.
 | Recovery choice | resume re-activates; discard marks `DISCARDED` → `Idle` |
 | Blank catalog search | no results shown |
 | Cancel preset edit | draft dropped, back to library, nothing persisted |
+| Warm-up disabled | duration/name hidden and stored as null |
+| Warm-up duration invalid | inline error; preset save blocked |
+| Warm-up timer reaches zero | marked `COMPLETED`; work timer continues |
+| Skip / Finish / recovery during warm-up | marked `SKIPPED`; actual elapsed retained |
+| Pause while warm-up running | disabled; only Skip and Finish remain |
+| Old preset or session row | null warm-up fields; no panel, summary, or history line |
+| Old backup without presets or warm-up fields | restores with null/empty warm-up data |
 
 ## Dependencies
 
 - Room (preset/catalog/session DAOs + explicit migrations with schema export).
 - Jetpack Compose Material 3; `FlowRow` for the quick pad.
-- Gson typing for the serialized preset exercises.
+- Gson typing for the serialized preset exercises and backup entity files.
+- Room migration 19→20 for the warm-up columns.
 - No DI framework; manual factories.
 - Health Connect write path reused from the v2 finish flow.
 - (Planned) Vico charting for Phase 5 analytics — documented in `tech-stack.md`
@@ -163,7 +223,12 @@ set-matrix and HIIT flows intact beside the routine path.
 - `app/src/main/java/com/example/healthjournal/data/local/BuiltInExerciseCatalog.kt` — seeds/defaults.
 - `app/src/main/java/com/example/healthjournal/domain/StrengthExercise.kt` — set model.
 - `app/src/main/java/com/example/healthjournal/domain/WorkoutPreset.kt` — scheduled-day enum + preset exercise model.
-- `app/src/main/java/com/example/healthjournal/domain/ValidatePreset.kt` — validation.
+- `app/src/main/java/com/example/healthjournal/domain/ValidatePreset.kt` — validation, including resource-backed warm-up errors.
+- `app/src/main/java/com/example/healthjournal/domain/WarmupHistoryFormatter.kt` — formatter seam for the persisted warm-up line.
+- `app/src/main/java/com/example/healthjournal/ui/format/AndroidWarmupHistoryFormatter.kt` — resource-backed formatter.
+- `app/src/main/java/com/example/healthjournal/domain/WarmupOutcome.kt` — warm-up outcome.
+- `app/src/main/java/com/example/healthjournal/export/BackupDataManifest.kt` — backup snapshot shape.
+- `app/src/main/java/com/example/healthjournal/export/FullBackupUseCase.kt` — full backup entity collection.
 - `app/src/main/java/com/example/healthjournal/domain/CalculateOneRepMaxUseCase.kt` — 1RM.
 - `app/src/main/java/com/example/healthjournal/domain/ConvertAlternativeExerciseWeightUseCase.kt` — conversion.
 - `Docs/prd/workout-presets.md` — requirements.

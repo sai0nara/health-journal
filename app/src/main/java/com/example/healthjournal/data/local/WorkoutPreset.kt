@@ -22,5 +22,8 @@ data class WorkoutPreset(
     val name: String,
     val scheduledDay: String = ScheduledDay.ANY.name,
     val exercises: List<PresetExercise> = emptyList(),
+    /** Optional single timed warm-up; null means the routine starts at work sets. */
+    val warmupName: String? = null,
+    val warmupDurationSeconds: Int? = null,
     val lastModified: Long = System.currentTimeMillis()
 )

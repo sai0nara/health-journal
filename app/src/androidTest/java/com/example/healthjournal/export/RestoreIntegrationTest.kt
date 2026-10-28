@@ -11,6 +11,7 @@ import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.WorkoutPreset
 import com.google.gson.Gson
 import java.io.File
 import java.io.FileOutputStream
@@ -117,6 +118,32 @@ class RestoreIntegrationTest {
         assertTrue("Post-restore sync should be triggered", syncTriggered)
         // Staging/scratch cleaned up
         assertFalse(scratchDir.exists())
+    }
+
+    @Test
+    fun restore_roundTripsPresetWarmupFields() = runBlocking {
+        db.workoutPresetDao().upsertPreset(WorkoutPreset(id = "old", name = "Old routine"))
+        val restored = WorkoutPreset(
+            id = "p1",
+            name = "Leg day",
+            warmupName = "Rowing",
+            warmupDurationSeconds = 300,
+            lastModified = 3L
+        )
+        val archive = buildBackup(
+            BackupData(presets = listOf(restored)),
+            mediaFile = null,
+            target = File(filesDir, "preset_${System.nanoTime()}.zip")
+        )
+
+        val outcome = coordinator().run(archive, passphrase = null)
+
+        assertTrue(outcome is RestoreCoordinator.Outcome.Success)
+        val presets = db.workoutPresetDao().getAllPresets().first()
+        assertEquals(listOf("p1"), presets.map { it.id })
+        assertEquals("Rowing", presets.single().warmupName)
+        assertEquals(300, presets.single().warmupDurationSeconds)
+        assertEquals(1, (outcome as RestoreCoordinator.Outcome.Success).result.presetCount)
     }
 
     @Test

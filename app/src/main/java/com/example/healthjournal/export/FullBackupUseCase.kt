@@ -52,6 +52,7 @@ class FullBackupUseCase(
         val bodyMeasurements = bodyMeasurementRepository.allEntries.first()
         val goals = goalsRepository.getAll()
         val workouts = database.workoutSessionDao().getAllSessions().first()
+        val presets = database.workoutPresetDao().getAllPresets().first()
 
         val personalCards = personalCardRepository.getPersonalCardSnapshot()
             ?.let { listOf(it) }
@@ -69,7 +70,8 @@ class FullBackupUseCase(
             personalCards = personalCards,
             deletedEntries = deletedEntries,
             entryTags = journalDao.getAllTags(),
-            workoutSessions = workouts
+            workoutSessions = workouts,
+            presets = presets
         )
 
         val writer = BackupWriter(gson = gson, schemaVersion = schemaVersion)

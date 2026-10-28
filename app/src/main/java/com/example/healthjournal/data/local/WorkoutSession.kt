@@ -4,6 +4,7 @@ import java.util.UUID
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.healthjournal.domain.StrengthExercise
+import com.example.healthjournal.domain.WarmupOutcome
 import com.example.healthjournal.domain.WorkoutIntervalSession
 
 /** Lifecycle states of a workout session; only one unfinished session exists at a time. */
@@ -31,5 +32,11 @@ data class WorkoutSession(
     val intervalState: WorkoutIntervalSession? = null,
     /** Preset name a routine session was started from, shown on its history card. */
     val routineName: String? = null,
+    /** Timed routine warm-up copied from the preset, if one was configured. */
+    val warmupName: String? = null,
+    val warmupDurationSeconds: Int? = null,
+    val warmupElapsedSeconds: Int? = null,
+    /** Null while the warm-up is pending/running; [WarmupOutcome] name otherwise. */
+    val warmupOutcome: String? = null,
     val lastModified: Long = startTimestamp
 )

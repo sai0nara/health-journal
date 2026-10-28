@@ -13,6 +13,8 @@ import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
 import com.example.healthjournal.data.local.PersonalCardDao
 import com.example.healthjournal.data.local.WorkoutSession
+import com.example.healthjournal.data.local.WorkoutPreset
+import com.example.healthjournal.data.local.WorkoutPresetDao
 import com.example.healthjournal.data.local.WorkoutSessionDao
 import io.mockk.coEvery
 import io.mockk.coJustRun
@@ -48,11 +50,13 @@ class RestoreRepositoryTest {
         val goalDao = mockk<GoalDao>()
         val personalCardDao = mockk<PersonalCardDao>()
         val workoutDao = mockk<WorkoutSessionDao>()
+        val presetDao = mockk<WorkoutPresetDao>()
         coEvery { db.journalDao() } returns journalDao
         coEvery { db.bodyMeasurementDao() } returns bodyDao
         coEvery { db.goalDao() } returns goalDao
         coEvery { db.personalCardDao() } returns personalCardDao
         coEvery { db.workoutSessionDao() } returns workoutDao
+        coEvery { db.workoutPresetDao() } returns presetDao
 
         coJustRun { journalDao.clearAllEntries() }
         coJustRun { journalDao.clearAllDeletedEntries() }
@@ -67,6 +71,8 @@ class RestoreRepositoryTest {
         coJustRun { personalCardDao.insertOrUpdate(any()) }
         coJustRun { workoutDao.clearAll() }
         coJustRun { workoutDao.insertAll(any()) }
+        coJustRun { presetDao.clearAll() }
+        coJustRun { presetDao.insertAll(any()) }
 
         val published = mutableListOf<List<JournalEntry>>()
         if (recordInsertAll) {
@@ -88,7 +94,20 @@ class RestoreRepositoryTest {
         personalCards = listOf(PersonalCard(id = "personal_card")),
         deletedEntries = listOf(DeletedEntry(entry_id = "eDel")),
         entryTags = listOf(EntryTagCrossRef("e1", "health")),
-        workoutSessions = listOf(WorkoutSession(session_id = "w1", type = "RUN", startTimestamp = 10L))
+        workoutSessions = listOf(
+            WorkoutSession(
+                session_id = "w1",
+                type = "RUN",
+                startTimestamp = 10L,
+                warmupName = "Rowing",
+                warmupDurationSeconds = 300,
+                warmupElapsedSeconds = 300,
+                warmupOutcome = "COMPLETED"
+            )
+        ),
+        presets = listOf(
+            WorkoutPreset(id = "p1", name = "Leg day", warmupName = "Rowing", warmupDurationSeconds = 300)
+        )
     )
 
     @Test
@@ -103,6 +122,7 @@ class RestoreRepositoryTest {
         val goalDao = harness.db.goalDao()
         val pcDao = harness.db.personalCardDao()
         val workoutDao = harness.db.workoutSessionDao()
+        val presetDao = harness.db.workoutPresetDao()
 
         // Wipe
         coVerify { journalDao.clearAllEntries() }
@@ -112,6 +132,7 @@ class RestoreRepositoryTest {
         coVerify { goalDao.clear() }
         coVerify { pcDao.clearAll() }
         coVerify { workoutDao.clearAll() }
+        coVerify { presetDao.clearAll() }
         // Insert
         coVerify { journalDao.insertAll(listOf(sampleData.journalEntries[0])) }
         coVerify { journalDao.insertAllDeletedEntries(listOf(sampleData.deletedEntries[0])) }
@@ -120,6 +141,7 @@ class RestoreRepositoryTest {
         coVerify { goalDao.importAll(listOf(sampleData.goals[0])) }
         coVerify { pcDao.insertOrUpdate(sampleData.personalCards[0]) }
         coVerify { workoutDao.insertAll(listOf(sampleData.workoutSessions[0])) }
+        coVerify { presetDao.insertAll(listOf(sampleData.presets[0])) }
 
         assertEquals(1, result.journalEntryCount)
         assertEquals(1, result.bodyMeasurementCount)
@@ -128,7 +150,8 @@ class RestoreRepositoryTest {
         assertEquals(1, result.tagCount)
         assertEquals(0, result.mediaFileCount)
         assertEquals(1, result.workoutCount)
-        assertEquals(6, result.totalRecords)
+        assertEquals(1, result.presetCount)
+        assertEquals(7, result.totalRecords)
     }
 
     @Test

@@ -68,6 +68,7 @@ import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.StrengthSet
 import com.example.healthjournal.domain.ValidateWorkout
 import com.example.healthjournal.domain.WorkoutIntervalSession
+import com.example.healthjournal.domain.WarmupOutcome
 import com.example.healthjournal.domain.WorkoutType
 import com.example.healthjournal.domain.formatCompact
 import com.example.healthjournal.domain.validation.DateInputMask
@@ -175,10 +176,12 @@ fun WorkoutScreen(
                         keepScreenOn = state.keepScreenOn,
                         restSeconds = state.restSeconds,
                         setMatrixError = state.setMatrixError,
+                        warmupSecondsRemaining = state.warmupSecondsRemaining,
                         catalogExercises = catalogExercises,
                         unitSystem = unitSystem,
                         onPauseResume = { viewModel.pauseSession() },
                         onFinish = { viewModel.finishSession() },
+                        onSkipWarmup = { viewModel.skipWarmup() },
                         onAdvanceInterval = { viewModel.advanceInterval() },
                         onAddExercise = { name -> viewModel.addExercise(name) },
                         onAddSet = { exerciseId, kg, reps -> viewModel.addSet(exerciseId, kg, reps) },
@@ -251,6 +254,9 @@ fun WorkoutScreen(
                     tonnageKg = state.tonnageKg,
                     intervalRounds = state.intervalRounds,
                     intervalIntervals = state.intervalIntervals,
+                    warmupName = state.session.warmupName,
+                    warmupDurationSeconds = state.session.warmupDurationSeconds,
+                    warmupOutcome = state.session.warmupOutcome,
                     unitSystem = unitSystem,
                     onDone = { viewModel.closeSummary() }
                 )
@@ -474,10 +480,12 @@ private fun SessionContent(
     keepScreenOn: Boolean,
     restSeconds: Int,
     setMatrixError: String?,
+    warmupSecondsRemaining: Int = 0,
     catalogExercises: List<ExerciseCatalogItem>,
     unitSystem: UnitSystem = UnitSystem.METRIC,
     onPauseResume: () -> Unit,
     onFinish: () -> Unit,
+    onSkipWarmup: () -> Unit = {},
     onAdvanceInterval: () -> Unit,
     onAddExercise: (String) -> Unit,
     onAddSet: (exerciseId: String, kg: Double, reps: Int) -> Unit,
@@ -513,10 +521,19 @@ private fun SessionContent(
         }
         val type = WorkoutType.fromName(session.type)
         val isRoutine = session.setMatrix?.any { it.isPlanned } == true
+        val warmupActive = session.warmupName != null &&
+            session.warmupOutcome == null &&
+            warmupSecondsRemaining > 0
         // The content area takes the remaining height so an over-long routine
         // scrolls internally instead of clipping the action row underneath it.
         Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            when {
+            if (warmupActive) {
+                WarmupPanel(
+                    name = session.warmupName.orEmpty(),
+                    secondsRemaining = warmupSecondsRemaining,
+                    onSkip = onSkipWarmup
+                )
+            } else when {
             type == WorkoutType.HIIT -> IntervalControls(
                 intervalState = session.intervalState,
                 onAdvanceInterval = onAdvanceInterval
@@ -544,12 +561,50 @@ private fun SessionContent(
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = onPauseResume, modifier = Modifier.weight(1f)) {
+            OutlinedButton(
+                onClick = onPauseResume,
+                enabled = !warmupActive,
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("workout_pause_button")
+            ) {
                 Text(stringResource(if (paused) R.string.workout_resume else R.string.workout_pause))
             }
             Button(onClick = onFinish, modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.workout_finish))
             }
+        }
+    }
+}
+
+@Composable
+private fun WarmupPanel(
+    name: String,
+    secondsRemaining: Int,
+    onSkip: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("warmup_panel"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.workout_warmup_title),
+            style = MaterialTheme.typography.titleMedium
+        )
+        Text(text = name, style = MaterialTheme.typography.headlineMedium)
+        Text(
+            text = formatElapsed(secondsRemaining.toLong()),
+            style = MaterialTheme.typography.displayLarge,
+            modifier = Modifier.testTag("warmup_timer")
+        )
+        Button(
+            onClick = onSkip,
+            modifier = Modifier.testTag("warmup_skip_button")
+        ) {
+            Text(stringResource(R.string.workout_warmup_skip))
         }
     }
 }
@@ -1099,6 +1154,9 @@ private fun SummaryContent(
     tonnageKg: Double?,
     intervalRounds: Int,
     intervalIntervals: Int,
+    warmupName: String? = null,
+    warmupDurationSeconds: Int? = null,
+    warmupOutcome: String? = null,
     unitSystem: UnitSystem = UnitSystem.METRIC,
     onDone: () -> Unit
 ) {
@@ -1128,6 +1186,25 @@ private fun SummaryContent(
             Text(
                 stringResource(R.string.workout_rounds_intervals, intervalRounds, intervalIntervals),
                 style = MaterialTheme.typography.titleMedium
+            )
+        }
+        if (warmupName != null && warmupDurationSeconds != null) {
+            val outcome = stringResource(
+                if (warmupOutcome == WarmupOutcome.COMPLETED.name) {
+                    R.string.warmup_outcome_completed
+                } else {
+                    R.string.warmup_outcome_skipped
+                }
+            )
+            Text(
+                stringResource(
+                    R.string.workout_warmup_summary,
+                    warmupName,
+                    (warmupDurationSeconds + 59) / 60,
+                    outcome
+                ),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.testTag("summary_warmup")
             )
         }
         Text(

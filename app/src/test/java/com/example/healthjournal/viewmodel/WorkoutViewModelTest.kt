@@ -16,6 +16,8 @@ import com.example.healthjournal.data.local.FakeWorkoutPresetDao
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.domain.PresetExercise
 import com.example.healthjournal.domain.ScheduledDay
+import com.example.healthjournal.domain.WarmupHistoryFormatter
+import com.example.healthjournal.domain.WarmupOutcome
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -29,6 +31,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -622,6 +625,96 @@ class WorkoutViewModelTest {
         assertTrue(vm.uiState.value is WorkoutUiState.Idle)
     }
 
+
+    @Test
+    fun finishSession_withCompletedWarmup_journalDescriptionHasOneWarmupLine() = runTest {
+        val vm = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60
+        )
+        startRoutine(vm)
+        vm.advanceTime(60)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { journalRepository.insert(withArg { entry ->
+            val warmupLines = entry.description.lines().filter { it.startsWith("Warm-up:") }
+            assertEquals(1, warmupLines.size)
+            assertEquals("Warm-up: Rowing · 1 min · Completed", warmupLines.single())
+        }) }
+    }
+
+    @Test
+    fun finishSession_withSkippedWarmup_journalDescriptionShowsSkipped() = runTest {
+        val vm = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60
+        )
+        startRoutine(vm)
+        vm.advanceTime(15)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.skipWarmup()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { journalRepository.insert(withArg { entry ->
+            val warmupLines = entry.description.lines().filter { it.startsWith("Warm-up:") }
+            assertEquals(1, warmupLines.size)
+            assertEquals("Warm-up: Rowing · 1 min · Skipped", warmupLines.single())
+        }) }
+    }
+
+    @Test
+    fun finishSession_usesInjectedWarmupHistoryFormatter() = runTest {
+        val formatter = WarmupHistoryFormatter { name, seconds, completed ->
+            "localized|$name|$seconds|$completed"
+        }
+        val vm = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60,
+            warmupHistoryFormatter = formatter
+        )
+        startRoutine(vm)
+        vm.advanceTime(60)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { journalRepository.insert(withArg { entry ->
+            assertTrue(
+                "Description was: ${entry.description}",
+                entry.description.lines().contains("localized|Rowing|60|true")
+            )
+        }) }
+    }
+
+    @Test
+    fun finishSession_withWarmup_keepsOneHealthRecordAndPlannedSets() = runTest {
+        val vm = newRoutineViewModel(
+            presetSets = 2,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60
+        )
+        startRoutine(vm)
+        vm.advanceTime(60)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val summary = vm.uiState.value as WorkoutUiState.Summary
+        assertEquals(2, summary.session.setMatrix!!.single().sets.size)
+        assertEquals(1, healthSource.storedRecords().size)
+    }
+
     @Test
     fun finishSession_journalDescriptionCarriesTonnage() = runTest {
         val vm = startActiveSession(WorkoutType.FITNESS, "30")
@@ -756,7 +849,12 @@ class WorkoutViewModelTest {
         assertEquals(HealthExerciseType.HIIT, healthSource.storedRecords().single().exerciseType)
     }
     /** Builds a VM backed by one catalog exercise and a preset with [presetSets] sets. */
-    private fun newRoutineViewModel(presetSets: Int = 2): WorkoutViewModel {
+    private fun newRoutineViewModel(
+        presetSets: Int = 2,
+        warmupName: String? = null,
+        warmupDurationSeconds: Int? = null,
+        warmupHistoryFormatter: WarmupHistoryFormatter = WarmupHistoryFormatter.English
+    ): WorkoutViewModel {
         val presetDao = FakeWorkoutPresetDao()
         val catalogDao = FakeExerciseCatalogDao()
         runBlocking {
@@ -777,7 +875,9 @@ class WorkoutViewModelTest {
                                 defaultWeightKg = 60.0,
                                 restSeconds = 90
                             )
-                        )
+                        ),
+                        warmupName = warmupName,
+                        warmupDurationSeconds = warmupDurationSeconds
                     )
                 )
             )
@@ -791,7 +891,8 @@ class WorkoutViewModelTest {
             clock = { nowMillis },
             presetRepository = PresetRepository(presetDao),
             catalogDao = catalogDao,
-            healthSyncEnabled = true
+            healthSyncEnabled = true,
+            warmupHistoryFormatter = warmupHistoryFormatter
         )
     }
 
@@ -802,6 +903,157 @@ class WorkoutViewModelTest {
             vm.advanceTime(1)
             dispatcher.scheduler.advanceUntilIdle()
         }
+    }
+
+
+    @Test
+    fun startPreset_withWarmup_copiesFieldsAndStartsTimer() = runTest {
+        val vm = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 300
+        )
+
+        startRoutine(vm)
+
+        val state = vm.uiState.value as WorkoutUiState.Active
+        assertEquals("Rowing", state.session.warmupName)
+        assertEquals(300, state.session.warmupDurationSeconds)
+        assertEquals(300, state.warmupSecondsRemaining)
+        assertEquals(0, state.session.warmupElapsedSeconds)
+        assertNull(state.session.warmupOutcome)
+    }
+
+    @Test
+    fun startPreset_withoutWarmup_hasNoWarmupState() = runTest {
+        val vm = newRoutineViewModel(presetSets = 1)
+
+        startRoutine(vm)
+
+        val state = vm.uiState.value as WorkoutUiState.Active
+        assertNull(state.session.warmupName)
+        assertEquals(0, state.warmupSecondsRemaining)
+    }
+
+    @Test
+    fun advanceTime_completesWarmup_atZeroAndRecordsOutcome() = runTest {
+        val vm = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60
+        )
+        startRoutine(vm)
+
+        vm.advanceTime(60)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value as WorkoutUiState.Active
+        assertEquals(0, state.warmupSecondsRemaining)
+        assertEquals(WarmupOutcome.COMPLETED.name, state.session.warmupOutcome)
+        assertEquals(60, state.session.warmupElapsedSeconds)
+        assertFalse(state.finishPromptVisible)
+        assertEquals(
+            WarmupOutcome.COMPLETED.name,
+            runBlocking { dao.getSessionById(state.session.session_id)!!.warmupOutcome }
+        )
+    }
+
+    @Test
+    fun skipWarmup_recordsSkippedAndRevealsWorkSets() = runTest {
+        val vm = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60
+        )
+        startRoutine(vm)
+        vm.advanceTime(15)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.skipWarmup()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value as WorkoutUiState.Active
+        assertEquals(0, state.warmupSecondsRemaining)
+        assertEquals(WarmupOutcome.SKIPPED.name, state.session.warmupOutcome)
+        assertEquals(15, state.session.warmupElapsedSeconds)
+        assertEquals(
+            WarmupOutcome.SKIPPED.name,
+            runBlocking { dao.getSessionById(state.session.session_id)!!.warmupOutcome }
+        )
+    }
+
+    @Test
+    fun pauseSession_duringWarmup_isIgnored() = runTest {
+        val vm = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60
+        )
+        startRoutine(vm)
+
+        vm.pauseSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value as WorkoutUiState.Active
+        assertEquals(WorkoutStatus.ACTIVE.name, state.session.status)
+        assertTrue(state.warmupSecondsRemaining > 0)
+        assertFalse(haptics.contains(WorkoutHaptic.STOP))
+    }
+
+    @Test
+    fun finishSession_duringWarmup_marksSkippedAndCompletes() = runTest {
+        val vm = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60
+        )
+        startRoutine(vm)
+        vm.advanceTime(10)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val summary = vm.uiState.value as WorkoutUiState.Summary
+        assertEquals(WorkoutStatus.COMPLETED.name, summary.session.status)
+        assertEquals(WarmupOutcome.SKIPPED.name, summary.session.warmupOutcome)
+        assertEquals(10, summary.session.warmupElapsedSeconds)
+        assertEquals(
+            WarmupOutcome.SKIPPED.name,
+            runBlocking { dao.getSessionById(summary.session.session_id)!!.warmupOutcome }
+        )
+    }
+
+    @Test
+    fun recovery_afterInterruptedWarmup_startsAtWorkSetsAndMarksSkipped() = runTest {
+        val first = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60
+        )
+        startRoutine(first)
+        first.advanceTime(10)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val recovered = newRoutineViewModel(
+            presetSets = 1,
+            warmupName = "Rowing",
+            warmupDurationSeconds = 60
+        )
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(recovered.uiState.value is WorkoutUiState.RecoveryRequired)
+
+        recovered.resumeRecovery()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = recovered.uiState.value as WorkoutUiState.Active
+        assertEquals(WarmupOutcome.SKIPPED.name, state.session.warmupOutcome)
+        assertEquals(0, state.warmupSecondsRemaining)
+        assertEquals(10, state.session.warmupElapsedSeconds)
+        assertEquals(
+            WarmupOutcome.SKIPPED.name,
+            runBlocking { dao.getSessionById(state.session.session_id)!!.warmupOutcome }
+        )
     }
 
     @Test

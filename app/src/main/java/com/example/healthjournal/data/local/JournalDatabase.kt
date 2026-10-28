@@ -8,7 +8,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import java.util.Locale
 
-@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class, WorkoutPreset::class, ExerciseCatalogItem::class], version = 19, exportSchema = true)
+@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class, WorkoutPreset::class, ExerciseCatalogItem::class], version = 20, exportSchema = true)
 @androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
@@ -30,7 +30,7 @@ abstract class JournalDatabase : RoomDatabase() {
         private var INSTANCE: JournalDatabase? = null
 
         /** Current Room database schema version; single-sourced for restore validation. */
-        const val CURRENT_SCHEMA_VERSION: Int = 19
+        const val CURRENT_SCHEMA_VERSION: Int = 20
 
         // v1 -> v2: add isSynced
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -311,6 +311,31 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        // v19 -> v20: optional timed warm-up per routine preset, plus the
+        // warm-up metadata copied onto the executed session for history.
+        val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE `workout_presets` ADD COLUMN `warmupName` TEXT"
+                )
+                database.execSQL(
+                    "ALTER TABLE `workout_presets` ADD COLUMN `warmupDurationSeconds` INTEGER"
+                )
+                database.execSQL(
+                    "ALTER TABLE `workout_sessions` ADD COLUMN `warmupName` TEXT"
+                )
+                database.execSQL(
+                    "ALTER TABLE `workout_sessions` ADD COLUMN `warmupDurationSeconds` INTEGER"
+                )
+                database.execSQL(
+                    "ALTER TABLE `workout_sessions` ADD COLUMN `warmupElapsedSeconds` INTEGER"
+                )
+                database.execSQL(
+                    "ALTER TABLE `workout_sessions` ADD COLUMN `warmupOutcome` TEXT"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -324,7 +349,8 @@ abstract class JournalDatabase : RoomDatabase() {
                     MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
                     MIGRATION_16_17,
                     MIGRATION_17_18,
-                    MIGRATION_18_19
+                    MIGRATION_18_19,
+                    MIGRATION_19_20
                 ).build()
                 INSTANCE = instance
                 instance

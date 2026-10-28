@@ -20,6 +20,8 @@ import kotlin.text.Charsets
  *  - [EntityFile.PERSONAL_CARD]    -> personal_card.json
  *  - [EntityFile.DELETED_ENTRIES]  -> deleted_entries.json
  *  - [EntityFile.ENTRY_TAGS]       -> entry_tags.json
+ *  - [EntityFile.WORKOUTS]         -> workouts.json
+ *  - [EntityFile.PRESETS]          -> presets.json
  *  - media/<filename>              -> referenced attachment/photo files
  *  - [MANIFEST_NAME] -> backup.json (written first)
  *
@@ -51,7 +53,8 @@ class BackupWriter(
             EntityFile.PERSONAL_CARD,
             EntityFile.DELETED_ENTRIES,
             EntityFile.ENTRY_TAGS,
-            EntityFile.WORKOUTS
+            EntityFile.WORKOUTS,
+            EntityFile.PRESETS
         )
 
         val manifest = BackupManifest(
@@ -69,6 +72,7 @@ class BackupWriter(
         writeJsonEntry(zip, EntityFile.DELETED_ENTRIES, data.deletedEntries)
         writeJsonEntry(zip, EntityFile.ENTRY_TAGS, data.entryTags)
         writeJsonEntry(zip, EntityFile.WORKOUTS, data.workoutSessions)
+        writeJsonEntry(zip, EntityFile.PRESETS, data.presets)
 
         for ((entryName, sourceFile) in mediaFiles) {
             writeMediaEntry(zip, entryName, sourceFile)
@@ -112,5 +116,6 @@ class BackupWriter(
         const val DELETED_ENTRIES = "deleted_entries.json"
         const val ENTRY_TAGS = "entry_tags.json"
         const val WORKOUTS = "workouts.json"
+        const val PRESETS = "presets.json"
     }
 }

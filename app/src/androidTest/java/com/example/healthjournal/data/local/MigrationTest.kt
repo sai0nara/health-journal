@@ -407,6 +407,80 @@ class MigrationTest {
         org.junit.Assert.assertEquals(listOf("sleep"), tagsFor(db, "other_tags"))
     }
 
+
+    @Test
+    fun migrate19To20_AddsWarmupColumnsAndPreservesRows() {
+        helper.createDatabase("$dbName-19-20", 19).apply {
+            execSQL(
+                "INSERT INTO workout_presets (id, name, scheduledDay, exercises, lastModified) " +
+                    "VALUES ('preset_warmup', 'Leg Day', 'ANY', '[]', 1000)"
+            )
+            execSQL(
+                "INSERT INTO workout_sessions (session_id, type, status, startTimestamp, elapsedSeconds, notes, lastModified) " +
+                    "VALUES ('ws_before_warmup', 'FITNESS', 'COMPLETED', 1000, 600, 'Before 19 to 20', 1000)"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-19-20",
+            20,
+            true,
+            JournalDatabase.MIGRATION_19_20
+        )
+
+        db.query("PRAGMA table_info(workout_presets)").use { cursor ->
+            val columns = buildList {
+                while (cursor.moveToNext()) add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
+            }
+            org.junit.Assert.assertTrue("warmupName column should be added", "warmupName" in columns)
+            org.junit.Assert.assertTrue("warmupDurationSeconds column should be added", "warmupDurationSeconds" in columns)
+        }
+        db.query("PRAGMA table_info(workout_sessions)").use { cursor ->
+            val columns = buildList {
+                while (cursor.moveToNext()) add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
+            }
+            org.junit.Assert.assertTrue("warmupName column should be added", "warmupName" in columns)
+            org.junit.Assert.assertTrue("warmupDurationSeconds column should be added", "warmupDurationSeconds" in columns)
+            org.junit.Assert.assertTrue("warmupElapsedSeconds column should be added", "warmupElapsedSeconds" in columns)
+            org.junit.Assert.assertTrue("warmupOutcome column should be added", "warmupOutcome" in columns)
+        }
+
+        db.query("SELECT name FROM workout_presets WHERE id = 'preset_warmup'").use { cursor ->
+            org.junit.Assert.assertTrue("Preset row lost during migration", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Leg Day", cursor.getString(0))
+        }
+        db.query("SELECT notes FROM workout_sessions WHERE session_id = 'ws_before_warmup'").use { cursor ->
+            org.junit.Assert.assertTrue("Session row lost during migration", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Before 19 to 20", cursor.getString(0))
+        }
+
+        db.execSQL(
+            "INSERT INTO workout_presets (id, name, scheduledDay, exercises, warmupName, warmupDurationSeconds, lastModified) " +
+                "VALUES ('preset_with_warmup', 'Push Day', 'ANY', '[]', 'Rowing', 300, 2000)"
+        )
+        db.query("SELECT warmupName, warmupDurationSeconds FROM workout_presets WHERE id = 'preset_with_warmup'").use { cursor ->
+            org.junit.Assert.assertTrue("Warm-up columns should be usable", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Rowing", cursor.getString(0))
+            org.junit.Assert.assertEquals(300, cursor.getInt(1))
+        }
+
+        db.execSQL(
+            "INSERT INTO workout_sessions (session_id, type, status, startTimestamp, elapsedSeconds, warmupName, warmupDurationSeconds, warmupElapsedSeconds, warmupOutcome, notes, lastModified) " +
+                "VALUES ('ws_with_warmup', 'FITNESS', 'COMPLETED', 2000, 600, 'Rowing', 300, 180, 'SKIPPED', '', 2000)"
+        )
+        db.query(
+            "SELECT warmupName, warmupDurationSeconds, warmupElapsedSeconds, warmupOutcome " +
+                "FROM workout_sessions WHERE session_id = 'ws_with_warmup'"
+        ).use { cursor ->
+            org.junit.Assert.assertTrue("Session warm-up columns should be usable", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Rowing", cursor.getString(0))
+            org.junit.Assert.assertEquals(300, cursor.getInt(1))
+            org.junit.Assert.assertEquals(180, cursor.getInt(2))
+            org.junit.Assert.assertEquals("SKIPPED", cursor.getString(3))
+        }
+    }
+
     private fun tagsFor(db: androidx.sqlite.db.SupportSQLiteDatabase, entryId: String): List<String> =
         db.query("SELECT tag FROM EntryTagCrossRef WHERE entryId = ? ORDER BY tag", arrayOf(entryId)).use { cursor ->
             buildList { while (cursor.moveToNext()) add(cursor.getString(0)) }
