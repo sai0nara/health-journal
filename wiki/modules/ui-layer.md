@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-10-27
+Last updated: 2026-10-30
 
 ## What lives here
 
@@ -59,11 +59,21 @@ The summary and controls are driven from the viewmodel's `WorkoutUiState` (see
   `MeasurementsScreen`, `PersonalCardScreen`, `WorkoutScreen`, plus the
   export and restore screens in the [[export-restore]] feature.
 - **Components** — reusable pieces such as `JournalEntryItem`, `RichTextToolbar`,
-  `MeasurementEntrySheet`, `ParamTrendChart`, and `SharedSearchBar`.
+  `MeasurementEntrySheet`, `VitalsEntrySheet`, `VitalsFieldsEditor`,
+  `ParamTrendChart`, and `SharedSearchBar`.
 - **Theme** — a custom material theme and the medical color system under `ui/theme`.
 
 Long journal entries are truncated in the list with a "Show More" interaction point,
 exercised by the truncation UI test on the instrumented stack.
+
+Journal cards render each stored vital — blood pressure, heart rate, blood glucose,
+body temperature, SpO2, and sleep — as a chip with its display unit, plus an
+`Add vitals` / `Edit vitals` action on non-archived entries. The action opens a
+quick-add sheet; the same shared field editor is embedded in `AddEntryScreen`
+alongside a read-only sleep value, and archived entries render the values
+read-only. Both surfaces format through
+`ValidateVitals` with the `UnitSettings` preference, keeping metric and imperial
+display consistent.
 
 The dashboard (`MainScreen`) top app bar carries the bundled app logo
 (`app/src/main/res/drawable-nodpi/app_logo.png`) next to the title; the same artwork
@@ -80,6 +90,11 @@ dashboard tiles.
 ## Sources
 
 - `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` — the main history feed screen.
+- `app/src/main/java/com/example/healthjournal/ui/screens/AddEntryScreen.kt` — the entry create/edit/read-only screen with inline manual vitals.
+- `app/src/main/java/com/example/healthjournal/ui/components/JournalEntryItem.kt` — the entry card with vitals chips and the quick-add action.
+- `app/src/main/java/com/example/healthjournal/ui/components/VitalsEntrySheet.kt` — the card's vitals quick-add/edit sheet.
+- `app/src/main/java/com/example/healthjournal/ui/components/VitalsFieldsEditor.kt` — the shared manual-vitals fields.
+- `app/src/main/java/com/example/healthjournal/domain/ValidateVitals.kt` — vitals validation and display formatting.
 - `app/src/main/java/com/example/healthjournal/ui/screens/MainScreen.kt` — the dashboard screen and its branded top bar.
 - `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` — the workout hub, session screen, warm-up panel, summary, and manual-log dialog.
 - `app/src/main/java/com/example/healthjournal/ui/screens/PresetLibraryScreen.kt` — the preset library and warm-up editor.

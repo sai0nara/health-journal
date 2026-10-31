@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.UnitConverter
 import com.itextpdf.io.image.ImageDataFactory
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
@@ -63,8 +64,21 @@ class PdfExportUseCase(
                     .setFontSize(11f))
 
                 // Metrics
-                if (entry.bp_systolic != null) {
-                    val metrics = "BP: ${entry.bp_systolic?.toInt()}/${entry.bp_diastolic?.toInt()} mmHg | HR: ${entry.heart_rate_avg} bpm | Sleep: ${entry.sleep_hours}h"
+                val metrics = buildList {
+                    if (entry.bp_systolic != null && entry.bp_diastolic != null) {
+                        add("BP: ${entry.bp_systolic.toInt()}/${entry.bp_diastolic.toInt()} mmHg")
+                    }
+                    entry.heart_rate_avg?.let { add("HR: $it bpm") }
+                    entry.blood_glucose_mmol?.let {
+                        add("Glucose: ${UnitConverter.formatDouble(it)} mmol/L")
+                    }
+                    entry.body_temperature_c?.let {
+                        add("Temp: ${UnitConverter.formatDouble(it)} °C")
+                    }
+                    entry.spo2_percent?.let { add("SpO2: $it %") }
+                    entry.sleep_hours?.let { add("Sleep: ${UnitConverter.formatDouble(it.toDouble())}h") }
+                }.joinToString(" | ")
+                if (metrics.isNotEmpty()) {
                     document.add(Paragraph(metrics)
                         .setItalic()
                         .setFontSize(10f)

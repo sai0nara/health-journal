@@ -3,6 +3,7 @@ package com.example.healthjournal.ui.screens
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.example.healthjournal.R
 import com.example.healthjournal.util.FakeJournalViewModel
@@ -40,7 +41,7 @@ class CyrillicSpacingTest {
         composeTestRule.onNodeWithText(targetString(R.string.entry_hint_feeling))
             .performTextInput(text)
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText(targetString(R.string.entry_save)).performClick()
+        composeTestRule.onNodeWithText(targetString(R.string.entry_save)).performScrollTo().performClick()
         composeTestRule.waitUntil(5000) { backCalled }
         return viewModel.addEntryCalledWith?.description ?: ""
     }

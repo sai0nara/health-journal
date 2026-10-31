@@ -5,7 +5,7 @@
 > it in sync when coverage moves. A QA pipeline suite derived from these docs
 > holds 52 cases (18 P0); all P0s are automated in the files cited below.
 
-Last updated: 2026-10-19
+Last updated: 2026-10-29
 
 ## Automated coverage
 
@@ -22,7 +22,8 @@ Last updated: 2026-10-19
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/PresetLibraryScreenTest.kt` | imperial preset default render and metric save |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/WorkoutScreenTest.kt` | imperial manual weight entry, metric labels and manual editor unchanged |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/PersonalCardScreenTest.kt` | converted card rows, ft/in entry save |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` | vitals identical under both systems |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` | unit-invariant vitals identical under both systems |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/components/JournalEntryItemTest.kt` | card chips convert glucose/temperature; BP/HR invariant |
 
 ## Test cases
 
@@ -35,7 +36,7 @@ Last updated: 2026-10-19
 | T-5 | Imperial routine and preset weights | imperial preference | run routine; edit preset default | rows/header/tonnage in lb; kg persisted |
 | T-6 | Personal-card rows follow preference | saved height/weight | switch to imperial | rows show in/lbs |
 | T-7 | Mid-draft toggle preserves values | partial draft typed | flip preference, reopen | values preserved in new units |
-| T-8 | Journal vitals invariance | entry with BP/HR/sleep | render under both preferences | identical text both times |
+| T-8 | Journal vitals display units | entry with BP/HR/glucose/temperature | render under both preferences | BP/HR identical; glucose and temperature convert |
 | T-9 | Display-unit validation | imperial preference | over-cap lb/in input | display-unit cap message; save blocked |
 | T-10 | Full verification | — | JVM suite, each UI class in isolation, wiki lint | all green, lint exits 0 |
 | T-11 | Manual editor imperial weight | imperial preference | enter lb in the manual add-set field, save | metric kg persisted; lb re-rendered |
@@ -67,6 +68,7 @@ Last updated: 2026-10-19
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/RoutineExecutionScreenTest.kt` — routine UI.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/PresetLibraryScreenTest.kt` — preset UI.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/PersonalCardScreenTest.kt` — card UI.
-- `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` — vitals invariance.
+- `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` — unit-invariant vitals.
+- `app/src/androidTest/java/com/example/healthjournal/ui/components/JournalEntryItemTest.kt` — converted vitals chips.
 - `Docs/prd/unit-conversion.md` — requirements under test.
 - `Docs/psd/unit-conversion.md` — design the cases verify.

@@ -37,11 +37,23 @@ import com.mohamedrejeb.richeditor.ui.material3.RichText
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.UnitConverter
+import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.HashtagParser
+import com.example.healthjournal.domain.ValidateVitals
+import com.example.healthjournal.domain.VitalField
+import com.example.healthjournal.domain.VitalsInput
 import com.example.healthjournal.util.HtmlEntities
 import com.example.healthjournal.ui.components.EnrichmentPanel
 import com.example.healthjournal.ui.components.RichTextToolbar
 import com.example.healthjournal.ui.components.TagSelectionRow
+import com.example.healthjournal.ui.components.VitalsFieldsEditor
+import com.example.healthjournal.ui.components.formatSleepHours
+import com.example.healthjournal.ui.components.hasAnyVitals
+import com.example.healthjournal.ui.components.toVitals
+import com.example.healthjournal.ui.components.unitFor
+import com.example.healthjournal.viewmodel.HealthSyncResult
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
 import java.io.File
@@ -65,9 +77,9 @@ fun AddEntryScreen(
     var entryTags by remember { mutableStateOf(setOf<String>()) }
     
     // Health Metrics State
-    var bpSystolic by remember { mutableStateOf<Double?>(null) }
-    var bpDiastolic by remember { mutableStateOf<Double?>(null) }
-    var heartRate by remember { mutableStateOf<Int?>(null) }
+    val unitSystem = UnitSettings.read(context)
+    var vitalsInput by remember { mutableStateOf(VitalsInput()) }
+    val vitalsErrors = ValidateVitals.validate(vitalsInput, unitSystem)
     var sleepHours by remember { mutableStateOf<Float?>(null) }
     var isHealthSyncing by remember { mutableStateOf(false) }
 
@@ -135,6 +147,17 @@ fun AddEntryScreen(
         initialMinute = calendar.get(Calendar.MINUTE)
     )
 
+    // Synced values replace BP/HR but never clear manually entered glucose,
+    // temperature, or SpO2; a missing Health Connect value leaves the draft alone.
+    fun applyHealthSyncResult(result: HealthSyncResult) {
+        vitalsInput = vitalsInput.copy(
+            systolic = result.bpSystolic?.let { UnitConverter.formatDouble(it) } ?: vitalsInput.systolic,
+            diastolic = result.bpDiastolic?.let { UnitConverter.formatDouble(it) } ?: vitalsInput.diastolic,
+            heartRate = result.heartRate?.toString() ?: vitalsInput.heartRate
+        )
+        sleepHours = result.sleepHours ?: sleepHours
+    }
+
     // Health Connect Permission Launcher
     val healthPermissionsLauncher = rememberLauncherForActivityResult(
         contract = PermissionController.createRequestPermissionResultContract()
@@ -144,11 +167,7 @@ fun AddEntryScreen(
         if (granted.containsAll(viewModel.healthPermissions)) {
             scope.launch {
                 isHealthSyncing = true
-                val result = viewModel.syncHealthData(selectedTimestamp)
-                bpSystolic = result.bpSystolic
-                bpDiastolic = result.bpDiastolic
-                heartRate = result.heartRate
-                sleepHours = result.sleepHours
+                applyHealthSyncResult(viewModel.syncHealthData(selectedTimestamp))
                 isHealthSyncing = false
             }
         } else {
@@ -167,9 +186,7 @@ fun AddEntryScreen(
                 selectedTimestamp = entry.timestamp
                 attachedPhotoUris = entry.photo_urls?.map { Uri.parse(it) } ?: emptyList()
                 attachedFiles = entry.attachments ?: emptyList()
-                bpSystolic = entry.bp_systolic
-                bpDiastolic = entry.bp_diastolic
-                heartRate = entry.heart_rate_avg
+                vitalsInput = ValidateVitals.formatVitals(entry.toVitals(), unitSystem)
                 sleepHours = entry.sleep_hours
                 entryTags = entry.tags?.toSet() ?: emptySet()
             }
@@ -386,27 +403,56 @@ fun AddEntryScreen(
                 }
             
             // Health Metrics Section
-            if (bpSystolic != null || heartRate != null || sleepHours != null) {
+            if (isReadOnly) {
+                existingEntry
+                    ?.takeIf { it.hasAnyVitals() }
+                    ?.let { ReadOnlyVitalsSummary(entry = it, unitSystem = unitSystem) }
+            } else {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier.padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        if (bpSystolic != null && bpDiastolic != null) {
-                            HealthMetricItem(
-                                icon = Icons.Default.MonitorHeart, 
-                                value = "${bpSystolic?.toInt()}/${bpDiastolic?.toInt()}", 
-                                label = stringResource(R.string.entry_metric_bp)
-                            )
-                        }
-                        heartRate?.let {
-                            HealthMetricItem(icon = Icons.Default.Favorite, value = "$it", label = stringResource(R.string.entry_metric_hr))
-                        }
-                        sleepHours?.let {
-                            HealthMetricItem(icon = Icons.Default.Bedtime, value = "%.1fh".format(it), label = stringResource(R.string.entry_metric_sleep))
+                        Text(
+                            text = stringResource(R.string.entry_health_metrics),
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        VitalsFieldsEditor(
+                            input = vitalsInput,
+                            onInputChange = { vitalsInput = it },
+                            errors = vitalsErrors,
+                            unitSystem = unitSystem
+                        )
+                        sleepHours?.let { hours ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Bedtime,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = stringResource(R.string.entry_metric_sleep),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                                Text(
+                                    text = stringResource(
+                                        R.string.entry_vitals_format_value_unit,
+                                        formatSleepHours(hours),
+                                        stringResource(R.string.entry_vitals_unit_hours)
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -530,11 +576,7 @@ fun AddEntryScreen(
 
                             if (viewModel.hasHealthPermissions()) {
                                 isHealthSyncing = true
-                                val result = viewModel.syncHealthData(selectedTimestamp)
-                                bpSystolic = result.bpSystolic
-                                bpDiastolic = result.bpDiastolic
-                                heartRate = result.heartRate
-                                sleepHours = result.sleepHours
+                                applyHealthSyncResult(viewModel.syncHealthData(selectedTimestamp))
                                 isHealthSyncing = false
                             } else {
                                 android.util.Log.d("AddEntryScreen", "Launching Health permissions for: ${viewModel.healthPermissions}")
@@ -555,6 +597,8 @@ fun AddEntryScreen(
                     val descriptionHtml = HtmlEntities.decodeNonAsciiNamedEntities(richTextState.toHtml())
                     val plainText = richTextState.annotatedString.text
                     if (plainText.isNotBlank()) {
+                        val vitals = ValidateVitals.toEntryVitals(vitalsInput, unitSystem)
+                        if (vitals != null) {
                         scope.launch {
                             val finalTimestamp = if (selectedTimestamp > System.currentTimeMillis()) {
                                 System.currentTimeMillis()
@@ -590,10 +634,13 @@ fun AddEntryScreen(
                                     timestamp = finalTimestamp,
                                     photoUrls = persistentPhotoUrls,
                                     attachments = persistentAttachments,
-                                    bpSystolic = bpSystolic,
-                                    bpDiastolic = bpDiastolic,
-                                    heartRate = heartRate,
+                                    bpSystolic = vitals.bpSystolic,
+                                    bpDiastolic = vitals.bpDiastolic,
+                                    heartRate = vitals.heartRate,
                                     sleepHours = sleepHours,
+                                    bloodGlucoseMmol = vitals.bloodGlucoseMmol,
+                                    bodyTemperatureC = vitals.bodyTemperatureC,
+                                    spo2Percent = vitals.spo2Percent,
                                     tags = tagsWithHashtags
                                 )
                             } else {
@@ -604,10 +651,13 @@ fun AddEntryScreen(
                                             timestamp = finalTimestamp,
                                             photo_urls = persistentPhotoUrls,
                                             attachments = persistentAttachments,
-                                            bp_systolic = bpSystolic,
-                                            bp_diastolic = bpDiastolic,
-                                            heart_rate_avg = heartRate,
-                                            sleep_hours = sleepHours
+                                            bp_systolic = vitals.bpSystolic,
+                                            bp_diastolic = vitals.bpDiastolic,
+                                            heart_rate_avg = vitals.heartRate,
+                                            sleep_hours = sleepHours,
+                                            blood_glucose_mmol = vitals.bloodGlucoseMmol,
+                                            body_temperature_c = vitals.bodyTemperatureC,
+                                            spo2_percent = vitals.spo2Percent
                                         ),
                                         tags = tagsWithHashtags
                                     )
@@ -615,8 +665,10 @@ fun AddEntryScreen(
                             }
                             onBack()
                         }
+                        }
                     }
                 },
+                enabled = vitalsErrors.isEmpty(),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (entryId == null) stringResource(R.string.entry_save) else stringResource(R.string.entry_update))
@@ -633,5 +685,99 @@ fun HealthMetricItem(icon: androidx.compose.ui.graphics.vector.ImageVector, valu
         Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
         Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
         Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ReadOnlyVitalsSummary(entry: JournalEntry, unitSystem: UnitSystem) {
+    val vitals = entry.toVitals()
+    val display = ValidateVitals.formatVitals(vitals, unitSystem)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.entry_health_metrics),
+                style = MaterialTheme.typography.titleSmall
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (vitals.bpSystolic != null && vitals.bpDiastolic != null) {
+                    HealthMetricItem(
+                        icon = Icons.Default.MonitorHeart,
+                        value = stringResource(
+                            R.string.entry_vitals_format_bp,
+                            display.systolic,
+                            display.diastolic,
+                            unitFor(VitalField.SYSTOLIC, unitSystem)
+                        ),
+                        label = stringResource(R.string.entry_metric_bp)
+                    )
+                }
+                vitals.heartRate?.let { heartRate ->
+                    HealthMetricItem(
+                        icon = Icons.Default.Favorite,
+                        value = stringResource(
+                            R.string.entry_vitals_format_value_unit,
+                            heartRate.toString(),
+                            unitFor(VitalField.HEART_RATE, unitSystem)
+                        ),
+                        label = stringResource(R.string.entry_metric_hr)
+                    )
+                }
+                vitals.bloodGlucoseMmol?.let {
+                    HealthMetricItem(
+                        icon = Icons.Default.WaterDrop,
+                        value = stringResource(
+                            R.string.entry_vitals_format_value_unit,
+                            display.glucose,
+                            unitFor(VitalField.GLUCOSE, unitSystem)
+                        ),
+                        label = stringResource(R.string.vitals_field_glucose)
+                    )
+                }
+                vitals.bodyTemperatureC?.let {
+                    HealthMetricItem(
+                        icon = Icons.Default.Thermostat,
+                        value = stringResource(
+                            R.string.entry_vitals_format_value_unit,
+                            display.temperature,
+                            unitFor(VitalField.TEMPERATURE, unitSystem)
+                        ),
+                        label = stringResource(R.string.vitals_field_temperature)
+                    )
+                }
+                vitals.spo2Percent?.let { spo2 ->
+                    HealthMetricItem(
+                        icon = Icons.Default.Air,
+                        value = stringResource(
+                            R.string.entry_vitals_format_value_unit,
+                            spo2.toString(),
+                            unitFor(VitalField.SPO2, unitSystem)
+                        ),
+                        label = stringResource(R.string.vitals_field_spo2)
+                    )
+                }
+                entry.sleep_hours?.let { hours ->
+                    HealthMetricItem(
+                        icon = Icons.Default.Bedtime,
+                        value = stringResource(
+                            R.string.entry_vitals_format_value_unit,
+                            formatSleepHours(hours),
+                            stringResource(R.string.entry_vitals_unit_hours)
+                        ),
+                        label = stringResource(R.string.entry_metric_sleep)
+                    )
+                }
+            }
+        }
     }
 }

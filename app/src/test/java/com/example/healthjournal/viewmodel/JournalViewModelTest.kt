@@ -13,6 +13,7 @@ import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.domain.EntryVitals
 import com.example.healthjournal.health.HealthConnectManager
 import com.example.healthjournal.sync.SyncManager
 import com.example.healthjournal.sync.SyncWorker
@@ -26,6 +27,7 @@ import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -695,5 +697,140 @@ class JournalViewModelTest {
             healthManager, mediaService, testDispatcher
         )
         assertTrue(reloaded.isHealthSyncEnabled.value)
+    }
+
+    @Test
+    fun updateVitals_writesCanonicalValuesAndMarksPendingSync() = runTest {
+        val existing = JournalEntry(
+            entry_id = "vitals-1",
+            description = "Morning",
+            timestamp = 1_000L,
+            lastModified = 1_000L,
+            photo_urls = listOf("photo://1"),
+            attachments = listOf(AttachmentData("a", "uri://a", "text/plain")),
+            bp_systolic = 118.0,
+            bp_diastolic = 78.0,
+            sleep_hours = 7.5f,
+            isArchived = true,
+            isSynced = true
+        )
+        coEvery { repository.getEntryById("vitals-1") } returns existing
+        val inserted = slot<JournalEntry>()
+        coEvery { repository.insert(capture(inserted)) } returns Unit
+
+        viewModel.updateVitals(
+            "vitals-1",
+            EntryVitals(
+                bpSystolic = 120.0,
+                bpDiastolic = 80.0,
+                heartRate = 72,
+                bloodGlucoseMmol = 5.4,
+                bodyTemperatureC = 36.6,
+                spo2Percent = 98
+            )
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val saved = inserted.captured
+        assertEquals(120.0, saved.bp_systolic!!, 0.001)
+        assertEquals(80.0, saved.bp_diastolic!!, 0.001)
+        assertEquals(72, saved.heart_rate_avg)
+        assertEquals(5.4, saved.blood_glucose_mmol!!, 0.001)
+        assertEquals(36.6, saved.body_temperature_c!!, 0.001)
+        assertEquals(98, saved.spo2_percent)
+        assertEquals(7.5f, saved.sleep_hours!!, 0.001f)
+        assertEquals("Morning", saved.description)
+        assertEquals(1_000L, saved.timestamp)
+        assertEquals(listOf("photo://1"), saved.photo_urls)
+        assertEquals(existing.attachments, saved.attachments)
+        assertTrue(saved.isArchived!!)
+        assertFalse(saved.isSynced!!)
+        assertEquals("PENDING_SYNC", saved.syncStatus)
+        assertTrue(saved.lastModified > 1_000L)
+        coVerify(exactly = 0) { repository.addTag(any(), any()) }
+        coVerify(exactly = 0) { repository.removeTag(any(), any()) }
+        verify { SyncManager.enqueuePeriodicSync(any()) }
+    }
+
+    @Test
+    fun updateVitals_withEmptyVitals_clearsEditableFields() = runTest {
+        val existing = JournalEntry(
+            entry_id = "vitals-2",
+            description = "Clear",
+            bp_systolic = 130.0,
+            bp_diastolic = 85.0,
+            heart_rate_avg = 80,
+            blood_glucose_mmol = 6.1,
+            body_temperature_c = 37.2,
+            spo2_percent = 97
+        )
+        coEvery { repository.getEntryById("vitals-2") } returns existing
+        val inserted = slot<JournalEntry>()
+        coEvery { repository.insert(capture(inserted)) } returns Unit
+
+        viewModel.updateVitals("vitals-2", EntryVitals())
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val saved = inserted.captured
+        assertNull(saved.bp_systolic)
+        assertNull(saved.bp_diastolic)
+        assertNull(saved.heart_rate_avg)
+        assertNull(saved.blood_glucose_mmol)
+        assertNull(saved.body_temperature_c)
+        assertNull(saved.spo2_percent)
+    }
+
+    @Test
+    fun updateVitals_unknownEntry_doesNotInsert() = runTest {
+        coEvery { repository.getEntryById("missing") } returns null
+        coEvery { repository.insert(any()) } returns Unit
+
+        viewModel.updateVitals("missing", EntryVitals(heartRate = 70))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.insert(any()) }
+    }
+
+    @Test
+    fun addEntry_persistsManualVitals() = runTest {
+        val inserted = slot<JournalEntry>()
+        coEvery { repository.insert(capture(inserted)) } returns Unit
+
+        viewModel.addEntry(
+            description = "With vitals",
+            bpSystolic = 120.0,
+            bpDiastolic = 80.0,
+            heartRate = 72,
+            sleepHours = 7.5f,
+            bloodGlucoseMmol = 5.4,
+            bodyTemperatureC = 36.6,
+            spo2Percent = 98
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val saved = inserted.captured
+        assertEquals(120.0, saved.bp_systolic!!, 0.001)
+        assertEquals(80.0, saved.bp_diastolic!!, 0.001)
+        assertEquals(72, saved.heart_rate_avg)
+        assertEquals(7.5f, saved.sleep_hours!!, 0.001f)
+        assertEquals(5.4, saved.blood_glucose_mmol!!, 0.001)
+        assertEquals(36.6, saved.body_temperature_c!!, 0.001)
+        assertEquals(98, saved.spo2_percent)
+    }
+
+    @Test
+    fun updateEntry_marksEntryUnsynced() = runTest {
+        val entry = JournalEntry(entry_id = "e4", description = "Edited", isSynced = true)
+        coEvery { repository.getTagsForEntry("e4") } returns emptyList()
+        coEvery { repository.addTag(any(), any()) } returns Unit
+        coEvery { repository.removeTag(any(), any()) } returns Unit
+        val inserted = slot<JournalEntry>()
+        coEvery { repository.insert(capture(inserted)) } returns Unit
+
+        viewModel.updateEntry(entry, emptySet())
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(inserted.captured.isSynced!!)
+        assertEquals("PENDING_SYNC", inserted.captured.syncStatus)
     }
 }

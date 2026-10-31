@@ -1,19 +1,20 @@
 # Entry Logging — Product Requirements
 
 > Capture a dated journal entry with rich text, date/time, tags, attached media,
-> and optional health metrics pulled from Health Connect — and edit or view it
-> (read-only, if archived) later.
+> and optional health metrics — typed manually or pulled from Health Connect —
+> and edit or view it (read-only, if archived) later.
 
-Last updated: 2026-09-02
+Last updated: 2026-10-29
 
 ## Overview
 
 Entry logging is the core capture path of the app. A user writes what happened
 and when, marking relevant category tags, attaching photos and generic files,
-and (via Health Connect) pulling that day's blood-pressure, heart-rate, and
-sleep numbers into the entry. The Add Entry screen doubles as the Edit screen
-for a chosen entry, and shows an archived entry read-only so it can be
-unarchived rather than edited in place.
+and recording blood pressure, heart rate, blood glucose, body temperature, and
+SpO2 — typing them directly or (via Health Connect) pulling that day's
+blood-pressure, heart-rate, and sleep numbers into the entry. The Add Entry
+screen doubles as the Edit screen for a chosen entry, and shows an archived entry
+read-only so it can be unarchived rather than edited in place.
 
 ## Goals / Non-goals
 
@@ -23,6 +24,7 @@ unarchived rather than edited in place.
   strikethrough, lists, links) and plain-text fallback handling.
 - Select categories from a fixed set of tags.
 - Attach photos and generic files.
+- Record the five manual vitals inline, with unit-aware labels and validation.
 - Import that day's health metrics into the entry from Health Connect.
 - Clamp/reject future timestamps so entries are never dated in the future.
 
@@ -57,6 +59,10 @@ unarchived rather than edited in place.
 - FR-6: The Enrichment panel's Health action imports that day's blood-pressure,
   heart-rate, and sleep from Health Connect into the entry.
 - FR-7: Editing an archived entry is read-only and offers an Unarchive action.
+- FR-8: The Health metrics section accepts manual blood pressure, heart rate,
+  blood glucose, body temperature, and SpO2; Save is blocked while any field is
+  invalid, and imported Health Connect values never clear manual glucose,
+  temperature, or SpO2.
 
 ## Non-functional requirements
 
@@ -74,6 +80,8 @@ unarchived rather than edited in place.
 - AC-5: Health Connect data, when granted, fills blood pressure, heart rate, and
   sleep on the entry.
 - AC-6: An archived entry opens read-only with an Unarchive action.
+- AC-7: Manual vitals prefill when editing, save on create and update, and an
+  invalid field blocks Save with an inline message.
 
 ## Out of scope
 
@@ -92,6 +100,8 @@ unarchived rather than edited in place.
 ## Sources
 
 - `app/src/main/java/com/example/healthjournal/ui/screens/AddEntryScreen.kt` — create/edit/read-only capture UI.
+- `app/src/main/java/com/example/healthjournal/ui/components/VitalsFieldsEditor.kt` — inline manual-vitals editor.
+- `app/src/main/java/com/example/healthjournal/domain/ValidateVitals.kt` — manual-vitals validation and conversion.
 - `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` — add/update/tag/save-persistent logic.
 - `app/src/main/java/com/example/healthjournal/data/JournalRepository.kt` — insert and tag persistence.
 - `app/src/main/java/com/example/healthjournal/data/local/JournalEntry.kt` — the persisted entry model.

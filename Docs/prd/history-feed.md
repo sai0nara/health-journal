@@ -1,10 +1,11 @@
 # History Feed — Product Requirements
 
-> Browse the journal chronologically, search and filter it, and manage an
-> archive (archive by swipe, restore, or permanently delete) from the History
-> and Archive screens. The History overflow menu also opens the workout hub.
+> Browse the journal chronologically, search and filter it, manage an archive
+> (archive by swipe, restore, or permanently delete), and see or quick-add each
+> entry's vitals from its card. The History overflow menu also opens the workout
+> hub.
 
-Last updated: 2026-10-19
+Last updated: 2026-10-29
 
 ## Overview
 
@@ -24,6 +25,8 @@ from the active feed.
 - List non-archived entries newest-first with optional ascending sort.
 - Substring-search entries by content, and filter by tags (AND semantics).
 - Archive from the feed by swipe (with undo) and restore from the archive.
+- Show each entry's stored vitals as unit-aware chips and quick-add or edit them
+  from the card.
 - Permanently delete selected entries or empty the whole archive, with
   confirmation.
 - Leave a tombstone on permanent deletion so the cloud cannot resurrect it.
@@ -59,6 +62,11 @@ from the active feed.
 - FR-8: Permanent deletion writes a tombstone and cleans up the entry's local
   media files.
 - FR-9: A Workouts overflow-menu action opens the workout hub.
+- FR-10: Each card renders one chip per present vital (BP, heart rate, glucose,
+  temperature, SpO2) and sleep, using the app's display units.
+- FR-11: Non-archived cards offer `Add vitals` / `Edit vitals`, opening a sheet
+  that saves the five manual vitals; archived cards show the values without the
+  action.
 
 ## Non-functional requirements
 
@@ -75,6 +83,8 @@ from the active feed.
 - AC-4: Swiping archives the entry and Undo restores it.
 - AC-5: Archive multi-select can restore, delete (confirmed), and empty all
   (confirmed); deletion removes local media files.
+- AC-6: Cards show vitals chips with units; the card action opens a prefilled
+  sheet whose Save updates the card and whose Cancel changes nothing.
 
 ## Out of scope
 
@@ -84,6 +94,7 @@ from the active feed.
 ## Cross-references
 
 - `Docs/prd/entry-logging.md` — how entries are captured.
+- `Docs/prd/manual-vitals.md` — the vitals shown and edited on the card.
 - [[data-layer]] — the entry/archive schema and DAO queries.
 - [[ui-layer]] — the History and Archive screens.
 
@@ -95,6 +106,7 @@ from the active feed.
 - `app/src/main/java/com/example/healthjournal/data/JournalRepository.kt` — archive-status, delete, tombstone, file cleanup.
 - `app/src/main/java/com/example/healthjournal/data/local/JournalDao.kt` — feed/search/archive queries.
 - `app/src/main/java/com/example/healthjournal/ui/components/JournalEntryItem.kt` — entry card rendering.
+- `app/src/main/java/com/example/healthjournal/ui/components/VitalsEntrySheet.kt` — card quick-add/edit sheet.
 - `app/src/main/java/com/example/healthjournal/ui/components/SharedSearchBar.kt` — search input.
 - `Docs/psd/history-feed.md` — specification.
 - `Docs/tests/history-feed.md` — test cases.
