@@ -15,6 +15,8 @@ import io.qameta.allure.kotlin.Feature
 import io.qameta.allure.kotlin.Step
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 
@@ -211,22 +213,24 @@ class HistoryScreenTest {
     }
 
     @Test
-    fun testHistoryScreen_vitalsRenderIdenticallyInBothUnitSystems() {
-        // Journal vitals (BP mmHg, bpm, hours) are unit-invariant: no metric/
-        // imperial conversion applies, so both preferences render identical text.
+    fun testHistoryScreen_vitalsRenderInPreferredUnits() {
         val entries = listOf(
             JournalEntry(
                 description = "Checkup",
                 bp_systolic = 120.0,
                 bp_diastolic = 80.0,
                 heart_rate_avg = 65,
+                blood_glucose_mmol = 5.4,
+                body_temperature_c = 36.6,
                 sleep_hours = 7.5f
             )
         )
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        UnitSettings.write(context, UnitSystem.IMPERIAL)
         try {
             viewModel.allEntries.value = entries
 
-            step("Render the entry once") {
+            step("Render the entry with imperial units") {
                 composeTestRule.setContent {
                     HealthJournalTheme {
                         HistoryScreen(
@@ -239,24 +243,15 @@ class HistoryScreenTest {
                 composeTestRule.waitForIdle()
             }
 
-            for (system in listOf(UnitSystem.METRIC, UnitSystem.IMPERIAL)) {
-                UnitSettings.write(
-                    InstrumentationRegistry.getInstrumentation().targetContext,
-                    system
-                )
-
-                step("Verify identical vitals text under $system") {
-                    composeTestRule.waitForIdle()
-                    composeTestRule.onNodeWithText("120/80").assertExists()
-                    composeTestRule.onNodeWithText("65").assertExists()
-                    composeTestRule.onNodeWithText("7.5h").assertExists()
-                }
+            step("Verify chips use the stored preference") {
+                composeTestRule.onNodeWithText("120/80 mmHg").assertExists()
+                composeTestRule.onNodeWithText("65 bpm").assertExists()
+                composeTestRule.onNodeWithText("97 mg/dL").assertExists()
+                composeTestRule.onNodeWithText("97.9 °F").assertExists()
+                composeTestRule.onNodeWithText("7.5 h").assertExists()
             }
         } finally {
-            UnitSettings.write(
-                InstrumentationRegistry.getInstrumentation().targetContext,
-                UnitSystem.METRIC
-            )
+            UnitSettings.write(context, UnitSystem.METRIC)
         }
     }
 
@@ -315,6 +310,82 @@ class HistoryScreenTest {
                 "Barbell Squat: 3 sets · 100 kg (220.5 lb)",
                 substring = true
             ).assertExists()
+        }
+    }
+
+    @Test
+    fun testHistoryScreen_addVitalsFromCard_savesAndUpdatesCard() {
+        val entry = JournalEntry(entry_id = "card-vitals", description = "Checkup")
+
+        step("Open History with an entry that has no vitals") {
+            viewModel.allEntries.value = listOf(entry)
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        onAddEntryClick = {},
+                        onEntryClick = {}
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Open the quick-add sheet from the card action") {
+            composeTestRule.onNodeWithTag("entry_vitals_action").assertTextContains("Add vitals")
+            composeTestRule.onNodeWithTag("entry_vitals_action").performClick()
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithTag("vitals_sheet_title").assertExists()
+        }
+
+        step("Enter vitals and save") {
+            composeTestRule.onNodeWithTag("vitals_field_systolic").performTextInput("120")
+            composeTestRule.onNodeWithTag("vitals_field_diastolic").performTextInput("80")
+            composeTestRule.onNodeWithTag("vitals_field_hr").performTextInput("72")
+            composeTestRule.onNodeWithTag("vitals_save").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify the card updated without a reload") {
+            val call = viewModel.updateVitalsCalledWith!!
+            assertEquals("card-vitals", call.first)
+            assertEquals(120.0, call.second.bpSystolic!!, 0.001)
+            assertEquals(80.0, call.second.bpDiastolic!!, 0.001)
+            assertEquals(72, call.second.heartRate)
+            composeTestRule.onNodeWithTag("entry_vitals_bp").assertTextContains("120/80 mmHg")
+            composeTestRule.onNodeWithTag("entry_vitals_action").assertTextContains("Edit vitals")
+        }
+    }
+
+    @Test
+    fun testHistoryScreen_cancelVitals_leavesCardUnchanged() {
+        val entry = JournalEntry(entry_id = "cancel-vitals", description = "Checkup")
+
+        step("Open the quick-add sheet") {
+            viewModel.allEntries.value = listOf(entry)
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        onAddEntryClick = {},
+                        onEntryClick = {}
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithTag("entry_vitals_action").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Type a value and cancel") {
+            composeTestRule.onNodeWithTag("vitals_field_systolic").performTextInput("130")
+            composeTestRule.onNodeWithTag("vitals_cancel").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify nothing was written and no chip appeared") {
+            assertNull(viewModel.updateVitalsCalledWith)
+            composeTestRule.onNodeWithTag("entry_vitals_bp").assertDoesNotExist()
         }
     }
 

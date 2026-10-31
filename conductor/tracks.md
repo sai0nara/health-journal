@@ -53,3 +53,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Add a warm up to routine presets**
   *Link: [./archive/warm_up_20261023/](./archive/warm_up_20261023/)*
+
+---
+
+- [~] **Track: Refactor History card: To add blood pressure manually glycemic index Other common params**
+  *Link: [./tracks/history_card_vitals_20261028/](./tracks/history_card_vitals_20261028/)*

@@ -9,6 +9,9 @@ data class FeetInches(val feet: Int, val inches: Double)
 object UnitConverter {
     private const val CM_PER_INCH = 2.54
     private const val KG_PER_LB = 0.45359237
+    private const val MGDL_PER_MMOL = 18.0182
+    private const val FAHRENHEIT_OFFSET = 32.0
+    private const val FAHRENHEIT_SCALE = 9.0 / 5.0
 
     fun cmToInches(cm: Double): Double {
         return BigDecimal(cm / CM_PER_INCH)
@@ -31,6 +34,30 @@ object UnitConverter {
     fun lbsToKg(lbs: Double): Double {
         return BigDecimal(lbs * KG_PER_LB)
             .setScale(2, RoundingMode.HALF_UP)
+            .toDouble()
+    }
+
+    fun mmolToMgdl(mmol: Double): Double {
+        return BigDecimal(mmol * MGDL_PER_MMOL)
+            .setScale(1, RoundingMode.HALF_UP)
+            .toDouble()
+    }
+
+    fun mgdlToMmol(mgdl: Double): Double {
+        return BigDecimal(mgdl / MGDL_PER_MMOL)
+            .setScale(2, RoundingMode.HALF_UP)
+            .toDouble()
+    }
+
+    fun celsiusToFahrenheit(celsius: Double): Double {
+        return BigDecimal(celsius * FAHRENHEIT_SCALE + FAHRENHEIT_OFFSET)
+            .setScale(1, RoundingMode.HALF_UP)
+            .toDouble()
+    }
+
+    fun fahrenheitToCelsius(fahrenheit: Double): Double {
+        return BigDecimal((fahrenheit - FAHRENHEIT_OFFSET) / FAHRENHEIT_SCALE)
+            .setScale(1, RoundingMode.HALF_UP)
             .toDouble()
     }
 

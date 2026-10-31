@@ -481,6 +481,62 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun migrate20To21_AddsVitalsColumnsAndPreservesRows() {
+        helper.createDatabase("$dbName-20-21", 20).apply {
+            execSQL(
+                "INSERT INTO journal_entries (entry_id, timestamp, lastModified, description, bp_systolic, bp_diastolic, heart_rate_avg, isArchived, isSynced, syncStatus) " +
+                    "VALUES ('entry_before_vitals', 1000, 1000, 'Before 20 to 21', 118.0, 78.0, 66, 0, 0, 'PENDING_SYNC')"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-20-21",
+            21,
+            true,
+            JournalDatabase.MIGRATION_20_21
+        )
+
+        db.query("PRAGMA table_info(journal_entries)").use { cursor ->
+            val columns = buildList {
+                while (cursor.moveToNext()) add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
+            }
+            org.junit.Assert.assertTrue("blood_glucose_mmol column should be added", "blood_glucose_mmol" in columns)
+            org.junit.Assert.assertTrue("body_temperature_c column should be added", "body_temperature_c" in columns)
+            org.junit.Assert.assertTrue("spo2_percent column should be added", "spo2_percent" in columns)
+        }
+
+        db.query(
+            "SELECT description, bp_systolic, bp_diastolic, heart_rate_avg, " +
+                "blood_glucose_mmol, body_temperature_c, spo2_percent " +
+                "FROM journal_entries WHERE entry_id = 'entry_before_vitals'"
+        ).use { cursor ->
+            org.junit.Assert.assertTrue("Journal row lost during migration", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Before 20 to 21", cursor.getString(0))
+            org.junit.Assert.assertEquals(118.0, cursor.getDouble(1), 0.001)
+            org.junit.Assert.assertEquals(78.0, cursor.getDouble(2), 0.001)
+            org.junit.Assert.assertEquals(66, cursor.getInt(3))
+            org.junit.Assert.assertTrue("Existing row should keep null glucose", cursor.isNull(4))
+            org.junit.Assert.assertTrue("Existing row should keep null temperature", cursor.isNull(5))
+            org.junit.Assert.assertTrue("Existing row should keep null SpO2", cursor.isNull(6))
+        }
+
+        db.execSQL(
+            "UPDATE journal_entries SET blood_glucose_mmol = 5.4, body_temperature_c = 36.6, " +
+                "spo2_percent = 98 WHERE entry_id = 'entry_before_vitals'"
+        )
+        db.query(
+            "SELECT blood_glucose_mmol, body_temperature_c, spo2_percent " +
+                "FROM journal_entries WHERE entry_id = 'entry_before_vitals'"
+        ).use { cursor ->
+            org.junit.Assert.assertTrue("Vitals columns should be usable", cursor.moveToFirst())
+            org.junit.Assert.assertEquals(5.4, cursor.getDouble(0), 0.001)
+            org.junit.Assert.assertEquals(36.6, cursor.getDouble(1), 0.001)
+            org.junit.Assert.assertEquals(98, cursor.getInt(2))
+        }
+    }
+
     private fun tagsFor(db: androidx.sqlite.db.SupportSQLiteDatabase, entryId: String): List<String> =
         db.query("SELECT tag FROM EntryTagCrossRef WHERE entryId = ? ORDER BY tag", arrayOf(entryId)).use { cursor ->
             buildList { while (cursor.moveToNext()) add(cursor.getString(0)) }

@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -31,11 +32,13 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.UnitSettings
 import com.example.healthjournal.ui.components.AboutAppDialog
 import com.example.healthjournal.R
 import com.example.healthjournal.ui.components.JournalEntryItem
 import com.example.healthjournal.ui.components.SharedSearchBar
 import com.example.healthjournal.ui.components.TagSelectionRow
+import com.example.healthjournal.ui.components.VitalsEntrySheet
 import com.example.healthjournal.util.HtmlParser
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
@@ -55,6 +58,8 @@ fun HistoryScreen(
     val selectedTags by viewModel.selectedTags.collectAsState()
     val tagsByEntry by viewModel.tagsByEntry.collectAsState()
     var expandedImageUri by remember { mutableStateOf<String?>(null) }
+    var vitalsEntry by remember { mutableStateOf<JournalEntry?>(null) }
+    val unitSystem = UnitSettings.read(LocalContext.current)
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -207,7 +212,9 @@ fun HistoryScreen(
                                     onClick = { onEntryClick(entry.entry_id) },
                                     onPhotoClick = { expandedImageUri = it },
                                     tags = tagsByEntry[entry.entry_id] ?: emptyList(),
-                                    onTagClick = { tag -> viewModel.toggleTag(tag) }
+                                    onTagClick = { tag -> viewModel.toggleTag(tag) },
+                                    unitSystem = unitSystem,
+                                    onVitalsClick = { vitalsEntry = it }
                                 )
                             }
                         }
@@ -215,6 +222,18 @@ fun HistoryScreen(
                 }
             }
         }
+    }
+
+    vitalsEntry?.let { entry ->
+        VitalsEntrySheet(
+            entry = entry,
+            unitSystem = unitSystem,
+            onDismiss = { vitalsEntry = null },
+            onSave = { vitals ->
+                viewModel.updateVitals(entry.entry_id, vitals)
+                vitalsEntry = null
+            }
+        )
     }
 
     if (expandedImageUri != null) {

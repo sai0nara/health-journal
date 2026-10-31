@@ -4,7 +4,7 @@
 > preferred unit system through the shared converter, while storage stays
 > canonical metric with no schema or sync changes.
 
-Last updated: 2026-09-22
+Last updated: 2026-10-29
 
 ## Overview
 
@@ -13,9 +13,11 @@ of converting at the display boundary. The single global preference backs all
 surfaces; each ViewModel holds display-unit state and parses input back to
 metric before validation and persistence. Validation runs in display units,
 mirroring the personal-card pattern, and toggling mid-draft re-renders drafts
-through the converter without loss. Journal vitals needed no production
-change: the entry columns are unit-invariant. See `Docs/prd/unit-conversion.md`
-for the requirements.
+through the converter without loss. Journal entry vitals use the same display
+boundary: blood pressure and heart rate are unit-invariant, while blood glucose
+and body temperature convert through the vitals domain object (see
+`Docs/psd/manual-vitals.md`). See `Docs/prd/unit-conversion.md` for the
+requirements.
 
 ## Architecture
 
@@ -48,8 +50,8 @@ for the requirements.
 5. Routine set rows, routine headers, tonnage, the manual editor, and the
    preset editor render converted values and parse edits back to kg.
 6. Personal-card read-only rows render converted values on launch (the saved
-   preference seeds initial ViewModel state); journal vitals render unchanged
-   in both systems.
+   preference seeds initial ViewModel state); journal vitals render BP/HR
+   unchanged and convert glucose and temperature through the shared converter.
 
 ## Components
 
@@ -80,13 +82,14 @@ for the requirements.
 | Blank/malformed input | blank skipped or required-error (goals); malformed surfaces inline format error |
 | Display round trip | metric→imperial→metric stays within display rounding; never crashes on missing values |
 | Preference unset/corrupt | global read falls back to metric |
-| Journal vitals | unit-invariant columns render identically; locked by regression test |
+| Journal vitals | BP/HR render identically; glucose (mmol/L ↔ mg/dL) and temperature (°C ↔ °F) convert at render time; covered by the card, sheet, and entry-screen suites |
 
 ## Dependencies
 
-- No new libraries or platform services; Room, Compose Material 3, and the
-  existing sync pipeline unchanged.
-- No schema migration; no sync/backup payload change.
+- No libraries or platform services beyond the existing Room, Compose Material 3,
+  and sync pipeline.
+- This feature adds no schema change or payload change of its own; the vitals
+  columns it formats arrive with `Docs/psd/manual-vitals.md`.
 
 ## Cross-references
 

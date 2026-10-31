@@ -2,7 +2,7 @@
 
 > The JVM test stack under `app/src/test` — fast, framework-level tests that run without a device.
 
-Last updated: 2026-10-26
+Last updated: 2026-10-30
 
 ## What this stack is
 

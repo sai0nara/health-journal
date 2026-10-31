@@ -4,7 +4,7 @@
 > the JVM ViewModel tests, Room DAO tests, and the instrumented Add Entry screen
 > tests.
 
-Last updated: 2026-10-18
+Last updated: 2026-10-29
 
 ## Automated coverage
 
@@ -15,7 +15,8 @@ Last updated: 2026-10-18
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/local/JournalTypeConvertersTest.kt` | JSON lists for media/vitals round-trip |
 | JVM unit | `app/src/test/java/com/example/healthjournal/util/HtmlEntitiesTest.kt` | non-ASCII entity decoding |
 | JVM unit | `app/src/test/java/com/example/healthjournal/domain/UtcToLocalDateTest.kt` | UTC↔local date handling |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/AddEntryScreenTest.kt` | save/back/empty/pickers/Unarchive render + callbacks |
+| JVM unit | `app/src/test/java/com/example/healthjournal/domain/ValidateVitalsTest.kt` | manual vitals validation, ranges, and unit conversion |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/AddEntryScreenTest.kt` | save/back/empty/pickers/Unarchive render + callbacks; manual vitals prefill/save/validation; health-merge preservation |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/JournalDaoTest.kt` | entry insert/read, tag lifecycle, type converters |
 
 ## Test cases
@@ -29,6 +30,10 @@ Last updated: 2026-10-18
 | T-5 | AC-4 | Tag add on save | new tag not yet present | cross-ref inserted, entry marked dirty + sync triggered |
 | T-6 | AC-6 | Archived entry read-only | entry with `isArchived` true | screen shows Unarchive; toolbar/capture hidden |
 | T-7 | AC-2 | Empty description UI | Add Entry with blank text | tapping save calls nothing, stays |
+| T-8 | AC-7 | Manual vitals create/update | description + five values, save; then edit glucose | ViewModel receives canonical values on create and update |
+| T-9 | AC-7 | Invalid vitals | only systolic entered | pair error shown, Save disabled |
+| T-10 | AC-5 | Health merge | manual glucose/temperature/SpO2 entered, import returns BP/HR/sleep | BP/HR fill, manual values remain |
+| T-11 | AC-6 | Archived vitals | archived entry with vitals | read-only summary, no fields or Save |
 
 ## Manual checks
 
@@ -50,6 +55,7 @@ Last updated: 2026-10-18
 - `app/src/test/java/com/example/healthjournal/data/local/JournalTypeConvertersTest.kt` — media/vitals JSON.
 - `app/src/test/java/com/example/healthjournal/util/HtmlEntitiesTest.kt` — entity decoding.
 - `app/src/test/java/com/example/healthjournal/domain/UtcToLocalDateTest.kt` — date handling.
+- `app/src/test/java/com/example/healthjournal/domain/ValidateVitalsTest.kt` — manual vitals validation.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/AddEntryScreenTest.kt` — capture UI.
 - `app/src/androidTest/java/com/example/healthjournal/data/local/JournalDaoTest.kt` — entry/tag DAO.
 - `Docs/prd/entry-logging.md` — requirements.
