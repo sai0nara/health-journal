@@ -48,6 +48,29 @@ class JournalDaoTest {
     }
 
     @Test
+    fun writeEntryWithVitals_roundTripsCanonicalValues() = runBlocking {
+        val entry = JournalEntry(
+            description = "Vitals",
+            bp_systolic = 120.0,
+            bp_diastolic = 80.0,
+            heart_rate_avg = 72,
+            blood_glucose_mmol = 5.4,
+            body_temperature_c = 36.6,
+            spo2_percent = 98
+        )
+
+        journalDao.insertEntry(entry)
+        val loaded = journalDao.getEntryById(entry.entry_id)!!
+
+        assertEquals(120.0, loaded.bp_systolic!!, 0.001)
+        assertEquals(80.0, loaded.bp_diastolic!!, 0.001)
+        assertEquals(72, loaded.heart_rate_avg)
+        assertEquals(5.4, loaded.blood_glucose_mmol!!, 0.001)
+        assertEquals(36.6, loaded.body_temperature_c!!, 0.001)
+        assertEquals(98, loaded.spo2_percent)
+    }
+
+    @Test
     @Throws(Exception::class)
     fun getEntryByIdReturnsNullForNonExistent() = runBlocking {
         val entry = journalDao.getEntryById("non_existent_id")

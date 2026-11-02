@@ -27,6 +27,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.healthjournal.R
+import com.example.healthjournal.data.local.UnitSettings
 import com.example.healthjournal.ui.components.JournalEntryItem
 import com.example.healthjournal.ui.components.SharedSearchBar
 import com.example.healthjournal.ui.components.TagSelectionRow
@@ -48,6 +49,7 @@ fun ArchiveScreen(
     var expandedImageUri by remember { mutableStateOf<String?>(null) }
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
+    val unitSystem = UnitSettings.read(context)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -256,6 +258,7 @@ fun ArchiveScreen(
                                     entry = entry,
                                     onClick = { if (isSelectionMode) onToggleSelect(entry.entry_id) else onEntryClick(entry.entry_id) },
                                     onPhotoClick = { expandedImageUri = it },
+                                    unitSystem = unitSystem,
                                     onLongClick = {
                                         if (!isSelectionMode) {
                                             isSelectionMode = true

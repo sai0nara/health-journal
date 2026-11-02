@@ -8,7 +8,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import java.util.Locale
 
-@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class, WorkoutPreset::class, ExerciseCatalogItem::class], version = 20, exportSchema = true)
+@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class, WorkoutPreset::class, ExerciseCatalogItem::class], version = 21, exportSchema = true)
 @androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
@@ -30,7 +30,7 @@ abstract class JournalDatabase : RoomDatabase() {
         private var INSTANCE: JournalDatabase? = null
 
         /** Current Room database schema version; single-sourced for restore validation. */
-        const val CURRENT_SCHEMA_VERSION: Int = 20
+        const val CURRENT_SCHEMA_VERSION: Int = 21
 
         // v1 -> v2: add isSynced
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -336,6 +336,22 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        // v20 -> v21: manual vitals captured from the History card or the
+        // entry editor. BP, heart rate, and sleep reuse the existing columns.
+        val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE `journal_entries` ADD COLUMN `blood_glucose_mmol` REAL"
+                )
+                database.execSQL(
+                    "ALTER TABLE `journal_entries` ADD COLUMN `body_temperature_c` REAL"
+                )
+                database.execSQL(
+                    "ALTER TABLE `journal_entries` ADD COLUMN `spo2_percent` INTEGER"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -350,7 +366,8 @@ abstract class JournalDatabase : RoomDatabase() {
                     MIGRATION_16_17,
                     MIGRATION_17_18,
                     MIGRATION_18_19,
-                    MIGRATION_19_20
+                    MIGRATION_19_20,
+                    MIGRATION_20_21
                 ).build()
                 INSTANCE = instance
                 instance

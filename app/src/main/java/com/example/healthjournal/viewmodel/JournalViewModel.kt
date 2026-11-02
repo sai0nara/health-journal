@@ -16,6 +16,7 @@ import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.HealthSyncSettings
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.domain.EntryVitals
 import com.example.healthjournal.domain.HashtagParser
 import com.example.healthjournal.domain.TagIdentity
 import com.example.healthjournal.health.HealthConnectManager
@@ -62,10 +63,15 @@ interface IJournalViewModel {
         bpDiastolic: Double? = null,
         heartRate: Int? = null,
         sleepHours: Float? = null,
+        bloodGlucoseMmol: Double? = null,
+        bodyTemperatureC: Double? = null,
+        spo2Percent: Int? = null,
         tags: Set<String> = emptySet()
     )
     /** Saves [entry] with exactly [tags] plus hashtags re-parsed from its text; callers must pass the complete chip selection. */
     fun updateEntry(entry: JournalEntry, tags: Set<String>)
+    /** Replaces the five editable vitals on [entryId] and marks the row pending sync. */
+    fun updateVitals(entryId: String, vitals: EntryVitals)
     suspend fun getEntryById(entryId: String): JournalEntry?
     fun signIn(activityContext: Context, onResolutionRequired: (android.app.PendingIntent) -> Unit)
     fun requestDriveAuth(onResolutionRequired: (android.app.PendingIntent) -> Unit)
@@ -287,6 +293,9 @@ class JournalViewModel(
         bpDiastolic: Double?,
         heartRate: Int?,
         sleepHours: Float?,
+        bloodGlucoseMmol: Double?,
+        bodyTemperatureC: Double?,
+        spo2Percent: Int?,
         tags: Set<String>
     ) {
         if (timestamp > System.currentTimeMillis()) {
@@ -303,6 +312,9 @@ class JournalViewModel(
                 bp_diastolic = bpDiastolic,
                 heart_rate_avg = heartRate,
                 sleep_hours = sleepHours,
+                blood_glucose_mmol = bloodGlucoseMmol,
+                body_temperature_c = bodyTemperatureC,
+                spo2_percent = spo2Percent,
                 lastModified = System.currentTimeMillis()
             )
             repository.insert(newEntry)
@@ -324,7 +336,7 @@ class JournalViewModel(
         viewModelScope.launch {
             // Update lastModified to ensure local edits "win" in sync conflict resolution
             // Keep the original timestamp (creation date)
-            repository.insert(entry.copy(syncStatus = "PENDING_SYNC", lastModified = System.currentTimeMillis()))
+            repository.insert(entry.copy(isSynced = false, syncStatus = "PENDING_SYNC", lastModified = System.currentTimeMillis()))
             
             // Refresh tags: remove all existing and add the current chip
             // selection plus re-parsed hashtags. Inline text still wins: a
@@ -339,6 +351,29 @@ class JournalViewModel(
             finalTags.forEach { tag ->
                 repository.addTag(entry.entry_id, tag)
             }
+
+            if (_isUserSignedIn.value) {
+                SyncManager.enqueuePeriodicSync(getApplication())
+            }
+        }
+    }
+
+    override fun updateVitals(entryId: String, vitals: EntryVitals) {
+        viewModelScope.launch {
+            val entry = repository.getEntryById(entryId) ?: return@launch
+            repository.insert(
+                entry.copy(
+                    bp_systolic = vitals.bpSystolic,
+                    bp_diastolic = vitals.bpDiastolic,
+                    heart_rate_avg = vitals.heartRate,
+                    blood_glucose_mmol = vitals.bloodGlucoseMmol,
+                    body_temperature_c = vitals.bodyTemperatureC,
+                    spo2_percent = vitals.spo2Percent,
+                    isSynced = false,
+                    syncStatus = "PENDING_SYNC",
+                    lastModified = System.currentTimeMillis()
+                )
+            )
 
             if (_isUserSignedIn.value) {
                 SyncManager.enqueuePeriodicSync(getApplication())

@@ -1,11 +1,12 @@
 # History Feed — Product Specification
 
 > A reactive, DB-driven feed over the non-archived entries couples with a
-> swipe/undo archive interaction; the Archive screen reuses the same search and
-> tag filters over the archived rows and adds multi-select delete/restore. A
-> Workouts overflow-menu action opens the workout hub.
+> swipe/undo archive interaction; each card renders its vitals as unit-aware chips
+> with a quick-add sheet. The Archive screen reuses the same search and tag
+> filters over the archived rows and adds multi-select delete/restore. A Workouts
+> overflow-menu action opens the workout hub.
 
-Last updated: 2026-10-19
+Last updated: 2026-10-29
 
 ## Overview
 
@@ -28,6 +29,9 @@ included — live on the dashboard tiles (`Docs/psd/main-page-tiles.md`).
 - Archive is a boolean column; deletion writes a `DeletedEntry` tombstone before
   removing the row, and removes the row's local media files through a sandboxed
   file helper.
+- `HistoryScreen` owns the selected entry for the vitals sheet and calls
+  `updateVitals`; `JournalEntryItem` only reports the action. Both screens pass
+  the `UnitSettings` preference so chips format identically.
 
 ## Data flow
 
@@ -40,6 +44,10 @@ included — live on the dashboard tiles (`Docs/psd/main-page-tiles.md`).
    flips flags back; Delete calls `deleteEntries(ids)` which writes tombstones,
    deletes rows/tag refs, and cleans local files; Empty calls the batch variant
    for all archived ids.
+5. A card's vitals action stores the entry and opens `VitalsEntrySheet`; Save
+   converts the display-unit draft to canonical metrics and calls `updateVitals`,
+   which updates the card through the reactive feed without a reload. Cancel
+   closes the sheet without writing.
 
 ## Components
 
@@ -50,7 +58,9 @@ included — live on the dashboard tiles (`Docs/psd/main-page-tiles.md`).
 | Journal ViewModel | `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` | feed composition, archive/restore/delete actions |
 | Journal repository | `app/src/main/java/com/example/healthjournal/data/JournalRepository.kt` | archive-status, tombstone, file cleanup |
 | Journal DAO | `app/src/main/java/com/example/healthjournal/data/local/JournalDao.kt` | feed/search/tag/archive queries |
-| Entry item | `app/src/main/java/com/example/healthjournal/ui/components/JournalEntryItem.kt` | entry card in both surfaces |
+| Entry item | `app/src/main/java/com/example/healthjournal/ui/components/JournalEntryItem.kt` | entry card in both surfaces, vitals chips, action |
+| Vitals sheet | `app/src/main/java/com/example/healthjournal/ui/components/VitalsEntrySheet.kt` | quick-add/edit of the five manual vitals |
+| Vitals editor | `app/src/main/java/com/example/healthjournal/ui/components/VitalsFieldsEditor.kt` | shared fields, unit labels, inline errors |
 | Search bar | `app/src/main/java/com/example/healthjournal/ui/components/SharedSearchBar.kt` | shared search input |
 
 ## Edge cases & failure handling
@@ -62,6 +72,9 @@ included — live on the dashboard tiles (`Docs/psd/main-page-tiles.md`).
 | Permanent deletion | tombstone written first; resurrection suppressed on sync (see `Docs/psd/drive-sync.md`) |
 | Local media deletion | only `filesDir`-prefixed paths removed; foreign URIs ignored |
 | Undo after archive | restores the `isArchived` flag |
+| Entry with no vitals | no chip row; the card still offers `Add vitals` |
+| Archived entry | chips render; action and quick-add sheet are unavailable |
+| Vitals sheet validation fails | inline error; Save disabled; card unchanged |
 
 ## Dependencies
 
@@ -76,5 +89,8 @@ included — live on the dashboard tiles (`Docs/psd/main-page-tiles.md`).
 - `app/src/main/java/com/example/healthjournal/data/JournalRepository.kt` — archive/delete logic.
 - `app/src/main/java/com/example/healthjournal/data/local/JournalDao.kt` — feed/search queries.
 - `app/src/main/java/com/example/healthjournal/ui/components/JournalEntryItem.kt` — card rendering.
+- `app/src/main/java/com/example/healthjournal/ui/components/VitalsEntrySheet.kt` — card quick-add sheet.
+- `app/src/main/java/com/example/healthjournal/ui/components/VitalsFieldsEditor.kt` — shared vitals fields.
+- `app/src/main/java/com/example/healthjournal/domain/ValidateVitals.kt` — vitals validation/formatting.
 - `Docs/prd/history-feed.md` — requirements.
 - `Docs/tests/history-feed.md` — test cases.

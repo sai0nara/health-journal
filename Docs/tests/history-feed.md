@@ -4,7 +4,7 @@
 > coverage, including the swipe-archive/undo interaction, batch operations,
 > and the trimmed top bar.
 
-Last updated: 2026-10-19
+Last updated: 2026-10-29
 
 ## Automated coverage
 
@@ -12,7 +12,9 @@ Last updated: 2026-10-19
 |---|---|---|
 | JVM unit | `app/src/test/java/com/example/healthjournal/viewmodel/JournalViewModelTest.kt` | archive/restore/delete/empty call-through, tag-toggle sync, feed query selection |
 | JVM unit | `app/src/test/java/com/example/healthjournal/data/JournalRepositoryTest.kt` | tombstone grace-period cleanup, tag/query delegation, import |
-| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` | feed display, swipe-to-archive + undo, trimmed top bar |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` | feed display, swipe-to-archive + undo, trimmed top bar, card vitals + quick-add flow |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/components/JournalEntryItemTest.kt` | vitals chips, units, action labels, archived action hidden |
+| Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/components/VitalsEntrySheetTest.kt` | sheet prefill, validation, save/cancel, clearing |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/ArchiveScreenTest.kt` | multi-select batch delete, empty-archive flow, search |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryFeedDeletionP0Test.kt` | P0 deletion flows on the real viewmodel over in-memory Room: selection vs filters, confirmed delete + tombstones, sandbox media cleanup, cancel/dismiss purity, empty archive, History gesture guards, no resurrection |
 | Instrumented | `app/src/androidTest/java/com/example/healthjournal/data/local/JournalDaoTest.kt` | sort asc/desc, LIKE search, tag AND-filter, tag lifecycle |
@@ -30,6 +32,9 @@ Last updated: 2026-10-19
 | T-7 | AC-5 | Restore selected | archived entries selected | `isArchived` flipped back |
 | T-8 | FR-8 | Local media cleanup | archived entry with photos | files removed (see photos-media) |
 | T-9 | — | Trimmed top bar | History screen | no logo, no Personal Card/Measurements/Export shortcuts; title and overflow remain |
+| T-10 | AC-6 | Vitals chips | entry with BP/HR/glucose/temperature/SpO2/sleep | one chip per value with units; metric and imperial variants |
+| T-11 | AC-6 | Card quick-add | entry without vitals, action tapped, values saved | `updateVitals` receives canonical values, card updates, action becomes `Edit vitals`; Cancel writes nothing |
+| T-12 | FR-11 | Archived card | archived entry with vitals | chips visible, no action button |
 
 ## Manual checks
 
@@ -49,6 +54,8 @@ Last updated: 2026-10-19
 - `app/src/test/java/com/example/healthjournal/viewmodel/JournalViewModelTest.kt` — archive actions + feed queries.
 - `app/src/test/java/com/example/healthjournal/data/JournalRepositoryTest.kt` — tombstone/tag logic.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryScreenTest.kt` — feed + swipe/undo.
+- `app/src/androidTest/java/com/example/healthjournal/ui/components/JournalEntryItemTest.kt` — card chips/action.
+- `app/src/androidTest/java/com/example/healthjournal/ui/components/VitalsEntrySheetTest.kt` — quick-add sheet.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/ArchiveScreenTest.kt` — multi-select/delete/empty/search.
 - `app/src/androidTest/java/com/example/healthjournal/ui/screens/HistoryFeedDeletionP0Test.kt` — P0 deletion flows (selectors in `pages`, haptic recorder in `util`).
 - `app/src/androidTest/java/com/example/healthjournal/data/local/JournalDaoTest.kt` — query-level behavior.

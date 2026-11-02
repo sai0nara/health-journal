@@ -101,7 +101,7 @@ class TagEditRemovalTest {
             .performClick()
             .assertIsNotSelected()
 
-        composeTestRule.onNodeWithText("Update Entry").performClick()
+        composeTestRule.onNodeWithText("Update Entry").performScrollTo().performClick()
 
         composeTestRule.waitUntil(10_000) {
             runBlocking { repository.getTagsForEntry("e_edit") } == listOf("recovery")

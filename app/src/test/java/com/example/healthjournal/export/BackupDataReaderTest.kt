@@ -98,6 +98,44 @@ class BackupDataReaderTest {
     }
 
     @Test
+    fun read_legacyJournalEntryWithoutVitals_restoresNulls() {
+        val staging = tempFolder.newFolder("legacy_journal_stage")
+        File(staging, BackupWriter.EntityFile.JOURNAL).writeText(
+            """[{"entry_id":"e1","description":"Legacy","timestamp":1,"lastModified":1}]"""
+        )
+
+        val result = BackupDataReader(gson).read(staging)
+        val entry = result.journalEntries.single()
+
+        assertNull(entry.bp_systolic)
+        assertNull(entry.bp_diastolic)
+        assertNull(entry.heart_rate_avg)
+        assertNull(entry.blood_glucose_mmol)
+        assertNull(entry.body_temperature_c)
+        assertNull(entry.spo2_percent)
+    }
+
+    @Test
+    fun read_journalEntryWithVitals_roundTripsCanonicalValues() {
+        val staging = tempFolder.newFolder("vitals_journal_stage")
+        val entry = JournalEntry(
+            entry_id = "e-vitals",
+            description = "Vitals",
+            bp_systolic = 120.0,
+            bp_diastolic = 80.0,
+            heart_rate_avg = 72,
+            blood_glucose_mmol = 5.4,
+            body_temperature_c = 36.6,
+            spo2_percent = 98
+        )
+        writeJson(staging, BackupWriter.EntityFile.JOURNAL, listOf(entry))
+
+        val result = BackupDataReader(gson).read(staging)
+
+        assertEquals(entry, result.journalEntries.single())
+    }
+
+    @Test
     fun read_throwsOnMalformedEntityFile() {
         val staging = tempFolder.newFolder("bad_entity")
         writeJson(staging, BackupWriter.EntityFile.JOURNAL, entities.journalEntries)

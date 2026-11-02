@@ -7,7 +7,7 @@
 > Cross-references between documents use backticked paths, not wikilinks,
 > because the same feature slug exists in three directories.
 
-Last updated: 2026-09-24
+Last updated: 2026-10-29
 
 ## Features
 
@@ -23,6 +23,7 @@ Last updated: 2026-09-24
 - `Docs/prd/export.md` — PRD
 - `Docs/prd/health-connect.md` — PRD
 - `Docs/prd/history-feed.md` — PRD
+- `Docs/prd/manual-vitals.md` — PRD
 - `Docs/prd/medical-color-system.md` — PRD
 - `Docs/prd/personal-card.md` — PRD
 - `Docs/prd/photos-media.md` — PRD
@@ -33,6 +34,7 @@ Last updated: 2026-09-24
 - `Docs/psd/export.md` — PSD
 - `Docs/psd/health-connect.md` — PSD
 - `Docs/psd/history-feed.md` — PSD
+- `Docs/psd/manual-vitals.md` — PSD
 - `Docs/psd/medical-color-system.md` — PSD
 - `Docs/psd/personal-card.md` — PSD
 - `Docs/psd/hashtags.md` — PSD
@@ -47,6 +49,7 @@ Last updated: 2026-09-24
 - `Docs/tests/export.md` — tests
 - `Docs/tests/health-connect.md` — tests
 - `Docs/tests/history-feed.md` — tests
+- `Docs/tests/manual-vitals.md` — tests
 - `Docs/tests/medical-color-system.md` — tests
 - `Docs/tests/personal-card.md` — tests
 - `Docs/tests/hashtags.md` — tests

@@ -1,0 +1,563 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 21,
+    "identityHash": "95b6c9de4dd0c0a038fad77a3abf3479",
+    "entities": [
+      {
+        "tableName": "journal_entries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entry_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `lastModified` INTEGER NOT NULL, `description` TEXT NOT NULL, `photo_urls` TEXT, `attachments` TEXT, `bp_systolic` REAL, `bp_diastolic` REAL, `heart_rate_avg` INTEGER, `sleep_hours` REAL, `blood_glucose_mmol` REAL, `body_temperature_c` REAL, `spo2_percent` INTEGER, `ai_advice` TEXT, `isArchived` INTEGER, `isSynced` INTEGER, `syncStatus` TEXT, PRIMARY KEY(`entry_id`))",
+        "fields": [
+          {
+            "fieldPath": "entry_id",
+            "columnName": "entry_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "lastModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photo_urls",
+            "columnName": "photo_urls",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "attachments",
+            "columnName": "attachments",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "bp_systolic",
+            "columnName": "bp_systolic",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "bp_diastolic",
+            "columnName": "bp_diastolic",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "heart_rate_avg",
+            "columnName": "heart_rate_avg",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sleep_hours",
+            "columnName": "sleep_hours",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "blood_glucose_mmol",
+            "columnName": "blood_glucose_mmol",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "body_temperature_c",
+            "columnName": "body_temperature_c",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "spo2_percent",
+            "columnName": "spo2_percent",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "ai_advice",
+            "columnName": "ai_advice",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isArchived",
+            "columnName": "isArchived",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "entry_id"
+          ]
+        }
+      },
+      {
+        "tableName": "deleted_entries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entry_id` TEXT NOT NULL, `deletedAt` INTEGER NOT NULL, PRIMARY KEY(`entry_id`))",
+        "fields": [
+          {
+            "fieldPath": "entry_id",
+            "columnName": "entry_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAt",
+            "columnName": "deletedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "entry_id"
+          ]
+        }
+      },
+      {
+        "tableName": "EntryTagCrossRef",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entryId` TEXT NOT NULL, `tag` TEXT NOT NULL, PRIMARY KEY(`entryId`, `tag`))",
+        "fields": [
+          {
+            "fieldPath": "entryId",
+            "columnName": "entryId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tag",
+            "columnName": "tag",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "entryId",
+            "tag"
+          ]
+        }
+      },
+      {
+        "tableName": "body_measurements",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entry_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `lastModified` INTEGER NOT NULL, `weight_kg` REAL, `chest_cm` REAL, `waist_cm` REAL, `glute_cm` REAL, `thigh_cm` REAL, `calf_cm` REAL, `bicep_cm` REAL, `isSynced` INTEGER, `syncStatus` TEXT, PRIMARY KEY(`entry_id`))",
+        "fields": [
+          {
+            "fieldPath": "entry_id",
+            "columnName": "entry_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "lastModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "weight_kg",
+            "columnName": "weight_kg",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "chest_cm",
+            "columnName": "chest_cm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "waist_cm",
+            "columnName": "waist_cm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "glute_cm",
+            "columnName": "glute_cm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "thigh_cm",
+            "columnName": "thigh_cm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "calf_cm",
+            "columnName": "calf_cm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "bicep_cm",
+            "columnName": "bicep_cm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "entry_id"
+          ]
+        }
+      },
+      {
+        "tableName": "goals",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`parameterId` TEXT NOT NULL, `target` REAL NOT NULL, `lastModified` INTEGER NOT NULL, PRIMARY KEY(`parameterId`))",
+        "fields": [
+          {
+            "fieldPath": "parameterId",
+            "columnName": "parameterId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "target",
+            "columnName": "target",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "lastModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "parameterId"
+          ]
+        }
+      },
+      {
+        "tableName": "personal_card",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `lastModified` INTEGER NOT NULL, `isSynced` INTEGER, `syncStatus` TEXT, `demographics` TEXT NOT NULL, `medicalProfile` TEXT NOT NULL, `medicalHistory` TEXT NOT NULL, `emergencyContacts` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "lastModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "demographics",
+            "columnName": "demographics",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "medicalProfile",
+            "columnName": "medicalProfile",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "medicalHistory",
+            "columnName": "medicalHistory",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "emergencyContacts",
+            "columnName": "emergencyContacts",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "workout_sessions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`session_id` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `startTimestamp` INTEGER NOT NULL, `endTimestamp` INTEGER, `elapsedSeconds` INTEGER NOT NULL, `targetDistanceM` REAL, `targetDurationMin` REAL, `calories` REAL, `notes` TEXT NOT NULL, `setMatrix` TEXT, `intervalState` TEXT, `routineName` TEXT, `warmupName` TEXT, `warmupDurationSeconds` INTEGER, `warmupElapsedSeconds` INTEGER, `warmupOutcome` TEXT, `lastModified` INTEGER NOT NULL, PRIMARY KEY(`session_id`))",
+        "fields": [
+          {
+            "fieldPath": "session_id",
+            "columnName": "session_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTimestamp",
+            "columnName": "startTimestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endTimestamp",
+            "columnName": "endTimestamp",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "elapsedSeconds",
+            "columnName": "elapsedSeconds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetDistanceM",
+            "columnName": "targetDistanceM",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "targetDurationMin",
+            "columnName": "targetDurationMin",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "calories",
+            "columnName": "calories",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "setMatrix",
+            "columnName": "setMatrix",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "intervalState",
+            "columnName": "intervalState",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "routineName",
+            "columnName": "routineName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "warmupName",
+            "columnName": "warmupName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "warmupDurationSeconds",
+            "columnName": "warmupDurationSeconds",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "warmupElapsedSeconds",
+            "columnName": "warmupElapsedSeconds",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "warmupOutcome",
+            "columnName": "warmupOutcome",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "lastModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "session_id"
+          ]
+        }
+      },
+      {
+        "tableName": "workout_presets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `scheduledDay` TEXT NOT NULL, `exercises` TEXT NOT NULL, `warmupName` TEXT, `warmupDurationSeconds` INTEGER, `lastModified` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scheduledDay",
+            "columnName": "scheduledDay",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exercises",
+            "columnName": "exercises",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "warmupName",
+            "columnName": "warmupName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "warmupDurationSeconds",
+            "columnName": "warmupDurationSeconds",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "lastModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_workout_presets_name",
+            "unique": false,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_workout_presets_name` ON `${TABLE_NAME}` (`name`)"
+          }
+        ]
+      },
+      {
+        "tableName": "exercise_catalog",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `muscleCategory` TEXT NOT NULL, `alternativeIds` TEXT NOT NULL, `isUserAdded` INTEGER NOT NULL, `lastModified` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "muscleCategory",
+            "columnName": "muscleCategory",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "alternativeIds",
+            "columnName": "alternativeIds",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isUserAdded",
+            "columnName": "isUserAdded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "lastModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_exercise_catalog_name",
+            "unique": false,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_exercise_catalog_name` ON `${TABLE_NAME}` (`name`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '95b6c9de4dd0c0a038fad77a3abf3479')"
+    ]
+  }
+}

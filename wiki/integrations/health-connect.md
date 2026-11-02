@@ -3,7 +3,7 @@
 > How this repo reads wearable health metrics (steps, heart rate, sleep) from
 > Android Health Connect and writes completed workouts as exercise records.
 
-Last updated: 2026-10-26
+Last updated: 2026-10-29
 
 ## Opt-in gate
 
@@ -15,6 +15,14 @@ values stay untouched in the database. The toggle is persisted in
 and enforced in `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt`
 (entry vitals) and `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutViewModel.kt`
 (exercise writes) plus the entry UI.
+
+## Manual vitals alongside imports
+
+Entry vitals are not a separate Health Connect-owned store: the entry UI keeps one
+draft seeded from the stored entry, and an import overwrites only blood pressure,
+heart rate, and sleep. Manually typed blood glucose, body temperature, and SpO2
+survive the import, and a later manual save replaces the imported BP/HR values in
+the same columns (see [[ui-layer]] and [[data-layer]]).
 
 ## Relationship to Android Health Connect
 

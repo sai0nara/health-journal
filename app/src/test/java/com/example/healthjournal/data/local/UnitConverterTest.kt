@@ -148,4 +148,40 @@ class UnitConverterTest {
         assertNull(UnitConverter.parseMeasurement("", UnitSystem.IMPERIAL, isWeight = true))
         assertNull(UnitConverter.parseMeasurement("abc", UnitSystem.METRIC, isWeight = false))
     }
+
+    @Test
+    fun `mmol to mgdl conversion is accurate`() {
+        assertEquals(97.3, UnitConverter.mmolToMgdl(5.4), 0.01)
+    }
+
+    @Test
+    fun `mgdl to mmol conversion is accurate`() {
+        assertEquals(5.38, UnitConverter.mgdlToMmol(97.0), 0.01)
+    }
+
+    @Test
+    fun `glucose display round trip stays within one mgdl`() {
+        val mmol = UnitConverter.mgdlToMmol(97.0)
+        val mgdl = UnitConverter.mmolToMgdl(mmol)
+
+        assertEquals(97.0, mgdl, 1.0)
+    }
+
+    @Test
+    fun `celsius to fahrenheit conversion is accurate`() {
+        assertEquals(97.9, UnitConverter.celsiusToFahrenheit(36.6), 0.01)
+    }
+
+    @Test
+    fun `fahrenheit to celsius conversion is accurate`() {
+        assertEquals(37.0, UnitConverter.fahrenheitToCelsius(98.6), 0.01)
+    }
+
+    @Test
+    fun `temperature display round trip stays within one decimal`() {
+        val celsius = UnitConverter.fahrenheitToCelsius(98.6)
+        val fahrenheit = UnitConverter.celsiusToFahrenheit(celsius)
+
+        assertEquals(98.6, fahrenheit, 0.1)
+    }
 }

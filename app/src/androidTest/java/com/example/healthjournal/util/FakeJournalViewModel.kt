@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.domain.EntryVitals
 import com.example.healthjournal.viewmodel.HealthSyncResult
 import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,7 @@ open class FakeJournalViewModel : IJournalViewModel {
 
     var addEntryCalledWith: AddEntryCall? = null
     var updateEntryCalledWith: Pair<JournalEntry, Set<String>>? = null
+    var updateVitalsCalledWith: Pair<String, EntryVitals>? = null
     var entryToReturn: JournalEntry? = null
     var restoredEntryId: String? = null
     var deletedEntriesIds: List<String>? = null
@@ -40,13 +42,23 @@ open class FakeJournalViewModel : IJournalViewModel {
     var syncNowCalled = false
     var requestDriveAuthCalled = false
     var healthAvailability = 1
+    var healthPermissionsGranted = false
+    var healthSyncResult: HealthSyncResult = HealthSyncResult()
+    var syncHealthDataCalled = false
 
     data class AddEntryCall(
         val description: String,
         val timestamp: Long,
         val photoUrls: List<String>,
         val attachments: List<AttachmentData>,
-        val tags: Set<String>
+        val tags: Set<String>,
+        val bpSystolic: Double? = null,
+        val bpDiastolic: Double? = null,
+        val heartRate: Int? = null,
+        val sleepHours: Float? = null,
+        val bloodGlucoseMmol: Double? = null,
+        val bodyTemperatureC: Double? = null,
+        val spo2Percent: Int? = null
     )
 
     override fun addEntry(
@@ -58,13 +70,47 @@ open class FakeJournalViewModel : IJournalViewModel {
         bpDiastolic: Double?,
         heartRate: Int?,
         sleepHours: Float?,
+        bloodGlucoseMmol: Double?,
+        bodyTemperatureC: Double?,
+        spo2Percent: Int?,
         tags: Set<String>
     ) {
-        addEntryCalledWith = AddEntryCall(description, timestamp, photoUrls, attachments, tags)
+        addEntryCalledWith = AddEntryCall(
+            description = description,
+            timestamp = timestamp,
+            photoUrls = photoUrls,
+            attachments = attachments,
+            tags = tags,
+            bpSystolic = bpSystolic,
+            bpDiastolic = bpDiastolic,
+            heartRate = heartRate,
+            sleepHours = sleepHours,
+            bloodGlucoseMmol = bloodGlucoseMmol,
+            bodyTemperatureC = bodyTemperatureC,
+            spo2Percent = spo2Percent
+        )
     }
 
     override fun updateEntry(entry: JournalEntry, tags: Set<String>) {
         updateEntryCalledWith = entry to tags
+    }
+
+    override fun updateVitals(entryId: String, vitals: EntryVitals) {
+        updateVitalsCalledWith = entryId to vitals
+        allEntries.value = allEntries.value.map { entry ->
+            if (entry.entry_id != entryId) {
+                entry
+            } else {
+                entry.copy(
+                    bp_systolic = vitals.bpSystolic,
+                    bp_diastolic = vitals.bpDiastolic,
+                    heart_rate_avg = vitals.heartRate,
+                    blood_glucose_mmol = vitals.bloodGlucoseMmol,
+                    body_temperature_c = vitals.bodyTemperatureC,
+                    spo2_percent = vitals.spo2Percent
+                )
+            }
+        }
     }
 
     override suspend fun getEntryById(entryId: String): JournalEntry? = entryToReturn
@@ -116,9 +162,12 @@ open class FakeJournalViewModel : IJournalViewModel {
     override fun setHealthSyncEnabled(enabled: Boolean) {
         isHealthSyncEnabled.value = enabled
     }
-    override suspend fun hasHealthPermissions(): Boolean = false
+    override suspend fun hasHealthPermissions(): Boolean = healthPermissionsGranted
     override fun checkHealthAvailability(): Int = healthAvailability
-    override suspend fun syncHealthData(timestamp: Long): HealthSyncResult = HealthSyncResult()
+    override suspend fun syncHealthData(timestamp: Long): HealthSyncResult {
+        syncHealthDataCalled = true
+        return healthSyncResult
+    }
 
     override fun archiveEntry(entryId: String) {}
 

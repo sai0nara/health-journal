@@ -2,7 +2,7 @@
 
 > The Room persistence layer: entities, DAOs, converters, and the repositories that own local reads and writes.
 
-Last updated: 2026-10-26
+Last updated: 2026-10-29
 
 ## What lives here
 
@@ -21,14 +21,20 @@ seconds, calories) plus two structured payloads: the strength **set matrix** and
 HIIT **interval state**, both of which `JournalTypeConverters` serializes to JSON for
 Room's Gson columns. Optional routine warm-up metadata is stored as nullable
 columns: `warmupName`, `warmupDurationSeconds`, `warmupElapsedSeconds`, and
-`warmupOutcome`. The schema is at version 20, added incrementally via the
-versioned migrations in `JournalDatabase.kt` (13→14 drops orphaned sync columns,
-14→15 adds the set matrix, 15→16 adds the interval state, 16→17 adds workout presets
-and the exercise catalog, 17→18 adds routineName to workout sessions, 18→19 folds
-case variants of a tag onto one lowercase cross-ref per entry, 19→20 adds the
-warm-up columns to presets and sessions); the exported JSON schema lives under
-`app/schemas/`. These payloads are what the session engine restores on crash
-recovery (see [[viewmodel-layer]]).
+`warmupOutcome`. Schema changes ship as versioned migrations in `JournalDatabase.kt`
+— consult that file for the current version and the migration list — and the
+exported JSON schema lives under `app/schemas/`. These payloads are what the session
+engine restores on crash recovery (see [[viewmodel-layer]]).
+
+## Journal entry vitals
+
+Journal entries carry their vitals on the entry row rather than in a separate
+table: blood pressure (systolic/diastolic), heart rate, blood glucose, body
+temperature, SpO2, and sleep. Values are stored in canonical metric units and
+converted for display in the UI layer (see [[ui-layer]]). Health Connect imports
+and manual edits write the same columns, so the latest write wins, and rows or
+payloads created before the vitals columns existed read them as null after the
+forward-only migration registered in `JournalDatabase.kt`.
 
 ## Key components
 
@@ -59,6 +65,7 @@ of this same repository layer and Room database rather than maintaining its own 
 ## Sources
 
 - `app/src/main/java/com/example/healthjournal/data/local/JournalDatabase.kt` — the Room database and migrations.
+- `app/src/main/java/com/example/healthjournal/data/local/JournalEntry.kt` — the journal entry entity including the vitals columns.
 - `app/src/main/java/com/example/healthjournal/data/local/WorkoutPreset.kt` — preset entity including optional warm-up columns.
 - `app/src/main/java/com/example/healthjournal/data/local/WorkoutSession.kt` — session entity including warm-up snapshot/outcome columns.
 - `app/src/main/java/com/example/healthjournal/data/JournalRepository.kt` — local persistence orchestration.
