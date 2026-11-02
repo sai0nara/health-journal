@@ -7,11 +7,12 @@
 > Cross-references between documents use backticked paths, not wikilinks,
 > because the same feature slug exists in three directories.
 
-Last updated: 2026-10-29
+Last updated: 2026-11-02
 
 ## Features
 
 - `Docs/prd/ai-insights.md` — planned
+- `Docs/prd/profiles-for-siblings.md` — planned
 - `Docs/prd/move-add-measurement-button.md` — PRD
 - `Docs/prd/hashtags.md` — PRD
 - `Docs/prd/main-page-tiles.md` — PRD

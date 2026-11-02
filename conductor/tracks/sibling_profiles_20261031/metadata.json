@@ -1,0 +1,8 @@
+{
+  "track_id": "sibling_profiles_20261031",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-11-02T10:32:09Z",
+  "updated_at": "2026-11-02T10:32:09Z",
+  "description": "Implement Docs/prd/profiles-for-siblings.md: multi-profile isolation for journal, measurements, goals, workouts, personal card, sync, backup, restore, PDF export, and Health Connect."
+}

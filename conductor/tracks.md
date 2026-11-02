@@ -58,3 +58,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [~] **Track: Refactor History card: To add blood pressure manually glycemic index Other common params**
   *Link: [./tracks/history_card_vitals_20261028/](./tracks/history_card_vitals_20261028/)*
+
+---
+
+- [ ] **Track: Sibling Profiles**
+  *Link: [./tracks/sibling_profiles_20261031/](./tracks/sibling_profiles_20261031/)*
