@@ -20,6 +20,7 @@ sealed interface PresetUiState {
     /** Draft being created ([presetId] null) or edited ([presetId] set). */
     data class Editing(
         val presetId: String? = null,
+        val profileId: String? = null,
         val name: String = "",
         val scheduledDay: ScheduledDay = ScheduledDay.ANY,
         val exercises: List<PresetExercise> = emptyList(),
@@ -30,6 +31,7 @@ sealed interface PresetUiState {
         val warmupDurationMinutes: String =
             ValidatePreset.WARMUP_DEFAULT_MINUTES.toString(),
         @get:StringRes val warmupNameError: Int? = null,
-        @get:StringRes val warmupDurationError: Int? = null
+        @get:StringRes val warmupDurationError: Int? = null,
+        val isSaving: Boolean = false
     ) : PresetUiState
 }

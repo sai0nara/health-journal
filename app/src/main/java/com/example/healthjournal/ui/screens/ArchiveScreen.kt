@@ -39,7 +39,10 @@ import kotlinx.coroutines.launch
 fun ArchiveScreen(
     viewModel: IJournalViewModel,
     onBack: () -> Unit,
-    onEntryClick: (String) -> Unit
+    onEntryClick: (String) -> Unit,
+    profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
+        { _, _ -> },
+    onSwitchProfile: (String) -> Unit = {}
 ) {
     val archivedEntries by viewModel.reactiveArchivedEntries.collectAsState()
     val searchQuery by viewModel.archiveSearchQuery.collectAsState()
@@ -173,6 +176,9 @@ fun ArchiveScreen(
                     }
                 },
                 actions = {
+                    if (!isSelectionMode) {
+                        profileSwitcher(true, onSwitchProfile)
+                    }
                     if (isSelectionMode) {
                         IconButton(onClick = { 
                             selectedIds.forEach { viewModel.restoreEntry(it) }

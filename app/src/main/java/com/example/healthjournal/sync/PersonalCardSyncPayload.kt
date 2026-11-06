@@ -1,6 +1,7 @@
 package com.example.healthjournal.sync
 
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.data.local.sanitized
 import com.google.gson.Gson
 
@@ -12,14 +13,17 @@ import com.google.gson.Gson
 object PersonalCardSyncPayload {
     private val gson = Gson()
 
-
     fun toJson(cards: List<PersonalCard>): String =
         gson.toJson(cards)
 
-    fun fromJson(json: String?): List<PersonalCard> {
+    fun fromJson(
+        json: String?,
+        defaultProfileId: String = SELF_PROFILE_ID
+    ): List<PersonalCard> {
         if (json.isNullOrBlank()) return emptyList()
         return try {
-            gson.fromJson(json, Array<PersonalCard>::class.java)?.toList()?.mapNotNull { it?.sanitized() }
+            gson.fromJson(json, Array<PersonalCard>::class.java)?.toList()
+                ?.mapNotNull { it?.sanitized(defaultProfileId) }
                 ?: emptyList()
         } catch (_: Exception) {
             emptyList()

@@ -1,6 +1,7 @@
 package com.example.healthjournal.viewmodel
 
 import com.example.healthjournal.R
+import com.example.healthjournal.data.FakeActiveProfileProvider
 import com.example.healthjournal.data.PresetRepository
 import com.example.healthjournal.data.local.ExerciseCatalogItem
 import com.example.healthjournal.data.local.FakeExerciseCatalogDao
@@ -34,6 +35,7 @@ class PresetViewModelTest {
     private lateinit var presetDao: FakeWorkoutPresetDao
     private lateinit var catalogDao: FakeExerciseCatalogDao
     private lateinit var repository: PresetRepository
+    private val activeProfile = FakeActiveProfileProvider()
 
     private val benchPress = PresetExercise(
         exerciseId = "bench-press",
@@ -48,7 +50,7 @@ class PresetViewModelTest {
         Dispatchers.setMain(dispatcher)
         presetDao = FakeWorkoutPresetDao()
         catalogDao = FakeExerciseCatalogDao()
-        repository = PresetRepository(presetDao)
+        repository = PresetRepository(presetDao, activeProfile)
     }
 
     @After
@@ -649,5 +651,134 @@ class PresetViewModelTest {
         assertEquals(saved.id, updated.id)
         assertEquals(ScheduledDay.MONDAY.name, updated.scheduledDay)
         assertEquals(listOf(benchPress), updated.exercises)
+    }
+
+    @Test
+    fun openCreate_capturesProfile_andSavesToCapturedProfileAfterSwitch() = runTest {
+        activeProfile.switchTo("self")
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.openCreate()
+        vm.updateName("Self Routine")
+        vm.addExercise(benchPress)
+
+        activeProfile.switchTo("sibling")
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(listOf("Self Routine"), repository.getAllPresets("self").map { it.name })
+        assertTrue(repository.getAllPresets("sibling").isEmpty())
+    }
+
+    @Test
+    fun openEdit_capturesProfile_andSavesToOriginalProfileAfterSwitch() = runTest {
+        activeProfile.switchTo("self")
+        repository.savePreset(
+            WorkoutPreset(
+                id = "p-self",
+                name = "Self Routine",
+                exercises = listOf(benchPress)
+            )
+        )
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.openEdit("p-self")
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.updateName("Self Routine Updated")
+
+        activeProfile.switchTo("sibling")
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(listOf("Self Routine Updated"), repository.getAllPresets("self").map { it.name })
+        assertTrue(repository.getAllPresets("sibling").isEmpty())
+    }
+
+    @Test
+    fun presetsArePerProfile_sameNameAllowed_andCatalogStaysShared() = runTest {
+        catalogDao.insertAll(
+            listOf(
+                ExerciseCatalogItem(
+                    id = "bench-press",
+                    name = "Bench Press",
+                    muscleCategory = "Chest"
+                )
+            )
+        )
+        val vm = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        activeProfile.switchTo("self")
+        vm.openCreate()
+        vm.updateName("Full Body")
+        vm.addExercise(benchPress)
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        activeProfile.switchTo("sibling")
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.presets.value.isEmpty())
+        assertEquals(listOf("bench-press"), vm.catalog.value.map { it.id })
+
+        vm.openCreate()
+        vm.updateName("Full Body")
+        vm.addExercise(benchPress.copy(targetSets = 5))
+        vm.savePreset()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, vm.presets.value.size)
+        assertEquals(5, vm.presets.value.single().exercises.single().targetSets)
+
+        activeProfile.switchTo("self")
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(1, vm.presets.value.size)
+        assertEquals(3, vm.presets.value.single().exercises.single().targetSets)
+        assertEquals(listOf("bench-press"), vm.catalog.value.map { it.id })
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class PresetSavingStateTest {
+
+    private val dispatcher = StandardTestDispatcher()
+
+    @Before
+    fun setup() {
+        Dispatchers.setMain(dispatcher)
+    }
+
+    @After
+    fun teardown() {
+        Dispatchers.resetMain()
+    }
+
+    @Test
+    fun savePreset_marksEditingSavingUntilRepositoryCompletes() = runTest {
+        val vm = PresetViewModel(
+            PresetRepository(FakeWorkoutPresetDao(), FakeActiveProfileProvider()),
+            FakeExerciseCatalogDao(),
+            dispatcher
+        )
+        dispatcher.scheduler.advanceUntilIdle()
+
+        vm.openCreate()
+        vm.updateName("Leg Day")
+        vm.addExercise(
+            PresetExercise(
+                exerciseId = "bench-press",
+                targetSets = 3,
+                defaultReps = 5,
+                defaultWeightKg = 60.0,
+                restSeconds = 90
+            )
+        )
+        vm.savePreset()
+
+        assertTrue((vm.uiState.value as PresetUiState.Editing).isSaving)
+
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.uiState.value is PresetUiState.Library)
     }
 }

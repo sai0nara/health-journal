@@ -15,6 +15,9 @@ import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
 import com.example.healthjournal.data.local.PersonalCardDao
+import com.example.healthjournal.data.local.ProfileDao
+import com.example.healthjournal.data.local.ProfileEntity
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutPresetDao
 import com.example.healthjournal.data.local.WorkoutSession
@@ -48,7 +51,8 @@ class FullBackupUseCaseTest {
         journalDao: JournalDao = mockk(),
         bodyMeasurementDao: BodyMeasurementDao = mockk(),
         workoutSessionDao: WorkoutSessionDao = mockk(),
-        workoutPresetDao: WorkoutPresetDao = mockk()
+        workoutPresetDao: WorkoutPresetDao = mockk(),
+        profileDao: ProfileDao = mockk()
     ): JournalDatabase {
         val db = mockk<JournalDatabase>()
         val helper = mockk<androidx.sqlite.db.SupportSQLiteOpenHelper>()
@@ -57,8 +61,12 @@ class FullBackupUseCaseTest {
         coEvery { db.bodyMeasurementDao() } returns bodyMeasurementDao
         coEvery { db.workoutSessionDao() } returns workoutSessionDao
         coEvery { db.workoutPresetDao() } returns workoutPresetDao
-        coEvery { workoutSessionDao.getAllSessions() } returns flowOf(emptyList())
-        coEvery { workoutPresetDao.getAllPresets() } returns flowOf(emptyList())
+        coEvery { db.profileDao() } returns profileDao
+        coEvery { profileDao.getAll() } returns listOf(
+            ProfileEntity(id = SELF_PROFILE_ID, name = "Me", relationship = "SELF")
+        )
+        coEvery { workoutSessionDao.getAllSessions(SELF_PROFILE_ID) } returns flowOf(emptyList())
+        coEvery { workoutPresetDao.getAllPresets(SELF_PROFILE_ID) } returns flowOf(emptyList())
         coEvery { db.openHelper } returns helper
         coEvery { helper.readableDatabase } returns sqLiteDatabase
         coEvery { sqLiteDatabase.version } returns version
@@ -85,28 +93,28 @@ class FullBackupUseCaseTest {
             workoutSessionDao = workoutDao,
             workoutPresetDao = presetDao
         )
-        coEvery { workoutDao.getAllSessions() } returns flowOf(listOf(WorkoutSession(session_id = "w1", type = "RUN", startTimestamp = 10L)))
-        coEvery { presetDao.getAllPresets() } returns flowOf(listOf(
+        coEvery { workoutDao.getAllSessions(SELF_PROFILE_ID) } returns flowOf(listOf(WorkoutSession(session_id = "w1", type = "RUN", startTimestamp = 10L)))
+        coEvery { presetDao.getAllPresets(SELF_PROFILE_ID) } returns flowOf(listOf(
             WorkoutPreset(id = "p1", name = "Leg day", warmupName = "Rowing", warmupDurationSeconds = 300)
         ))
 
         val journalRepo = mockk<JournalRepository>()
-        coEvery { journalRepo.getAllEntriesInDateRange(0L, Long.MAX_VALUE) } returns
+        coEvery { journalRepo.getAllEntriesInDateRange(SELF_PROFILE_ID, 0L, Long.MAX_VALUE) } returns
             listOf(JournalEntry(entry_id = "e1", description = "x"))
-        coEvery { journalDao.getAllDeletedEntries() } returns listOf(DeletedEntry("eDel"))
-        coEvery { journalDao.getAllTags() } returns listOf(EntryTagCrossRef("e1", "health"))
+        coEvery { journalDao.getAllDeletedEntries(SELF_PROFILE_ID) } returns listOf(DeletedEntry("eDel"))
+        coEvery { journalDao.getAllTags(SELF_PROFILE_ID) } returns listOf(EntryTagCrossRef("e1", "health"))
 
         val bodyRepo = mockk<BodyMeasurementRepository>()
-        coEvery { bodyRepo.allEntries } returns flowOf(listOf(BodyMeasurementEntry(entry_id = "m1", weight_kg = 80.0)))
-        coEvery { bodyDao.getAllDeletedEntries() } returns listOf(DeletedEntry("mDel"))
+        coEvery { bodyRepo.getAllEntriesList(SELF_PROFILE_ID) } returns listOf(BodyMeasurementEntry(entry_id = "m1", weight_kg = 80.0))
+        coEvery { bodyDao.getAllDeletedEntries(SELF_PROFILE_ID) } returns listOf(DeletedEntry("mDel"))
 
         val goalsRepo = mockk<GoalsRepository>()
-        coEvery { goalsRepo.getAll() } returns listOf(GoalEntity(parameterId = "weight", target = 75.0, lastModified = 1L))
+        coEvery { goalsRepo.getAll(SELF_PROFILE_ID) } returns listOf(GoalEntity(parameterId = "weight", target = 75.0, lastModified = 1L))
 
         val pcRepo = mockk<PersonalCardRepository>()
         val personalCardDao = mockk<PersonalCardDao>()
         coEvery { db.personalCardDao() } returns personalCardDao
-        coEvery { pcRepo.getPersonalCardSnapshot() } returns PersonalCard(id = "personal_card")
+        coEvery { pcRepo.getPersonalCardSnapshot(SELF_PROFILE_ID) } returns PersonalCard(id = "personal_card")
 
         val useCase = FullBackupUseCase(
             database = db,
@@ -159,16 +167,16 @@ class FullBackupUseCaseTest {
     fun execute_schemaVersionReflectsDatabase() = runTest {
         val db = mockDatabase(version = 9)
         val journalRepo = mockk<JournalRepository>()
-        coEvery { journalRepo.getAllEntriesInDateRange(0L, Long.MAX_VALUE) } returns emptyList()
-        coEvery { db.journalDao().getAllDeletedEntries() } returns emptyList()
-        coEvery { db.journalDao().getAllTags() } returns emptyList()
+        coEvery { journalRepo.getAllEntriesInDateRange(SELF_PROFILE_ID, 0L, Long.MAX_VALUE) } returns emptyList()
+        coEvery { db.journalDao().getAllDeletedEntries(SELF_PROFILE_ID) } returns emptyList()
+        coEvery { db.journalDao().getAllTags(SELF_PROFILE_ID) } returns emptyList()
         val bodyRepo = mockk<BodyMeasurementRepository>()
-        coEvery { bodyRepo.allEntries } returns flowOf(emptyList())
-        coEvery { db.bodyMeasurementDao().getAllDeletedEntries() } returns emptyList()
+        coEvery { bodyRepo.getAllEntriesList(SELF_PROFILE_ID) } returns emptyList()
+        coEvery { db.bodyMeasurementDao().getAllDeletedEntries(SELF_PROFILE_ID) } returns emptyList()
         val goalsRepo = mockk<GoalsRepository>()
-        coEvery { goalsRepo.getAll() } returns emptyList()
+        coEvery { goalsRepo.getAll(SELF_PROFILE_ID) } returns emptyList()
         val pcRepo = mockk<PersonalCardRepository>()
-        coEvery { pcRepo.getPersonalCardSnapshot() } returns null
+        coEvery { pcRepo.getPersonalCardSnapshot(SELF_PROFILE_ID) } returns null
         coEvery { db.personalCardDao() } returns mockk()
 
         val useCase = FullBackupUseCase(
@@ -194,22 +202,22 @@ class FullBackupUseCaseTest {
         val db = mockDatabase(version = 12, journalDao = journalDao, bodyMeasurementDao = bodyDao)
 
         val journalRepo = mockk<JournalRepository>()
-        coEvery { journalRepo.getAllEntriesInDateRange(0L, Long.MAX_VALUE) } returns
+        coEvery { journalRepo.getAllEntriesInDateRange(SELF_PROFILE_ID, 0L, Long.MAX_VALUE) } returns
             listOf(JournalEntry(entry_id = "e1", description = "x"))
-        coEvery { journalDao.getAllDeletedEntries() } returns emptyList()
-        coEvery { journalDao.getAllTags() } returns emptyList()
+        coEvery { journalDao.getAllDeletedEntries(SELF_PROFILE_ID) } returns emptyList()
+        coEvery { journalDao.getAllTags(SELF_PROFILE_ID) } returns emptyList()
 
         val bodyRepo = mockk<BodyMeasurementRepository>()
-        coEvery { bodyRepo.allEntries } returns flowOf(emptyList())
-        coEvery { bodyDao.getAllDeletedEntries() } returns emptyList()
+        coEvery { bodyRepo.getAllEntriesList(SELF_PROFILE_ID) } returns emptyList()
+        coEvery { bodyDao.getAllDeletedEntries(SELF_PROFILE_ID) } returns emptyList()
 
         val goalsRepo = mockk<GoalsRepository>()
-        coEvery { goalsRepo.getAll() } returns emptyList()
+        coEvery { goalsRepo.getAll(SELF_PROFILE_ID) } returns emptyList()
 
         val pcRepo = mockk<PersonalCardRepository>()
         val personalCardDao = mockk<PersonalCardDao>()
         coEvery { db.personalCardDao() } returns personalCardDao
-        coEvery { pcRepo.getPersonalCardSnapshot() } returns null
+        coEvery { pcRepo.getPersonalCardSnapshot(SELF_PROFILE_ID) } returns null
 
         val useCase = FullBackupUseCase(
             database = db,
@@ -236,18 +244,18 @@ class FullBackupUseCaseTest {
     fun execute_nullPassphrase_producesPlainArchive() = runTest {
         val journalDao = mockk<JournalDao>()
         val db = mockDatabase(journalDao = journalDao)
-        coEvery { journalDao.getAllDeletedEntries() } returns emptyList()
-        coEvery { journalDao.getAllTags() } returns emptyList()
+        coEvery { journalDao.getAllDeletedEntries(SELF_PROFILE_ID) } returns emptyList()
+        coEvery { journalDao.getAllTags(SELF_PROFILE_ID) } returns emptyList()
         val bodyRepo = mockk<BodyMeasurementRepository>()
-        coEvery { bodyRepo.allEntries } returns flowOf(emptyList())
-        coEvery { db.bodyMeasurementDao().getAllDeletedEntries() } returns emptyList()
+        coEvery { bodyRepo.getAllEntriesList(SELF_PROFILE_ID) } returns emptyList()
+        coEvery { db.bodyMeasurementDao().getAllDeletedEntries(SELF_PROFILE_ID) } returns emptyList()
         val goalsRepo = mockk<GoalsRepository>()
-        coEvery { goalsRepo.getAll() } returns emptyList()
+        coEvery { goalsRepo.getAll(SELF_PROFILE_ID) } returns emptyList()
         val pcRepo = mockk<PersonalCardRepository>()
-        coEvery { pcRepo.getPersonalCardSnapshot() } returns null
+        coEvery { pcRepo.getPersonalCardSnapshot(SELF_PROFILE_ID) } returns null
         coEvery { db.personalCardDao() } returns mockk()
         val journalRepo = mockk<JournalRepository>()
-        coEvery { journalRepo.getAllEntriesInDateRange(0L, Long.MAX_VALUE) } returns emptyList()
+        coEvery { journalRepo.getAllEntriesInDateRange(SELF_PROFILE_ID, 0L, Long.MAX_VALUE) } returns emptyList()
 
         val useCase = FullBackupUseCase(
             database = db,
@@ -284,23 +292,23 @@ class FullBackupUseCaseTest {
 
         val journalDao = mockk<JournalDao>()
         val db = mockDatabase(journalDao = journalDao)
-        coEvery { journalDao.getAllDeletedEntries() } returns emptyList()
-        coEvery { journalDao.getAllTags() } returns emptyList()
+        coEvery { journalDao.getAllDeletedEntries(SELF_PROFILE_ID) } returns emptyList()
+        coEvery { journalDao.getAllTags(SELF_PROFILE_ID) } returns emptyList()
 
         val entry = JournalEntry(entry_id = "e1", description = "x")
             .copy(photo_urls = listOf("file://${photo.absolutePath}"))
 
         val journalRepo = mockk<JournalRepository>()
-        coEvery { journalRepo.getAllEntriesInDateRange(0L, Long.MAX_VALUE) } returns listOf(entry)
+        coEvery { journalRepo.getAllEntriesInDateRange(SELF_PROFILE_ID, 0L, Long.MAX_VALUE) } returns listOf(entry)
 
         val bodyRepo = mockk<BodyMeasurementRepository>()
-        coEvery { bodyRepo.allEntries } returns flowOf(emptyList())
-        coEvery { db.bodyMeasurementDao().getAllDeletedEntries() } returns emptyList()
+        coEvery { bodyRepo.getAllEntriesList(SELF_PROFILE_ID) } returns emptyList()
+        coEvery { db.bodyMeasurementDao().getAllDeletedEntries(SELF_PROFILE_ID) } returns emptyList()
 
         val goalsRepo = mockk<GoalsRepository>()
-        coEvery { goalsRepo.getAll() } returns emptyList()
+        coEvery { goalsRepo.getAll(SELF_PROFILE_ID) } returns emptyList()
         val pcRepo = mockk<PersonalCardRepository>()
-        coEvery { pcRepo.getPersonalCardSnapshot() } returns null
+        coEvery { pcRepo.getPersonalCardSnapshot(SELF_PROFILE_ID) } returns null
         coEvery { db.personalCardDao() } returns mockk()
 
         val useCase = FullBackupUseCase(
@@ -321,6 +329,110 @@ class FullBackupUseCaseTest {
             val bytes = zf.getInputStream(mediaEntry).use { it.readBytes() }
             assertNotNull(bytes)
             assertTrue(bytes.contentEquals(byteArrayOf(9, 9, 9)))
+        }
+        unmockkStatic(Uri::class)
+    }
+
+    @Test
+    fun execute_includesAllActiveAndArchivedProfilesAndScopesSiblingMediaPaths() = runTest {
+        val filesDir = File(tempFolder.root, "files_multi")
+        val photosDir = File(filesDir, "photos")
+        photosDir.mkdirs()
+        val selfPhoto = File(photosDir, "shared_name.jpg").apply { writeBytes(byteArrayOf(1, 1, 1)) }
+        val sibPhotosDir = File(photosDir, "sib-1").apply { mkdirs() }
+        val sibPhoto = File(sibPhotosDir, "shared_name.jpg").apply { writeBytes(byteArrayOf(2, 2, 2)) }
+
+        mockkStatic(Uri::class)
+        coEvery { Uri.parse(any()) } answers {
+            val raw = firstArg<String>()
+            val mockUri = mockk<Uri>()
+            coEvery { mockUri.scheme } returns "file"
+            coEvery { mockUri.path } returns raw.removePrefix("file://")
+            mockUri
+        }
+
+        val journalDao = mockk<JournalDao>()
+        val bodyDao = mockk<BodyMeasurementDao>()
+        val workoutDao = mockk<WorkoutSessionDao>()
+        val presetDao = mockk<WorkoutPresetDao>()
+        val profileDao = mockk<ProfileDao>()
+        val profiles = listOf(
+            ProfileEntity(id = SELF_PROFILE_ID, name = "Me", relationship = "SELF"),
+            ProfileEntity(id = "sib-1", name = "Alex", relationship = "SIBLING", isArchived = true)
+        )
+        coEvery { profileDao.getAll() } returns profiles
+
+        val db = mockDatabase(
+            version = 22,
+            journalDao = journalDao,
+            bodyMeasurementDao = bodyDao,
+            workoutSessionDao = workoutDao,
+            workoutPresetDao = presetDao,
+            profileDao = profileDao
+        )
+        coEvery { profileDao.getAll() } returns profiles
+        coEvery { workoutDao.getAllSessions(any()) } returns flowOf(emptyList())
+        coEvery { presetDao.getAllPresets(any()) } returns flowOf(emptyList())
+        coEvery { journalDao.getAllDeletedEntries(any()) } returns emptyList()
+        coEvery { journalDao.getAllTags(any()) } returns emptyList()
+        coEvery { bodyDao.getAllDeletedEntries(any()) } returns emptyList()
+
+        val journalRepo = mockk<JournalRepository>()
+        coEvery { journalRepo.getAllEntriesInDateRange(SELF_PROFILE_ID, 0L, Long.MAX_VALUE) } returns listOf(
+            JournalEntry(
+                entry_id = "e-self",
+                profileId = SELF_PROFILE_ID,
+                description = "Self",
+                photo_urls = listOf("file://${selfPhoto.absolutePath}")
+            )
+        )
+        coEvery { journalRepo.getAllEntriesInDateRange("sib-1", 0L, Long.MAX_VALUE) } returns listOf(
+            JournalEntry(
+                entry_id = "e-sib",
+                profileId = "sib-1",
+                description = "Sibling",
+                photo_urls = listOf("file://${sibPhoto.absolutePath}")
+            )
+        )
+
+        val bodyRepo = mockk<BodyMeasurementRepository>()
+        coEvery { bodyRepo.getAllEntriesList(any()) } returns emptyList()
+        val goalsRepo = mockk<GoalsRepository>()
+        coEvery { goalsRepo.getAll(any()) } returns emptyList()
+        val pcRepo = mockk<PersonalCardRepository>()
+        coEvery { pcRepo.getPersonalCardSnapshot(any()) } returns null
+        coEvery { db.personalCardDao() } returns mockk()
+
+        val useCase = FullBackupUseCase(
+            database = db,
+            journalRepository = journalRepo,
+            bodyMeasurementRepository = bodyRepo,
+            goalsRepository = goalsRepo,
+            personalCardRepository = pcRepo,
+            filesDir = filesDir,
+            exportsDir = tempFolder.root,
+            gson = gson
+        )
+
+        val zip = useCase.execute()
+
+        val backedUpProfiles = gson.fromJson(
+            readText(zip, BackupWriter.EntityFile.PROFILES)!!,
+            Array<ProfileEntity>::class.java
+        ).toList()
+        assertEquals(profiles, backedUpProfiles)
+
+        val backedUpEntries = gson.fromJson(
+            readText(zip, BackupWriter.EntityFile.JOURNAL)!!,
+            Array<JournalEntry>::class.java
+        ).toList()
+        assertEquals(setOf(SELF_PROFILE_ID, "sib-1"), backedUpEntries.map { it.profileId }.toSet())
+
+        ZipFile(zip).use { zf ->
+            val selfMedia = zf.getEntry("media/shared_name.jpg") ?: error("self media missing")
+            val sibMedia = zf.getEntry("media/sib-1/shared_name.jpg") ?: error("sibling media missing")
+            assertTrue(zf.getInputStream(selfMedia).use { it.readBytes() }.contentEquals(byteArrayOf(1, 1, 1)))
+            assertTrue(zf.getInputStream(sibMedia).use { it.readBytes() }.contentEquals(byteArrayOf(2, 2, 2)))
         }
         unmockkStatic(Uri::class)
     }

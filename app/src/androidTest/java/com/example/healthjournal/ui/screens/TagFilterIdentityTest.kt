@@ -27,6 +27,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import com.example.healthjournal.util.FakeActiveProfileProvider
 
 /**
  * Filtering by a preset tag chip must match the same concept written by a
@@ -52,7 +53,7 @@ class TagFilterIdentityTest {
     fun setUp() {
         app = ApplicationProvider.getApplicationContext()
         db = Room.inMemoryDatabaseBuilder(app, JournalDatabase::class.java).build()
-        repository = JournalRepository(db.journalDao())
+        repository = JournalRepository(db.journalDao(), FakeActiveProfileProvider())
         val session = mockk<SessionManager>()
         every { session.getUserEmail() } returns null
         viewModel = JournalViewModel(

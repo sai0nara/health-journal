@@ -49,7 +49,7 @@ class RestoreCoordinator(
 
             val staging = File(scratchDir, "staging")
             extractor.extract(plainZip, staging)
-            val data = backupDataReader.read(staging)
+            val data = backupDataReader.read(staging).copy(formatVersion = manifest.formatVersion)
 
             val result = restoreRepository.restore(data, mediaStagingDir = File(staging, "media"))
 

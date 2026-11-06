@@ -65,7 +65,10 @@ import java.util.*
 fun AddEntryScreen(
     viewModel: IJournalViewModel,
     onBack: () -> Unit,
-    entryId: String? = null
+    entryId: String? = null,
+    profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
+        { _, _ -> },
+    onSwitchProfile: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -75,6 +78,23 @@ fun AddEntryScreen(
     var attachedFiles by remember { mutableStateOf<List<AttachmentData>>(emptyList()) }
     var existingEntry by remember { mutableStateOf<JournalEntry?>(null) }
     var entryTags by remember { mutableStateOf(setOf<String>()) }
+    // Capture the profile when the form opens so switching mid-edit cannot
+    // redirect the draft into another profile.
+    var formProfileId by remember(entryId) {
+        mutableStateOf(viewModel.activeProfileId.value)
+    }
+    val activeProfile by viewModel.activeProfile.collectAsState()
+    var formProfileName by remember(entryId) {
+        mutableStateOf(activeProfile?.name?.takeIf { it.isNotBlank() } ?: "Me")
+    }
+    LaunchedEffect(activeProfile?.id, activeProfile?.name) {
+        val current = activeProfile
+        if (current != null && current.id == formProfileId && current.name.isNotBlank()) {
+            formProfileName = current.name
+        }
+    }
+    var pendingHealthSyncTarget by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var confirmedHealthSyncProfileId by remember { mutableStateOf<String?>(null) }
     
     // Health Metrics State
     val unitSystem = UnitSettings.read(context)
@@ -82,6 +102,22 @@ fun AddEntryScreen(
     val vitalsErrors = ValidateVitals.validate(vitalsInput, unitSystem)
     var sleepHours by remember { mutableStateOf<Float?>(null) }
     var isHealthSyncing by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(false) }
+    var pendingSwitchId by remember { mutableStateOf<String?>(null) }
+    var initialSnapshot by remember { mutableStateOf<FormSnapshot?>(null) }
+
+    fun currentSnapshot() = FormSnapshot(
+        html = richTextState.toHtml(),
+        timestamp = selectedTimestamp,
+        photoUrls = attachedPhotoUris.map { it.toString() },
+        attachments = attachedFiles,
+        tags = entryTags,
+        vitals = vitalsInput,
+        sleepHours = sleepHours
+    )
+
+    fun isDraftDirty(): Boolean =
+        initialSnapshot?.let { it != currentSnapshot() } ?: false
 
     var cameraTempUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -150,6 +186,7 @@ fun AddEntryScreen(
     // Synced values replace BP/HR but never clear manually entered glucose,
     // temperature, or SpO2; a missing Health Connect value leaves the draft alone.
     fun applyHealthSyncResult(result: HealthSyncResult) {
+        if (result.targetProfileId != formProfileId) return
         vitalsInput = vitalsInput.copy(
             systolic = result.bpSystolic?.let { UnitConverter.formatDouble(it) } ?: vitalsInput.systolic,
             diastolic = result.bpDiastolic?.let { UnitConverter.formatDouble(it) } ?: vitalsInput.diastolic,
@@ -164,10 +201,12 @@ fun AddEntryScreen(
     ) { granted ->
         android.util.Log.d("AddEntryScreen", "Health permissions result: $granted")
         if (!viewModel.isHealthSyncEnabled.value) return@rememberLauncherForActivityResult
+        val targetProfileId = confirmedHealthSyncProfileId ?: formProfileId
+        confirmedHealthSyncProfileId = null
         if (granted.containsAll(viewModel.healthPermissions)) {
             scope.launch {
                 isHealthSyncing = true
-                applyHealthSyncResult(viewModel.syncHealthData(selectedTimestamp))
+                applyHealthSyncResult(viewModel.syncHealthData(selectedTimestamp, targetProfileId))
                 isHealthSyncing = false
             }
         } else {
@@ -190,6 +229,17 @@ fun AddEntryScreen(
                 sleepHours = entry.sleep_hours
                 entryTags = entry.tags?.toSet() ?: emptySet()
             }
+        }
+    }
+
+    LaunchedEffect(existingEntry) {
+        existingEntry?.let { formProfileId = it.profileId }
+    }
+
+    // Snapshot once the form is populated so a profile switch can detect edits.
+    LaunchedEffect(entryId, existingEntry) {
+        if (existingEntry != null || initialSnapshot == null) {
+            initialSnapshot = currentSnapshot()
         }
     }
 
@@ -299,6 +349,67 @@ fun AddEntryScreen(
         )
     }
 
+    pendingSwitchId?.let { targetProfileId ->
+        AlertDialog(
+            onDismissRequest = { pendingSwitchId = null },
+            title = { Text(stringResource(R.string.profile_switch_discard_title)) },
+            text = { Text(stringResource(R.string.profile_switch_discard_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingSwitchId = null
+                        onSwitchProfile(targetProfileId)
+                    }
+                ) {
+                    Text(stringResource(R.string.profile_switch_discard_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingSwitchId = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    pendingHealthSyncTarget?.let { (targetProfileId, targetProfileName) ->
+        AlertDialog(
+            onDismissRequest = { pendingHealthSyncTarget = null },
+            title = { Text(stringResource(R.string.entry_health_confirm_title)) },
+            text = { Text(stringResource(R.string.entry_health_confirm_body, targetProfileName)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingHealthSyncTarget = null
+                        scope.launch {
+                            if (viewModel.hasHealthPermissions()) {
+                                isHealthSyncing = true
+                                applyHealthSyncResult(
+                                    viewModel.syncHealthData(selectedTimestamp, targetProfileId)
+                                )
+                                isHealthSyncing = false
+                            } else {
+                                confirmedHealthSyncProfileId = targetProfileId
+                                android.util.Log.d(
+                                    "AddEntryScreen",
+                                    "Launching Health permissions for: ${viewModel.healthPermissions}"
+                                )
+                                healthPermissionsLauncher.launch(viewModel.healthPermissions)
+                            }
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.entry_health_confirm_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingHealthSyncTarget = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -309,6 +420,13 @@ fun AddEntryScreen(
                     }
                 },
                 actions = {
+                    profileSwitcher(!isSaving) { targetProfileId ->
+                        if (isDraftDirty()) {
+                            pendingSwitchId = targetProfileId
+                        } else {
+                            onSwitchProfile(targetProfileId)
+                        }
+                    }
                     if (existingEntry?.isArchived == true) {
                         IconButton(onClick = {
                             viewModel.restoreEntry(existingEntry!!.entry_id)
@@ -567,22 +685,21 @@ fun AddEntryScreen(
                     showSyncHealth = healthSyncEnabled,
                     onSyncHealthClick = {
                         if (!viewModel.isHealthSyncEnabled.value) return@EnrichmentPanel
-                        scope.launch {
-                            val availability = viewModel.checkHealthAvailability()
-                            if (availability != HealthConnectClient.SDK_AVAILABLE) {
-                                android.widget.Toast.makeText(context, context.getString(R.string.entry_toast_health_unavailable), android.widget.Toast.LENGTH_LONG).show()
-                                return@launch
-                            }
-
-                            if (viewModel.hasHealthPermissions()) {
-                                isHealthSyncing = true
-                                applyHealthSyncResult(viewModel.syncHealthData(selectedTimestamp))
-                                isHealthSyncing = false
-                            } else {
-                                android.util.Log.d("AddEntryScreen", "Launching Health permissions for: ${viewModel.healthPermissions}")
-                                healthPermissionsLauncher.launch(viewModel.healthPermissions)
-                            }
+                        val availability = viewModel.checkHealthAvailability()
+                        if (availability != HealthConnectClient.SDK_AVAILABLE) {
+                            android.widget.Toast.makeText(
+                                context,
+                                context.getString(R.string.entry_toast_health_unavailable),
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                            return@EnrichmentPanel
                         }
+                        val targetName = activeProfile
+                            ?.takeIf { it.id == formProfileId }
+                            ?.name
+                            ?.takeIf { it.isNotBlank() }
+                            ?: formProfileName
+                        pendingHealthSyncTarget = formProfileId to targetName
                     }
                 )
                 
@@ -600,6 +717,7 @@ fun AddEntryScreen(
                         val vitals = ValidateVitals.toEntryVitals(vitalsInput, unitSystem)
                         if (vitals != null) {
                         scope.launch {
+                            isSaving = true
                             val finalTimestamp = if (selectedTimestamp > System.currentTimeMillis()) {
                                 System.currentTimeMillis()
                             } else {
@@ -641,7 +759,8 @@ fun AddEntryScreen(
                                     bloodGlucoseMmol = vitals.bloodGlucoseMmol,
                                     bodyTemperatureC = vitals.bodyTemperatureC,
                                     spo2Percent = vitals.spo2Percent,
-                                    tags = tagsWithHashtags
+                                    tags = tagsWithHashtags,
+                                    profileId = formProfileId
                                 )
                             } else {
                                 existingEntry?.let {
@@ -659,7 +778,8 @@ fun AddEntryScreen(
                                             body_temperature_c = vitals.bodyTemperatureC,
                                             spo2_percent = vitals.spo2Percent
                                         ),
-                                        tags = tagsWithHashtags
+                                        tags = tagsWithHashtags,
+                                        profileId = formProfileId
                                     )
                                 }
                             }
@@ -781,3 +901,14 @@ private fun ReadOnlyVitalsSummary(entry: JournalEntry, unitSystem: UnitSystem) {
         }
     }
 }
+
+/** Snapshot of editable Add Entry values used to detect an unsaved draft. */
+private data class FormSnapshot(
+    val html: String,
+    val timestamp: Long,
+    val photoUrls: List<String>,
+    val attachments: List<AttachmentData>,
+    val tags: Set<String>,
+    val vitals: VitalsInput,
+    val sleepHours: Float?
+)

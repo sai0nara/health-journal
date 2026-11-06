@@ -38,6 +38,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.util.Locale
+import com.example.healthjournal.util.FakeActiveProfileProvider
 
 class PresetLibraryScreenTest {
 
@@ -53,7 +54,7 @@ class PresetLibraryScreenTest {
     fun setup() {
         presetDao = FakeWorkoutPresetDao()
         catalogDao = FakeExerciseCatalogDao()
-        repository = PresetRepository(presetDao)
+        repository = PresetRepository(presetDao, FakeActiveProfileProvider())
         viewModel = PresetViewModel(repository, catalogDao)
         runBlocking {
             catalogDao.insertAll(
@@ -572,5 +573,102 @@ class PresetLibraryScreenTest {
                 UnitSystem.METRIC
             )
         }
+    }
+}
+
+class PresetProfileSwitchTest {
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
+    private lateinit var viewModel: PresetViewModel
+
+    @Before
+    fun setup() {
+        val repository = PresetRepository(
+            FakeWorkoutPresetDao(),
+            FakeActiveProfileProvider()
+        )
+        viewModel = PresetViewModel(repository, FakeExerciseCatalogDao())
+    }
+
+    @Test
+    fun editingPreset_requiresDiscardConfirmationBeforeSwitch() {
+        var switchedTo: String? = null
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                PresetLibraryScreen(
+                    viewModel = viewModel,
+                    onBack = {},
+                    profileSwitcher = { enabled, onSwitch ->
+                        androidx.compose.material3.Button(
+                            onClick = { onSwitch("sibling") },
+                            enabled = enabled
+                        ) {
+                            androidx.compose.material3.Text("Switch")
+                        }
+                    },
+                    onSwitchProfile = { switchedTo = it }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Switch").performClick()
+
+        composeTestRule.onNodeWithText("Discard changes?").assertExists()
+        assertEquals(null, switchedTo)
+
+        composeTestRule.onNodeWithText("Discard and switch").performClick()
+        assertEquals("sibling", switchedTo)
+    }
+
+    @Test
+    fun presetsArePerProfile_andCatalogRemainsSharedAcrossProfiles() {
+        val activeProfile = FakeActiveProfileProvider()
+        val scopedRepo = PresetRepository(FakeWorkoutPresetDao(), activeProfile)
+        val scopedVm = PresetViewModel(scopedRepo, FakeExerciseCatalogDao())
+        runBlocking {
+            scopedRepo.savePreset(
+                "self",
+                WorkoutPreset(
+                    id = "p-self",
+                    name = "Self Only Routine",
+                    exercises = listOf(
+                        PresetExercise("bench-press", 3, 5, 60.0, 90)
+                    ),
+                    profileId = "self"
+                )
+            )
+            scopedRepo.savePreset(
+                "sibling",
+                WorkoutPreset(
+                    id = "p-sibling",
+                    name = "Sibling Only Routine",
+                    exercises = listOf(
+                        PresetExercise("barbell-squat", 4, 8, 80.0, 120)
+                    ),
+                    profileId = "sibling"
+                )
+            )
+        }
+
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                PresetLibraryScreen(viewModel = scopedVm, onBack = {})
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Self Only Routine").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Sibling Only Routine").assertDoesNotExist()
+
+        activeProfile.switchTo("sibling")
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Sibling Only Routine").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Self Only Routine").assertDoesNotExist()
     }
 }

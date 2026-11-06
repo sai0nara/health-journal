@@ -6,6 +6,7 @@ import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.ProfileEntity
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
 
@@ -21,7 +22,9 @@ data class BackupData(
     val deletedEntries: List<DeletedEntry> = emptyList(),
     val entryTags: List<EntryTagCrossRef> = emptyList(),
     val workoutSessions: List<WorkoutSession> = emptyList(),
-    val presets: List<WorkoutPreset> = emptyList()
+    val presets: List<WorkoutPreset> = emptyList(),
+    val profiles: List<ProfileEntity> = emptyList(),
+    val formatVersion: Int = if (profiles.isNotEmpty()) BackupWriter.BACKUP_FORMAT_VERSION else 1
 )
 
 /**

@@ -6,6 +6,8 @@ import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.ProfileEntity
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
 import com.google.gson.Gson
@@ -145,5 +147,39 @@ class BackupDataReaderTest {
             BackupDataReader(gson).read(staging)
         }
         assertEquals("Malformed ${BackupWriter.EntityFile.GOALS} in backup.", error.message)
+    }
+
+    @Test
+    fun read_v2ProfilesFile_loadsActiveAndArchivedProfiles() {
+        val staging = tempFolder.newFolder("v2_stage")
+        val profiles = listOf(
+            ProfileEntity(id = SELF_PROFILE_ID, name = "Me", relationship = "SELF"),
+            ProfileEntity(id = "sib-1", name = "Alex", relationship = "SIBLING", isArchived = true)
+        )
+        writeJson(staging, BackupWriter.EntityFile.PROFILES, profiles)
+
+        val result = BackupDataReader(gson).read(staging)
+
+        assertEquals(profiles, result.profiles)
+    }
+
+    @Test
+    fun read_v1EntitiesWithoutProfileId_defaultsOwnersToSelf() {
+        val staging = tempFolder.newFolder("v1_missing_profile_stage")
+        File(staging, BackupWriter.EntityFile.JOURNAL).writeText(
+            """[{"entry_id":"e1","description":"Legacy","timestamp":1,"lastModified":1}]"""
+        )
+        File(staging, BackupWriter.EntityFile.BODY_MEASUREMENTS).writeText(
+            """[{"entry_id":"m1","timestamp":1,"lastModified":1,"weight_kg":70.0}]"""
+        )
+        File(staging, BackupWriter.EntityFile.GOALS).writeText(
+            """[{"parameterId":"WEIGHT","target":70.0,"lastModified":1}]"""
+        )
+
+        val result = BackupDataReader(gson).read(staging)
+
+        assertEquals(SELF_PROFILE_ID, result.journalEntries.single().profileId)
+        assertEquals(SELF_PROFILE_ID, result.bodyMeasurements.single().profileId)
+        assertEquals(SELF_PROFILE_ID, result.goals.single().profileId)
     }
 }

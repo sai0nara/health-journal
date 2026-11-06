@@ -9,23 +9,23 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface WorkoutPresetDao {
 
-    /** Reactive feed of all presets, newest-edited first. */
-    @Query("SELECT * FROM workout_presets ORDER BY lastModified DESC")
-    fun getAllPresets(): Flow<List<WorkoutPreset>>
+    /** Reactive feed of one profile's presets, newest-edited first. */
+    @Query("SELECT * FROM workout_presets WHERE profileId = :profileId ORDER BY lastModified DESC")
+    fun getAllPresets(profileId: String): Flow<List<WorkoutPreset>>
 
-    @Query("SELECT * FROM workout_presets WHERE id = :presetId")
-    suspend fun getPresetById(presetId: String): WorkoutPreset?
+    @Query("SELECT * FROM workout_presets WHERE profileId = :profileId AND id = :presetId")
+    suspend fun getPresetById(profileId: String, presetId: String): WorkoutPreset?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertPreset(preset: WorkoutPreset)
 
-    @Query("DELETE FROM workout_presets WHERE id = :presetId")
-    suspend fun deletePresetById(presetId: String)
+    @Query("DELETE FROM workout_presets WHERE profileId = :profileId AND id = :presetId")
+    suspend fun deletePresetById(profileId: String, presetId: String)
 
     /** Bulk insert for full-backup restore (identity-preserving, replaces overlaps). */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(presets: List<WorkoutPreset>)
 
-    @Query("DELETE FROM workout_presets")
-    suspend fun clearAll()
+    @Query("DELETE FROM workout_presets WHERE profileId = :profileId")
+    suspend fun clearAll(profileId: String)
 }

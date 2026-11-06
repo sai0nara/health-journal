@@ -1,8 +1,10 @@
 package com.example.healthjournal.viewmodel
 
+import com.example.healthjournal.data.FakeActiveProfileProvider
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.WorkoutRepository
 import com.example.healthjournal.data.local.FakeWorkoutSessionDao
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.StrengthSet
@@ -38,6 +40,7 @@ class WorkoutSessionEngineTest {
     private val dispatcher = StandardTestDispatcher()
     private lateinit var dao: FakeWorkoutSessionDao
     private lateinit var repository: WorkoutRepository
+    private val activeProfile = FakeActiveProfileProvider()
     private val journalRepository: JournalRepository = mockk(relaxed = true)
     private val haptics = mutableListOf<WorkoutHaptic>()
 
@@ -45,7 +48,7 @@ class WorkoutSessionEngineTest {
     fun setup() {
         Dispatchers.setMain(dispatcher)
         dao = FakeWorkoutSessionDao()
-        repository = WorkoutRepository(dao)
+        repository = WorkoutRepository(dao, activeProfile)
         haptics.clear()
         coEvery { journalRepository.insert(any()) } returns Unit
     }
@@ -136,7 +139,7 @@ class WorkoutSessionEngineTest {
         vm.advanceTime(1)
         dispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(0L, dao.getSessionById(sessionId)!!.elapsedSeconds)
+        assertEquals(0L, dao.getSessionById(SELF_PROFILE_ID, sessionId)!!.elapsedSeconds)
     }
 
     @Test
@@ -175,7 +178,7 @@ class WorkoutSessionEngineTest {
         vm.advanceInterval()
         dispatcher.scheduler.advanceUntilIdle()
 
-        val persisted = dao.getSessionById((vm.uiState.value as WorkoutUiState.Active).session.session_id)!!
+        val persisted = dao.getSessionById(SELF_PROFILE_ID, (vm.uiState.value as WorkoutUiState.Active).session.session_id)!!
         assertNotNull(persisted.intervalState)
         assertEquals(WorkoutIntervalPhase.REST, persisted.intervalState!!.phase)
     }
@@ -203,7 +206,7 @@ class WorkoutSessionEngineTest {
         val state = vm.uiState.value as WorkoutUiState.Active
         assertEquals(listOf("Squat"), state.session.setMatrix?.map { it.name })
         assertNull(state.setMatrixError)
-        val persisted = dao.getSessionById(state.session.session_id)!!
+        val persisted = dao.getSessionById(SELF_PROFILE_ID, state.session.session_id)!!
         assertEquals("Squat", persisted.setMatrix!!.single().name)
     }
 
@@ -235,7 +238,7 @@ class WorkoutSessionEngineTest {
         assertEquals(600.0, set.kg * set.reps, 0.0)
         assertEquals(WorkoutViewModel.DEFAULT_REST_SECONDS, state.restSeconds)
         assertNull(state.setMatrixError)
-        assertEquals(1, dao.getSessionById(state.session.session_id)!!.setMatrix!!.single().sets.size)
+        assertEquals(1, dao.getSessionById(SELF_PROFILE_ID, state.session.session_id)!!.setMatrix!!.single().sets.size)
     }
 
     @Test

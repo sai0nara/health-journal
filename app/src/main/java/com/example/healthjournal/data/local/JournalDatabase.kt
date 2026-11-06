@@ -8,7 +8,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import java.util.Locale
 
-@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class, WorkoutPreset::class, ExerciseCatalogItem::class], version = 21, exportSchema = true)
+@Database(entities = [JournalEntry::class, DeletedEntry::class, EntryTagCrossRef::class, BodyMeasurementEntry::class, GoalEntity::class, PersonalCard::class, WorkoutSession::class, WorkoutPreset::class, ExerciseCatalogItem::class, ProfileEntity::class, ProfileDeletionEntity::class], version = 22, exportSchema = true)
 @androidx.room.TypeConverters(JournalTypeConverters::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
@@ -25,12 +25,16 @@ abstract class JournalDatabase : RoomDatabase() {
 
     abstract fun exerciseCatalogDao(): ExerciseCatalogDao
 
+    abstract fun profileDao(): ProfileDao
+
+    abstract fun profileDeletionDao(): ProfileDeletionDao
+
     companion object {
         @Volatile
         private var INSTANCE: JournalDatabase? = null
 
         /** Current Room database schema version; single-sourced for restore validation. */
-        const val CURRENT_SCHEMA_VERSION: Int = 21
+        const val CURRENT_SCHEMA_VERSION: Int = 22
 
         // v1 -> v2: add isSynced
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -352,6 +356,118 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        // v21 -> v22: multi-profile ownership. Existing rows belong to the
+        // migrated Self profile; the profile ids are stable strings because
+        // sync payloads address rows by (profileId, key).
+        val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                val now = System.currentTimeMillis()
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `profiles` (" +
+                        "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `relationship` TEXT NOT NULL, " +
+                        "`accentColor` INTEGER, `isArchived` INTEGER NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, `lastModified` INTEGER NOT NULL, " +
+                        "`isSynced` INTEGER, `syncStatus` TEXT, PRIMARY KEY(`id`))"
+                )
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `profile_deletions` (" +
+                        "`profileId` TEXT NOT NULL, `deletedAt` INTEGER NOT NULL, PRIMARY KEY(`profileId`))"
+                )
+                database.execSQL(
+                    "INSERT OR IGNORE INTO `profiles` " +
+                        "(`id`, `name`, `relationship`, `accentColor`, `isArchived`, `createdAt`, `lastModified`, `isSynced`, `syncStatus`) " +
+                        "VALUES ('self', 'Me', 'SELF', NULL, 0, $now, $now, 0, 'PENDING_SYNC')"
+                )
+
+                database.execSQL(
+                    "ALTER TABLE `journal_entries` ADD COLUMN `profileId` TEXT NOT NULL DEFAULT 'self'"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_journal_entries_profileId_timestamp` " +
+                        "ON `journal_entries` (`profileId`, `timestamp`)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_journal_entries_profileId_isArchived` " +
+                        "ON `journal_entries` (`profileId`, `isArchived`)"
+                )
+
+                database.execSQL(
+                    "ALTER TABLE `body_measurements` ADD COLUMN `profileId` TEXT NOT NULL DEFAULT 'self'"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_body_measurements_profileId_timestamp` " +
+                        "ON `body_measurements` (`profileId`, `timestamp`)"
+                )
+
+                database.execSQL(
+                    "ALTER TABLE `workout_sessions` ADD COLUMN `profileId` TEXT NOT NULL DEFAULT 'self'"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_workout_sessions_profileId_startTimestamp` " +
+                        "ON `workout_sessions` (`profileId`, `startTimestamp`)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_workout_sessions_profileId_status` " +
+                        "ON `workout_sessions` (`profileId`, `status`)"
+                )
+
+                database.execSQL(
+                    "ALTER TABLE `workout_presets` ADD COLUMN `profileId` TEXT NOT NULL DEFAULT 'self'"
+                )
+                database.execSQL("DROP INDEX IF EXISTS `index_workout_presets_name`")
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_workout_presets_profileId_name` " +
+                        "ON `workout_presets` (`profileId`, `name`)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_workout_presets_profileId_lastModified` " +
+                        "ON `workout_presets` (`profileId`, `lastModified`)"
+                )
+
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `goals_new` (" +
+                        "`parameterId` TEXT NOT NULL, `target` REAL NOT NULL, " +
+                        "`lastModified` INTEGER NOT NULL, `profileId` TEXT NOT NULL, " +
+                        "PRIMARY KEY(`profileId`, `parameterId`))"
+                )
+                database.execSQL(
+                    "INSERT INTO `goals_new` (`parameterId`, `target`, `lastModified`, `profileId`) " +
+                        "SELECT `parameterId`, `target`, `lastModified`, 'self' FROM `goals`"
+                )
+                database.execSQL("DROP TABLE `goals`")
+                database.execSQL("ALTER TABLE `goals_new` RENAME TO `goals`")
+
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `personal_card_new` (" +
+                        "`id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, " +
+                        "`lastModified` INTEGER NOT NULL, `isSynced` INTEGER, " +
+                        "`syncStatus` TEXT, `demographics` TEXT NOT NULL, " +
+                        "`medicalProfile` TEXT NOT NULL, `medicalHistory` TEXT NOT NULL, " +
+                        "`emergencyContacts` TEXT NOT NULL, `profileId` TEXT NOT NULL, " +
+                        "PRIMARY KEY(`profileId`, `id`))"
+                )
+                database.execSQL(
+                    "INSERT INTO `personal_card_new` " +
+                        "(`id`, `timestamp`, `lastModified`, `isSynced`, `syncStatus`, `demographics`, `medicalProfile`, `medicalHistory`, `emergencyContacts`, `profileId`) " +
+                        "SELECT `id`, `timestamp`, `lastModified`, `isSynced`, `syncStatus`, `demographics`, `medicalProfile`, `medicalHistory`, `emergencyContacts`, 'self' FROM `personal_card`"
+                )
+                database.execSQL("DROP TABLE `personal_card`")
+                database.execSQL("ALTER TABLE `personal_card_new` RENAME TO `personal_card`")
+
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `deleted_entries_new` (" +
+                        "`entry_id` TEXT NOT NULL, `deletedAt` INTEGER NOT NULL, " +
+                        "`profileId` TEXT NOT NULL, PRIMARY KEY(`profileId`, `entry_id`))"
+                )
+                database.execSQL(
+                    "INSERT INTO `deleted_entries_new` (`entry_id`, `deletedAt`, `profileId`) " +
+                        "SELECT `entry_id`, `deletedAt`, 'self' FROM `deleted_entries`"
+                )
+                database.execSQL("DROP TABLE `deleted_entries`")
+                database.execSQL("ALTER TABLE `deleted_entries_new` RENAME TO `deleted_entries`")
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -367,7 +483,8 @@ abstract class JournalDatabase : RoomDatabase() {
                     MIGRATION_17_18,
                     MIGRATION_18_19,
                     MIGRATION_19_20,
-                    MIGRATION_20_21
+                    MIGRATION_20_21,
+                    MIGRATION_21_22
                 ).build()
                 INSTANCE = instance
                 instance

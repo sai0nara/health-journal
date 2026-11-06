@@ -432,6 +432,7 @@ class PersonalCardScreenTest {
         step("Verify metric cm persisted") {
             io.mockk.coVerify {
                 repository.insertOrUpdate(
+                    any(),
                     match { it.demographics.heightCm == 177.8 }
                 )
             }
@@ -475,5 +476,54 @@ class PersonalCardScreenTest {
                 UnitSystem.METRIC
             )
         }
+    }
+}
+@Feature("Personal Card profile switch")
+class PersonalCardProfileSwitchTest {
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
+    private val repository: PersonalCardRepository = mockk(relaxed = true)
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    private fun setScreen(onSwitchProfile: (String) -> Unit) {
+        every { repository.getPersonalCard() } returns MutableStateFlow(PersonalCard())
+        coEvery { repository.insertOrUpdate(any()) } returns Unit
+        coEvery { repository.markEntryDirty() } returns Unit
+        val viewModel = PersonalCardViewModel(repository, ioDispatcher = testDispatcher)
+        composeTestRule.setContent {
+            com.example.healthjournal.ui.theme.HealthJournalTheme {
+                PersonalCardScreen(
+                    viewModel = viewModel,
+                    onBack = {},
+                    profileSwitcher = { enabled, onSwitch ->
+                        androidx.compose.material3.Button(
+                            onClick = { onSwitch("sibling") },
+                            enabled = enabled
+                        ) {
+                            androidx.compose.material3.Text("Switch")
+                        }
+                    },
+                    onSwitchProfile = onSwitchProfile
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+    }
+
+    @Test
+    fun editingCard_requiresDiscardConfirmationBeforeSwitch() {
+        var switchedTo: String? = null
+        setScreen { switchedTo = it }
+
+        composeTestRule.onNodeWithContentDescription("Edit personal card").performClick()
+        composeTestRule.onNodeWithText("Switch").performClick()
+
+        composeTestRule.onNodeWithText("Discard changes?").assertExists()
+        org.junit.Assert.assertNull(switchedTo)
+
+        composeTestRule.onNodeWithText("Discard and switch").performClick()
+        org.junit.Assert.assertEquals("sibling", switchedTo)
     }
 }

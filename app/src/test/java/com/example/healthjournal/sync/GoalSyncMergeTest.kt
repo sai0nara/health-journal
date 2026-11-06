@@ -120,4 +120,18 @@ class GoalSyncMergeTest {
 
         assertEquals(listOf(local), mergedGoals)
     }
+
+    @Test
+    fun mergeGoals_compositeKeyByProfileAndParameter_doesNotCrossReassignOrPruneOtherProfiles() {
+        val cloudSelf = GoalEntity(parameterId = "WEIGHT", target = 75.0, lastModified = 2_000L, profileId = "self")
+        val localSelfWaist = GoalEntity(parameterId = "WAIST", target = 80.0, lastModified = 1_000L, profileId = "self")
+        val localSibWeight = GoalEntity(parameterId = "WEIGHT", target = 60.0, lastModified = 1_000L, profileId = "sib-1")
+
+        val merged = SyncMerge.mergeGoals(listOf(cloudSelf), listOf(localSelfWaist, localSibWeight))
+        val byKey = merged.associateBy { it.profileId to it.parameterId }
+
+        assertEquals(75.0, byKey.getValue("self" to "WEIGHT").target, 0.001)
+        assertTrue(("self" to "WAIST") !in byKey)
+        assertEquals(60.0, byKey.getValue("sib-1" to "WEIGHT").target, 0.001)
+    }
 }

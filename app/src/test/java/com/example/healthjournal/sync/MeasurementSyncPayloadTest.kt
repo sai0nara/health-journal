@@ -56,4 +56,11 @@ class MeasurementSyncPayloadTest {
         // A missing/absent measurements file downloads as null content.
         assertEquals(emptyList<BodyMeasurementEntry>(), MeasurementSyncPayload.fromJson(null))
     }
+
+    @Test
+    fun payload_legacyMissingProfileId_normalizesToSelf() {
+        val json = """[{"entry_id":"m-leg","timestamp":1000,"lastModified":1000,"weight_kg":72.0}]"""
+        val restored = MeasurementSyncPayload.fromJson(json)
+        assertEquals("self", restored.single().profileId)
+    }
 }

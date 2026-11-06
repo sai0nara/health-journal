@@ -2,6 +2,7 @@ package com.example.healthjournal.ui.screens
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -34,6 +35,8 @@ class ExportScreenDefectsTest {
         val exportFlow = MutableStateFlow<ExportState>(ExportState.Idle)
         val exportViewModel = mockk<ExportViewModel>(relaxed = true)
         every { exportViewModel.exportState } returns exportFlow
+        every { exportViewModel.activeProfiles } returns MutableStateFlow(emptyList())
+        every { exportViewModel.selectedProfileIds } returns MutableStateFlow(emptySet())
         every { exportViewModel.exportData(any(), any(), any()) } just runs
 
         val restoreFlow = MutableStateFlow<RestoreUiState>(RestoreUiState.Idle)
@@ -105,5 +108,44 @@ class ExportScreenDefectsTest {
 
         composeTestRule.onNodeWithTag("format_pdf").performClick()
         composeTestRule.onNodeWithText("Start Date").assertIsDisplayed()
+    }
+}
+
+
+@RunWith(AndroidJUnit4::class)
+class ExportProfileSwitchTest {
+
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test
+    fun generatingExport_disablesProfileSwitching() {
+        val exportViewModel = mockk<ExportViewModel>(relaxed = true)
+        every { exportViewModel.exportState } returns MutableStateFlow(
+            ExportState.Generating(progress = 0.5f, message = "Exporting")
+        )
+        every { exportViewModel.activeProfiles } returns MutableStateFlow(emptyList())
+        every { exportViewModel.selectedProfileIds } returns MutableStateFlow(emptySet())
+        val restoreViewModel = mockk<RestoreViewModel>(relaxed = true)
+        every { restoreViewModel.uiState } returns MutableStateFlow(RestoreUiState.Idle)
+
+        composeTestRule.setContent {
+            ExportScreen(
+                viewModel = exportViewModel,
+                restoreViewModel = restoreViewModel,
+                onBack = {},
+                profileSwitcher = { enabled, onSwitch ->
+                    androidx.compose.material3.Button(
+                        onClick = { onSwitch("sibling") },
+                        enabled = enabled
+                    ) {
+                        androidx.compose.material3.Text("Switch")
+                    }
+                },
+                onSwitchProfile = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Switch").assertIsNotEnabled()
     }
 }

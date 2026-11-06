@@ -54,4 +54,29 @@ class MeasurementSyncMergeTest {
 
         assertEquals("l1", merged.single().entry_id)
     }
+
+    @Test
+    fun merge_compositeKeyByProfileAndId_preventsCrossProfileReassignment() {
+        val selfM = BodyMeasurementEntry(
+            entry_id = "m-shared",
+            profileId = "self",
+            timestamp = 1L,
+            weight_kg = 70.0,
+            lastModified = 1_000L
+        )
+        val sibM = BodyMeasurementEntry(
+            entry_id = "m-shared",
+            profileId = "sib-1",
+            timestamp = 1L,
+            weight_kg = 55.0,
+            lastModified = 2_000L
+        )
+
+        val merged = SyncMerge.mergeMeasurements(listOf(sibM), listOf(selfM))
+        val byProfile = merged.associateBy { it.profileId }
+
+        assertEquals(2, merged.size)
+        assertEquals(70.0, byProfile.getValue("self").weight_kg!!, 0.001)
+        assertEquals(55.0, byProfile.getValue("sib-1").weight_kg!!, 0.001)
+    }
 }

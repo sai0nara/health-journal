@@ -5,6 +5,9 @@ import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.ProfileEntity
+import com.example.healthjournal.data.local.ProfileRelationship
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.domain.TagIdentity
 import java.io.File
 
@@ -17,7 +20,8 @@ data class RestoreResult(
     val tagCount: Int,
     val mediaFileCount: Int,
     val workoutCount: Int = 0,
-    val presetCount: Int = 0
+    val presetCount: Int = 0,
+    val profileCount: Int = 1
 ) {
     val totalRecords: Int
         get() = journalEntryCount + bodyMeasurementCount + goalCount + deletedEntryCount + tagCount +
@@ -48,8 +52,23 @@ class RestoreRepository(
      *   [SafeBackupExtractor]; null to skip media re-import.
      * @throws RestoreError if validation/import fails (database is left untouched).
      */
+    suspend fun restore(
+        data: BackupData,
+        mediaStagingDir: File?,
+        formatVersion: Int
+    ): RestoreResult = restore(data.copy(formatVersion = formatVersion), mediaStagingDir)
+
     suspend fun restore(data: BackupData, mediaStagingDir: File?): RestoreResult {
-        val (remappedEntries, mediaCount, copiedFiles) = reimportMedia(data.journalEntries, mediaStagingDir)
+        val isMultiProfileV2 = data.formatVersion >= 2 || data.profiles.isNotEmpty()
+        val normalizedEntries = if (isMultiProfileV2) {
+            data.journalEntries.map { e ->
+                val pid = e.profileId.ifBlank { SELF_PROFILE_ID }
+                if (e.profileId == pid) e else e.copy(profileId = pid).also { it.tags = e.tags }
+            }
+        } else {
+            data.journalEntries.map { it.copy(profileId = SELF_PROFILE_ID).also { copy -> copy.tags = it.tags } }
+        }
+        val (remappedEntries, mediaCount, copiedFiles) = reimportMedia(normalizedEntries, mediaStagingDir)
         val dataToWrite = data.copy(journalEntries = remappedEntries)
         val canonicalTags = dataToWrite.entryTags
             .groupBy { it.entryId }
@@ -57,6 +76,12 @@ class RestoreRepository(
                 TagIdentity.canonicalDistinct(refs.map { it.tag })
                     .map { EntryTagCrossRef(entryId, it) }
             }
+
+        val restoredProfileCount = if (isMultiProfileV2) {
+            data.profiles.size.coerceAtLeast(1)
+        } else {
+            1
+        }
 
         try {
             runInTransaction {
@@ -67,23 +92,126 @@ class RestoreRepository(
                 val workoutDao = db.workoutSessionDao()
                 val presetDao = db.workoutPresetDao()
 
-                journalDao.clearAllEntries()
-                journalDao.clearAllDeletedEntries()
-                journalDao.clearAllTags()
-                bodyDao.clearAll()
-                goalDao.clear()
-                personalCardDao.clearAll()
-                workoutDao.clearAll()
-                presetDao.clearAll()
+                if (!isMultiProfileV2) {
+                    // A v1 backup has no profile ownership: restore it into Self
+                    // and leave any sibling profiles untouched.
+                    journalDao.clearAllEntries(SELF_PROFILE_ID)
+                    journalDao.clearAllDeletedEntries(SELF_PROFILE_ID)
+                    journalDao.clearAllTags(SELF_PROFILE_ID)
+                    bodyDao.clearAll(SELF_PROFILE_ID)
+                    goalDao.clear(SELF_PROFILE_ID)
+                    personalCardDao.clearAll(SELF_PROFILE_ID)
+                    workoutDao.clearAll(SELF_PROFILE_ID)
+                    presetDao.clearAll(SELF_PROFILE_ID)
 
-                journalDao.insertAll(dataToWrite.journalEntries)
-                journalDao.insertAllDeletedEntries(dataToWrite.deletedEntries)
-                journalDao.insertAllTags(canonicalTags)
-                bodyDao.replaceAll(dataToWrite.bodyMeasurements)
-                goalDao.importAll(dataToWrite.goals)
-                dataToWrite.personalCards.forEach { personalCardDao.insertOrUpdate(it) }
-                workoutDao.insertAll(dataToWrite.workoutSessions)
-                presetDao.insertAll(dataToWrite.presets)
+                    journalDao.insertAll(dataToWrite.journalEntries.map { it.copy(profileId = SELF_PROFILE_ID) })
+                    journalDao.insertAllDeletedEntries(dataToWrite.deletedEntries.map { it.copy(profileId = SELF_PROFILE_ID) })
+                    journalDao.insertAllTags(canonicalTags)
+                    bodyDao.replaceAll(dataToWrite.bodyMeasurements.map { it.copy(profileId = SELF_PROFILE_ID) })
+                    goalDao.importAll(SELF_PROFILE_ID, dataToWrite.goals)
+                    dataToWrite.personalCards.forEach {
+                        personalCardDao.insertOrUpdate(it.copy(profileId = SELF_PROFILE_ID))
+                    }
+                    workoutDao.insertAll(dataToWrite.workoutSessions.map { it.copy(profileId = SELF_PROFILE_ID) })
+                    presetDao.insertAll(dataToWrite.presets.map { it.copy(profileId = SELF_PROFILE_ID) })
+                } else {
+                    val profileDao = runCatching { db.profileDao() }.getOrNull()
+                    val existingIds = runCatching { profileDao?.getAll()?.map { it.id }.orEmpty() }
+                        .getOrDefault(emptyList())
+                    val restoredProfiles = data.profiles.ifEmpty {
+                        listOf(
+                            ProfileEntity(
+                                id = SELF_PROFILE_ID,
+                                name = "Me",
+                                relationship = ProfileRelationship.SELF.name
+                            )
+                        )
+                    }.let { list ->
+                        if (list.any { it.id == SELF_PROFILE_ID || it.relationship == ProfileRelationship.SELF.name }) {
+                            list
+                        } else {
+                            listOf(
+                                ProfileEntity(
+                                    id = SELF_PROFILE_ID,
+                                    name = "Me",
+                                    relationship = ProfileRelationship.SELF.name
+                                )
+                            ) + list
+                        }
+                    }
+
+                    val allProfileIdsToWipe = (
+                        existingIds +
+                            restoredProfiles.map { it.id } +
+                            dataToWrite.journalEntries.map { it.profileId } +
+                            dataToWrite.bodyMeasurements.map { it.profileId } +
+                            dataToWrite.goals.map { it.profileId } +
+                            dataToWrite.personalCards.map { it.profileId } +
+                            dataToWrite.workoutSessions.map { it.profileId } +
+                            dataToWrite.presets.map { it.profileId } +
+                            SELF_PROFILE_ID
+                        ).filter { it.isNotBlank() }.toSet()
+
+                    allProfileIdsToWipe.forEach { pid ->
+                        journalDao.clearAllEntries(pid)
+                        journalDao.clearAllDeletedEntries(pid)
+                        journalDao.clearAllTags(pid)
+                        bodyDao.clearAll(pid)
+                        goalDao.clear(pid)
+                        personalCardDao.clearAll(pid)
+                        workoutDao.clearAll(pid)
+                        presetDao.clearAll(pid)
+                    }
+
+                    if (profileDao != null) {
+                        existingIds.forEach { profileDao.delete(it) }
+                        restoredProfiles.forEach { profileDao.upsert(it) }
+                    }
+
+                    journalDao.insertAll(
+                        dataToWrite.journalEntries.map {
+                            val pid = it.profileId.ifBlank { SELF_PROFILE_ID }
+                            if (it.profileId == pid) it else it.copy(profileId = pid)
+                        }
+                    )
+                    journalDao.insertAllDeletedEntries(
+                        dataToWrite.deletedEntries.map {
+                            val pid = it.profileId.ifBlank { SELF_PROFILE_ID }
+                            if (it.profileId == pid) it else it.copy(profileId = pid)
+                        }
+                    )
+                    journalDao.insertAllTags(canonicalTags)
+                    bodyDao.replaceAll(
+                        dataToWrite.bodyMeasurements.map {
+                            val pid = it.profileId.ifBlank { SELF_PROFILE_ID }
+                            if (it.profileId == pid) it else it.copy(profileId = pid)
+                        }
+                    )
+                    val goalsByProfile = dataToWrite.goals.groupBy { it.profileId.ifBlank { SELF_PROFILE_ID } }
+                    if (goalsByProfile.isEmpty()) {
+                        goalDao.importAll(SELF_PROFILE_ID, emptyList())
+                    } else {
+                        goalsByProfile.forEach { (pid, goalsForProfile) ->
+                            goalDao.importAll(pid, goalsForProfile.map { it.copy(profileId = pid) })
+                        }
+                    }
+                    dataToWrite.personalCards.forEach { card ->
+                        val pid = card.profileId.ifBlank { SELF_PROFILE_ID }
+                        personalCardDao.insertOrUpdate(card.copy(profileId = pid))
+                    }
+                    workoutDao.insertAll(
+                        dataToWrite.workoutSessions.map {
+                            val pid = it.profileId.ifBlank { SELF_PROFILE_ID }
+                            if (it.profileId == pid) it else it.copy(profileId = pid)
+                        }
+                    )
+                    presetDao.insertAll(
+                        dataToWrite.presets.map {
+                            val pid = it.profileId.ifBlank { SELF_PROFILE_ID }
+                            if (it.profileId == pid) it else it.copy(profileId = pid)
+                        }
+                    )
+                }
             }
         } catch (e: Exception) {
             copiedFiles.forEach { it.delete() }
@@ -98,7 +226,8 @@ class RestoreRepository(
             tagCount = canonicalTags.size,
             mediaFileCount = mediaCount,
             workoutCount = data.workoutSessions.size,
-            presetCount = data.presets.size
+            presetCount = data.presets.size,
+            profileCount = restoredProfileCount
         )
     }
 
@@ -111,16 +240,28 @@ class RestoreRepository(
         stagingDir: File?
     ): Triple<List<JournalEntry>, Int, List<File>> {
         if (stagingDir == null) return Triple(entries, 0, emptyList())
-        val photosDir = File(filesDir, "photos").apply { mkdirs() }
-        val attachmentsDir = File(filesDir, "attachments").apply { mkdirs() }
+        val basePhotosDir = File(filesDir, "photos").apply { mkdirs() }
+        val baseAttachmentsDir = File(filesDir, "attachments").apply { mkdirs() }
         var mediaCount = 0
         val copiedFiles = mutableListOf<File>()
 
         val remapped = entries.map { entry ->
+            val profileId = entry.profileId.ifBlank { SELF_PROFILE_ID }
+            val photosDir = if (profileId == SELF_PROFILE_ID) {
+                basePhotosDir
+            } else {
+                File(basePhotosDir, profileId).apply { mkdirs() }
+            }
+            val attachmentsDir = if (profileId == SELF_PROFILE_ID) {
+                baseAttachmentsDir
+            } else {
+                File(baseAttachmentsDir, profileId).apply { mkdirs() }
+            }
+
             val newPhotos = entry.photo_urls?.map { url ->
                 val filename = url.substringAfterLast('/')
                 val dest = File(photosDir, filename)
-                val copied = copyFromStaging(stagingDir, filename, dest)
+                val copied = copyFromStaging(stagingDir, profileId, filename, dest)
                 if (copied) {
                     mediaCount++
                     copiedFiles.add(dest)
@@ -131,7 +272,7 @@ class RestoreRepository(
             val newAttachments = entry.attachments?.map { att ->
                 val filename = att.uri.substringAfterLast('/')
                 val dest = File(attachmentsDir, filename)
-                val copied = copyFromStaging(stagingDir, filename, dest)
+                val copied = copyFromStaging(stagingDir, profileId, filename, dest)
                 if (copied) {
                     mediaCount++
                     copiedFiles.add(dest)
@@ -144,8 +285,14 @@ class RestoreRepository(
         return Triple(remapped, mediaCount, copiedFiles)
     }
 
-    private fun copyFromStaging(stagingDir: File, filename: String, dest: File): Boolean {
-        val source = File(stagingDir, filename)
+    private fun copyFromStaging(
+        stagingDir: File,
+        profileId: String,
+        filename: String,
+        dest: File
+    ): Boolean {
+        val scopedSource = File(stagingDir, "$profileId/$filename")
+        val source = if (scopedSource.isFile) scopedSource else File(stagingDir, filename)
         if (!source.isFile) return false
         return try {
             dest.parentFile?.mkdirs()

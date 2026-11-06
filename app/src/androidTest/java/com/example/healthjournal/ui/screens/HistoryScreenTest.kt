@@ -4,6 +4,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.ProfileEntity
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.UnitSettings
 import com.example.healthjournal.data.local.UnitSystem
@@ -61,6 +62,30 @@ class HistoryScreenTest {
         step("Verify no Sign In button is shown (lives in Settings now)") {
             composeTestRule.onNodeWithText("Sign In").assertDoesNotExist()
         }
+    }
+
+    @Test
+    fun testHistoryScreen_emptyStateNamesActiveProfile() {
+        viewModel.allEntries.value = emptyList()
+        viewModel.activeProfile.value = ProfileEntity(
+            id = "sibling",
+            name = "Sam",
+            relationship = "SIBLING"
+        )
+
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                HistoryScreen(
+                    viewModel = viewModel,
+                    onAddEntryClick = {},
+                    onEntryClick = {}
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("No entries yet for Sam. Start by adding one!")
+            .assertIsDisplayed()
     }
 
     @Test

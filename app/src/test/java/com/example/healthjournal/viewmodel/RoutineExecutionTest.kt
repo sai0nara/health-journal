@@ -1,11 +1,13 @@
 package com.example.healthjournal.viewmodel
 
+import com.example.healthjournal.data.FakeActiveProfileProvider
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.PresetRepository
 import com.example.healthjournal.data.WorkoutRepository
 import com.example.healthjournal.data.local.ExerciseCatalogItem
 import com.example.healthjournal.data.local.FakeExerciseCatalogDao
 import com.example.healthjournal.data.local.FakeWorkoutPresetDao
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.data.local.FakeWorkoutSessionDao
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.WorkoutPreset
@@ -50,6 +52,7 @@ class RoutineExecutionTest {
     private lateinit var presetDao: FakeWorkoutPresetDao
     private lateinit var catalogDao: FakeExerciseCatalogDao
     private lateinit var repository: WorkoutRepository
+    private val activeProfile = FakeActiveProfileProvider()
     private lateinit var healthSource: FakeWorkoutHealthDataSource
     private val journalRepository: JournalRepository = mockk(relaxed = true)
     private val haptics = mutableListOf<WorkoutHaptic>()
@@ -87,7 +90,7 @@ class RoutineExecutionTest {
         dao = FakeWorkoutSessionDao()
         presetDao = FakeWorkoutPresetDao()
         catalogDao = FakeExerciseCatalogDao()
-        repository = WorkoutRepository(dao)
+        repository = WorkoutRepository(dao, activeProfile)
         healthSource = FakeWorkoutHealthDataSource()
         haptics.clear()
         nowMillis = 1_700_000_000_000L
@@ -110,7 +113,7 @@ class RoutineExecutionTest {
         dispatcher = dispatcher,
         onHaptic = { haptics.add(it) },
         clock = clock,
-        presetRepository = PresetRepository(presetDao),
+        presetRepository = PresetRepository(presetDao, activeProfile),
         catalogDao = catalogDao,
         healthSyncEnabled = healthSyncEnabled
     )
@@ -175,7 +178,7 @@ class RoutineExecutionTest {
         val vm = startRoutineFor()
 
         assertEquals("Leg Day", activeState(vm).session.routineName)
-        val stored = dao.getSessionById(activeState(vm).session.session_id)!!
+        val stored = dao.getSessionById(SELF_PROFILE_ID, activeState(vm).session.session_id)!!
         assertEquals("Leg Day", stored.routineName)
     }
 
@@ -263,7 +266,7 @@ coVerify { journalRepository.insert(withArg { entry ->
         dispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(vm.uiState.value is WorkoutUiState.RecoveryRequired)
-        assertEquals(sessionId, dao.getSessionById(sessionId)!!.session_id)
+        assertEquals(sessionId, dao.getSessionById(SELF_PROFILE_ID, sessionId)!!.session_id)
     }
 
     @Test
@@ -354,7 +357,7 @@ coVerify { journalRepository.insert(withArg { entry ->
 
         val active = activeState(vm)
         assertFalse(active.session.setMatrix!!.single().sets[0].completed)
-        val stored = dao.getSessionById(active.session.session_id)!!
+        val stored = dao.getSessionById(SELF_PROFILE_ID, active.session.session_id)!!
         assertFalse(stored.setMatrix!!.single().sets[0].completed)
     }
 
@@ -467,7 +470,7 @@ coVerify { journalRepository.insert(withArg { entry ->
         assertFalse(added.completed)
         assertEquals(60.0, added.kg, 0.0)
         assertEquals(5, added.reps)
-        val stored = dao.getSessionById(active.session.session_id)!!
+        val stored = dao.getSessionById(SELF_PROFILE_ID, active.session.session_id)!!
         assertEquals(4, stored.setMatrix!!.single().sets.size)
     }
 
@@ -659,7 +662,7 @@ coVerify { journalRepository.insert(withArg { entry ->
 
         val state = vm.uiState.value as WorkoutUiState.Error
         assertEquals("Preset not found", state.message)
-        assertTrue(dao.getAllSessions().first().isEmpty())
+        assertTrue(dao.getAllSessions(SELF_PROFILE_ID).first().isEmpty())
 
         vm.dismissError()
         assertTrue(vm.uiState.value is WorkoutUiState.Idle)
@@ -739,7 +742,7 @@ coVerify { journalRepository.insert(withArg { entry ->
 
         // A double-submit must never fork a second session row or duplicate
         // the planned matrix: the store keeps a single session.
-        val sessions = dao.getAllSessions().first()
+        val sessions = dao.getAllSessions(SELF_PROFILE_ID).first()
         assertEquals(1, sessions.size)
         assertEquals(3, sessions.single().setMatrix!!.single().sets.size)
     }
@@ -758,7 +761,7 @@ coVerify { journalRepository.insert(withArg { entry ->
         dispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(vm.uiState.value is WorkoutUiState.Paused)
-        val stored = dao.getSessionById(sessionId)!!
+        val stored = dao.getSessionById(SELF_PROFILE_ID, sessionId)!!
         assertEquals(WorkoutStatus.PAUSED.name, stored.status)
         assertEquals(60.0, stored.setMatrix!!.single().sets[0].kg, 0.0)
         assertEquals(5, stored.setMatrix!!.single().sets[0].reps)
@@ -781,14 +784,14 @@ coVerify { journalRepository.insert(withArg { entry ->
         val recovered = newViewModel()
         dispatcher.scheduler.advanceUntilIdle()
         assertTrue(recovered.uiState.value is WorkoutUiState.RecoveryRequired)
-        val before = dao.getSessionById(sessionId)!!
+        val before = dao.getSessionById(SELF_PROFILE_ID, sessionId)!!
 
         recovered.finishSession()
         dispatcher.scheduler.advanceUntilIdle()
 
         // A recovery prompt must be resolved first; Finish is a no-op there.
         assertTrue(recovered.uiState.value is WorkoutUiState.RecoveryRequired)
-        assertEquals(before, dao.getSessionById(sessionId))
+        assertEquals(before, dao.getSessionById(SELF_PROFILE_ID, sessionId))
         coVerify(exactly = 0) { journalRepository.insert(any<JournalEntry>()) }
     }
 

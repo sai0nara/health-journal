@@ -12,6 +12,9 @@ import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
 import com.example.healthjournal.data.local.PersonalCardDao
+import com.example.healthjournal.data.local.ProfileDao
+import com.example.healthjournal.data.local.ProfileEntity
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.data.local.WorkoutSession
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutPresetDao
@@ -58,20 +61,20 @@ class RestoreRepositoryTest {
         coEvery { db.workoutSessionDao() } returns workoutDao
         coEvery { db.workoutPresetDao() } returns presetDao
 
-        coJustRun { journalDao.clearAllEntries() }
-        coJustRun { journalDao.clearAllDeletedEntries() }
-        coJustRun { journalDao.clearAllTags() }
+        coJustRun { journalDao.clearAllEntries(SELF_PROFILE_ID) }
+        coJustRun { journalDao.clearAllDeletedEntries(SELF_PROFILE_ID) }
+        coJustRun { journalDao.clearAllTags(SELF_PROFILE_ID) }
         coJustRun { journalDao.insertAllDeletedEntries(any()) }
         coJustRun { journalDao.insertAllTags(any()) }
-        coJustRun { bodyDao.clearAll() }
+        coJustRun { bodyDao.clearAll(SELF_PROFILE_ID) }
         coJustRun { bodyDao.replaceAll(any()) }
-        coJustRun { goalDao.clear() }
-        coJustRun { goalDao.importAll(any()) }
-        coJustRun { personalCardDao.clearAll() }
+        coJustRun { goalDao.clear(SELF_PROFILE_ID) }
+        coJustRun { goalDao.importAll(any(), any()) }
+        coJustRun { personalCardDao.clearAll(SELF_PROFILE_ID) }
         coJustRun { personalCardDao.insertOrUpdate(any()) }
-        coJustRun { workoutDao.clearAll() }
+        coJustRun { workoutDao.clearAll(SELF_PROFILE_ID) }
         coJustRun { workoutDao.insertAll(any()) }
-        coJustRun { presetDao.clearAll() }
+        coJustRun { presetDao.clearAll(SELF_PROFILE_ID) }
         coJustRun { presetDao.insertAll(any()) }
 
         val published = mutableListOf<List<JournalEntry>>()
@@ -125,23 +128,23 @@ class RestoreRepositoryTest {
         val presetDao = harness.db.workoutPresetDao()
 
         // Wipe
-        coVerify { journalDao.clearAllEntries() }
-        coVerify { journalDao.clearAllDeletedEntries() }
-        coVerify { journalDao.clearAllTags() }
-        coVerify { bodyDao.clearAll() }
-        coVerify { goalDao.clear() }
-        coVerify { pcDao.clearAll() }
-        coVerify { workoutDao.clearAll() }
-        coVerify { presetDao.clearAll() }
+        coVerify { journalDao.clearAllEntries(SELF_PROFILE_ID) }
+        coVerify { journalDao.clearAllDeletedEntries(SELF_PROFILE_ID) }
+        coVerify { journalDao.clearAllTags(SELF_PROFILE_ID) }
+        coVerify { bodyDao.clearAll(SELF_PROFILE_ID) }
+        coVerify { goalDao.clear(SELF_PROFILE_ID) }
+        coVerify { pcDao.clearAll(SELF_PROFILE_ID) }
+        coVerify { workoutDao.clearAll(SELF_PROFILE_ID) }
+        coVerify { presetDao.clearAll(SELF_PROFILE_ID) }
         // Insert
-        coVerify { journalDao.insertAll(listOf(sampleData.journalEntries[0])) }
-        coVerify { journalDao.insertAllDeletedEntries(listOf(sampleData.deletedEntries[0])) }
+        coVerify { journalDao.insertAll(listOf(sampleData.journalEntries[0].copy(profileId = SELF_PROFILE_ID))) }
+        coVerify { journalDao.insertAllDeletedEntries(listOf(sampleData.deletedEntries[0].copy(profileId = SELF_PROFILE_ID))) }
         coVerify { journalDao.insertAllTags(listOf(sampleData.entryTags[0])) }
-        coVerify { bodyDao.replaceAll(listOf(sampleData.bodyMeasurements[0])) }
-        coVerify { goalDao.importAll(listOf(sampleData.goals[0])) }
-        coVerify { pcDao.insertOrUpdate(sampleData.personalCards[0]) }
-        coVerify { workoutDao.insertAll(listOf(sampleData.workoutSessions[0])) }
-        coVerify { presetDao.insertAll(listOf(sampleData.presets[0])) }
+        coVerify { bodyDao.replaceAll(listOf(sampleData.bodyMeasurements[0].copy(profileId = SELF_PROFILE_ID))) }
+        coVerify { goalDao.importAll(SELF_PROFILE_ID, listOf(sampleData.goals[0])) }
+        coVerify { pcDao.insertOrUpdate(sampleData.personalCards[0].copy(profileId = SELF_PROFILE_ID)) }
+        coVerify { workoutDao.insertAll(listOf(sampleData.workoutSessions[0].copy(profileId = SELF_PROFILE_ID))) }
+        coVerify { presetDao.insertAll(listOf(sampleData.presets[0].copy(profileId = SELF_PROFILE_ID))) }
 
         assertEquals(1, result.journalEntryCount)
         assertEquals(1, result.bodyMeasurementCount)
@@ -233,10 +236,10 @@ class RestoreRepositoryTest {
         val db = mockk<JournalDatabase>()
         val journalDao = mockk<JournalDao>()
         coEvery { db.journalDao() } returns journalDao
-        coJustRun { journalDao.clearAllEntries() }
+        coJustRun { journalDao.clearAllEntries(SELF_PROFILE_ID) }
 
         val repo = RestoreRepository(db, filesDir, runInTransaction = { _ ->
-            journalDao.clearAllEntries()
+            journalDao.clearAllEntries(SELF_PROFILE_ID)
             throw IOException("boom in transaction")
         })
 
@@ -246,5 +249,85 @@ class RestoreRepositoryTest {
         } catch (e: IOException) {
             assertEquals("boom in transaction", e.message)
         }
+    }
+
+    @Test
+    fun restore_v2ReplacesAllProfilesAndRemapsProfileScopedMedia() = runTest {
+        val filesDir = tempFolder.newFolder("files_v2")
+        val staging = tempFolder.newFolder("stage_v2")
+        File(staging, "self_photo.jpg").writeBytes(byteArrayOf(1, 2))
+        val sibStage = File(staging, "sib-1").apply { mkdirs() }
+        File(sibStage, "sib_photo.jpg").writeBytes(byteArrayOf(3, 4))
+
+        val db = mockk<JournalDatabase>(relaxed = true)
+        val profileDao = mockk<ProfileDao>(relaxed = true)
+        val journalDao = mockk<JournalDao>(relaxed = true)
+        coEvery { db.profileDao() } returns profileDao
+        coEvery { db.journalDao() } returns journalDao
+        coEvery { profileDao.getAll() } returns listOf(
+            ProfileEntity(id = SELF_PROFILE_ID, name = "Me", relationship = "SELF"),
+            ProfileEntity(id = "old-sib", name = "Old", relationship = "SIBLING")
+        )
+
+        val insertedEntries = mutableListOf<List<JournalEntry>>()
+        coEvery { journalDao.insertAll(any()) } answers {
+            insertedEntries += firstArg<List<JournalEntry>>()
+        }
+
+        val v2Profiles = listOf(
+            ProfileEntity(id = SELF_PROFILE_ID, name = "Me", relationship = "SELF"),
+            ProfileEntity(id = "sib-1", name = "Alex", relationship = "SIBLING")
+        )
+        val v2Data = BackupData(
+            profiles = v2Profiles,
+            journalEntries = listOf(
+                JournalEntry(
+                    entry_id = "e-self",
+                    profileId = SELF_PROFILE_ID,
+                    description = "Self",
+                    photo_urls = listOf("file:///old/photos/self_photo.jpg")
+                ),
+                JournalEntry(
+                    entry_id = "e-sib",
+                    profileId = "sib-1",
+                    description = "Sibling",
+                    photo_urls = listOf("file:///old/photos/sib-1/sib_photo.jpg")
+                )
+            )
+        )
+
+        val repo = RestoreRepository(db, filesDir, runInTransaction = { block -> block() })
+        val result = repo.restore(v2Data, mediaStagingDir = staging)
+
+        assertEquals(2, result.profileCount)
+        coVerify { journalDao.clearAllEntries("old-sib") }
+        coVerify { journalDao.clearAllEntries("sib-1") }
+        coVerify { profileDao.delete("old-sib") }
+        coVerify { profileDao.upsert(v2Profiles[0]) }
+        coVerify { profileDao.upsert(v2Profiles[1]) }
+
+        val byId = insertedEntries.single().associateBy { it.entry_id }
+        assertTrue(File(filesDir, "photos/self_photo.jpg").exists())
+        assertTrue(File(filesDir, "photos/sib-1/sib_photo.jpg").exists())
+        assertEquals(
+            listOf("file://${File(filesDir, "photos/self_photo.jpg").absolutePath}"),
+            byId.getValue("e-self").photo_urls
+        )
+        assertEquals(
+            listOf("file://${File(filesDir, "photos/sib-1/sib_photo.jpg").absolutePath}"),
+            byId.getValue("e-sib").photo_urls
+        )
+    }
+
+    @Test
+    fun restore_v1BackupWipesOnlySelfAndPreservesOtherProfiles() = runTest {
+        val filesDir = tempFolder.newFolder("files_v1")
+        val harness = mockRepository(filesDir)
+
+        val result = harness.repo.restore(sampleData, mediaStagingDir = null)
+
+        assertEquals(1, result.profileCount)
+        coVerify(exactly = 1) { harness.journalDao.clearAllEntries(SELF_PROFILE_ID) }
+        coVerify(exactly = 0) { harness.journalDao.clearAllEntries("sib-1") }
     }
 }

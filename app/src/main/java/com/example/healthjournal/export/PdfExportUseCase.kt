@@ -13,7 +13,6 @@ import com.itextpdf.layout.Document
 import com.itextpdf.layout.element.Image
 import com.itextpdf.layout.element.Paragraph
 import com.itextpdf.layout.properties.TextAlignment
-import kotlinx.coroutines.flow.first
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -24,91 +23,148 @@ class PdfExportUseCase(
     private val exportsDir: File,
     private val imageResizer: ImageResizer
 ) {
-    suspend fun execute(startDate: Long, endDate: Long): File {
+    suspend fun execute(startDate: Long, endDate: Long): File =
+        execute(
+            profileIds = listOf(repository.currentProfileId()),
+            startDate = startDate,
+            endDate = endDate
+        )
+
+    suspend fun execute(
+        profileIds: List<String>,
+        startDate: Long,
+        endDate: Long,
+        profileNames: Map<String, String> = emptyMap()
+    ): File {
         exportsDir.mkdirs()
         val pdfFile = File(exportsDir, "health_journal_report_${System.currentTimeMillis()}.pdf")
-        
-        // Filter entries by date
-        val entries = repository.allEntries.first().filter { 
-            it.timestamp in startDate..endDate 
-        }.sortedByDescending { it.timestamp }
+        val targetProfiles = profileIds.distinct().ifEmpty { listOf(repository.currentProfileId()) }
+
+        val entriesByProfile = targetProfiles.associateWith { profileId ->
+            repository.getAllEntriesInDateRange(profileId, startDate, endDate)
+                .filter { it.isArchived != true }
+                .sortedByDescending { it.timestamp }
+        }
 
         val writer = PdfWriter(pdfFile)
         val pdf = PdfDocument(writer)
         val document = Document(pdf)
 
         try {
-            // Title
-            document.add(Paragraph(context.getString(R.string.pdf_report_title))
-                .setBold()
-                .setFontSize(24f)
-                .setTextAlignment(TextAlignment.CENTER))
+            val reportTitle = context.getString(R.string.pdf_report_title)
+                ?.takeIf { it.isNotBlank() }
+                ?: "Health Journal Report"
+            document.add(
+                Paragraph(reportTitle)
+                    .setBold()
+                    .setFontSize(24f)
+                    .setTextAlignment(TextAlignment.CENTER)
+            )
 
             // Date Range
             val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-            document.add(Paragraph("Period: ${sdf.format(Date(startDate))} - ${sdf.format(Date(endDate))}")
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(20f))
+            document.add(
+                Paragraph("Period: ${sdf.format(Date(startDate))} - ${sdf.format(Date(endDate))}")
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(20f)
+            )
 
-            entries.forEach { entry ->
-                // Entry Date Header
-                val entryDate = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(Date(entry.timestamp))
-                document.add(Paragraph(entryDate)
-                    .setBold()
-                    .setFontSize(14f)
-                    .setMarginTop(10f))
+            targetProfiles.forEach { profileId ->
+                val profileName = profileNames[profileId]?.takeIf { it.isNotBlank() } ?: profileId
+                val sectionTitle = context.getString(R.string.export_pdf_profile_section, profileName)
+                    ?.takeIf { it.isNotBlank() }
+                    ?: "Profile: $profileName"
+                document.add(
+                    Paragraph(sectionTitle)
+                        .setBold()
+                        .setFontSize(16f)
+                        .setMarginTop(14f)
+                )
 
-                // Entry Content
-                val plaintext = android.text.Html.fromHtml(entry.description, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
-                document.add(Paragraph(plaintext)
-                    .setFontSize(11f))
-
-                // Metrics
-                val metrics = buildList {
-                    if (entry.bp_systolic != null && entry.bp_diastolic != null) {
-                        add("BP: ${entry.bp_systolic.toInt()}/${entry.bp_diastolic.toInt()} mmHg")
-                    }
-                    entry.heart_rate_avg?.let { add("HR: $it bpm") }
-                    entry.blood_glucose_mmol?.let {
-                        add("Glucose: ${UnitConverter.formatDouble(it)} mmol/L")
-                    }
-                    entry.body_temperature_c?.let {
-                        add("Temp: ${UnitConverter.formatDouble(it)} °C")
-                    }
-                    entry.spo2_percent?.let { add("SpO2: $it %") }
-                    entry.sleep_hours?.let { add("Sleep: ${UnitConverter.formatDouble(it.toDouble())}h") }
-                }.joinToString(" | ")
-                if (metrics.isNotEmpty()) {
-                    document.add(Paragraph(metrics)
-                        .setItalic()
-                        .setFontSize(10f)
-                        .setFontColor(com.itextpdf.kernel.colors.ColorConstants.DARK_GRAY))
+                val entries = entriesByProfile[profileId].orEmpty()
+                if (entries.isEmpty()) {
+                    val emptyText = context.getString(R.string.export_pdf_no_entries)
+                        ?.takeIf { it.isNotBlank() }
+                        ?: "No entries in selected period."
+                    document.add(
+                        Paragraph(emptyText)
+                            .setItalic()
+                            .setFontSize(11f)
+                    )
                 }
 
-                // Photos
-                entry.photo_urls?.forEach { photoUrl ->
-                    val imageFile = imageResizer.downsampleImage(Uri.parse(photoUrl), 600)
-                    if (imageFile != null) {
-                        try {
-                            val data = ImageDataFactory.create(imageFile.absolutePath)
-                            val img = Image(data)
-                            img.setMaxWidth(300f)
-                            document.add(img)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        } finally {
-                            imageFile.delete()
+                entries.forEach { entry ->
+                    // Entry Date Header
+                    val entryDate = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+                        .format(Date(entry.timestamp))
+                    document.add(
+                        Paragraph(entryDate)
+                            .setBold()
+                            .setFontSize(14f)
+                            .setMarginTop(10f)
+                    )
+
+                    // Entry Content
+                    val plaintext = runCatching {
+                        android.text.Html.fromHtml(
+                            entry.description,
+                            android.text.Html.FROM_HTML_MODE_LEGACY
+                        )?.toString()
+                    }.getOrNull() ?: entry.description.replace(Regex("<[^>]*>"), "")
+                    document.add(
+                        Paragraph(plaintext)
+                            .setFontSize(11f)
+                    )
+
+                    // Metrics
+                    val metrics = buildList {
+                        if (entry.bp_systolic != null && entry.bp_diastolic != null) {
+                            add("BP: ${entry.bp_systolic.toInt()}/${entry.bp_diastolic.toInt()} mmHg")
+                        }
+                        entry.heart_rate_avg?.let { add("HR: $it bpm") }
+                        entry.blood_glucose_mmol?.let {
+                            add("Glucose: ${UnitConverter.formatDouble(it)} mmol/L")
+                        }
+                        entry.body_temperature_c?.let {
+                            add("Temp: ${UnitConverter.formatDouble(it)} °C")
+                        }
+                        entry.spo2_percent?.let { add("SpO2: $it %") }
+                        entry.sleep_hours?.let { add("Sleep: ${UnitConverter.formatDouble(it.toDouble())}h") }
+                    }.joinToString(" | ")
+                    if (metrics.isNotEmpty()) {
+                        document.add(
+                            Paragraph(metrics)
+                                .setItalic()
+                                .setFontSize(10f)
+                                .setFontColor(com.itextpdf.kernel.colors.ColorConstants.DARK_GRAY)
+                        )
+                    }
+
+                    // Photos
+                    entry.photo_urls?.forEach { photoUrl ->
+                        val imageFile = imageResizer.downsampleImage(Uri.parse(photoUrl), 600)
+                        if (imageFile != null) {
+                            try {
+                                val data = ImageDataFactory.create(imageFile.absolutePath)
+                                val img = Image(data)
+                                img.setMaxWidth(300f)
+                                document.add(img)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            } finally {
+                                imageFile.delete()
+                            }
                         }
                     }
+
+                    // Separator line or spacing
+                    document.add(Paragraph("\n").setFontSize(5f))
                 }
-                
-                // Separator line or spacing
-                document.add(Paragraph("\n").setFontSize(5f))
             }
         } finally {
             document.close()
         }
-        
+
         return pdfFile
     }
 }

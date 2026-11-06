@@ -2,6 +2,7 @@ package com.example.healthjournal.data.local
 
 import java.util.UUID
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.WarmupOutcome
@@ -15,7 +16,13 @@ enum class WorkoutStatus {
     DISCARDED
 }
 
-@Entity(tableName = "workout_sessions")
+@Entity(
+    tableName = "workout_sessions",
+    indices = [
+        Index(value = ["profileId", "startTimestamp"]),
+        Index(value = ["profileId", "status"])
+    ]
+)
 data class WorkoutSession(
     @PrimaryKey val session_id: String = UUID.randomUUID().toString(),
     val type: String = "RUN",
@@ -38,5 +45,6 @@ data class WorkoutSession(
     val warmupElapsedSeconds: Int? = null,
     /** Null while the warm-up is pending/running; [WarmupOutcome] name otherwise. */
     val warmupOutcome: String? = null,
-    val lastModified: Long = startTimestamp
+    val lastModified: Long = startTimestamp,
+    val profileId: String = SELF_PROFILE_ID
 )
