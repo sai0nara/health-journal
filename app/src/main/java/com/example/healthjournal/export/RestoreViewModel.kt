@@ -98,7 +98,8 @@ class RestoreViewModel(
                 fileUri = workerUri,
                 isEncrypted = isEncrypted,
                 schemaVersion = manifest.schemaVersion,
-                backupTimestamp = manifest.backupTimestamp
+                backupTimestamp = manifest.backupTimestamp,
+                formatVersion = manifest.formatVersion
             )
         } finally {
             if (resolved.isTemp) resolved.file.delete()
@@ -192,7 +193,8 @@ private suspend fun runRestoreThroughWorker(context: Context, fileUri: String, p
             tagCount = data.getInt(RestoreWorker.KEY_RESULT_TAGS, 0),
             mediaFileCount = data.getInt(RestoreWorker.KEY_RESULT_MEDIA, 0),
             workoutCount = data.getInt(RestoreWorker.KEY_RESULT_WORKOUTS, 0),
-            presetCount = data.getInt(RestoreWorker.KEY_RESULT_PRESETS, 0)
+            presetCount = data.getInt(RestoreWorker.KEY_RESULT_PRESETS, 0),
+            profileCount = data.getInt(RestoreWorker.KEY_RESULT_PROFILES, 1)
         )
     }
 

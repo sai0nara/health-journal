@@ -17,7 +17,8 @@ sealed class RestoreUiState {
         val fileUri: String,
         val isEncrypted: Boolean,
         val schemaVersion: Int,
-        val backupTimestamp: Long
+        val backupTimestamp: Long,
+        val formatVersion: Int = BackupWriter.BACKUP_FORMAT_VERSION
     ) : RestoreUiState()
 
     /** The selected backup is AES-256 encrypted; a passphrase is required. */

@@ -2,7 +2,7 @@
 
 > The MVVM state holders: each feature's ViewModel exposes `StateFlow` state and orchestrates calls into the data layer.
 
-Last updated: 2026-10-29
+Last updated: 2026-11-06
 
 ## What lives here
 
@@ -25,8 +25,13 @@ data layer directly — ViewModels are the only path between the two.
 - `BodyMeasurementViewModel` / `BodyAnalyticsViewModel` — measurement capture and
   the weight/trend analytics the measurements screens render.
 - `PersonalCardViewModel` — the personal-card feature.
+- `ProfileViewModel` — profile lifecycle intents and `ProfileUiState`: the active
+  profile, active/archived lists, busy/error state, and suspend actions returning
+  `Result` so screens render typed errors. It delegates all invariants to
+  `ProfileRepository`; it does not own persistence.
 - `PresetViewModel` — the routine library/editor: draft validation, load/save/delete,
-  and the optional warm-up fields (`warmupEnabled`, name, duration).
+  the optional warm-up fields (`warmupEnabled`, name, duration), and an `isSaving`
+  flag that keeps the profile switcher disabled until the write completes.
 - `WorkoutViewModel` — the workout hub and session state machine: countdown, active
   timer, routine set matrix, finish prompt, crash recovery, journaling, and the
   optional routine warm-up. A warm-up is copied from the preset at start, runs
@@ -38,6 +43,13 @@ data layer directly — ViewModels are the only path between the two.
   `WarmupHistoryFormatter`, so it follows the device locale at finish time.
 - The export/restore feature adds its own ViewModels (export and restore), which the
   [[export-restore]] page describes.
+- Journal writes carry the profile captured when the form opened, not whichever
+  profile is active at save time: `JournalViewModel.addEntry`/`updateEntry` take an
+  explicit `profileId`, and an update whose entry owner differs is rejected.
+  `JournalViewModel.syncHealthData` also accepts an explicit `targetProfileId` so
+  a Health Connect import stays bound to the profile confirmed when the dialog
+  opened. The personal-card editor, measurement sheet, workout session, and preset
+  editor likewise capture their target `profileId` when editing or a session starts.
 
 ## Cross-references
 
@@ -47,8 +59,11 @@ data layer directly — ViewModels are the only path between the two.
 
 ## Sources
 
-- `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` — journal feed state and intents.
-- `app/src/main/java/com/example/healthjournal/viewmodel/BodyMeasurementViewModel.kt` — measurement capture state.
+- `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` — journal feed state, explicit-profile writes, and Health Connect target capture.
+- `app/src/main/java/com/example/healthjournal/viewmodel/BodyMeasurementViewModel.kt` — measurement capture state and explicit-profile writes.
+- `app/src/main/java/com/example/healthjournal/viewmodel/BodyAnalyticsViewModel.kt` — profile-scoped measurement trends and goal analytics.
+- `app/src/main/java/com/example/healthjournal/viewmodel/PersonalCardViewModel.kt` — profile-scoped personal card state and editor drafts.
+- `app/src/main/java/com/example/healthjournal/viewmodel/ProfileViewModel.kt` — profile switcher and Manage Profiles state.
 - `app/src/main/java/com/example/healthjournal/viewmodel/PresetViewModel.kt` — routine preset editor state.
 - `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutViewModel.kt` — workout session and warm-up state machine.
 - `app/src/main/java/com/example/healthjournal/domain/WarmupHistoryFormatter.kt` — formatter seam for the persisted warm-up history line.

@@ -2,7 +2,7 @@
 
 > The on-device test stack under `app/src/androidTest` — Compose UI tests plus Room DAO and migration tests that need the Android framework.
 
-Last updated: 2026-10-30
+Last updated: 2026-11-06
 
 ## What this stack is
 
@@ -18,7 +18,21 @@ controls (countdown, HIIT phase/round, set-matrix editor with rest timer), the
 end-of-routine finish prompt, summary composition, and manual-log extras, driven
 deterministically through the viewmodel's `advanceTime`. The migration tests
 alongside verify the full schema chain up to the current version, including the
-workout set-matrix (14→15), interval-state (15→16), and warm-up (19→20) columns.
+workout set-matrix (14→15), interval-state (15→16), warm-up (19→20), and
+profile ownership (21→22) columns. DAO suites also verify that profile-scoped
+reads, writes, tags, tombstones, and unfinished-session guards do not leak
+between profiles.
+
+Profile UI coverage includes the avatar/switcher components, the Manage Profiles
+screen (create/edit, archive/restore, typed-name delete, active limit), and the
+switch guards: dirty Add Entry, personal-card, and preset drafts prompt for
+discard; an active workout and a generating export disable switching. Add Entry
+also keeps the profile captured when the form opened, including when the user
+switches before saving, and the History empty state names the active profile.
+These are Compose tests with fake repositories/DAOs, so they assert visible state
+and callbacks rather than persisted effects. DAO coverage also checks that two
+profiles can reference attachments with the same filename without crossing
+entry associations.
 
 This is the second of two test stacks. Unlike the [[unit-tests]] JVM stack, it
 requires a running device and cannot run in a plain JVM context.
@@ -75,8 +89,8 @@ fatal at boot, not as a test failure.
 
 ## Sources
 
-- `app/src/androidTest/java/com/example/healthjournal/ui/screens` — Compose screen tests live here, including the workout hub/session screens, preset warm-up editor, execution panel, and summary.
-- `app/src/androidTest/java/com/example/healthjournal/export/RestoreIntegrationTest.kt` — full restore against a real Room database, including preset warm-up fields.
+- `app/src/androidTest/java/com/example/healthjournal/ui/screens` — Compose screen tests live here, including the workout hub/session screens, preset warm-up editor, execution panel, summary, Manage Profiles flows, Add Entry Health Connect confirmation, and Export PDF profile selector.
+- `app/src/androidTest/java/com/example/healthjournal/export/RestoreIntegrationTest.kt` — full v2 multi-profile and v1 legacy restore against a real Room database, including preset warm-up fields and profile-scoped media remapping.
 - `app/src/androidTest/java/com/example/healthjournal/pages` — page objects for the deletion suites (selectors and actions only).
 - `app/src/androidTest/java/com/example/healthjournal/util/RecordingHapticFeedback.kt` — recording `LocalHapticFeedback` used to assert gesture feedback.
 - `app/src/androidTest/java/com/example/healthjournal/data/local` — DAO and migration tests live here.

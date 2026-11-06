@@ -2,7 +2,7 @@
 
 > The Room persistence layer: entities, DAOs, converters, and the repositories that own local reads and writes.
 
-Last updated: 2026-10-29
+Last updated: 2026-11-06
 
 ## What lives here
 
@@ -36,6 +36,24 @@ and manual edits write the same columns, so the latest write wins, and rows or
 payloads created before the vitals columns existed read them as null after the
 forward-only migration registered in `JournalDatabase.kt`.
 
+## Profiles and record ownership
+
+Every scoped record — journal entries, body measurements, goals, personal cards,
+workout sessions, presets, and deletion tombstones — carries a `profileId` owner.
+Existing rows were backfilled to the built-in `Self`/`Me` profile by the versioned
+migration in `JournalDatabase.kt`; goals, personal cards, and tombstones use a
+composite primary key that includes `profileId`, so the same parameter or card id
+can exist under different profiles. Tags stay owned indirectly: the tag
+cross-reference table has no profile column and is scoped by joining to
+`journal_entries`.
+
+`ProfileRepository` is the source of the active profile. It implements
+`ActiveProfileProvider`, persists the choice through `ActiveProfileStore`, and
+exposes profile CRUD plus archive/restore and permanent-delete rules. Repositories
+read `activeProfileId` and switch their flows with `flatMapLatest`, while
+sync/backup callers use explicit-profile methods. `RoomProfileDataEraser` performs
+transactional, profile-scoped erasure and writes a deletion marker for sync.
+
 ## Key components
 
 - **Database and DAOs.** Room is configured via the database class in
@@ -49,7 +67,11 @@ forward-only migration registered in `JournalDatabase.kt`.
   matrix, and the HIIT interval state.
 - **Repositories.** `JournalRepository`, `BodyMeasurementRepository`, `GoalsRepository`,
   `PersonalCardRepository`, `WorkoutRepository`, and `PresetRepository` expose
-  feature-scoped operations.
+  feature-scoped operations, resolving the active profile through
+  `ActiveProfileProvider` and exposing explicit-profile reads for sync/backup.
+- **Profiles.** `ProfileRepository` owns profile lifecycle and the active-profile
+  preference; profile entities/DAOs and `RoomProfileDataEraser` live alongside the
+  other Room storage.
 
 ## Sync coexistence
 
@@ -68,6 +90,11 @@ of this same repository layer and Room database rather than maintaining its own 
 - `app/src/main/java/com/example/healthjournal/data/local/JournalEntry.kt` — the journal entry entity including the vitals columns.
 - `app/src/main/java/com/example/healthjournal/data/local/WorkoutPreset.kt` — preset entity including optional warm-up columns.
 - `app/src/main/java/com/example/healthjournal/data/local/WorkoutSession.kt` — session entity including warm-up snapshot/outcome columns.
-- `app/src/main/java/com/example/healthjournal/data/JournalRepository.kt` — local persistence orchestration.
+- `app/src/main/java/com/example/healthjournal/data/JournalRepository.kt` — local persistence orchestration, including explicit-profile insert/tag overloads and the active-profile flow.
+- `app/src/main/java/com/example/healthjournal/data/PersonalCardRepository.kt` — active-profile reads plus explicit-profile writes for an open editor.
+- `app/src/main/java/com/example/healthjournal/data/BodyMeasurementRepository.kt` — active-profile and explicit-profile body measurement reads and writes.
+- `app/src/main/java/com/example/healthjournal/data/WorkoutRepository.kt` — per-profile workout session storage and single-active-session guard.
+- `app/src/main/java/com/example/healthjournal/data/PresetRepository.kt` — per-profile preset storage with shared exercise catalog access.
+- `app/src/main/java/com/example/healthjournal/data/ProfileRepository.kt` — active profile preference, CRUD, archive/restore, and deletion rules.
 
 Back to [[overview]]

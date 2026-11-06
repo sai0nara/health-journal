@@ -13,9 +13,11 @@ import com.example.healthjournal.R
 import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
+import com.example.healthjournal.data.ProfileRepository
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.HealthSyncSettings
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.ProfileEntity
 import com.example.healthjournal.domain.EntryVitals
 import com.example.healthjournal.domain.HashtagParser
 import com.example.healthjournal.domain.TagIdentity
@@ -36,7 +38,8 @@ data class HealthSyncResult(
     val bpSystolic: Double? = null,
     val bpDiastolic: Double? = null,
     val heartRate: Int? = null,
-    val sleepHours: Float? = null
+    val sleepHours: Float? = null,
+    val targetProfileId: String = com.example.healthjournal.data.local.SELF_PROFILE_ID
 )
 
 interface IJournalViewModel {
@@ -53,6 +56,8 @@ interface IJournalViewModel {
     val isAscending: StateFlow<Boolean>
     val selectedTags: StateFlow<Set<String>>
     val tagsByEntry: StateFlow<Map<String, List<String>>>
+    val activeProfileId: StateFlow<String>
+    val activeProfile: StateFlow<ProfileEntity?>
 
     fun addEntry(
         description: String,
@@ -66,10 +71,11 @@ interface IJournalViewModel {
         bloodGlucoseMmol: Double? = null,
         bodyTemperatureC: Double? = null,
         spo2Percent: Int? = null,
-        tags: Set<String> = emptySet()
+        tags: Set<String> = emptySet(),
+        profileId: String
     )
     /** Saves [entry] with exactly [tags] plus hashtags re-parsed from its text; callers must pass the complete chip selection. */
-    fun updateEntry(entry: JournalEntry, tags: Set<String>)
+    fun updateEntry(entry: JournalEntry, tags: Set<String>, profileId: String)
     /** Replaces the five editable vitals on [entryId] and marks the row pending sync. */
     fun updateVitals(entryId: String, vitals: EntryVitals)
     suspend fun getEntryById(entryId: String): JournalEntry?
@@ -90,7 +96,10 @@ interface IJournalViewModel {
     fun setHealthSyncEnabled(enabled: Boolean)
     suspend fun hasHealthPermissions(): Boolean
     fun checkHealthAvailability(): Int
-    suspend fun syncHealthData(timestamp: Long): HealthSyncResult
+    suspend fun syncHealthData(
+        timestamp: Long,
+        targetProfileId: String = activeProfileId.value
+    ): HealthSyncResult
 
     // Archive & Delete
     fun archiveEntry(entryId: String)
@@ -108,8 +117,17 @@ class JournalViewModel(
     private val healthManager: HealthConnectManager,
     private val mediaService: MediaCompressionService,
     private val ioContext: kotlin.coroutines.CoroutineContext = Dispatchers.IO,
-    healthSyncEnabledInitial: Boolean? = null
+    healthSyncEnabledInitial: Boolean? = null,
+    profileRepository: ProfileRepository? = null
 ) : AndroidViewModel(application), IJournalViewModel {
+
+    override val activeProfileId: StateFlow<String> = repository.activeProfileId
+    override val activeProfile: StateFlow<ProfileEntity?> =
+        profileRepository?.activeProfile?.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        ) ?: MutableStateFlow(null)
 
     private val _searchQuery = MutableStateFlow("")
     override val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -296,7 +314,8 @@ class JournalViewModel(
         bloodGlucoseMmol: Double?,
         bodyTemperatureC: Double?,
         spo2Percent: Int?,
-        tags: Set<String>
+        tags: Set<String>,
+        profileId: String
     ) {
         if (timestamp > System.currentTimeMillis()) {
             Log.w(TAG, "Attempted to add entry in the future. Ignoring.")
@@ -317,13 +336,13 @@ class JournalViewModel(
                 spo2_percent = spo2Percent,
                 lastModified = System.currentTimeMillis()
             )
-            repository.insert(newEntry)
+            repository.insert(profileId, newEntry)
 
             val finalTags = TagIdentity.canonicalDistinct(
                 tags + HashtagParser.extractHashtags(description)
             )
             finalTags.forEach { tag ->
-                repository.addTag(newEntry.entry_id, tag)
+                repository.addTag(profileId, newEntry.entry_id, tag)
             }
 
             if (_isUserSignedIn.value) {
@@ -332,24 +351,29 @@ class JournalViewModel(
         }
     }
 
-    override fun updateEntry(entry: JournalEntry, tags: Set<String>) {
+    override fun updateEntry(entry: JournalEntry, tags: Set<String>, profileId: String) {
+        // A stale edit screen must never write into whichever profile is active now.
+        if (entry.profileId != profileId) return
         viewModelScope.launch {
             // Update lastModified to ensure local edits "win" in sync conflict resolution
             // Keep the original timestamp (creation date)
-            repository.insert(entry.copy(isSynced = false, syncStatus = "PENDING_SYNC", lastModified = System.currentTimeMillis()))
-            
+            repository.insert(
+                profileId,
+                entry.copy(isSynced = false, syncStatus = "PENDING_SYNC", lastModified = System.currentTimeMillis())
+            )
+
             // Refresh tags: remove all existing and add the current chip
             // selection plus re-parsed hashtags. Inline text still wins: a
             // #word left in the text keeps its tag even if the chip is off.
-            val existingTags = repository.getTagsForEntry(entry.entry_id)
+            val existingTags = repository.getTagsForEntry(profileId, entry.entry_id)
             existingTags.forEach { tag ->
-                repository.removeTag(entry.entry_id, tag)
+                repository.removeTag(profileId, entry.entry_id, tag)
             }
             val finalTags = TagIdentity.canonicalDistinct(
                 tags + HashtagParser.extractHashtags(entry.description)
             )
             finalTags.forEach { tag ->
-                repository.addTag(entry.entry_id, tag)
+                repository.addTag(profileId, entry.entry_id, tag)
             }
 
             if (_isUserSignedIn.value) {
@@ -531,8 +555,13 @@ class JournalViewModel(
         return healthManager.checkAvailability()
     }
 
-    override suspend fun syncHealthData(timestamp: Long): HealthSyncResult = withContext(ioContext) {
-        if (!_isHealthSyncEnabled.value) return@withContext HealthSyncResult()
+    override suspend fun syncHealthData(
+        timestamp: Long,
+        targetProfileId: String
+    ): HealthSyncResult = withContext(ioContext) {
+        if (!_isHealthSyncEnabled.value || targetProfileId.isBlank()) {
+            return@withContext HealthSyncResult(targetProfileId = targetProfileId)
+        }
         val instant = Instant.ofEpochMilli(timestamp)
         val zoneId = ZoneId.systemDefault()
         val startOfDay = instant.atZone(zoneId).toLocalDate().atStartOfDay(zoneId).toInstant()
@@ -546,7 +575,8 @@ class JournalViewModel(
             bpSystolic = bp?.first,
             bpDiastolic = bp?.second,
             heartRate = hr?.toInt(),
-            sleepHours = sleep
+            sleepHours = sleep,
+            targetProfileId = targetProfileId
         )
     }
 
@@ -574,8 +604,8 @@ class JournalViewModel(
         viewModelScope.launch {
             // Capture file paths before the rows (and their attachment lists) are gone
             val doomedEntries = repository.getEntriesByIds(entryIds)
-            repository.deleteEntries(entryIds)
             deleteLocalFiles(doomedEntries)
+            repository.deleteEntries(entryIds)
             if (_isUserSignedIn.value) {
                 SyncManager.enqueuePeriodicSync(getApplication())
             }
@@ -585,8 +615,8 @@ class JournalViewModel(
     override fun emptyArchive() {
         viewModelScope.launch {
             val doomedEntries = repository.getArchivedEntriesList()
-            repository.deleteAllArchived()
             deleteLocalFiles(doomedEntries)
+            repository.deleteAllArchived()
             if (_isUserSignedIn.value) {
                 SyncManager.enqueuePeriodicSync(getApplication())
             }
@@ -649,7 +679,8 @@ class JournalViewModel(
 
 class JournalViewModelFactory(
     private val application: Application,
-    private val repository: JournalRepository
+    private val repository: JournalRepository,
+    private val profileRepository: ProfileRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(JournalViewModel::class.java)) {
@@ -658,7 +689,15 @@ class JournalViewModelFactory(
             val healthManager = HealthConnectManager(application)
             val mediaService = AndroidMediaCompressionService(application)
             @Suppress("UNCHECKED_CAST")
-            return JournalViewModel(application, repository, authManager, sessionManager, healthManager, mediaService) as T
+            return JournalViewModel(
+                application,
+                repository,
+                authManager,
+                sessionManager,
+                healthManager,
+                mediaService,
+                profileRepository = profileRepository
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

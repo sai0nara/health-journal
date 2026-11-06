@@ -417,4 +417,43 @@ class BodyMeasurementViewModelTest {
         coVerify(exactly = 1) { repository.insert(any()) }
         assertTrue(currentState().justSaved)
     }
+
+    @Test
+    fun entries_reloadsWhenRepositoryFlowEmitsSwitchedProfile() = runTest {
+        val entriesFlow = kotlinx.coroutines.flow.MutableStateFlow(
+            listOf(BodyMeasurementEntry(entry_id = "me-1", weight_kg = 80.0, profileId = "self"))
+        )
+        coEvery { repository.allEntries } returns entriesFlow
+        viewModel = BodyMeasurementViewModel(
+            repository = repository,
+            ioDispatcher = testDispatcher,
+            journalRepository = journalRepository
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(listOf("me-1"), viewModel.entries.value.map { it.entry_id })
+
+        entriesFlow.value = listOf(
+            BodyMeasurementEntry(entry_id = "sib-1", weight_kg = 62.0, profileId = "sibling")
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(listOf("sib-1"), viewModel.entries.value.map { it.entry_id })
+    }
+
+    @Test
+    fun startCapture_stampsCapturedProfileEvenIfActiveProfileChangesBeforeSave() = runTest {
+        coEvery { repository.currentProfileId() } returns "self" andThen "sibling"
+        coEvery { repository.insert(any(), any()) } returns Unit
+        coEvery { journalRepository.insert(any(), any()) } returns Unit
+        coEvery { journalRepository.addTag(any(), any(), any()) } returns Unit
+
+        viewModel.startCapture()
+        set(MeasurementField.WEIGHT, "78.5")
+
+        viewModel.onSaveClicked()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { repository.insert("self", match { it.weight_kg == 78.5 }) }
+        coVerify { journalRepository.insert("self", match { it.description.isNotBlank() }) }
+        coVerify { journalRepository.addTag("self", any(), "health") }
+    }
 }

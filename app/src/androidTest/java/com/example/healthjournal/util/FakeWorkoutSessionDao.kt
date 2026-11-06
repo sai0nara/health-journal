@@ -9,32 +9,40 @@ import kotlinx.coroutines.flow.map
 
 /**
  * In-memory [WorkoutSessionDao] for instrumented UI tests: behaves like Room
- * for upserts, identity lookup, and the unfinished-session recovery query.
+ * for upserts, identity lookup, profile scoping, and unfinished-session recovery.
  */
 class FakeWorkoutSessionDao : WorkoutSessionDao {
 
     private val store = mutableMapOf<String, WorkoutSession>()
     private val feed = MutableStateFlow<List<WorkoutSession>>(emptyList())
 
-    override fun getAllSessions(): Flow<List<WorkoutSession>> = feed
+    override fun getAllSessions(profileId: String): Flow<List<WorkoutSession>> =
+        feed.map { all -> all.filter { it.profileId == profileId } }
 
-    override fun getCompletedSessions(): Flow<List<WorkoutSession>> =
-        feed.map { all -> all.filter { it.status == WorkoutStatus.COMPLETED.name } }
-
-    override fun getCompletedWithSetMatrix(): Flow<List<WorkoutSession>> =
+    override fun getCompletedSessions(profileId: String): Flow<List<WorkoutSession>> =
         feed.map { all ->
-            all.filter { it.status == WorkoutStatus.COMPLETED.name && it.setMatrix != null }
-                .sortedBy { it.startTimestamp }
+            all.filter { it.profileId == profileId && it.status == WorkoutStatus.COMPLETED.name }
         }
 
-    override suspend fun getSessionById(sessionId: String): WorkoutSession? =
-        store[sessionId]
+    override fun getCompletedWithSetMatrix(profileId: String): Flow<List<WorkoutSession>> =
+        feed.map { all ->
+            all.filter {
+                it.profileId == profileId &&
+                    it.status == WorkoutStatus.COMPLETED.name &&
+                    it.setMatrix != null
+            }.sortedBy { it.startTimestamp }
+        }
 
-    override suspend fun getUnfinishedSession(): WorkoutSession? =
+    override suspend fun getSessionById(profileId: String, sessionId: String): WorkoutSession? =
+        store[sessionId]?.takeIf { it.profileId == profileId }
+
+    override suspend fun getUnfinishedSession(profileId: String): WorkoutSession? =
         store.values
             .filter {
-                it.status == WorkoutStatus.ACTIVE.name ||
-                    it.status == WorkoutStatus.PAUSED.name
+                it.profileId == profileId && (
+                    it.status == WorkoutStatus.ACTIVE.name ||
+                        it.status == WorkoutStatus.PAUSED.name
+                    )
             }
             .maxByOrNull { it.startTimestamp }
 
@@ -48,13 +56,14 @@ class FakeWorkoutSessionDao : WorkoutSessionDao {
         emit()
     }
 
-    override suspend fun deleteSessionById(sessionId: String) {
-        store.remove(sessionId)
+    override suspend fun deleteSessionById(profileId: String, sessionId: String) {
+        val existing = store[sessionId]
+        if (existing?.profileId == profileId) store.remove(sessionId)
         emit()
     }
 
-    override suspend fun clearAll() {
-        store.clear()
+    override suspend fun clearAll(profileId: String) {
+        store.entries.removeAll { it.value.profileId == profileId }
         emit()
     }
 

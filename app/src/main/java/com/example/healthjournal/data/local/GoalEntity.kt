@@ -1,7 +1,6 @@
 package com.example.healthjournal.data.local
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
 /**
  * One per-parameter Body Analytics goal target. `parameterId` stores the
@@ -9,9 +8,10 @@ import androidx.room.PrimaryKey
  * metric units (kg for weight, cm for girths). `lastModified` drives LWW
  * resolution during cloud sync of the goals snapshot.
  */
-@Entity(tableName = "goals")
+@Entity(tableName = "goals", primaryKeys = ["profileId", "parameterId"])
 data class GoalEntity(
-    @PrimaryKey val parameterId: String,
+    val parameterId: String,
     val target: Double,
-    val lastModified: Long
+    val lastModified: Long,
+    val profileId: String = SELF_PROFILE_ID
 )

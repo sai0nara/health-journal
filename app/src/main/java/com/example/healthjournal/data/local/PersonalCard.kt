@@ -1,7 +1,6 @@
 package com.example.healthjournal.data.local
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
 enum class BloodType(val displayName: String) {
     A_POSITIVE("A+"),
@@ -59,9 +58,8 @@ data class EmergencyContacts(
     val contacts: List<EmergencyContact> = emptyList()
 )
 
-@Entity(tableName = "personal_card")
+@Entity(tableName = "personal_card", primaryKeys = ["profileId", "id"])
 data class PersonalCard(
-    @PrimaryKey
     val id: String = "personal_card",
     val timestamp: Long = System.currentTimeMillis(),
     val lastModified: Long = System.currentTimeMillis(),
@@ -70,7 +68,8 @@ data class PersonalCard(
     val demographics: Demographics = Demographics(),
     val medicalProfile: MedicalProfile = MedicalProfile(),
     val medicalHistory: MedicalHistory = MedicalHistory(),
-    val emergencyContacts: EmergencyContacts = EmergencyContacts()
+    val emergencyContacts: EmergencyContacts = EmergencyContacts(),
+    val profileId: String = SELF_PROFILE_ID
 )
 
 /**
@@ -125,8 +124,10 @@ fun EmergencyContacts.sanitized(): EmergencyContacts = copy(
 )
 
 /** See [Demographics.sanitized] for why this exists. */
-@Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS")
-fun PersonalCard.sanitized(): PersonalCard = copy(
+@Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS", "USELESS_ELVIS")
+fun PersonalCard.sanitized(defaultProfileId: String = SELF_PROFILE_ID): PersonalCard = copy(
+    id = (id as String?)?.takeIf { it.isNotBlank() } ?: "personal_card",
+    profileId = (profileId as String?)?.takeIf { it.isNotBlank() } ?: defaultProfileId,
     demographics = demographics?.sanitized() ?: Demographics(),
     medicalProfile = medicalProfile?.sanitized() ?: MedicalProfile(),
     medicalHistory = medicalHistory?.sanitized() ?: MedicalHistory(),

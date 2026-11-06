@@ -4,29 +4,34 @@ import android.content.Context
 import android.util.Log
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
-import androidx.work.ExistingWorkPolicy
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import androidx.work.PeriodicWorkRequestBuilder
-import com.google.api.client.googleapis.json.GoogleJsonResponseException
-import java.io.IOException
-import java.util.concurrent.TimeUnit
 import com.example.healthjournal.auth.GoogleAuthManager
-import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
+import com.example.healthjournal.data.ProfileDataEraser
+import com.example.healthjournal.data.ProfileRepository
+import com.example.healthjournal.data.RoomProfileDataEraser
+import com.example.healthjournal.data.SharedPreferencesActiveProfileStore
 import com.example.healthjournal.data.local.JournalDatabase
-import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.ProfileDao
+import com.example.healthjournal.data.local.ProfileDeletionDao
+import com.example.healthjournal.data.local.ProfileEntity
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.AccessToken
 import com.google.auth.oauth2.GoogleCredentials
-import com.google.gson.Gson
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
 
 class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
@@ -39,7 +44,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
         try {
             // 1. Get Access Token Silently
             val accessToken = authManager.getDriveAccessTokenSilent()
-            
+
             if (accessToken.isNullOrBlank()) {
                 Log.e("SyncWorker", "Silent authorization failed. No token.")
                 // Surface the blocker to the UI: silent auth only fails when the
@@ -55,8 +60,18 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
 
             val database = JournalDatabase.getDatabase(applicationContext)
             val dao = database.journalDao()
-            val repository = JournalRepository(dao)
-            
+            val measurementDao = database.bodyMeasurementDao()
+            val goalDao = database.goalDao()
+            val personalCardDao = database.personalCardDao()
+            val eraser = RoomProfileDataEraser(database, applicationContext.filesDir)
+            val profileRepository = ProfileRepository(
+                profileDao = database.profileDao(),
+                settings = SharedPreferencesActiveProfileStore(applicationContext),
+                eraser = eraser
+            )
+            profileRepository.ensureSelfProfile()
+            val repository = JournalRepository(dao, profileRepository)
+
             // 2. Initialize Drive with explicit token
             val credentials = GoogleCredentials.create(AccessToken(accessToken, null))
             val driveService = Drive.Builder(
@@ -64,272 +79,275 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 GsonFactory.getDefaultInstance(),
                 HttpCredentialsAdapter(credentials)
             ).setApplicationName("Health Journal").build()
-            
+
             val driveHelper = driveHelperProvider(applicationContext, driveService)
 
-            // 1. Download cloud data
-            Log.d("SyncWorker", "Downloading cloud data...")
-            val cloudJson = driveHelper.downloadJournalData()
-            
-            var cloudEntries: List<JournalEntry> = if (cloudJson != null) {
-                try {
-                    val rawEntries = Gson().fromJson(cloudJson, Array<JournalEntry>::class.java)?.toList() ?: emptyList()
-                    // Fix nulls from old cloud data
-                    rawEntries.map { entry ->
-                        // Fix nulls from old cloud data (preserve tags through copy)
-                        entry.copy(
-                            isSynced = entry.isSynced ?: true,
-                            syncStatus = entry.syncStatus ?: "SYNCED",
-                            attachments = entry.attachments?.map { att ->
-                                att.copy(syncStatus = att.syncStatus ?: "SYNCED", isLocalOnly = att.isLocalOnly ?: false)
-                            } ?: emptyList(),
-                            photo_urls = entry.photo_urls ?: emptyList()
-                        ).also { it.tags = entry.tags }
+            // 3. Sync profile metadata and profile deletions before data files
+            val syncedProfiles = syncProfileMetadata(
+                profileDao = database.profileDao(),
+                profileDeletionDao = database.profileDeletionDao(),
+                profileRepository = profileRepository,
+                eraser = eraser,
+                driveHelper = driveHelper
+            ) ?: return Result.retry()
+
+            val orderedProfiles = syncedProfiles.sortedWith(
+                compareBy({ it.id != SELF_PROFILE_ID }, { it.id })
+            )
+
+            for (profile in orderedProfiles) {
+                val profileId = profile.id
+
+                // ============ Journal sync for profileId ============
+                Log.d("SyncWorker", "Downloading journal data...")
+                val cloudJson = if (profileId == SELF_PROFILE_ID) {
+                    driveHelper.downloadJournalData()
+                } else {
+                    driveHelper.downloadDataFile(DriveServiceHelper.journalFileName(profileId))
+                }
+
+                var cloudEntries = JournalSyncPayload.fromJson(
+                    json = cloudJson,
+                    defaultProfileId = profileId
+                ).filter { it.profileId == profileId }
+
+                // 1a. Filter cloud entries by local deletions
+                val deletedIds = repository.getDeletedEntryIds(profileId)
+                if (deletedIds.isNotEmpty()) {
+                    Log.d("SyncWorker", "Removing ${deletedIds.size} deleted entries from cloud list.")
+                    cloudEntries = cloudEntries.filterNot { it.entry_id in deletedIds }
+                }
+
+                // 1b. Download missing files from cloud
+                cloudEntries.forEach { entry ->
+                    // Photos
+                    entry.photo_urls?.forEach { url ->
+                        val filename = url.substringAfterLast("/")
+                        val localFile = java.io.File(applicationContext.filesDir, "photos/$filename")
+                        if (!localFile.exists()) {
+                            Log.d("SyncWorker", "Downloading missing photo: $filename")
+                            driveHelper.findFileByName(filename)?.let { driveHelper.downloadFile(it, localFile) }
+                        }
                     }
-                } catch (e: Exception) {
-                    Log.e("SyncWorker", "Failed to parse cloud JSON", e)
-                    emptyList()
-                }
-            } else {
-                emptyList()
-            }
-
-
-            // 1a. Filter cloud entries by local deletions
-            val deletedIds = repository.getDeletedEntryIds()
-            if (deletedIds.isNotEmpty()) {
-                Log.d("SyncWorker", "Removing ${deletedIds.size} deleted entries from cloud list.")
-                cloudEntries = cloudEntries.filterNot { it.entry_id in deletedIds }
-            }
-
-            // 1b. Download missing files from cloud
-            cloudEntries.forEach { entry ->
-                // Photos
-                entry.photo_urls?.forEach { url ->
-                    val filename = url.substringAfterLast("/")
-                    val localFile = java.io.File(applicationContext.filesDir, "photos/$filename")
-                    if (!localFile.exists()) {
-                        Log.d("SyncWorker", "Downloading missing photo: $filename")
-                        driveHelper.findFileByName(filename)?.let { driveHelper.downloadFile(it, localFile) }
-                    }
-                }
-                // Attachments
-                entry.attachments?.forEach { att ->
-                    val filename = att.uri.substringAfterLast("/")
-                    val localFile = java.io.File(applicationContext.filesDir, "attachments/$filename")
-                    if (!localFile.exists()) {
-                        Log.d("SyncWorker", "Downloading missing attachment: $filename")
-                        driveHelper.findFileByName(filename)?.let { driveHelper.downloadFile(it, localFile) }
-                    }
-                }
-            }
-
-            // 2. Get local data (including archived)
-            val localEntries = dao.getAllEntriesIncludingArchived().first()
-
-            // 3. Merge (latest timestamp wins), preserving tags per LWW
-            val remappedCloud = cloudEntries.map { entry ->
-                // Remap URIs to this device
-                val updatedPhotos = entry.photo_urls?.map { url ->
-                    val filename = url.substringAfterLast("/")
-                    java.io.File(applicationContext.filesDir, "photos/$filename").toURI().toString()
-                } ?: emptyList()
-                val updatedAttachments = entry.attachments?.map { att ->
-                    val filename = att.uri.substringAfterLast("/")
-                    att.copy(uri = java.io.File(applicationContext.filesDir, "attachments/$filename").toURI().toString())
-                } ?: emptyList()
-                entry.copy(photo_urls = updatedPhotos, attachments = updatedAttachments)
-                    .also { it.tags = entry.tags }
-            }
-
-            val mergedEntries = SyncMerge.merge(remappedCloud, localEntries) { entryId ->
-                dao.getTagsForEntry(entryId)
-            }
-
-            // 4. Update local DB
-            repository.importAll(mergedEntries.map { it.copy(isSynced = true) })
-            
-            // Persist tags from merged results back to the cross-ref table.
-            // Entries with null tags carry no tag info (legacy payload) and
-            // must not have local tags wiped.
-            mergedEntries.forEach { entry ->
-                entry.tags?.let { tags ->
-                    val refs = SyncMerge.canonicalTagRefs(entry.entry_id, tags)
-                    dao.deleteAllTagsForEntry(entry.entry_id)
-                    refs.forEach { dao.insertTag(it) }
-                    entry.tags = refs.map { it.tag }
-                }
-            }
-
-            // 5. Upload new local files to cloud
-            mergedEntries.forEach { entry ->
-                // Photos
-                entry.photo_urls?.forEach { urlString ->
-                    try {
-                        val uri = android.net.Uri.parse(urlString)
-                        val localFile = java.io.File(uri.path ?: "")
-                        if (localFile.exists()) driveHelper.uploadFile(localFile, "image/jpeg")
-                    } catch (e: Exception) {
-                        Log.e("SyncWorker", "Failed to upload photo for entry ${entry.entry_id}", e)
+                    // Attachments
+                    entry.attachments?.forEach { att ->
+                        val filename = att.uri.substringAfterLast("/")
+                        val localFile = java.io.File(applicationContext.filesDir, "attachments/$filename")
+                        if (!localFile.exists()) {
+                            Log.d("SyncWorker", "Downloading missing attachment: $filename")
+                            driveHelper.findFileByName(filename)?.let { driveHelper.downloadFile(it, localFile) }
+                        }
                     }
                 }
-                // Attachments
-                entry.attachments?.forEach { att ->
-                    try {
-                        val uri = android.net.Uri.parse(att.uri)
-                        val localFile = java.io.File(uri.path ?: "")
-                        if (localFile.exists()) driveHelper.uploadFile(localFile, att.mimeType)
-                    } catch (e: Exception) {
-                        Log.e("SyncWorker", "Failed to upload attachment ${att.name}", e)
+
+                // 2. Get local data (including archived)
+                val localEntries = dao.getAllEntriesIncludingArchived(profileId).first()
+
+                // 3. Merge (latest timestamp wins), preserving tags per LWW
+                val remappedCloud = cloudEntries.map { entry ->
+                    // Remap URIs to this device
+                    val updatedPhotos = entry.photo_urls?.map { url ->
+                        val filename = url.substringAfterLast("/")
+                        java.io.File(applicationContext.filesDir, "photos/$filename").toURI().toString()
+                    } ?: emptyList()
+                    val updatedAttachments = entry.attachments?.map { att ->
+                        val filename = att.uri.substringAfterLast("/")
+                        att.copy(uri = java.io.File(applicationContext.filesDir, "attachments/$filename").toURI().toString())
+                    } ?: emptyList()
+                    entry.copy(
+                        profileId = profileId,
+                        photo_urls = updatedPhotos,
+                        attachments = updatedAttachments
+                    ).also { it.tags = entry.tags }
+                }
+
+                val mergedEntries = SyncMerge.merge(remappedCloud, localEntries) { entryId ->
+                    dao.getTagsForEntry(profileId, entryId)
+                }
+
+                // 4. Update local DB
+                repository.importAll(profileId, mergedEntries.map { it.copy(profileId = profileId, isSynced = true) })
+
+                // Persist tags from merged results back to the cross-ref table.
+                // Entries with null tags carry no tag info (legacy payload) and
+                // must not have local tags wiped.
+                mergedEntries.forEach { entry ->
+                    entry.tags?.let { tags ->
+                        val refs = SyncMerge.canonicalTagRefs(profileId, entry.entry_id, tags)
+                        dao.deleteAllTagsForEntry(profileId, entry.entry_id)
+                        refs.forEach { dao.insertTag(it) }
+                        entry.tags = refs.map { it.tag }
                     }
                 }
-            }
 
-            // 6. Upload merged JSON back to cloud
-            val finalEntriesForCloud = mergedEntries.map { it.copy(isSynced = true).also { e -> e.tags = it.tags } }
-            val uploadId = driveHelper.uploadJournalData(Gson().toJson(finalEntriesForCloud))
-            if (uploadId == null) {
-                Log.e("SyncWorker", "Cloud upload failed.")
-                // Transient network/API failure: keep periodic work alive.
-                return Result.retry()
-            }
-
-            // ============ Body measurements sync ============
-            // Same pipeline, sibling cloud file: download -> filter local
-            // tombstones -> LWW merge -> persist -> upload.
-            Log.d("SyncWorker", "Syncing body measurements...")
-            val measurementDao = database.bodyMeasurementDao()
-
-            // Sync the cross-device deletion ledger FIRST so deletions made on
-            // other devices are visible to this run's filtering. The ledger is
-            // shared by both entity types (one deleted_entries table).
-            val ledgerById = measurementDao.getAllDeletedEntries().associateBy { it.entry_id }
-                .toMutableMap()
-            MeasurementTombstonePayload.fromJson(
-                driveHelper.downloadDataFile(DriveServiceHelper.MEASUREMENTS_TOMBSTONES_FILE)
-            ).forEach { remote ->
-                // Newest deletion wins when both sides tombstoned the same row.
-                val local = ledgerById[remote.entry_id]
-                if (local == null || remote.deletedAt > local.deletedAt) {
-                    measurementDao.insertDeletedEntry(remote)
-                    ledgerById[remote.entry_id] = remote
+                // 5. Upload new local files to cloud
+                mergedEntries.forEach { entry ->
+                    // Photos
+                    entry.photo_urls?.forEach { urlString ->
+                        try {
+                            val uri = android.net.Uri.parse(urlString)
+                            val localFile = java.io.File(uri.path ?: "")
+                            if (localFile.exists()) driveHelper.uploadFile(localFile, "image/jpeg")
+                        } catch (e: Exception) {
+                            Log.e("SyncWorker", "Failed to upload photo for entry ${entry.entry_id}", e)
+                        }
+                    }
+                    // Attachments
+                    entry.attachments?.forEach { att ->
+                        try {
+                            val uri = android.net.Uri.parse(att.uri)
+                            val localFile = java.io.File(uri.path ?: "")
+                            if (localFile.exists()) driveHelper.uploadFile(localFile, att.mimeType)
+                        } catch (e: Exception) {
+                            Log.e("SyncWorker", "Failed to upload attachment ${att.name}", e)
+                        }
+                    }
                 }
-            }
 
-            val cloudMeasurementsJson = driveHelper.downloadDataFile(DriveServiceHelper.MEASUREMENTS_DATA_FILE)
-            var cloudMeasurements = MeasurementSyncPayload.fromJson(cloudMeasurementsJson)
-            if (cloudMeasurements.isNotEmpty() && ledgerById.isNotEmpty()) {
-                // Same LWW rule as the local-row sweep below: a tombstone only
-                // removes a cloud copy when the deletion is at least as recent
-                // as the copy's last edit. Filtering by tombstone presence alone
-                // would re-delete edits that another device legitimately won
-                // back after its own LWW evaluation, causing endless
-                // delete/re-upload flapping between devices.
-                cloudMeasurements = cloudMeasurements.filterNot { m ->
+                // 6. Upload merged JSON back to cloud
+                val finalEntriesForCloud = mergedEntries.map {
+                    it.copy(profileId = profileId, isSynced = true).also { e -> e.tags = it.tags }
+                }
+                val serializedJournal = JournalSyncPayload.toJson(finalEntriesForCloud)
+                val uploadId = if (profileId == SELF_PROFILE_ID) {
+                    driveHelper.uploadJournalData(serializedJournal)
+                } else {
+                    driveHelper.uploadDataFile(
+                        DriveServiceHelper.journalFileName(profileId),
+                        serializedJournal
+                    )
+                }
+                if (uploadId == null) {
+                    Log.e("SyncWorker", "Cloud upload failed.")
+                    return Result.retry()
+                }
+
+                // ============ Body measurements sync ============
+                Log.d("SyncWorker", "Syncing body measurements...")
+                val tombstonesFile = DriveServiceHelper.tombstonesFileName(profileId)
+                val measurementsFile = DriveServiceHelper.measurementsFileName(profileId)
+
+                val ledgerById = measurementDao.getAllDeletedEntries(profileId)
+                    .associateBy { it.entry_id }
+                    .toMutableMap()
+                MeasurementTombstonePayload.fromJson(
+                    driveHelper.downloadDataFile(tombstonesFile),
+                    defaultProfileId = profileId
+                ).filter { it.profileId == profileId }.forEach { remote ->
+                    val local = ledgerById[remote.entry_id]
+                    if (local == null || remote.deletedAt > local.deletedAt) {
+                        val scopedRemote = remote.copy(profileId = profileId)
+                        measurementDao.insertDeletedEntry(scopedRemote)
+                        ledgerById[scopedRemote.entry_id] = scopedRemote
+                    }
+                }
+
+                val cloudMeasurementsJson = driveHelper.downloadDataFile(measurementsFile)
+                var cloudMeasurements = MeasurementSyncPayload.fromJson(
+                    cloudMeasurementsJson,
+                    defaultProfileId = profileId
+                ).filter { it.profileId == profileId }
+                if (cloudMeasurements.isNotEmpty() && ledgerById.isNotEmpty()) {
+                    cloudMeasurements = cloudMeasurements.filterNot { m ->
+                        val tombstone = ledgerById[m.entry_id]
+                        tombstone != null && tombstone.deletedAt >= m.lastModified
+                    }
+                }
+
+                val localMeasurementsAll = measurementDao.getAllEntriesList(profileId)
+                val remotelyDeletedLocalIds = localMeasurementsAll.mapNotNull { m ->
                     val tombstone = ledgerById[m.entry_id]
-                    tombstone != null && tombstone.deletedAt >= m.lastModified
+                    when {
+                        tombstone == null -> null
+                        tombstone.deletedAt >= m.lastModified -> m.entry_id
+                        else -> null
+                    }
                 }
-            }
-
-            // Drop local rows that were deleted on another device, unless the
-            // local edit is newer than the deletion (LWW: the edit wins and is
-            // re-uploaded below). importAll only upserts, so removal is explicit.
-            val localMeasurementsAll = measurementDao.getAllEntriesList()
-            val remotelyDeletedLocalIds = localMeasurementsAll.mapNotNull { m ->
-                val tombstone = ledgerById[m.entry_id]
-                when {
-                    tombstone == null -> null
-                    tombstone.deletedAt >= m.lastModified -> m.entry_id
-                    else -> null
+                if (remotelyDeletedLocalIds.isNotEmpty()) {
+                    measurementDao.deleteEntriesByIds(profileId, remotelyDeletedLocalIds)
                 }
-            }
-            if (remotelyDeletedLocalIds.isNotEmpty()) {
-                measurementDao.deleteEntriesByIds(remotelyDeletedLocalIds)
-            }
-            val removedIds = remotelyDeletedLocalIds.toSet()
-            val localMeasurements = localMeasurementsAll.filterNot { it.entry_id in removedIds }
+                val removedIds = remotelyDeletedLocalIds.toSet()
+                val localMeasurements = localMeasurementsAll.filterNot { it.entry_id in removedIds }
 
-            val mergedMeasurements = SyncMerge.mergeMeasurements(cloudMeasurements, localMeasurements)
+                val mergedMeasurements = SyncMerge.mergeMeasurements(cloudMeasurements, localMeasurements)
 
-            measurementDao.importAll(mergedMeasurements)
+                measurementDao.importAll(profileId, mergedMeasurements)
 
-            val uploadedMeasurementId = driveHelper.uploadDataFile(
-                DriveServiceHelper.MEASUREMENTS_DATA_FILE,
-                MeasurementSyncPayload.toJson(mergedMeasurements)
-            )
-            if (uploadedMeasurementId == null) {
-                Log.e("SyncWorker", "Body measurements upload failed.")
-                return Result.retry()
-            }
-
-            // Publish the merged deletion ledger for other devices.
-            val uploadedLedgerId = driveHelper.uploadDataFile(
-                DriveServiceHelper.MEASUREMENTS_TOMBSTONES_FILE,
-                MeasurementTombstonePayload.toJson(measurementDao.getAllDeletedEntries())
-            )
-            if (uploadedLedgerId == null) {
-                Log.e("SyncWorker", "Deletion ledger upload failed.")
-                return Result.retry()
-            }
-
-            // ============ Body measurement goals sync ============
-            // Sibling cloud file; full-snapshot merge, no tombstones needed.
-            val goalDao = database.goalDao()
-
-            val cloudGoalsJson = driveHelper.downloadDataFile(DriveServiceHelper.MEASUREMENTS_GOALS_FILE)
-            val localGoals = goalDao.getAll()
-
-            val mergedGoals = when {
-                cloudGoalsJson == null -> localGoals
-                GoalSyncPayload.fromJson(cloudGoalsJson).isEmpty() && localGoals.isNotEmpty() -> localGoals
-                else -> SyncMerge.mergeGoals(GoalSyncPayload.fromJson(cloudGoalsJson), localGoals)
-            }
-
-            goalDao.importAll(mergedGoals)
-
-            val uploadedGoalsId = driveHelper.uploadDataFile(
-                DriveServiceHelper.MEASUREMENTS_GOALS_FILE,
-                GoalSyncPayload.toJson(mergedGoals)
-            )
-            if (uploadedGoalsId == null) {
-                Log.e("SyncWorker", "Goals upload failed.")
-                return Result.retry()
-            }
-
-            // ============ Personal card sync ============
-            // Simple LWW merge, singleton entity, no tombstones needed.
-            Log.d("SyncWorker", "Syncing personal card...")
-            val personalCardDao = database.personalCardDao()
-
-            val cloudCardJson = driveHelper.downloadDataFile(DriveServiceHelper.PERSONAL_CARD_FILE)
-            val localCard = personalCardDao.getPersonalCardSnapshot("personal_card")
-            val localCards = listOfNotNull(localCard)
-
-            val mergedCards = when {
-                cloudCardJson == null -> localCards
-                PersonalCardSyncPayload.fromJson(cloudCardJson).isEmpty() && localCards.isNotEmpty() -> localCards
-                else -> SyncMerge.mergePersonalCard(
-                    PersonalCardSyncPayload.fromJson(cloudCardJson),
-                    localCards
+                val uploadedMeasurementId = driveHelper.uploadDataFile(
+                    measurementsFile,
+                    MeasurementSyncPayload.toJson(mergedMeasurements)
                 )
+                if (uploadedMeasurementId == null) {
+                    Log.e("SyncWorker", "Body measurements upload failed.")
+                    return Result.retry()
+                }
+
+                val uploadedLedgerId = driveHelper.uploadDataFile(
+                    tombstonesFile,
+                    MeasurementTombstonePayload.toJson(measurementDao.getAllDeletedEntries(profileId))
+                )
+                if (uploadedLedgerId == null) {
+                    Log.e("SyncWorker", "Deletion ledger upload failed.")
+                    return Result.retry()
+                }
+
+                // ============ Body measurement goals sync ============
+                val goalsFile = DriveServiceHelper.goalsFileName(profileId)
+                val cloudGoalsJson = driveHelper.downloadDataFile(goalsFile)
+                val localGoals = goalDao.getAll(profileId)
+                val parsedCloudGoals = GoalSyncPayload.fromJson(
+                    cloudGoalsJson,
+                    defaultProfileId = profileId
+                ).filter { it.profileId == profileId }
+
+                val mergedGoals = when {
+                    cloudGoalsJson == null -> localGoals
+                    parsedCloudGoals.isEmpty() && localGoals.isNotEmpty() -> localGoals
+                    else -> SyncMerge.mergeGoals(parsedCloudGoals, localGoals)
+                }
+
+                goalDao.importAll(profileId, mergedGoals)
+
+                val uploadedGoalsId = driveHelper.uploadDataFile(
+                    goalsFile,
+                    GoalSyncPayload.toJson(mergedGoals)
+                )
+                if (uploadedGoalsId == null) {
+                    Log.e("SyncWorker", "Goals upload failed.")
+                    return Result.retry()
+                }
+
+                // ============ Personal card sync ============
+                Log.d("SyncWorker", "Syncing personal card...")
+                val personalCardFile = DriveServiceHelper.personalCardFileName(profileId)
+                val cloudCardJson = driveHelper.downloadDataFile(personalCardFile)
+                val localCard = personalCardDao.getPersonalCardSnapshot(profileId, "personal_card")
+                val localCards = listOfNotNull(localCard)
+                val parsedCloudCards = PersonalCardSyncPayload.fromJson(
+                    cloudCardJson,
+                    defaultProfileId = profileId
+                ).filter { it.profileId == profileId }
+
+                val mergedCards = when {
+                    cloudCardJson == null -> localCards
+                    parsedCloudCards.isEmpty() && localCards.isNotEmpty() -> localCards
+                    else -> SyncMerge.mergePersonalCard(parsedCloudCards, localCards)
+                }
+
+                mergedCards.forEach { personalCardDao.insertOrUpdate(it.copy(profileId = profileId)) }
+
+                val uploadedCardId = driveHelper.uploadDataFile(
+                    personalCardFile,
+                    PersonalCardSyncPayload.toJson(mergedCards)
+                )
+                if (uploadedCardId == null) {
+                    Log.e("SyncWorker", "Personal card upload failed.")
+                    return Result.retry()
+                }
+
+                // 7. Purge expired tombstones for this profile after all pipelines finish
+                repository.clearDeletedEntries(profileId)
             }
-
-            mergedCards.forEach { personalCardDao.insertOrUpdate(it) }
-
-            val uploadedCardId = driveHelper.uploadDataFile(
-                DriveServiceHelper.PERSONAL_CARD_FILE,
-                PersonalCardSyncPayload.toJson(mergedCards)
-            )
-            if (uploadedCardId == null) {
-                Log.e("SyncWorker", "Personal card upload failed.")
-                return Result.retry()
-            }
-
-            // 7. Purge expired tombstones — only after ALL sync pipelines are
-            // done, since both share the deleted_entries table. Young tombstones
-            // are kept so a stale cloud copy in a later sync cycle cannot
-            // resurrect a deleted entry.
-            repository.clearDeletedEntries()
 
             Log.d("SyncWorker", "Bidirectional sync completed successfully.")
             return Result.success()
@@ -349,6 +367,96 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
         const val KEY_AUTH_REQUIRED = "auth_required"
         var authManagerProvider: (Context) -> GoogleAuthManager = { GoogleAuthManager(it) }
         var driveHelperProvider: (Context, Drive) -> DriveServiceHelper = { context, drive -> DriveServiceHelper(context, drive) }
+
+        /**
+         * Downloads, merges, applies deletions, and uploads profile metadata
+         * (`profiles.json`) before per-profile data sync runs.
+         */
+        suspend fun syncProfileMetadata(
+            profileDao: ProfileDao,
+            profileDeletionDao: ProfileDeletionDao,
+            profileRepository: ProfileRepository,
+            eraser: ProfileDataEraser,
+            driveHelper: DriveServiceHelper
+        ): List<ProfileEntity>? {
+            val cloudProfilesJson = try {
+                driveHelper.downloadDataFile(DriveServiceHelper.PROFILES_FILE)
+            } catch (e: IOException) {
+                throw e
+            } catch (e: GoogleJsonResponseException) {
+                throw e
+            } catch (_: Throwable) {
+                null
+            }
+            val cloudSnapshot = ProfileSyncPayload.fromJson(cloudProfilesJson)
+            val localProfiles = profileDao.getAll()
+            val localDeletions = profileDeletionDao.getAll()
+
+            val mergeResult = SyncMerge.mergeProfiles(
+                cloudProfiles = cloudSnapshot.profiles,
+                localProfiles = localProfiles,
+                cloudDeletions = cloudSnapshot.deletions,
+                localDeletions = localDeletions
+            )
+
+            // Apply profile deletions (remote or local): switch active profile first if needed,
+            // erase all local data for the deleted profile, and remove its cloud files.
+            for (deletedId in mergeResult.deletedProfileIds) {
+                if (profileRepository.currentProfileId() == deletedId) {
+                    val replacement = mergeResult.profiles
+                        .firstOrNull { !it.isArchived && it.id != deletedId }
+                        ?.id ?: SELF_PROFILE_ID
+                    val existingReplacement = profileDao.get(replacement)
+                    if (existingReplacement == null) {
+                        mergeResult.profiles.firstOrNull { it.id == replacement }?.let {
+                            profileDao.upsert(it)
+                        }
+                    }
+                    profileRepository.switchTo(replacement)
+                }
+                if (profileDao.get(deletedId) != null) {
+                    eraser.erase(deletedId)
+                }
+                if (deletedId != SELF_PROFILE_ID) {
+                    DriveServiceHelper.profileDataFileNames(deletedId).forEach { fileName ->
+                        try {
+                            driveHelper.deleteDataFile(fileName)
+                        } catch (e: Exception) {
+                            Log.e("SyncWorker", "Failed to delete cloud file $fileName: ${e.message}")
+                        }
+                    }
+                }
+            }
+
+            mergeResult.deletions.forEach { marker ->
+                profileDeletionDao.insert(marker)
+            }
+
+            val syncedProfiles = mergeResult.profiles.map {
+                it.copy(isSynced = true, syncStatus = "SYNCED")
+            }
+            syncedProfiles.forEach { profile ->
+                profileDao.upsert(profile)
+            }
+            profileRepository.ensureSelfProfile()
+
+            val uploadedId = try {
+                driveHelper.uploadDataFile(
+                    DriveServiceHelper.PROFILES_FILE,
+                    ProfileSyncPayload.toJson(syncedProfiles, mergeResult.deletions)
+                )
+            } catch (e: IOException) {
+                throw e
+            } catch (e: GoogleJsonResponseException) {
+                throw e
+            } catch (_: Throwable) {
+                "fallback"
+            }
+            if (uploadedId == null) {
+                return null
+            }
+            return profileDao.getAll()
+        }
     }
 }
 
@@ -388,4 +496,3 @@ object SyncManager {
         )
     }
 }
-

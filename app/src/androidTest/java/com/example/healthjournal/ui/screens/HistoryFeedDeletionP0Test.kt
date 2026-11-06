@@ -41,6 +41,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
+import com.example.healthjournal.util.FakeActiveProfileProvider
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 
 /**
  * P0 automation for the irreversible-deletion paths of the History feed and
@@ -76,7 +78,7 @@ class HistoryFeedDeletionP0Test {
         app = ApplicationProvider.getApplicationContext()
         db = Room.inMemoryDatabaseBuilder(app, JournalDatabase::class.java).build()
         dao = db.journalDao()
-        repository = JournalRepository(dao)
+        repository = JournalRepository(dao, FakeActiveProfileProvider())
         val session = mockk<SessionManager>()
         every { session.getUserEmail() } returns null
         viewModel = JournalViewModel(
@@ -426,10 +428,10 @@ class HistoryFeedDeletionP0Test {
         attachments = attachments
     )
 
-    private fun entryById(id: String): JournalEntry? = runBlocking { dao.getEntryById(id) }
+    private fun entryById(id: String): JournalEntry? = runBlocking { dao.getEntryById(SELF_PROFILE_ID, id) }
 
     private fun tombstoneIds(): Set<String> =
-        runBlocking { dao.getAllDeletedEntries().map { it.entry_id }.toSet() }
+        runBlocking { dao.getAllDeletedEntries(SELF_PROFILE_ID).map { it.entry_id }.toSet() }
 
     private fun waitFor(message: String = "condition", condition: () -> Boolean) {
         composeTestRule.waitUntil(timeoutMillis = 10_000, condition = condition)

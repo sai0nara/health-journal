@@ -2,6 +2,7 @@ package com.example.healthjournal.data.local
 
 import androidx.room.Entity
 import androidx.room.Ignore
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.util.UUID
 
@@ -14,7 +15,13 @@ data class AttachmentData(
     val syncStatus: String? = "PENDING"
 )
 
-@Entity(tableName = "journal_entries")
+@Entity(
+    tableName = "journal_entries",
+    indices = [
+        Index(value = ["profileId", "timestamp"]),
+        Index(value = ["profileId", "isArchived"])
+    ]
+)
 data class JournalEntry(
     @PrimaryKey val entry_id: String = UUID.randomUUID().toString(),
     val timestamp: Long = System.currentTimeMillis(),
@@ -32,7 +39,8 @@ data class JournalEntry(
     val ai_advice: String? = null,
     val isArchived: Boolean? = false,
     val isSynced: Boolean? = false,
-    val syncStatus: String? = "PENDING_SYNC"
+    val syncStatus: String? = "PENDING_SYNC",
+    val profileId: String = SELF_PROFILE_ID
 ) {
     @Ignore
     var tags: List<String>? = null

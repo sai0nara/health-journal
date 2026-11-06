@@ -1,6 +1,7 @@
 package com.example.healthjournal.sync
 
 import com.example.healthjournal.data.local.BodyMeasurementEntry
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.google.gson.Gson
 
 /**
@@ -12,14 +13,24 @@ import com.google.gson.Gson
 object MeasurementSyncPayload {
     private val gson = Gson()
 
-
     fun toJson(measurements: List<BodyMeasurementEntry>): String =
         gson.toJson(measurements)
 
-    fun fromJson(json: String?): List<BodyMeasurementEntry> {
+    @Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS", "USELESS_ELVIS")
+    fun fromJson(
+        json: String?,
+        defaultProfileId: String = SELF_PROFILE_ID
+    ): List<BodyMeasurementEntry> {
         if (json.isNullOrBlank()) return emptyList()
         return try {
-            gson.fromJson(json, Array<BodyMeasurementEntry>::class.java)?.toList() ?: emptyList()
+            gson.fromJson(json, Array<BodyMeasurementEntry>::class.java)?.toList()
+                ?.mapNotNull { entry ->
+                    if (entry == null) return@mapNotNull null
+                    val profileId = (entry.profileId as String?)?.takeIf { it.isNotBlank() }
+                        ?: defaultProfileId
+                    entry.copy(profileId = profileId)
+                }
+                ?: emptyList()
         } catch (_: Exception) {
             emptyList()
         }

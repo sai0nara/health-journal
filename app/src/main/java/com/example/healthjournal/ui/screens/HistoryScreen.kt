@@ -51,9 +51,13 @@ fun HistoryScreen(
     viewModel: IJournalViewModel,
     onAddEntryClick: () -> Unit,
     onEntryClick: (String) -> Unit,
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
+        { _, _ -> },
+    onSwitchProfile: (String) -> Unit = {}
 ) {
     val entries by viewModel.allEntries.collectAsState()
+    val activeProfile by viewModel.activeProfile.collectAsState()
     val isAscending by viewModel.isAscending.collectAsState()
     val selectedTags by viewModel.selectedTags.collectAsState()
     val tagsByEntry by viewModel.tagsByEntry.collectAsState()
@@ -109,6 +113,7 @@ fun HistoryScreen(
                     )
                 },
                 actions = {
+                    profileSwitcher(true, onSwitchProfile)
                     IconButton(
                         onClick = { showOverflow = true },
                         modifier = Modifier.testTag("overflow_menu")
@@ -183,7 +188,11 @@ fun HistoryScreen(
             ) {
                 if (entries.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.history_empty))
+                        Text(
+                            activeProfile?.let {
+                                stringResource(R.string.history_empty_profile, it.name)
+                            } ?: stringResource(R.string.history_empty)
+                        )
                     }
                 } else {
                     LazyColumn(

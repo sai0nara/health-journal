@@ -67,12 +67,16 @@ import com.example.healthjournal.viewmodel.PresetViewModel
 @Composable
 fun PresetLibraryScreen(
     viewModel: PresetViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
+        { _, _ -> },
+    onSwitchProfile: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val presets by viewModel.presets.collectAsState()
     val catalog by viewModel.catalog.collectAsState()
     var deleteTarget by remember { mutableStateOf<WorkoutPreset?>(null) }
+    var pendingSwitchId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -85,7 +89,17 @@ fun PresetLibraryScreen(
                         )
                     }
                 },
-                title = { Text(stringResource(R.string.preset_title)) }
+                title = { Text(stringResource(R.string.preset_title)) },
+                actions = {
+                    val editing = uiState as? PresetUiState.Editing
+                    profileSwitcher(editing?.isSaving != true) { targetProfileId ->
+                        if (editing != null) {
+                            pendingSwitchId = targetProfileId
+                        } else {
+                            onSwitchProfile(targetProfileId)
+                        }
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -125,6 +139,30 @@ fun PresetLibraryScreen(
                 modifier = Modifier.padding(padding)
             )
         }
+    }
+
+    pendingSwitchId?.let { targetProfileId ->
+        AlertDialog(
+            onDismissRequest = { pendingSwitchId = null },
+            title = { Text(stringResource(R.string.profile_switch_discard_title)) },
+            text = { Text(stringResource(R.string.profile_switch_discard_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingSwitchId = null
+                        viewModel.showLibrary()
+                        onSwitchProfile(targetProfileId)
+                    }
+                ) {
+                    Text(stringResource(R.string.profile_switch_discard_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingSwitchId = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
     }
 
     deleteTarget?.let { preset ->

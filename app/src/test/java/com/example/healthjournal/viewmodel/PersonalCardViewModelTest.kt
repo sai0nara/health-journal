@@ -11,11 +11,13 @@ import com.example.healthjournal.data.local.MedicalHistory
 import com.example.healthjournal.data.local.MedicalProfile
 import com.example.healthjournal.data.local.MedicationEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.validation.ValidationResult
 import com.example.healthjournal.domain.validation.DemographicsValidationResult
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,8 +44,9 @@ class PersonalCardViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         coEvery { repository.getPersonalCard() } returns flowOf(null)
-        coEvery { repository.insertOrUpdate(any()) } returns Unit
-        coEvery { repository.markEntryDirty() } returns Unit
+        every { repository.currentProfileId() } returns SELF_PROFILE_ID
+        coEvery { repository.insertOrUpdate(any<String>(), any()) } returns Unit
+        coEvery { repository.markEntryDirty(any<String>()) } returns Unit
         viewModel = PersonalCardViewModel(repository, testDispatcher)
     }
 
@@ -116,8 +119,23 @@ class PersonalCardViewModelTest {
         assertFalse(state.isEditing)
         assertEquals("John Doe", state.demographics.fullName)
         assertEquals(BloodType.A_POSITIVE, state.medicalProfile.bloodType)
-        coVerify { repository.insertOrUpdate(any()) }
-        coVerify { repository.markEntryDirty() }
+        coVerify { repository.insertOrUpdate(SELF_PROFILE_ID, any()) }
+        coVerify { repository.markEntryDirty(SELF_PROFILE_ID) }
+    }
+
+    @Test
+    fun saveChanges_usesProfileCapturedWhenEditingStarted() = runTest {
+        seedCard(PersonalCard())
+        every { repository.currentProfileId() } returns SELF_PROFILE_ID
+
+        viewModel.startEditing()
+        every { repository.currentProfileId() } returns "sibling"
+        viewModel.onFullNameChanged("Me")
+        viewModel.saveChanges()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { repository.insertOrUpdate(SELF_PROFILE_ID, any()) }
+        coVerify { repository.markEntryDirty(SELF_PROFILE_ID) }
     }
 
     @Test

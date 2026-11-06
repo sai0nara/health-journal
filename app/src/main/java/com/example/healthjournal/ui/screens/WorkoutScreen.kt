@@ -94,7 +94,10 @@ import java.time.format.ResolverStyle
 fun WorkoutScreen(
     viewModel: WorkoutViewModel,
     onBack: () -> Unit,
-    onPresetsClick: () -> Unit
+    onPresetsClick: () -> Unit,
+    profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
+        { _, _ -> },
+    onSwitchProfile: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val recentSessions by viewModel.recentSessions.collectAsState()
@@ -104,6 +107,10 @@ fun WorkoutScreen(
     val unitSystem = UnitSettings.read(LocalContext.current)
 
     val state = uiState
+    val canSwitchProfile = state is WorkoutUiState.Idle ||
+        state is WorkoutUiState.Configuring ||
+        state is WorkoutUiState.Summary ||
+        state is WorkoutUiState.Error
     val session = when (state) {
         is WorkoutUiState.Active -> state.session
         is WorkoutUiState.Countdown -> state.session
@@ -130,7 +137,12 @@ fun WorkoutScreen(
                         )
                     }
                 },
-                title = { Text(stringResource(R.string.workout_title)) }
+                title = { Text(stringResource(R.string.workout_title)) },
+                actions = {
+                    profileSwitcher(canSwitchProfile) { targetProfileId ->
+                        if (canSwitchProfile) onSwitchProfile(targetProfileId)
+                    }
+                }
             )
         }
     ) { padding ->

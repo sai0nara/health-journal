@@ -23,15 +23,44 @@ import com.example.healthjournal.export.RestoreViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ExportScreen(
     viewModel: ExportViewModel,
     restoreViewModel: RestoreViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
+        { _, _ -> },
+    onSwitchProfile: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val exportState by viewModel.exportState.collectAsState()
+    val activeProfilesFlow = remember(viewModel) {
+        runCatching {
+            @Suppress("UNCHECKED_CAST")
+            val initial = (viewModel.activeProfiles.value as? List<*>)
+                ?.filterIsInstance<com.example.healthjournal.data.local.ProfileEntity>()
+            if (initial != null) {
+                viewModel.activeProfiles
+            } else {
+                kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+            }
+        }.getOrDefault(kotlinx.coroutines.flow.MutableStateFlow(emptyList()))
+    }
+    val selectedProfileIdsFlow = remember(viewModel) {
+        runCatching {
+            val initial = (viewModel.selectedProfileIds.value as? Set<*>)
+                ?.filterIsInstance<String>()
+                ?.toSet()
+            if (initial != null) {
+                viewModel.selectedProfileIds
+            } else {
+                kotlinx.coroutines.flow.MutableStateFlow(emptySet())
+            }
+        }.getOrDefault(kotlinx.coroutines.flow.MutableStateFlow(emptySet()))
+    }
+    val activeProfiles by activeProfilesFlow.collectAsState()
+    val selectedProfileIds by selectedProfileIdsFlow.collectAsState()
 
     var selectedTab by rememberSaveable { mutableStateOf(0) }
     
@@ -75,6 +104,12 @@ fun ExportScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back_label))
                     }
+                },
+                actions = {
+                    val canSwitch = exportState !is ExportState.Generating
+                    profileSwitcher(canSwitch) { targetProfileId ->
+                        if (canSwitch) onSwitchProfile(targetProfileId)
+                    }
                 }
             )
         }
@@ -106,6 +141,28 @@ fun ExportScreen(
                     )
 
             if (selectedFormat == "PDF") {
+                if (activeProfiles.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = stringResource(R.string.export_profiles_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            activeProfiles.forEach { profile ->
+                                FilterChip(
+                                    selected = profile.id in selectedProfileIds,
+                                    onClick = { viewModel.toggleProfileSelection(profile.id) },
+                                    label = { Text(profile.name) },
+                                    modifier = Modifier.testTag("export_profile_${profile.id}")
+                                )
+                            }
+                        }
+                    }
+                }
                 // Date Selection (PDF is date-scoped)
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

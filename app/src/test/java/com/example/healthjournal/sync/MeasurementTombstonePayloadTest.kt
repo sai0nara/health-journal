@@ -31,4 +31,11 @@ class MeasurementTombstonePayloadTest {
 
         assertEquals(tombstones, parsed)
     }
+
+    @Test
+    fun fromJson_legacyMissingProfileId_normalizesToSelf() {
+        val json = """[{"entry_id":"del-1","deletedAt":1500}]"""
+        val parsed = MeasurementTombstonePayload.fromJson(json)
+        assertEquals("self", parsed.single().profileId)
+    }
 }

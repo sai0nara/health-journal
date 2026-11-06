@@ -267,4 +267,22 @@ class RestoreViewModelTest {
         dispatcher.scheduler.advanceUntilIdle()
         assertTrue(vm.state() is RestoreUiState.ConfirmationRequired)
     }
+
+    @Test
+    fun selectBackup_v2Backup_exposesFormatVersionAndProfileCount() = runTest {
+        val resultWithProfiles = RestoreResult(1, 0, 0, 0, 0, 0, profileCount = 2)
+        val vm = newViewModel(restoreResult = resultWithProfiles)
+        val backup = buildBackup()
+
+        vm.selectBackup("file://${backup.absolutePath}")
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val conf = vm.state() as RestoreUiState.ConfirmationRequired
+        assertEquals(BackupWriter.BACKUP_FORMAT_VERSION, conf.formatVersion)
+
+        vm.confirmRestore()
+        dispatcher.scheduler.advanceUntilIdle()
+        val success = vm.state() as RestoreUiState.Success
+        assertEquals(2, success.result.profileCount)
+    }
 }

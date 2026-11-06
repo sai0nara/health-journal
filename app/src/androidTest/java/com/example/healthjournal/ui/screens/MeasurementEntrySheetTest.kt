@@ -28,6 +28,7 @@ import org.junit.Test
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import com.example.healthjournal.util.FakeActiveProfileProvider
 
 @Feature("Body Measurements Capture")
 class MeasurementEntrySheetTest {
@@ -53,12 +54,12 @@ class MeasurementEntrySheetTest {
 
     private fun setContent(darkTheme: Boolean = false) {
         val goalsDao = mockk<com.example.healthjournal.data.local.GoalDao>(relaxed = true)
-        every { goalsDao.observeAll() } returns kotlinx.coroutines.flow.MutableStateFlow(
+        every { goalsDao.observeAll(com.example.healthjournal.data.local.SELF_PROFILE_ID) } returns kotlinx.coroutines.flow.MutableStateFlow(
             emptyList<com.example.healthjournal.data.local.GoalEntity>()
         )
         val analyticsViewModel = BodyAnalyticsViewModel(
             measurementRepository,
-            GoalsRepository(goalsDao),
+            GoalsRepository(goalsDao, FakeActiveProfileProvider()),
             kotlinx.coroutines.test.UnconfinedTestDispatcher()
         )
         composeTestRule.setContent {
@@ -146,6 +147,7 @@ class MeasurementEntrySheetTest {
         step("Verify insert persisted and sheet dismissed") {
             coVerify(timeout = 5000) {
                 measurementRepository.insert(
+                    any(),
                     match { it.waist_cm == 85.0 && it.weight_kg == null }
                 )
             }
@@ -268,6 +270,7 @@ class MeasurementEntrySheetTest {
             step("Verify metric kg persisted and sheet dismissed") {
                 coVerify(timeout = 5000) {
                     measurementRepository.insert(
+                        any(),
                         match { it.weight_kg == 69.99 }
                     )
                 }

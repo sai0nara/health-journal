@@ -73,7 +73,12 @@ private val mainTiles = listOf(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(onTileClick: (String) -> Unit) {
+fun MainScreen(
+    onTileClick: (String) -> Unit,
+    profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
+        { _, _ -> },
+    onSwitchProfile: (String) -> Unit = {}
+) {
     var showAboutDialog by remember { mutableStateOf(false) }
     if (showAboutDialog) {
         AboutAppDialog(onDismiss = { showAboutDialog = false })
@@ -95,6 +100,7 @@ fun MainScreen(onTileClick: (String) -> Unit) {
                 },
                 title = { Text(stringResource(R.string.main_title)) },
                 actions = {
+                    profileSwitcher(true, onSwitchProfile)
                     IconButton(
                         onClick = { showAboutDialog = true },
                         modifier = Modifier.testTag("main_about")

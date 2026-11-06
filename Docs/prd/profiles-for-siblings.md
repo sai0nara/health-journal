@@ -4,29 +4,24 @@
 > single signed-in account, without mixing their journals, measurements, goals,
 > workouts, or medical cards.
 
-Last updated: 2026-11-02
-
-> **Status: PLANNED.** This PRD defines the agreed product behavior. The app is
-> currently single-profile: journal entries and the personal card have one owner,
-> and no profile switcher exists. The product specification and test cases are
-> added when implementation starts.
+Last updated: 2026-11-06
 
 ## Overview
 
 The app is used by one signed-in account, but one adult may track more than one
-sibling. Today every journal entry, body measurement, goal, workout, and personal
-card belongs to that single implicit user. The profiles feature makes the owner
-explicit: a default Self profile keeps existing data, and additional dependent
+sibling. Every journal entry, body measurement, goal, workout, and personal
+card belongs to an explicit profile owner: a default Self profile keeps existing data, and additional dependent
 profiles can be created for siblings or other family members.
 
 Profiles are an organizational boundary, not a security boundary. They prevent
 accidental mixing of health records; they do not protect one sibling's data from
 another person using the unlocked device or signed-in account.
 
-The current single-owner assumptions live in
+Profile ownership lives on
+`app/src/main/java/com/example/healthjournal/data/local/ProfileEntity.kt`,
 `app/src/main/java/com/example/healthjournal/data/local/JournalEntry.kt`,
 `app/src/main/java/com/example/healthjournal/data/local/PersonalCard.kt`, and the
-screens that read repository-wide flows.
+repositories and screens that scope queries to the active profile.
 
 ## Goals / Non-goals
 

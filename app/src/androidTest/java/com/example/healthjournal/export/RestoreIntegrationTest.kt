@@ -10,6 +10,8 @@ import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.ProfileEntity
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.data.local.PersonalCard
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.google.gson.Gson
@@ -102,7 +104,7 @@ class RestoreIntegrationTest {
         assertTrue(outcome is RestoreCoordinator.Outcome.Success)
         assertEquals(1, (outcome as RestoreCoordinator.Outcome.Success).result.journalEntryCount)
 
-        val after = journalDao.getAllEntries().first()
+        val after = journalDao.getAllEntries(SELF_PROFILE_ID).first()
         assertEquals(1, after.size)
         assertEquals("ENTRY_B", after.single().description)
         assertFalse("Pre-existing data must be wiped by atomic replace", after.any { it.description == "ENTRY_A" })
@@ -139,7 +141,7 @@ class RestoreIntegrationTest {
         val outcome = coordinator().run(archive, passphrase = null)
 
         assertTrue(outcome is RestoreCoordinator.Outcome.Success)
-        val presets = db.workoutPresetDao().getAllPresets().first()
+        val presets = db.workoutPresetDao().getAllPresets(SELF_PROFILE_ID).first()
         assertEquals(listOf("p1"), presets.map { it.id })
         assertEquals("Rowing", presets.single().warmupName)
         assertEquals(300, presets.single().warmupDurationSeconds)
@@ -157,7 +159,7 @@ class RestoreIntegrationTest {
         val outcome = coordinator().run(encrypted, passphrase = "super-secret")
 
         assertTrue(outcome is RestoreCoordinator.Outcome.Success)
-        assertEquals("ENCRYPTED_ENTRY", journalDao.getAllEntries().first().single().description)
+        assertEquals("ENCRYPTED_ENTRY", journalDao.getAllEntries(SELF_PROFILE_ID).first().single().description)
     }
 
     @Test
@@ -175,7 +177,7 @@ class RestoreIntegrationTest {
         assertTrue(outcome is RestoreCoordinator.Outcome.Failure)
         assertTrue((outcome as RestoreCoordinator.Outcome.Failure).error is RestoreError.WrongPassphrase)
 
-        val after = journalDao.getAllEntries().first()
+        val after = journalDao.getAllEntries(SELF_PROFILE_ID).first()
         assertEquals("Original data must remain intact", 1, after.size)
         assertEquals("ORIGINAL", after.single().description)
         // Media import must not have happened
@@ -200,6 +202,72 @@ class RestoreIntegrationTest {
 
         assertTrue(outcome is RestoreCoordinator.Outcome.Failure)
         assertTrue((outcome as RestoreCoordinator.Outcome.Failure).error is RestoreError.VersionMismatch)
-        assertEquals("KEEP_ME", journalDao.getAllEntries().first().single().description)
+        assertEquals("KEEP_ME", journalDao.getAllEntries(SELF_PROFILE_ID).first().single().description)
+    }
+
+    @Test
+    fun restore_v2ReplacesAllProfilesAndBoundaries() = runBlocking {
+        val profileDao = db.profileDao()
+        val journalDao = db.journalDao()
+        profileDao.upsert(ProfileEntity(id = SELF_PROFILE_ID, name = "Me", relationship = "SELF"))
+        profileDao.upsert(ProfileEntity(id = "sib-old", name = "Old Sibling", relationship = "SIBLING"))
+        journalDao.insertEntry(JournalEntry(entry_id = "e-old", profileId = "sib-old", description = "Old Sibling Entry"))
+
+        val v2Profiles = listOf(
+            ProfileEntity(id = SELF_PROFILE_ID, name = "Me", relationship = "SELF"),
+            ProfileEntity(id = "sib-new", name = "Alex", relationship = "SIBLING")
+        )
+        val v2Data = BackupData(
+            profiles = v2Profiles,
+            journalEntries = listOf(
+                JournalEntry(entry_id = "e-self", profileId = SELF_PROFILE_ID, description = "Self Restored"),
+                JournalEntry(entry_id = "e-alex", profileId = "sib-new", description = "Alex Restored")
+            )
+        )
+        val archive = buildBackup(v2Data, mediaFile = null, target = File(filesDir, "v2_${System.nanoTime()}.zip"))
+
+        val outcome = coordinator().run(archive, passphrase = null)
+
+        assertTrue(outcome is RestoreCoordinator.Outcome.Success)
+        assertEquals(2, (outcome as RestoreCoordinator.Outcome.Success).result.profileCount)
+        assertEquals(setOf(SELF_PROFILE_ID, "sib-new"), profileDao.getAll().map { it.id }.toSet())
+        assertTrue(journalDao.getAllEntries("sib-old").first().isEmpty())
+        assertEquals(listOf("Self Restored"), journalDao.getAllEntries(SELF_PROFILE_ID).first().map { it.description })
+        assertEquals(listOf("Alex Restored"), journalDao.getAllEntries("sib-new").first().map { it.description })
+    }
+
+    @Test
+    fun restore_v1ClearsAndRestoresOnlySelfWhilePreservingOtherProfiles() = runBlocking {
+        val profileDao = db.profileDao()
+        val journalDao = db.journalDao()
+        profileDao.upsert(ProfileEntity(id = SELF_PROFILE_ID, name = "Me", relationship = "SELF"))
+        profileDao.upsert(ProfileEntity(id = "sib-keep", name = "Keep Me Sibling", relationship = "SIBLING"))
+        journalDao.insertEntry(JournalEntry(entry_id = "e-self-old", profileId = SELF_PROFILE_ID, description = "Old Self"))
+        journalDao.insertEntry(JournalEntry(entry_id = "e-sib-keep", profileId = "sib-keep", description = "Keep Sibling Entry"))
+
+        val v1Archive = File(filesDir, "v1_${System.nanoTime()}.zip")
+        FileOutputStream(v1Archive).use { fos ->
+            ZipOutputStream(fos).use { zos ->
+                BackupWriter(
+                    gson = Gson(),
+                    schemaVersion = JournalDatabase.CURRENT_SCHEMA_VERSION,
+                    formatVersion = 1
+                ).writeBackup(
+                    zos,
+                    BackupData(
+                        journalEntries = listOf(JournalEntry(entry_id = "e-self-new", description = "New Self From V1"))
+                    ),
+                    emptyList()
+                )
+            }
+        }
+
+        val outcome = coordinator().run(v1Archive, passphrase = null)
+
+        assertTrue(outcome is RestoreCoordinator.Outcome.Success)
+        assertEquals(1, (outcome as RestoreCoordinator.Outcome.Success).result.profileCount)
+        assertEquals(listOf("New Self From V1"), journalDao.getAllEntries(SELF_PROFILE_ID).first().map { it.description })
+        assertEquals(listOf("Keep Sibling Entry"), journalDao.getAllEntries("sib-keep").first().map { it.description })
+        assertTrue(profileDao.getAll().any { it.id == "sib-keep" })
     }
 }

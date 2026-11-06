@@ -1,6 +1,7 @@
 package com.example.healthjournal.sync
 
 import android.content.Context
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.google.api.client.http.ByteArrayContent
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.model.File
@@ -47,6 +48,28 @@ class DriveServiceHelper(private val context: Context, private val driveService:
 
         driveService.files().get(fileId).executeMediaAsInputStream().use { inputStream ->
             inputStream.bufferedReader().use { it.readText() }
+        }
+    }
+
+    /** Deletes a JSON data file from the appDataFolder if present. */
+    suspend fun deleteDataFile(fileName: String): Boolean = withContext(Dispatchers.IO) {
+        val fileId = findFileByName(fileName) ?: return@withContext false
+        driveService.files().delete(fileId).execute()
+        true
+    }
+
+    /** Deletes all per-profile Drive data files for a non-Self profile. */
+    suspend fun deleteProfileDataFiles(profileId: String) {
+        if (profileId == SELF_PROFILE_ID) return
+        profileDataFileNames(profileId).forEach { fileName ->
+            try {
+                deleteDataFile(fileName)
+            } catch (e: Exception) {
+                android.util.Log.e(
+                    "DriveServiceHelper",
+                    "Failed to delete cloud file $fileName: ${e.message}"
+                )
+            }
         }
     }
 
@@ -102,6 +125,7 @@ class DriveServiceHelper(private val context: Context, private val driveService:
 
 
     companion object {
+        const val PROFILES_FILE = "profiles.json"
         const val JOURNAL_DATA_FILE = "health_journal_data.json"
         const val MEASUREMENTS_DATA_FILE = "body_measurements.json"
         const val MEASUREMENTS_GOALS_FILE = "body_measurements_goals.json"
@@ -114,5 +138,28 @@ class DriveServiceHelper(private val context: Context, private val driveService:
         const val MEASUREMENTS_TOMBSTONES_FILE = "body_measurements_tombstones.json"
 
         const val PERSONAL_CARD_FILE = "personal_card.json"
+
+        fun journalFileName(profileId: String): String =
+            if (profileId == SELF_PROFILE_ID) JOURNAL_DATA_FILE else "health_journal_data_${profileId}.json"
+
+        fun measurementsFileName(profileId: String): String =
+            if (profileId == SELF_PROFILE_ID) MEASUREMENTS_DATA_FILE else "body_measurements_${profileId}.json"
+
+        fun goalsFileName(profileId: String): String =
+            if (profileId == SELF_PROFILE_ID) MEASUREMENTS_GOALS_FILE else "body_measurements_goals_${profileId}.json"
+
+        fun tombstonesFileName(profileId: String): String =
+            if (profileId == SELF_PROFILE_ID) MEASUREMENTS_TOMBSTONES_FILE else "body_measurements_tombstones_${profileId}.json"
+
+        fun personalCardFileName(profileId: String): String =
+            if (profileId == SELF_PROFILE_ID) PERSONAL_CARD_FILE else "personal_card_${profileId}.json"
+
+        fun profileDataFileNames(profileId: String): List<String> = listOf(
+            journalFileName(profileId),
+            measurementsFileName(profileId),
+            goalsFileName(profileId),
+            tombstonesFileName(profileId),
+            personalCardFileName(profileId)
+        )
     }
 }

@@ -503,6 +503,7 @@ class AddEntryScreenTest {
 
         step("Sync Health Connect") {
             composeTestRule.onNodeWithTag("enrichment_sync_health").performScrollTo().performClick()
+            composeTestRule.onNodeWithText("Import").performClick()
             composeTestRule.waitUntil(5000) { viewModel.syncHealthDataCalled }
             composeTestRule.waitForIdle()
         }
@@ -514,6 +515,62 @@ class AddEntryScreenTest {
             composeTestRule.onNodeWithTag("vitals_field_glucose").performScrollTo().assertTextContains("5.4")
             composeTestRule.onNodeWithTag("vitals_field_temperature").performScrollTo().assertTextContains("36.6")
             composeTestRule.onNodeWithTag("vitals_field_spo2").performScrollTo().assertTextContains("98")
+        }
+    }
+
+    @Test
+    fun testAddEntryScreen_HealthSyncDialogNamesActiveProfileAndLocksCapturedTarget() {
+        viewModel.activeProfileId.value = "profile-a"
+        viewModel.activeProfile.value = com.example.healthjournal.data.local.ProfileEntity(
+            id = "profile-a",
+            name = "Alex",
+            relationship = "SIBLING"
+        )
+        viewModel.healthAvailability = HealthConnectClient.SDK_AVAILABLE
+        viewModel.healthPermissionsGranted = true
+        viewModel.healthSyncResult = HealthSyncResult(
+            bpSystolic = 115.0,
+            bpDiastolic = 75.0,
+            heartRate = 66,
+            sleepHours = 7.5f
+        )
+
+        step("Open Add Entry Screen and tap Health Connect") {
+            composeTestRule.setContent {
+                AddEntryScreen(viewModel = viewModel, onBack = {})
+            }
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithText("How are you feeling today?")
+                .performTextInput("Morning sync")
+            composeTestRule.onNodeWithTag("enrichment_sync_health").performScrollTo().performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify confirmation dialog names the active profile before importing") {
+            composeTestRule.onNodeWithText("Import from Health Connect?").assertIsDisplayed()
+            composeTestRule.onNodeWithText("Import Health Connect metrics into Alex's profile?")
+                .assertIsDisplayed()
+            org.junit.Assert.assertFalse(viewModel.syncHealthDataCalled)
+        }
+
+        step("Switch active profile while dialog is open, then confirm") {
+            viewModel.activeProfileId.value = "profile-b"
+            viewModel.activeProfile.value = com.example.healthjournal.data.local.ProfileEntity(
+                id = "profile-b",
+                name = "Sam",
+                relationship = "SIBLING"
+            )
+            composeTestRule.onNodeWithText("Import").performClick()
+            composeTestRule.waitUntil(5000) { viewModel.syncHealthDataCalled }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify import and saved entry both target the captured profile-a") {
+            assertEquals("profile-a", viewModel.syncHealthDataTargetProfileId)
+            composeTestRule.onNodeWithText("Save Entry").performScrollTo().performClick()
+            composeTestRule.waitUntil(5000) { viewModel.addEntryCalledWith != null }
+            assertEquals("profile-a", viewModel.addEntryCalledWith?.profileId)
+            assertEquals(115.0, viewModel.addEntryCalledWith?.bpSystolic!!, 0.001)
         }
     }
 
@@ -554,5 +611,111 @@ class AddEntryScreenTest {
         io.qameta.allure.kotlin.Allure.step(description) {
             block()
         }
+    }
+}
+
+@Feature("Add Entry profile switch")
+class AddEntryProfileSwitchTest {
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
+    class MockJournalViewModel : com.example.healthjournal.util.FakeJournalViewModel()
+
+    private val viewModel = MockJournalViewModel()
+
+    private fun setScreen(onSwitchProfile: (String) -> Unit) {
+        composeTestRule.setContent {
+            com.example.healthjournal.ui.theme.HealthJournalTheme {
+                AddEntryScreen(
+                    viewModel = viewModel,
+                    onBack = {},
+                    profileSwitcher = { enabled, onSwitch ->
+                        androidx.compose.material3.Button(
+                            onClick = { onSwitch("sibling") },
+                            enabled = enabled
+                        ) {
+                            androidx.compose.material3.Text("Switch")
+                        }
+                    },
+                    onSwitchProfile = onSwitchProfile
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+    }
+
+    @Test
+    fun cleanDraft_switchesImmediately() {
+        var switchedTo: String? = null
+        setScreen { switchedTo = it }
+
+        composeTestRule.onNodeWithText("Switch").performClick()
+
+        org.junit.Assert.assertEquals("sibling", switchedTo)
+    }
+
+    @Test
+    fun dirtyDraft_requiresDiscardConfirmation() {
+        var switchedTo: String? = null
+        setScreen { switchedTo = it }
+        composeTestRule.onNodeWithText("How are you feeling today?")
+            .performTextInput("Unsaved draft")
+
+        composeTestRule.onNodeWithText("Switch").performClick()
+
+        composeTestRule.onNodeWithText("Discard changes?").assertExists()
+        org.junit.Assert.assertNull(switchedTo)
+        composeTestRule.onNodeWithText("Discard and switch").performClick()
+        org.junit.Assert.assertEquals("sibling", switchedTo)
+    }
+
+    @Test
+    fun savedEntryUsesProfileCapturedWhenFormOpened() {
+        viewModel.activeProfileId.value = "self"
+        setScreen {}
+        composeTestRule.onNodeWithText("How are you feeling today?")
+            .performTextInput("Draft under self")
+
+        viewModel.activeProfileId.value = "sibling"
+        composeTestRule.onNodeWithText("Save Entry").performScrollTo().performClick()
+
+        composeTestRule.waitUntil(5000) { viewModel.addEntryCalledWith != null }
+        org.junit.Assert.assertEquals("self", viewModel.addEntryCalledWith?.profileId)
+    }
+
+    @Test
+    fun editOpenedUnderProfileAStaysWithProfileA() {
+        viewModel.activeProfileId.value = "self"
+        viewModel.entryToReturn = JournalEntry(
+            entry_id = "1",
+            description = "Old",
+            profileId = "self"
+        )
+        composeTestRule.setContent {
+            AddEntryScreen(viewModel = viewModel, onBack = {}, entryId = "1")
+        }
+        composeTestRule.waitForIdle()
+
+        viewModel.activeProfileId.value = "sibling"
+        composeTestRule.onNodeWithText("Update Entry").performScrollTo().performClick()
+
+        composeTestRule.waitUntil(5000) { viewModel.updateEntryCalledWith != null }
+        org.junit.Assert.assertEquals("self", viewModel.updateEntryProfileId)
+        org.junit.Assert.assertEquals("self", viewModel.updateEntryCalledWith?.first?.profileId)
+    }
+
+    @Test
+    fun dirtyDraft_cancelKeepsDraft() {
+        var switchedTo: String? = null
+        setScreen { switchedTo = it }
+        composeTestRule.onNodeWithText("How are you feeling today?")
+            .performTextInput("Unsaved draft")
+
+        composeTestRule.onNodeWithText("Switch").performClick()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+
+        org.junit.Assert.assertNull(switchedTo)
+        composeTestRule.onNodeWithText("Discard changes?").assertDoesNotExist()
     }
 }

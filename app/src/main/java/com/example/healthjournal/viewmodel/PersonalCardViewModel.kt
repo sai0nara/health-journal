@@ -59,6 +59,7 @@ class PersonalCardViewModel(
     val uiState: StateFlow<PersonalCardUiState> = _uiState.asStateFlow()
 
 private val demographicsValidator = DemographicsValidator()
+    private var editingProfileId: String? = null
 
     /**
      * Seeds the height entry texts for [unitSystem]: a single decimal text in
@@ -113,6 +114,8 @@ private val demographicsValidator = DemographicsValidator()
     }
 
     fun startEditing() {
+        if (_uiState.value.isEditing) return
+        editingProfileId = repository.currentProfileId()
         _uiState.update { state ->
             val (heightText, feet, inches) =
                 heightEntryTexts(state.demographics.heightCm, state.unitSystem)
@@ -138,6 +141,7 @@ private val demographicsValidator = DemographicsValidator()
     }
 
     fun cancelEditing() {
+        editingProfileId = null
         _uiState.update { state ->
             val (heightText, feet, inches) =
                 heightEntryTexts(state.demographics.heightCm, state.unitSystem)
@@ -165,6 +169,7 @@ private val demographicsValidator = DemographicsValidator()
         val state = _uiState.value
         if (state.isSaving) return
 
+        val profileId = editingProfileId ?: repository.currentProfileId()
         _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch(ioDispatcher) {
             val card = PersonalCard(
@@ -175,8 +180,9 @@ private val demographicsValidator = DemographicsValidator()
                 medicalHistory = state.draftMedicalHistory,
                 emergencyContacts = state.draftEmergencyContacts
             )
-            repository.insertOrUpdate(card)
-            repository.markEntryDirty()
+            repository.insertOrUpdate(profileId, card)
+            repository.markEntryDirty(profileId)
+            editingProfileId = null
             _uiState.update {
                 it.copy(
                     isEditing = false,

@@ -45,7 +45,7 @@ class PersonalCardDaoTest {
         )
         personalCardDao.insertOrUpdate(card)
 
-        val loaded = personalCardDao.getPersonalCardSnapshot("personal_card")
+        val loaded = personalCardDao.getPersonalCardSnapshot(SELF_PROFILE_ID, "personal_card")
 
         assertEquals("John Doe", loaded?.demographics?.fullName)
         assertEquals(180.0, loaded?.demographics?.heightCm)
@@ -65,7 +65,7 @@ class PersonalCardDaoTest {
         )
         personalCardDao.insertOrUpdate(updated)
 
-        val loaded = personalCardDao.getPersonalCardSnapshot("personal_card")
+        val loaded = personalCardDao.getPersonalCardSnapshot(SELF_PROFILE_ID, "personal_card")
         assertEquals("Jane Doe", loaded?.demographics?.fullName)
     }
 
@@ -77,14 +77,14 @@ class PersonalCardDaoTest {
         )
         personalCardDao.insertOrUpdate(card)
 
-        val flowValue = personalCardDao.getPersonalCard("personal_card").first()
+        val flowValue = personalCardDao.getPersonalCard(SELF_PROFILE_ID, "personal_card").first()
 
         assertEquals("John Doe", flowValue?.demographics?.fullName)
     }
 
     @Test
     fun getPersonalCardSnapshot_returnsNullForNonExistent() = runBlocking {
-        assertNull(personalCardDao.getPersonalCardSnapshot("non_existent"))
+        assertNull(personalCardDao.getPersonalCardSnapshot(SELF_PROFILE_ID, "non_existent"))
     }
 
     @Test
@@ -92,9 +92,9 @@ class PersonalCardDaoTest {
         val card = PersonalCard(id = "personal_card")
         personalCardDao.insertOrUpdate(card)
 
-        personalCardDao.deletePersonalCard("personal_card")
+        personalCardDao.deletePersonalCard(SELF_PROFILE_ID, "personal_card")
 
-        assertNull(personalCardDao.getPersonalCardSnapshot("personal_card"))
+        assertNull(personalCardDao.getPersonalCardSnapshot(SELF_PROFILE_ID, "personal_card"))
     }
 
     @Test
@@ -106,7 +106,7 @@ class PersonalCardDaoTest {
             PersonalCard(id = "card2", syncStatus = "SYNCED")
         )
 
-        val pending = personalCardDao.getPendingSyncEntries()
+        val pending = personalCardDao.getPendingSyncEntries(SELF_PROFILE_ID)
 
         assertEquals(1, pending.size)
         assertEquals("card1", pending[0].id)
@@ -118,9 +118,9 @@ class PersonalCardDaoTest {
             PersonalCard(id = "personal_card", syncStatus = "PENDING_SYNC")
         )
 
-        personalCardDao.updateSyncStatus("personal_card", "SYNCED")
+        personalCardDao.updateSyncStatus(SELF_PROFILE_ID, "personal_card", "SYNCED")
 
-        val loaded = personalCardDao.getPersonalCardSnapshot("personal_card")
+        val loaded = personalCardDao.getPersonalCardSnapshot(SELF_PROFILE_ID, "personal_card")
         assertEquals("SYNCED", loaded?.syncStatus)
     }
 
@@ -130,9 +130,9 @@ class PersonalCardDaoTest {
             PersonalCard(id = "personal_card", lastModified = 1_000L, syncStatus = "SYNCED")
         )
 
-        personalCardDao.markEntryDirty("personal_card", 9_000L)
+        personalCardDao.markEntryDirty(SELF_PROFILE_ID, "personal_card", 9_000L)
 
-        val dirty = personalCardDao.getPersonalCardSnapshot("personal_card")!!
+        val dirty = personalCardDao.getPersonalCardSnapshot(SELF_PROFILE_ID, "personal_card")!!
         assertEquals("PENDING_SYNC", dirty.syncStatus)
         assertEquals(9_000L, dirty.lastModified)
     }
@@ -151,7 +151,7 @@ class PersonalCardDaoTest {
         )
         personalCardDao.insertOrUpdate(card)
 
-        val loaded = personalCardDao.getPersonalCardSnapshot("personal_card")
+        val loaded = personalCardDao.getPersonalCardSnapshot(SELF_PROFILE_ID, "personal_card")
 
         assertEquals(BloodType.O_POSITIVE, loaded?.medicalProfile?.bloodType)
         assertEquals(2, loaded?.medicalProfile?.allergies?.size)
@@ -170,10 +170,25 @@ class PersonalCardDaoTest {
         )
         personalCardDao.insertOrUpdate(card)
 
-        val loaded = personalCardDao.getPersonalCardSnapshot("personal_card")
+        val loaded = personalCardDao.getPersonalCardSnapshot(SELF_PROFILE_ID, "personal_card")
 
         assertEquals(1, loaded?.emergencyContacts?.contacts?.size)
         assertEquals("Jane Doe", loaded?.emergencyContacts?.contacts?.first()?.name)
         assertEquals("Spouse", loaded?.emergencyContacts?.contacts?.first()?.relationship)
+    }
+
+    @Test
+    fun sameCardIdStaysIndependentPerProfile() = runBlocking {
+        personalCardDao.insertOrUpdate(PersonalCard(id = "personal_card", demographics = Demographics(fullName = "Me")))
+        personalCardDao.insertOrUpdate(
+            PersonalCard(id = "personal_card", profileId = "sibling", demographics = Demographics(fullName = "Sibling"))
+        )
+
+        assertEquals("Me", personalCardDao.getPersonalCardSnapshot(SELF_PROFILE_ID, "personal_card")?.demographics?.fullName)
+        assertEquals("Sibling", personalCardDao.getPersonalCardSnapshot("sibling", "personal_card")?.demographics?.fullName)
+
+        personalCardDao.deletePersonalCard(SELF_PROFILE_ID, "personal_card")
+        assertNull(personalCardDao.getPersonalCardSnapshot(SELF_PROFILE_ID, "personal_card"))
+        assertEquals("Sibling", personalCardDao.getPersonalCardSnapshot("sibling", "personal_card")?.demographics?.fullName)
     }
 }

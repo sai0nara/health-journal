@@ -17,6 +17,7 @@ import io.qameta.allure.kotlin.Step
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Rule
 import org.junit.Test
+import com.example.healthjournal.util.FakeActiveProfileProvider
 
 @Feature("Body Measurements Screen")
 class MeasurementScreenTest {
@@ -48,8 +49,8 @@ class MeasurementScreenTest {
         val goalsFlow =
             MutableStateFlow(emptyList<com.example.healthjournal.data.local.GoalEntity>())
         val goalsDao = mockk<com.example.healthjournal.data.local.GoalDao>(relaxed = true)
-        every { goalsDao.observeAll() } returns goalsFlow
-        val goalsRepository = GoalsRepository(goalsDao)
+        every { goalsDao.observeAll(com.example.healthjournal.data.local.SELF_PROFILE_ID) } returns goalsFlow
+        val goalsRepository = GoalsRepository(goalsDao, FakeActiveProfileProvider())
         val viewModel = BodyMeasurementViewModel(
             repository,
             testDispatcher,
@@ -373,7 +374,7 @@ class MeasurementScreenTest {
         }
 
         step("Clear deletes via repository") {
-            io.mockk.coVerify { ctx.goalsDao.deleteById("WEIGHT") }
+            io.mockk.coVerify { ctx.goalsDao.deleteById(com.example.healthjournal.data.local.SELF_PROFILE_ID, "WEIGHT") }
         }
     }
 
@@ -589,5 +590,52 @@ step("Inline error appears and save is blocked") {
                 UnitSystem.METRIC
             )
         }
+    }
+
+    @Test
+    fun emptyList_namesActiveProfileWhenProvided() {
+        val profileDao = com.example.healthjournal.util.FakeProfileDao()
+        val profileRepository = com.example.healthjournal.data.ProfileRepository(
+            profileDao = profileDao,
+            settings = com.example.healthjournal.util.FakeProfileStore(),
+            eraser = com.example.healthjournal.util.FakeProfileDataEraser()
+        )
+        kotlinx.coroutines.runBlocking {
+            profileDao.upsert(
+                com.example.healthjournal.data.local.ProfileEntity(
+                    id = "sibling",
+                    name = "Sam",
+                    relationship = "SIBLING"
+                )
+            )
+            profileRepository.switchTo("sibling")
+        }
+        every { repository.allEntries } returns MutableStateFlow(emptyList())
+        val goalsDao = mockk<com.example.healthjournal.data.local.GoalDao>(relaxed = true)
+        every { goalsDao.observeAll(any()) } returns MutableStateFlow(emptyList())
+        val viewModel = BodyMeasurementViewModel(
+            repository,
+            testDispatcher,
+            journalRepository = mockk(relaxed = true),
+            profileRepository = profileRepository
+        )
+        val analyticsViewModel = BodyAnalyticsViewModel(
+            repository,
+            GoalsRepository(goalsDao, profileRepository),
+            testDispatcher
+        )
+        composeTestRule.setContent {
+            com.example.healthjournal.ui.theme.HealthJournalTheme {
+                MeasurementsScreen(
+                    viewModel = viewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    onBack = {}
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("bm_empty_state").assertExists()
+        composeTestRule.onNodeWithText("No body measurements yet for Sam").assertExists()
     }
 }

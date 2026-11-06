@@ -6,31 +6,31 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
-/** Persistence for per-parameter Body Analytics goal targets. */
+/** Persistence for per-parameter, per-profile Body Analytics goal targets. */
 @Dao
 interface GoalDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertGoal(goal: GoalEntity)
 
-    @Query("SELECT * FROM goals")
-    suspend fun getAll(): List<GoalEntity>
+    @Query("SELECT * FROM goals WHERE profileId = :profileId")
+    suspend fun getAll(profileId: String): List<GoalEntity>
 
     /** Reactive feed backing the chart's goal-line rendering. */
-    @Query("SELECT * FROM goals")
-    fun observeAll(): Flow<List<GoalEntity>>
+    @Query("SELECT * FROM goals WHERE profileId = :profileId")
+    fun observeAll(profileId: String): Flow<List<GoalEntity>>
 
-    @Query("DELETE FROM goals WHERE parameterId = :parameterId")
-    suspend fun deleteById(parameterId: String)
+    @Query("DELETE FROM goals WHERE profileId = :profileId AND parameterId = :parameterId")
+    suspend fun deleteById(profileId: String, parameterId: String)
 
-    /** Full-table wipe used by the sync snapshot prune step. */
-    @Query("DELETE FROM goals")
-    suspend fun clear()
+    /** Per-profile wipe used by the sync snapshot prune step. */
+    @Query("DELETE FROM goals WHERE profileId = :profileId")
+    suspend fun clear(profileId: String)
 
-    /** Replace the entire goals table with a merged snapshot. */
+    /** Replace one profile's goals with a merged snapshot. */
     @androidx.room.Transaction
-    suspend fun importAll(goals: List<GoalEntity>) {
-        clear()
-        goals.forEach { upsertGoal(it) }
+    suspend fun importAll(profileId: String, goals: List<GoalEntity>) {
+        clear(profileId)
+        goals.forEach { upsertGoal(it.copy(profileId = profileId)) }
     }
 }

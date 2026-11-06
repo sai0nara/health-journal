@@ -5,7 +5,17 @@ import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.ProfileDeletionEntity
+import com.example.healthjournal.data.local.ProfileEntity
+import com.example.healthjournal.data.local.ProfileRelationship
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.domain.TagIdentity
+
+data class ProfileMergeResult(
+    val profiles: List<ProfileEntity>,
+    val deletions: List<ProfileDeletionEntity>,
+    val deletedProfileIds: Set<String>
+)
 
 /**
  * Pure merge logic for bidirectional journal sync.
@@ -21,29 +31,107 @@ object SyncMerge {
     fun canonicalTagRefs(entryId: String, tags: Iterable<String>): List<EntryTagCrossRef> =
         TagIdentity.canonicalDistinct(tags).map { EntryTagCrossRef(entryId, it) }
 
+    fun canonicalTagRefs(
+        @Suppress("UNUSED_PARAMETER") profileId: String,
+        entryId: String,
+        tags: Iterable<String>
+    ): List<EntryTagCrossRef> =
+        canonicalTagRefs(entryId, tags)
+
+    fun mergeProfiles(
+        cloudProfiles: List<ProfileEntity>,
+        localProfiles: List<ProfileEntity>,
+        cloudDeletions: List<ProfileDeletionEntity> = emptyList(),
+        localDeletions: List<ProfileDeletionEntity> = emptyList()
+    ): ProfileMergeResult {
+        val mergedDeletions = mutableMapOf<String, ProfileDeletionEntity>()
+        (cloudDeletions + localDeletions).forEach { marker ->
+            if (marker.profileId == SELF_PROFILE_ID) return@forEach
+            val existing = mergedDeletions[marker.profileId]
+            if (existing == null || marker.deletedAt > existing.deletedAt) {
+                mergedDeletions[marker.profileId] = marker
+            }
+        }
+
+        val candidates = mutableMapOf<String, ProfileEntity>()
+        cloudProfiles.forEach { cloud ->
+            candidates[cloud.id] = cloud
+        }
+        localProfiles.forEach { local ->
+            val cloud = candidates[local.id]
+            if (cloud == null || local.lastModified > cloud.lastModified) {
+                candidates[local.id] = local
+            }
+        }
+
+        val deletedIds = mutableSetOf<String>()
+        val surviving = mutableListOf<ProfileEntity>()
+        candidates.values.forEach { profile ->
+            val deletion = mergedDeletions[profile.id]
+            if (profile.id != SELF_PROFILE_ID &&
+                deletion != null &&
+                deletion.deletedAt >= profile.lastModified
+            ) {
+                deletedIds += profile.id
+            } else {
+                surviving += profile
+            }
+        }
+        mergedDeletions.keys.forEach { id ->
+            if (id != SELF_PROFILE_ID && surviving.none { it.id == id }) {
+                deletedIds += id
+            }
+        }
+
+        if (surviving.none { it.id == SELF_PROFILE_ID || it.relationship == ProfileRelationship.SELF.name }) {
+            val now = System.currentTimeMillis()
+            surviving += ProfileEntity(
+                id = SELF_PROFILE_ID,
+                name = "Me",
+                relationship = ProfileRelationship.SELF.name,
+                createdAt = now,
+                lastModified = now,
+                isSynced = true,
+                syncStatus = "SYNCED"
+            )
+        }
+
+        return ProfileMergeResult(
+            profiles = surviving,
+            deletions = mergedDeletions.values.toList(),
+            deletedProfileIds = deletedIds
+        )
+    }
+
+    @Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS", "USELESS_ELVIS")
     suspend fun merge(
         cloudEntries: List<JournalEntry>,
         localEntries: List<JournalEntry>,
         localTagsForEntry: suspend (String) -> List<String>
     ): List<JournalEntry> {
-        val result = mutableMapOf<String, JournalEntry>()
+        val result = mutableMapOf<Pair<String, String>, JournalEntry>()
 
-        cloudEntries.forEach { cloud ->
-            result[cloud.entry_id] = cloud
+        cloudEntries.forEach { rawCloud ->
+            val profileId = (rawCloud.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
+            val cloud = if (rawCloud.profileId == profileId) rawCloud else rawCloud.copy(profileId = profileId).also { it.tags = rawCloud.tags }
+            result[profileId to cloud.entry_id] = cloud
         }
 
-        localEntries.forEach { local ->
-            val cloud = result[local.entry_id]
+        localEntries.forEach { rawLocal ->
+            val profileId = (rawLocal.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
+            val local = if (rawLocal.profileId == profileId) rawLocal else rawLocal.copy(profileId = profileId).also { it.tags = rawLocal.tags }
+            val key = profileId to local.entry_id
+            val cloud = result[key]
             val cloudWins = cloud != null && cloud.lastModified >= local.lastModified
             val localWins = !cloudWins
             if (localWins) {
                 val tags = localTagsForEntry(local.entry_id)
-                result[local.entry_id] = local.withTags(tags)
+                result[key] = local.withTags(tags)
             } else if (cloud != null && cloud.tags == null) {
                 // Cloud copy won but carries no tag info (legacy payload):
                 // preserve local tags instead of wiping them.
                 val tags = localTagsForEntry(local.entry_id)
-                result[local.entry_id] = cloud.withTags(tags)
+                result[key] = cloud.withTags(tags)
             }
         }
 
@@ -55,20 +143,26 @@ object SyncMerge {
      * cloud wins ties (same convention as journal merge). Tombstones are
      * filtered by SyncWorker before merging, mirroring journal flow.
      */
+    @Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS", "USELESS_ELVIS")
     fun mergeMeasurements(
         cloudMeasurements: List<BodyMeasurementEntry>,
         localMeasurements: List<BodyMeasurementEntry>
     ): List<BodyMeasurementEntry> {
-        val result = mutableMapOf<String, BodyMeasurementEntry>()
+        val result = mutableMapOf<Pair<String, String>, BodyMeasurementEntry>()
 
-        cloudMeasurements.forEach { cloud ->
-            result[cloud.entry_id] = cloud
+        cloudMeasurements.forEach { rawCloud ->
+            val profileId = (rawCloud.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
+            val cloud = if (rawCloud.profileId == profileId) rawCloud else rawCloud.copy(profileId = profileId)
+            result[profileId to cloud.entry_id] = cloud
         }
 
-        localMeasurements.forEach { local ->
-            val cloud = result[local.entry_id]
+        localMeasurements.forEach { rawLocal ->
+            val profileId = (rawLocal.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
+            val local = if (rawLocal.profileId == profileId) rawLocal else rawLocal.copy(profileId = profileId)
+            val key = profileId to local.entry_id
+            val cloud = result[key]
             if (cloud == null || local.lastModified > cloud.lastModified) {
-                result[local.entry_id] = local
+                result[key] = local
             }
         }
 
@@ -77,37 +171,53 @@ object SyncMerge {
 
     /**
      * Full-snapshot merge for goals: newest [GoalEntity.lastModified] wins
-     * per parameter id (cloud wins ties). A local goal absent from the cloud
-     * snapshot is pruned only when the cloud snapshot is at least as fresh —
-     * propagating genuine goal clears without letting a stale partial cloud
-     * wipe newer local goals.
+     * per (profileId, parameterId) (cloud wins ties). A local goal absent from
+     * the cloud snapshot for that profile is pruned only when that profile's
+     * cloud snapshot is at least as fresh — propagating genuine goal clears
+     * without letting a stale partial cloud or another profile's snapshot wipe
+     * newer local goals.
      */
+    @Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS", "USELESS_ELVIS")
     fun mergeGoals(
         cloudGoals: List<GoalEntity>,
         localGoals: List<GoalEntity>
     ): List<GoalEntity> {
-        val result = mutableMapOf<String, GoalEntity>()
-
-        cloudGoals.forEach { cloud ->
-            result[cloud.parameterId] = cloud
+        val normalizedCloud = cloudGoals.map { raw ->
+            val profileId = (raw.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
+            if (raw.profileId == profileId) raw else raw.copy(profileId = profileId)
+        }
+        val normalizedLocal = localGoals.map { raw ->
+            val profileId = (raw.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
+            if (raw.profileId == profileId) raw else raw.copy(profileId = profileId)
         }
 
-        val cloudFresh = cloudGoals.maxOfOrNull { it.lastModified }
-        val localFresh = localGoals.maxOfOrNull { it.lastModified }
-        // Absent-from-cloud params are pruned only if the cloud snapshot is
-        // at least as fresh; an empty cloud carries no freshness signal.
-        val pruneAbsent = cloudFresh != null && (localFresh == null || cloudFresh >= localFresh)
+        val result = mutableMapOf<Pair<String, String>, GoalEntity>()
 
-        localGoals.forEach { local ->
-            val cloud = result[local.parameterId]
+        normalizedCloud.forEach { cloud ->
+            result[cloud.profileId to cloud.parameterId] = cloud
+        }
+
+        val cloudFreshByProfile = normalizedCloud
+            .groupBy { it.profileId }
+            .mapValues { (_, list) -> list.maxOfOrNull { it.lastModified } }
+        val localFreshByProfile = normalizedLocal
+            .groupBy { it.profileId }
+            .mapValues { (_, list) -> list.maxOfOrNull { it.lastModified } }
+
+        normalizedLocal.forEach { local ->
+            val key = local.profileId to local.parameterId
+            val cloud = result[key]
+            val cloudFresh = cloudFreshByProfile[local.profileId]
+            val localFresh = localFreshByProfile[local.profileId]
+            val pruneAbsent = cloudFresh != null && (localFresh == null || cloudFresh >= localFresh)
             if (cloud != null) {
                 // Keep local copy only when the local edit is strictly newer
                 // (cloud wins ties).
                 if (local.lastModified > cloud.lastModified) {
-                    result[local.parameterId] = local
+                    result[key] = local
                 }
             } else if (!pruneAbsent) {
-                result[local.parameterId] = local
+                result[key] = local
             }
         }
 
@@ -115,24 +225,31 @@ object SyncMerge {
     }
 
     /**
-     * Merge for personal card: Last-Write-Wins on lastModified, cloud wins ties.
-     * Since PersonalCard is a singleton (one row per user), this is a simple
-     * LWW merge similar to goals.
+     * Merge for personal card: Last-Write-Wins on lastModified per (profileId, id),
+     * cloud wins ties.
      */
+    @Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS", "USELESS_ELVIS")
     fun mergePersonalCard(
         cloudCards: List<PersonalCard>,
         localCards: List<PersonalCard>
     ): List<PersonalCard> {
-        val result = mutableMapOf<String, PersonalCard>()
+        val result = mutableMapOf<Pair<String, String>, PersonalCard>()
 
-        cloudCards.forEach { cloud ->
-            result[cloud.id] = cloud
+        cloudCards.forEach { rawCloud ->
+            val profileId = (rawCloud.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
+            val id = (rawCloud.id as String?)?.takeIf { it.isNotBlank() } ?: "personal_card"
+            val cloud = if (rawCloud.profileId == profileId && rawCloud.id == id) rawCloud else rawCloud.copy(profileId = profileId, id = id)
+            result[profileId to id] = cloud
         }
 
-        localCards.forEach { local ->
-            val cloud = result[local.id]
+        localCards.forEach { rawLocal ->
+            val profileId = (rawLocal.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
+            val id = (rawLocal.id as String?)?.takeIf { it.isNotBlank() } ?: "personal_card"
+            val local = if (rawLocal.profileId == profileId && rawLocal.id == id) rawLocal else rawLocal.copy(profileId = profileId, id = id)
+            val key = profileId to id
+            val cloud = result[key]
             if (cloud == null || local.lastModified > cloud.lastModified) {
-                result[local.id] = local
+                result[key] = local
             }
         }
 

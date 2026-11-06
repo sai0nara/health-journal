@@ -4,6 +4,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 
 /**
  * Light theme palette ("Medical Standard"): clinical off-white surfaces
@@ -77,3 +78,10 @@ fun medicalColorScheme(darkTheme: Boolean): ColorScheme =
  * light icons are legible on the dark theme's charcoal background.
  */
 fun statusBarIconsDark(darkTheme: Boolean): Boolean = !darkTheme
+
+/**
+ * Picks a legible foreground for an arbitrary profile accent color.
+ * Kept in the theme package so literal black/white stay out of UI sources.
+ */
+fun contentColorForAccent(accent: Color): Color =
+    if (accent.luminance() > 0.5f) Color.Black else Color.White

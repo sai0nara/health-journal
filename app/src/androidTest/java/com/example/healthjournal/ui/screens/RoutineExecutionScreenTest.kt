@@ -45,6 +45,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import com.example.healthjournal.util.FakeActiveProfileProvider
 
 /**
  * Compose UI tests for preset-driven routine execution in the Active state:
@@ -109,11 +110,11 @@ class RoutineExecutionScreenTest {
             catalogDao.insertAll(listOf(squat, press))
         }
         return WorkoutViewModel(
-            repository = WorkoutRepository(dao),
+            repository = WorkoutRepository(dao, FakeActiveProfileProvider()),
             healthSource = FakeWorkoutHealthDataSource(),
             journalRepository = journalRepository,
             onHaptic = { haptics.add(it) },
-            presetRepository = PresetRepository(presetDao),
+            presetRepository = PresetRepository(presetDao, FakeActiveProfileProvider()),
             catalogDao = catalogDao
         )
     }
@@ -137,7 +138,7 @@ class RoutineExecutionScreenTest {
         val sessionId =
             (viewModel.uiState.value as com.example.healthjournal.viewmodel.WorkoutUiState.Active)
                 .session.session_id
-        return runBlocking { dao.getSessionById(sessionId)!!.setMatrix!! }
+        return runBlocking { dao.getSessionById(com.example.healthjournal.data.local.SELF_PROFILE_ID, sessionId)!!.setMatrix!! }
     }
 
     /** Asserts an editable field's current text (its EditableText semantics config). */

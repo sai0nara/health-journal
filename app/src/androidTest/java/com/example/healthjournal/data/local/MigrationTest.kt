@@ -537,6 +537,129 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun migrate21To22_AddsProfilesAndBackfillsEveryScopedTable() {
+        helper.createDatabase("$dbName-21-22", 21).apply {
+            execSQL(
+                "INSERT INTO journal_entries (entry_id, timestamp, lastModified, description) " +
+                    "VALUES ('entry_before_profiles', 1000, 1000, 'Before 21 to 22')"
+            )
+            execSQL(
+                "INSERT INTO body_measurements (entry_id, timestamp, lastModified, weight_kg) " +
+                    "VALUES ('bm_before_profiles', 1000, 1000, 70.0)"
+            )
+            execSQL(
+                "INSERT INTO goals (parameterId, target, lastModified) " +
+                    "VALUES ('WAIST', 80.0, 1000)"
+            )
+            execSQL(
+                "INSERT INTO personal_card (id, timestamp, lastModified, demographics, medicalProfile, medicalHistory, emergencyContacts) " +
+                    "VALUES ('personal_card', 1000, 1000, '{}', '{}', '{}', '{}')"
+            )
+            execSQL(
+                "INSERT INTO deleted_entries (entry_id, deletedAt) " +
+                    "VALUES ('deleted_before_profiles', 1000)"
+            )
+            execSQL(
+                "INSERT INTO workout_sessions (session_id, type, status, startTimestamp, elapsedSeconds, notes, lastModified) " +
+                    "VALUES ('ws_before_profiles', 'FITNESS', 'COMPLETED', 1000, 600, '', 1000)"
+            )
+            execSQL(
+                "INSERT INTO workout_presets (id, name, scheduledDay, exercises, lastModified) " +
+                    "VALUES ('preset_before_profiles', 'Leg Day', 'ANY', '[]', 1000)"
+            )
+            execSQL(
+                "INSERT INTO EntryTagCrossRef (entryId, tag) VALUES ('entry_before_profiles', 'fitness')"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-21-22",
+            22,
+            true,
+            JournalDatabase.MIGRATION_21_22
+        )
+
+        db.query("SELECT name, relationship, isArchived FROM profiles WHERE id = 'self'").use { cursor ->
+            org.junit.Assert.assertTrue("Self profile should be created", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Me", cursor.getString(0))
+            org.junit.Assert.assertEquals("SELF", cursor.getString(1))
+            org.junit.Assert.assertEquals(0, cursor.getInt(2))
+        }
+        db.query("SELECT COUNT(*) FROM profile_deletions").use { cursor ->
+            org.junit.Assert.assertTrue(cursor.moveToFirst())
+            org.junit.Assert.assertEquals(0, cursor.getInt(0))
+        }
+
+        assertProfileId(db, "journal_entries", "entry_id", "entry_before_profiles")
+        assertProfileId(db, "body_measurements", "entry_id", "bm_before_profiles")
+        assertProfileId(db, "workout_sessions", "session_id", "ws_before_profiles")
+        assertProfileId(db, "workout_presets", "id", "preset_before_profiles")
+        assertProfileId(db, "goals", "parameterId", "WAIST")
+        assertProfileId(db, "personal_card", "id", "personal_card")
+        assertProfileId(db, "deleted_entries", "entry_id", "deleted_before_profiles")
+
+        org.junit.Assert.assertEquals(listOf("fitness"), tagsFor(db, "entry_before_profiles"))
+
+        // Composite primary keys allow the same parameter/id in another profile.
+        db.execSQL("INSERT INTO goals (parameterId, target, lastModified, profileId) VALUES ('WAIST', 75.0, 2000, 'sibling')")
+        db.query("SELECT COUNT(*) FROM goals WHERE parameterId = 'WAIST'").use { cursor ->
+            org.junit.Assert.assertTrue(cursor.moveToFirst())
+            org.junit.Assert.assertEquals(2, cursor.getInt(0))
+        }
+        db.execSQL(
+            "INSERT INTO profile_deletions (profileId, deletedAt) VALUES ('gone-profile', 2000)"
+        )
+        db.query("SELECT profileId FROM profile_deletions WHERE profileId = 'gone-profile'").use { cursor ->
+            org.junit.Assert.assertTrue("Deletion marker should be writable", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("gone-profile", cursor.getString(0))
+        }
+    }
+
+    @Test
+    fun migrate20To22_ChainsVitalsAndProfilesMigration() {
+        helper.createDatabase("$dbName-20-22", 20).apply {
+            execSQL(
+                "INSERT INTO journal_entries (entry_id, timestamp, lastModified, description) " +
+                    "VALUES ('entry_20_to_22', 1000, 1000, 'Before 20 to 22')"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            "$dbName-20-22",
+            22,
+            true,
+            JournalDatabase.MIGRATION_20_21,
+            JournalDatabase.MIGRATION_21_22
+        )
+
+        db.query(
+            "SELECT description, profileId FROM journal_entries WHERE entry_id = 'entry_20_to_22'"
+        ).use { cursor ->
+            org.junit.Assert.assertTrue("Journal row lost during chained migration", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("Before 20 to 22", cursor.getString(0))
+            org.junit.Assert.assertEquals("self", cursor.getString(1))
+        }
+        db.query("SELECT COUNT(*) FROM profiles WHERE id = 'self'").use { cursor ->
+            org.junit.Assert.assertTrue(cursor.moveToFirst())
+            org.junit.Assert.assertEquals(1, cursor.getInt(0))
+        }
+    }
+
+    private fun assertProfileId(
+        db: androidx.sqlite.db.SupportSQLiteDatabase,
+        table: String,
+        keyColumn: String,
+        keyValue: String
+    ) {
+        db.query("SELECT profileId FROM `$table` WHERE `$keyColumn` = ?", arrayOf(keyValue)).use { cursor ->
+            org.junit.Assert.assertTrue("$table row lost during migration", cursor.moveToFirst())
+            org.junit.Assert.assertEquals("$table should be backfilled to self", "self", cursor.getString(0))
+        }
+    }
+
     private fun tagsFor(db: androidx.sqlite.db.SupportSQLiteDatabase, entryId: String): List<String> =
         db.query("SELECT tag FROM EntryTagCrossRef WHERE entryId = ? ORDER BY tag", arrayOf(entryId)).use { cursor ->
             buildList { while (cursor.moveToNext()) add(cursor.getString(0)) }

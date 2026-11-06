@@ -81,4 +81,10 @@ class PersonalCardSyncPayloadTest {
         assertNull(card.demographics.heightCm)
         assertEquals(70.0, card.demographics.weightKg)
     }
+
+    @Test
+    fun payload_legacyMissingProfileId_normalizesToSelf() {
+        val card = PersonalCardSyncPayload.fromJson(poisonedJson).single()
+        assertEquals("self", card.profileId)
+    }
 }

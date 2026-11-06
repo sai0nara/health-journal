@@ -6,6 +6,8 @@ import com.example.healthjournal.data.local.EntryTagCrossRef
 import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.ProfileEntity
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
 import com.google.gson.Gson
@@ -217,5 +219,27 @@ class BackupWriterTest {
 
         assertTrue(zip.length() > 0)
         assertEquals(null, readEntryBytes(zip, "media/missing.jpg"))
+    }
+
+    @Test
+    fun writeBackup_v2IncludesProfilesJsonAndFormatVersion2() {
+        val profiles = listOf(
+            ProfileEntity(id = SELF_PROFILE_ID, name = "Me", relationship = "SELF"),
+            ProfileEntity(id = "sib-1", name = "Alex", relationship = "SIBLING", isArchived = true)
+        )
+        val zip = createBackup(sampleData.copy(profiles = profiles))
+
+        val manifest = gson.fromJson(
+            readEntryText(zip, BackupWriter.MANIFEST_NAME)!!,
+            BackupManifest::class.java
+        )
+        assertEquals(2, manifest.formatVersion)
+        assertTrue(manifest.contents.contains(BackupWriter.EntityFile.PROFILES))
+
+        val parsedProfiles = gson.fromJson(
+            readEntryText(zip, BackupWriter.EntityFile.PROFILES)!!,
+            Array<ProfileEntity>::class.java
+        ).toList()
+        assertEquals(profiles, parsedProfiles)
     }
 }

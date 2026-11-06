@@ -8,11 +8,13 @@ import com.example.healthjournal.domain.WorkoutType
 import com.example.healthjournal.health.FakeWorkoutHealthDataSource
 import com.example.healthjournal.health.HealthExerciseType
 import com.example.healthjournal.domain.WorkoutIntervalPhase
+import com.example.healthjournal.data.FakeActiveProfileProvider
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.PresetRepository
 import com.example.healthjournal.data.local.ExerciseCatalogItem
 import com.example.healthjournal.data.local.FakeExerciseCatalogDao
 import com.example.healthjournal.data.local.FakeWorkoutPresetDao
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.domain.PresetExercise
 import com.example.healthjournal.domain.ScheduledDay
@@ -47,6 +49,7 @@ class WorkoutViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private lateinit var dao: FakeWorkoutSessionDao
     private lateinit var repository: WorkoutRepository
+    private val activeProfile = FakeActiveProfileProvider()
     private lateinit var healthSource: FakeWorkoutHealthDataSource
     private val journalRepository: JournalRepository = mockk(relaxed = true)
     private val haptics = mutableListOf<WorkoutHaptic>()
@@ -56,7 +59,7 @@ class WorkoutViewModelTest {
     fun setup() {
         Dispatchers.setMain(dispatcher)
         dao = FakeWorkoutSessionDao()
-        repository = WorkoutRepository(dao)
+        repository = WorkoutRepository(dao, activeProfile)
         healthSource = FakeWorkoutHealthDataSource()
         haptics.clear()
         nowMillis = 1_700_000_000_000L
@@ -243,11 +246,11 @@ class WorkoutViewModelTest {
         dispatcher.scheduler.advanceUntilIdle()
         val active = vm.uiState.value as WorkoutUiState.Active
         assertEquals(3L, active.session.elapsedSeconds)
-        assertEquals(0L, dao.getSessionById(active.session.session_id)!!.elapsedSeconds)
+        assertEquals(0L, dao.getSessionById(SELF_PROFILE_ID, active.session.session_id)!!.elapsedSeconds)
 
         vm.advanceTime(2)
         dispatcher.scheduler.advanceUntilIdle()
-        assertEquals(5L, dao.getSessionById(active.session.session_id)!!.elapsedSeconds)
+        assertEquals(5L, dao.getSessionById(SELF_PROFILE_ID, active.session.session_id)!!.elapsedSeconds)
     }
 
     @Test
@@ -334,7 +337,7 @@ class WorkoutViewModelTest {
         assertEquals(121L, active.session.elapsedSeconds)
         // 121s is not a persistence boundary; the stored row reflects the resume snapshot
         // and must not have absorbed the ten paused minutes.
-        assertEquals(120L, dao.getSessionById(sessionId)!!.elapsedSeconds)
+        assertEquals(120L, dao.getSessionById(SELF_PROFILE_ID, sessionId)!!.elapsedSeconds)
     }
 
     @Test
@@ -354,7 +357,7 @@ class WorkoutViewModelTest {
         assertEquals(WorkoutStatus.COMPLETED.name, summary.session.status)
         assertEquals(
             WorkoutStatus.COMPLETED.name,
-            dao.getSessionById(summary.session.session_id)!!.status
+            dao.getSessionById(SELF_PROFILE_ID, summary.session.session_id)!!.status
         )
         coVerify { journalRepository.insert(withArg { entry ->
             assertTrue(entry.description.contains("Run"))
@@ -553,7 +556,7 @@ class WorkoutViewModelTest {
         assertTrue(vm.uiState.value is WorkoutUiState.Idle)
         assertEquals(
             WorkoutStatus.DISCARDED.name,
-            dao.getSessionById(unfinished.session_id)!!.status
+            dao.getSessionById(SELF_PROFILE_ID, unfinished.session_id)!!.status
         )
     }
 
@@ -889,7 +892,7 @@ class WorkoutViewModelTest {
             dispatcher = dispatcher,
             onHaptic = { haptics.add(it) },
             clock = { nowMillis },
-            presetRepository = PresetRepository(presetDao),
+            presetRepository = PresetRepository(presetDao, activeProfile),
             catalogDao = catalogDao,
             healthSyncEnabled = true,
             warmupHistoryFormatter = warmupHistoryFormatter
@@ -954,7 +957,7 @@ class WorkoutViewModelTest {
         assertFalse(state.finishPromptVisible)
         assertEquals(
             WarmupOutcome.COMPLETED.name,
-            runBlocking { dao.getSessionById(state.session.session_id)!!.warmupOutcome }
+            runBlocking { dao.getSessionById(SELF_PROFILE_ID, state.session.session_id)!!.warmupOutcome }
         )
     }
 
@@ -978,7 +981,7 @@ class WorkoutViewModelTest {
         assertEquals(15, state.session.warmupElapsedSeconds)
         assertEquals(
             WarmupOutcome.SKIPPED.name,
-            runBlocking { dao.getSessionById(state.session.session_id)!!.warmupOutcome }
+            runBlocking { dao.getSessionById(SELF_PROFILE_ID, state.session.session_id)!!.warmupOutcome }
         )
     }
 
@@ -1020,7 +1023,7 @@ class WorkoutViewModelTest {
         assertEquals(10, summary.session.warmupElapsedSeconds)
         assertEquals(
             WarmupOutcome.SKIPPED.name,
-            runBlocking { dao.getSessionById(summary.session.session_id)!!.warmupOutcome }
+            runBlocking { dao.getSessionById(SELF_PROFILE_ID, summary.session.session_id)!!.warmupOutcome }
         )
     }
 
@@ -1052,7 +1055,7 @@ class WorkoutViewModelTest {
         assertEquals(10, state.session.warmupElapsedSeconds)
         assertEquals(
             WarmupOutcome.SKIPPED.name,
-            runBlocking { dao.getSessionById(state.session.session_id)!!.warmupOutcome }
+            runBlocking { dao.getSessionById(SELF_PROFILE_ID, state.session.session_id)!!.warmupOutcome }
         )
     }
 
@@ -1144,7 +1147,7 @@ class WorkoutViewModelTest {
         assertEquals(WorkoutStatus.COMPLETED.name, summary.session.status)
         assertEquals(
             WorkoutStatus.COMPLETED.name,
-            runBlocking { dao.getSessionById(summary.session.session_id)!!.status }
+            runBlocking { dao.getSessionById(SELF_PROFILE_ID, summary.session.session_id)!!.status }
         )
         coVerify(exactly = 1) { journalRepository.insert(any()) }
     }
@@ -1216,4 +1219,57 @@ class WorkoutViewModelTest {
         assertFalse((recovered.uiState.value as WorkoutUiState.Active).finishPromptVisible)
     }
 
+    @Test
+    fun twoProfiles_canEachOwnAnUnfinishedSession_andRecoveryOnBDoesNotResumeA() = runTest {
+        repository.saveSession(
+            "self",
+            WorkoutSession(session_id = "s-self", status = WorkoutStatus.ACTIVE.name, profileId = "self")
+        )
+        activeProfile.switchTo("sibling")
+
+        val vmB = newViewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vmB.uiState.value is WorkoutUiState.Idle)
+
+        vmB.selectType(WorkoutType.RUN)
+        vmB.updateTarget("5")
+        vmB.startSession()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vmB.uiState.value is WorkoutUiState.Countdown)
+
+        assertEquals("s-self", dao.getUnfinishedSession("self")?.session_id)
+        assertEquals(
+            (vmB.uiState.value as WorkoutUiState.Countdown).session.session_id,
+            dao.getUnfinishedSession("sibling")?.session_id
+        )
+    }
+
+    @Test
+    fun sessionStartedUnderProfileA_cannotBeSavedUnderProfileB() = runTest {
+        activeProfile.switchTo("self")
+        val vm = startActiveSession(WorkoutType.RUN, "5")
+        val sessionId = (vm.uiState.value as WorkoutUiState.Active).session.session_id
+
+        // Even if the active profile provider changes mid-session, advancing,
+        // pausing, and finishing must keep writing to the captured profile ("self").
+        activeProfile.switchTo("sibling")
+        vm.advanceTime(600)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.pauseSession()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.resumeSession()
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.finishSession()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(WorkoutStatus.COMPLETED.name, dao.getSessionById("self", sessionId)?.status)
+        assertNull(dao.getSessionById("sibling", sessionId))
+        coVerify {
+            journalRepository.insert(
+                "self",
+                match { it.description.contains("Run") }
+            )
+            journalRepository.addTag("self", any(), "fitness")
+        }
+    }
 }

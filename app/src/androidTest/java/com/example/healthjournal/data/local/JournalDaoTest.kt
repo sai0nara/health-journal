@@ -43,7 +43,7 @@ class JournalDaoTest {
     fun writeEntryAndReadInList() = runBlocking {
         val entry = JournalEntry(description = "Morning jog")
         journalDao.insertEntry(entry)
-        val allEntries = journalDao.getAllEntries().first()
+        val allEntries = journalDao.getAllEntries(SELF_PROFILE_ID).first()
         assertEquals(allEntries[0].description, entry.description)
     }
 
@@ -60,7 +60,7 @@ class JournalDaoTest {
         )
 
         journalDao.insertEntry(entry)
-        val loaded = journalDao.getEntryById(entry.entry_id)!!
+        val loaded = journalDao.getEntryById(SELF_PROFILE_ID, entry.entry_id)!!
 
         assertEquals(120.0, loaded.bp_systolic!!, 0.001)
         assertEquals(80.0, loaded.bp_diastolic!!, 0.001)
@@ -71,9 +71,45 @@ class JournalDaoTest {
     }
 
     @Test
+    fun sameAttachmentNameIsScopedToItsProfileEntry() = runBlocking {
+        val meEntry = JournalEntry(
+            description = "Me",
+            profileId = SELF_PROFILE_ID,
+            attachments = listOf(
+                AttachmentData(
+                    name = "report.pdf",
+                    uri = "file:///me/report.pdf",
+                    mimeType = "application/pdf"
+                )
+            )
+        )
+        val siblingEntry = JournalEntry(
+            description = "Sibling",
+            profileId = "sibling",
+            attachments = listOf(
+                AttachmentData(
+                    name = "report.pdf",
+                    uri = "file:///sibling/report.pdf",
+                    mimeType = "application/pdf"
+                )
+            )
+        )
+
+        journalDao.insertEntry(meEntry)
+        journalDao.insertEntry(siblingEntry)
+
+        val loadedMe = journalDao.getEntryById(SELF_PROFILE_ID, meEntry.entry_id)!!
+        val loadedSibling = journalDao.getEntryById("sibling", siblingEntry.entry_id)!!
+        assertEquals("file:///me/report.pdf", loadedMe.attachments!!.single().uri)
+        assertEquals("file:///sibling/report.pdf", loadedSibling.attachments!!.single().uri)
+        assertEquals(1, journalDao.getAllEntries(SELF_PROFILE_ID).first().size)
+        assertEquals(1, journalDao.getAllEntries("sibling").first().size)
+    }
+
+    @Test
     @Throws(Exception::class)
     fun getEntryByIdReturnsNullForNonExistent() = runBlocking {
-        val entry = journalDao.getEntryById("non_existent_id")
+        val entry = journalDao.getEntryById(SELF_PROFILE_ID, "non_existent_id")
         assertNull(entry)
     }
 
@@ -86,11 +122,11 @@ class JournalDaoTest {
         journalDao.insertTag(EntryTagCrossRef(entry1.entry_id, "RUN"))
         journalDao.insertTag(EntryTagCrossRef(entry2.entry_id, "GYM"))
 
-        journalDao.deleteAllTagsForEntries(listOf(entry2.entry_id))
-        journalDao.deleteEntriesByIds(listOf(entry2.entry_id))
+        journalDao.deleteAllTagsForEntries(SELF_PROFILE_ID, listOf(entry2.entry_id))
+        journalDao.deleteEntriesByIds(SELF_PROFILE_ID, listOf(entry2.entry_id))
 
-        assertEquals(listOf("RUN"), journalDao.getTagsForEntry(entry1.entry_id))
-        assertTrue(journalDao.getTagsForEntry(entry2.entry_id).isEmpty())
+        assertEquals(listOf("RUN"), journalDao.getTagsForEntry(SELF_PROFILE_ID, entry1.entry_id))
+        assertTrue(journalDao.getTagsForEntry(SELF_PROFILE_ID, entry2.entry_id).isEmpty())
     }
 
     @Test
@@ -100,7 +136,7 @@ class JournalDaoTest {
         journalDao.insertEntry(entry2)
         journalDao.insertEntry(entry1)
         
-        val entries = journalDao.getEntriesSortedByDate(isAsc = true).first()
+        val entries = journalDao.getEntriesSortedByDate(SELF_PROFILE_ID, isAsc = true).first()
         assertEquals("First", entries[0].description)
         assertEquals("Second", entries[1].description)
     }
@@ -112,7 +148,7 @@ class JournalDaoTest {
         journalDao.insertEntry(entry1)
         journalDao.insertEntry(entry2)
         
-        val entries = journalDao.getEntriesSortedByDate(isAsc = false).first()
+        val entries = journalDao.getEntriesSortedByDate(SELF_PROFILE_ID, isAsc = false).first()
         assertEquals("Second", entries[0].description)
         assertEquals("First", entries[1].description)
     }
@@ -126,7 +162,7 @@ class JournalDaoTest {
         journalDao.insertEntry(entry2)
         journalDao.insertEntry(entry3)
         
-        val results = journalDao.searchEntries("juice", isAsc = false).first()
+        val results = journalDao.searchEntries(SELF_PROFILE_ID, "juice", isAsc = false).first()
         assertEquals(2, results.size)
         assertTrue(results.any { it.description == "Apple juice" })
         assertTrue(results.any { it.description == "Orange juice" })
@@ -153,7 +189,7 @@ class JournalDaoTest {
         journalDao.insertEntry(entry1)
         journalDao.insertEntry(entry2)
         
-        val pending = journalDao.getPendingSyncEntries()
+        val pending = journalDao.getPendingSyncEntries(SELF_PROFILE_ID)
         assertEquals(1, pending.size)
         assertEquals("Pending", pending[0].description)
         assertEquals("PENDING_SYNC", pending[0].syncStatus)
@@ -164,9 +200,9 @@ class JournalDaoTest {
         val entry = JournalEntry(description = "Test", syncStatus = "PENDING_SYNC")
         journalDao.insertEntry(entry)
         
-        journalDao.updateSyncStatus(entry.entry_id, "SYNCING")
+        journalDao.updateSyncStatus(SELF_PROFILE_ID, entry.entry_id, "SYNCING")
         
-        val updated = journalDao.getEntryById(entry.entry_id)
+        val updated = journalDao.getEntryById(SELF_PROFILE_ID, entry.entry_id)
         assertNotNull(updated)
         assertEquals("SYNCING", updated!!.syncStatus)
     }
@@ -180,9 +216,9 @@ class JournalDaoTest {
             AttachmentData(name = "report.pdf", uri = "file:///path/to/report.pdf", mimeType = "application/pdf")
         )
         
-        journalDao.updateAttachments(entry.entry_id, newAttachments, "SYNCED")
+        journalDao.updateAttachments(SELF_PROFILE_ID, entry.entry_id, newAttachments, "SYNCED")
         
-        val updated = journalDao.getEntryById(entry.entry_id)
+        val updated = journalDao.getEntryById(SELF_PROFILE_ID, entry.entry_id)
         assertNotNull(updated)
         assertEquals("SYNCED", updated!!.syncStatus)
         assertNotNull(updated.attachments)
@@ -206,6 +242,7 @@ class JournalDaoTest {
         // Search for "checkup" with tag "CHECKUP" -> should find entry1 only
         // (entry3 has the CHECKUP tag but its description does not contain "checkup")
         val results = journalDao.searchEntriesWithTags(
+            SELF_PROFILE_ID,
             query = "checkup", 
             tags = listOf("CHECKUP"), 
             tagCount = 1, 
@@ -230,6 +267,7 @@ class JournalDaoTest {
 
         // Search for entries that have BOTH CHECKUP and DOCTOR
         val results = journalDao.searchEntriesWithTags(
+            SELF_PROFILE_ID,
             query = "", 
             tags = listOf("CHECKUP", "DOCTOR"), 
             tagCount = 2, 
@@ -247,13 +285,13 @@ class JournalDaoTest {
 
         // Test Insert
         journalDao.insertTag(EntryTagCrossRef(entry.entry_id, "TEST_TAG"))
-        var tags = journalDao.getTagsForEntry(entry.entry_id)
+        var tags = journalDao.getTagsForEntry(SELF_PROFILE_ID, entry.entry_id)
         assertEquals(1, tags.size)
         assertEquals("TEST_TAG", tags[0])
 
         // Test Delete
-        journalDao.deleteTag(entry.entry_id, "TEST_TAG")
-        tags = journalDao.getTagsForEntry(entry.entry_id)
+        journalDao.deleteTag(SELF_PROFILE_ID, entry.entry_id, "TEST_TAG")
+        tags = journalDao.getTagsForEntry(SELF_PROFILE_ID, entry.entry_id)
         assertTrue(tags.isEmpty())
     }
 
@@ -267,10 +305,44 @@ class JournalDaoTest {
         journalDao.insertTag(EntryTagCrossRef(entry1.entry_id, "GYM"))
         journalDao.insertTag(EntryTagCrossRef(entry2.entry_id, "SWIM"))
 
-        val all = journalDao.getAllTags()
+        val all = journalDao.getAllTags(SELF_PROFILE_ID)
         assertEquals(3, all.size)
         assertTrue(all.any { it.entryId == entry1.entry_id && it.tag == "RUN" })
         assertTrue(all.any { it.entryId == entry1.entry_id && it.tag == "GYM" })
         assertTrue(all.any { it.entryId == entry2.entry_id && it.tag == "SWIM" })
+    }
+
+    @Test
+    fun profileScopedReadsWritesTagsAndTombstonesStayIsolated() = runBlocking {
+        val me = JournalEntry(entry_id = "me-entry", description = "Mine")
+        val sibling = JournalEntry(entry_id = "sib-entry", description = "Theirs", profileId = "sibling")
+        journalDao.insertEntry(me)
+        journalDao.insertEntry(sibling)
+
+        assertEquals(listOf("Mine"), journalDao.getAllEntries(SELF_PROFILE_ID).first().map { it.description })
+        assertEquals(listOf("Theirs"), journalDao.getAllEntries("sibling").first().map { it.description })
+        assertNull(journalDao.getEntryById(SELF_PROFILE_ID, sibling.entry_id))
+        assertNull(journalDao.getEntryById("sibling", me.entry_id))
+
+        journalDao.insertTag(EntryTagCrossRef(me.entry_id, "MINE"))
+        journalDao.insertTag(EntryTagCrossRef(sibling.entry_id, "THEIRS"))
+        assertEquals(listOf("MINE"), journalDao.getTagsForEntry(SELF_PROFILE_ID, me.entry_id))
+        assertTrue(journalDao.getTagsForEntry(SELF_PROFILE_ID, sibling.entry_id).isEmpty())
+        assertEquals(1, journalDao.getAllTags(SELF_PROFILE_ID).size)
+
+        journalDao.insertDeletedEntry(DeletedEntry("me-del", deletedAt = 10L))
+        journalDao.insertDeletedEntry(DeletedEntry("sib-del", deletedAt = 20L, profileId = "sibling"))
+        assertEquals(listOf("me-del"), journalDao.getAllDeletedEntries(SELF_PROFILE_ID).map { it.entry_id })
+
+        journalDao.deleteEntriesByIds(SELF_PROFILE_ID, listOf(sibling.entry_id))
+        assertEquals(1, journalDao.getAllEntries("sibling").first().size)
+        journalDao.clearAllTags(SELF_PROFILE_ID)
+        assertTrue(journalDao.getAllTags("sibling").isNotEmpty())
+        journalDao.clearAllEntries(SELF_PROFILE_ID)
+        journalDao.clearAllDeletedEntries(SELF_PROFILE_ID)
+        assertTrue(journalDao.getAllEntries(SELF_PROFILE_ID).first().isEmpty())
+        assertTrue(journalDao.getAllDeletedEntries(SELF_PROFILE_ID).isEmpty())
+        assertEquals(1, journalDao.getAllEntries("sibling").first().size)
+        assertEquals(1, journalDao.getAllDeletedEntries("sibling").size)
     }
 }
