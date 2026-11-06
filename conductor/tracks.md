@@ -62,4 +62,4 @@ This file tracks all major tracks for the project. Each track has its own detail
 ---
 
 - [x] **Track: Sibling Profiles**
-  *Link: [./tracks/sibling_profiles_20261031/](./tracks/sibling_profiles_20261031/)*
+  *Link: [./archive/sibling_profiles_20261031/](./archive/sibling_profiles_20261031/)*
