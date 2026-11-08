@@ -5,6 +5,8 @@ import android.content.Context
 import android.net.Uri
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.ProfileEntity
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.domain.EntryVitals
 import com.example.healthjournal.viewmodel.HealthSyncResult
 import com.example.healthjournal.viewmodel.IJournalViewModel
@@ -29,9 +31,12 @@ open class FakeJournalViewModel : IJournalViewModel {
     override val isAscending: MutableStateFlow<Boolean> = MutableStateFlow(false)
     override val selectedTags: MutableStateFlow<Set<String>> = MutableStateFlow(emptySet())
     override val tagsByEntry: MutableStateFlow<Map<String, List<String>>> = MutableStateFlow(emptyMap())
+    override val activeProfileId: MutableStateFlow<String> = MutableStateFlow(SELF_PROFILE_ID)
+    override val activeProfile: MutableStateFlow<ProfileEntity?> = MutableStateFlow(null)
 
     var addEntryCalledWith: AddEntryCall? = null
     var updateEntryCalledWith: Pair<JournalEntry, Set<String>>? = null
+    var updateEntryProfileId: String? = null
     var updateVitalsCalledWith: Pair<String, EntryVitals>? = null
     var entryToReturn: JournalEntry? = null
     var restoredEntryId: String? = null
@@ -45,6 +50,7 @@ open class FakeJournalViewModel : IJournalViewModel {
     var healthPermissionsGranted = false
     var healthSyncResult: HealthSyncResult = HealthSyncResult()
     var syncHealthDataCalled = false
+    var syncHealthDataTargetProfileId: String? = null
 
     data class AddEntryCall(
         val description: String,
@@ -58,7 +64,8 @@ open class FakeJournalViewModel : IJournalViewModel {
         val sleepHours: Float? = null,
         val bloodGlucoseMmol: Double? = null,
         val bodyTemperatureC: Double? = null,
-        val spo2Percent: Int? = null
+        val spo2Percent: Int? = null,
+        val profileId: String
     )
 
     override fun addEntry(
@@ -73,7 +80,8 @@ open class FakeJournalViewModel : IJournalViewModel {
         bloodGlucoseMmol: Double?,
         bodyTemperatureC: Double?,
         spo2Percent: Int?,
-        tags: Set<String>
+        tags: Set<String>,
+        profileId: String
     ) {
         addEntryCalledWith = AddEntryCall(
             description = description,
@@ -87,12 +95,14 @@ open class FakeJournalViewModel : IJournalViewModel {
             sleepHours = sleepHours,
             bloodGlucoseMmol = bloodGlucoseMmol,
             bodyTemperatureC = bodyTemperatureC,
-            spo2Percent = spo2Percent
+            spo2Percent = spo2Percent,
+            profileId = profileId
         )
     }
 
-    override fun updateEntry(entry: JournalEntry, tags: Set<String>) {
+    override fun updateEntry(entry: JournalEntry, tags: Set<String>, profileId: String) {
         updateEntryCalledWith = entry to tags
+        updateEntryProfileId = profileId
     }
 
     override fun updateVitals(entryId: String, vitals: EntryVitals) {
@@ -164,9 +174,10 @@ open class FakeJournalViewModel : IJournalViewModel {
     }
     override suspend fun hasHealthPermissions(): Boolean = healthPermissionsGranted
     override fun checkHealthAvailability(): Int = healthAvailability
-    override suspend fun syncHealthData(timestamp: Long): HealthSyncResult {
+    override suspend fun syncHealthData(timestamp: Long, targetProfileId: String): HealthSyncResult {
         syncHealthDataCalled = true
-        return healthSyncResult
+        syncHealthDataTargetProfileId = targetProfileId
+        return healthSyncResult.copy(targetProfileId = targetProfileId)
     }
 
     override fun archiveEntry(entryId: String) {}

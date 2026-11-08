@@ -47,6 +47,7 @@ class BackupWriter(
         mediaFiles: List<Pair<String, File>>
     ): BackupManifest {
         val contents = mutableListOf(
+            EntityFile.PROFILES,
             EntityFile.JOURNAL,
             EntityFile.BODY_MEASUREMENTS,
             EntityFile.GOALS,
@@ -65,6 +66,7 @@ class BackupWriter(
         )
 
         writeJsonEntry(zip, MANIFEST_NAME, manifest)
+        writeJsonEntry(zip, EntityFile.PROFILES, data.profiles)
         writeJsonEntry(zip, EntityFile.JOURNAL, data.journalEntries)
         writeJsonEntry(zip, EntityFile.BODY_MEASUREMENTS, data.bodyMeasurements)
         writeJsonEntry(zip, EntityFile.GOALS, data.goals)
@@ -103,12 +105,13 @@ class BackupWriter(
     }
 
     companion object {
-        const val BACKUP_FORMAT_VERSION = 1
+        const val BACKUP_FORMAT_VERSION = 2
         const val MANIFEST_NAME = "backup.json"
         private const val BUFFER_SIZE = 8192
     }
 
     object EntityFile {
+        const val PROFILES = "profiles.json"
         const val JOURNAL = "data.json"
         const val BODY_MEASUREMENTS = "body_measurements.json"
         const val GOALS = "goals.json"

@@ -8,6 +8,7 @@ import com.example.healthjournal.data.PersonalCardRepository
 import com.example.healthjournal.data.local.DeletedEntry
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.PersonalCard
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.google.gson.Gson
 import java.io.File
 import java.io.FileOutputStream
@@ -47,20 +48,46 @@ class FullBackupUseCase(
 
         val journalDao = database.journalDao()
         val bodyMeasurementDao = database.bodyMeasurementDao()
+        val profiles = database.profileDao().getAll().ifEmpty {
+            listOf(
+                com.example.healthjournal.data.local.ProfileEntity(
+                    id = SELF_PROFILE_ID,
+                    name = "Me",
+                    relationship = "SELF"
+                )
+            )
+        }
+        val profileIds = profiles.map { it.id }.distinct()
 
-        val journalEntries = journalRepository.getAllEntriesInDateRange(0L, Long.MAX_VALUE)
-        val bodyMeasurements = bodyMeasurementRepository.allEntries.first()
-        val goals = goalsRepository.getAll()
-        val workouts = database.workoutSessionDao().getAllSessions().first()
-        val presets = database.workoutPresetDao().getAllPresets().first()
+        val journalEntries = profileIds.flatMap { profileId ->
+            journalRepository.getAllEntriesInDateRange(profileId, 0L, Long.MAX_VALUE)
+                .map { if (it.profileId == profileId) it else it.copy(profileId = profileId).also { copy -> copy.tags = it.tags } }
+        }
+        val bodyMeasurements = profileIds.flatMap { profileId ->
+            bodyMeasurementRepository.getAllEntriesList(profileId)
+                .map { if (it.profileId == profileId) it else it.copy(profileId = profileId) }
+        }
+        val goals = profileIds.flatMap { profileId ->
+            goalsRepository.getAll(profileId)
+                .map { if (it.profileId == profileId) it else it.copy(profileId = profileId) }
+        }
+        val workouts = profileIds.flatMap { profileId ->
+            database.workoutSessionDao().getAllSessions(profileId).first()
+                .map { if (it.profileId == profileId) it else it.copy(profileId = profileId) }
+        }
+        val presets = profileIds.flatMap { profileId ->
+            database.workoutPresetDao().getAllPresets(profileId).first()
+                .map { if (it.profileId == profileId) it else it.copy(profileId = profileId) }
+        }
 
-        val personalCards = personalCardRepository.getPersonalCardSnapshot()
-            ?.let { listOf(it) }
-            ?: emptyList()
+        val personalCards = profileIds.mapNotNull { profileId ->
+            personalCardRepository.getPersonalCardSnapshot(profileId)
+                ?.let { if (it.profileId == profileId) it else it.copy(profileId = profileId) }
+        }
 
         val deletedEntries = mergeTombstones(
-            journalDao.getAllDeletedEntries(),
-            bodyMeasurementDao.getAllDeletedEntries()
+            profileIds.flatMap { pid -> journalDao.getAllDeletedEntries(pid).map { if (it.profileId == pid) it else it.copy(profileId = pid) } },
+            profileIds.flatMap { pid -> bodyMeasurementDao.getAllDeletedEntries(pid).map { if (it.profileId == pid) it else it.copy(profileId = pid) } }
         )
 
         val data = BackupData(
@@ -69,9 +96,10 @@ class FullBackupUseCase(
             goals = goals,
             personalCards = personalCards,
             deletedEntries = deletedEntries,
-            entryTags = journalDao.getAllTags(),
+            entryTags = profileIds.flatMap { journalDao.getAllTags(it) },
             workoutSessions = workouts,
-            presets = presets
+            presets = presets,
+            profiles = profiles
         )
 
         val writer = BackupWriter(gson = gson, schemaVersion = schemaVersion)
@@ -104,8 +132,8 @@ class FullBackupUseCase(
         measurements: List<DeletedEntry>
     ): List<DeletedEntry> {
         val byId = LinkedHashMap<String, DeletedEntry>()
-        journal.forEach { byId[it.entry_id] = it }
-        measurements.forEach { byId.putIfAbsent(it.entry_id, it) }
+        journal.forEach { byId["${it.profileId}:${it.entry_id}"] = it }
+        measurements.forEach { byId.putIfAbsent("${it.profileId}:${it.entry_id}", it) }
         return byId.values.toList()
     }
 
@@ -118,20 +146,30 @@ class FullBackupUseCase(
         val result = mutableListOf<Pair<String, File>>()
 
         for (entry in entries) {
+            val profileId = entry.profileId.ifBlank { SELF_PROFILE_ID }
             entry.attachments?.forEach { attachment ->
                 val file = resolveFile(attachment.uri)
-                val name = MEDIA_PREFIX + (attachment.name.ifBlank { attachment.uri.substringAfterLast("/") })
+                val fileName = attachment.name.ifBlank { attachment.uri.substringAfterLast("/") }
+                val name = mediaEntryName(profileId, fileName)
                 if (file != null && seen.add(name)) result.add(name to file)
             }
             entry.photo_urls?.forEach { photoUrl ->
                 val file = resolveFile(photoUrl)
-                val name = MEDIA_PREFIX + photoUrl.substringAfterLast("/")
+                val fileName = photoUrl.substringAfterLast("/")
+                val name = mediaEntryName(profileId, fileName)
                 if (file != null && seen.add(name)) result.add(name to file)
             }
         }
 
         return result
     }
+
+    private fun mediaEntryName(profileId: String, fileName: String): String =
+        if (profileId == SELF_PROFILE_ID) {
+            MEDIA_PREFIX + fileName
+        } else {
+            "$MEDIA_PREFIX$profileId/$fileName"
+        }
 
     private fun resolveFile(fileUri: String): File? {
         val uri = Uri.parse(fileUri)

@@ -10,10 +10,12 @@ import com.example.healthjournal.auth.GoogleAuthManager
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.google.android.gms.auth.api.identity.AuthorizationClient
 import com.google.android.gms.auth.api.identity.AuthorizationResult
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.tasks.Tasks
+import com.example.healthjournal.util.FakeActiveProfileProvider
 import com.google.gson.Gson
 import io.mockk.*
 import kotlinx.coroutines.flow.first
@@ -97,7 +99,7 @@ class SyncDownloadTest {
         assertEquals(ListenableWorker.Result.success(), result)
 
         // 3. Verify data in local database
-        val localEntries = database.journalDao().getAllEntriesIncludingArchived().first()
+        val localEntries = database.journalDao().getAllEntriesIncludingArchived(SELF_PROFILE_ID).first()
         assertEquals(1, localEntries.size)
         val entry = localEntries[0]
 
@@ -151,7 +153,7 @@ class SyncDownloadTest {
         assertEquals(ListenableWorker.Result.success(), result)
 
         // 3. Verify that local content was PRESERVED and date is still 1000
-        val localEntries = database.journalDao().getAllEntriesIncludingArchived().first()
+        val localEntries = database.journalDao().getAllEntriesIncludingArchived(SELF_PROFILE_ID).first()
         val entry = localEntries.find { it.entry_id == entryId }
         assertNotNull(entry)
         assertEquals("Local Updated Content", entry?.description)
@@ -200,7 +202,7 @@ class SyncDownloadTest {
     fun testSyncWorker_HandlesPermanentDeletions() = runBlocking {
         // 1. Prepare local "deleted" record
         val deletedId = "deleted_id"
-        val repository = com.example.healthjournal.data.JournalRepository(database.journalDao())
+        val repository = com.example.healthjournal.data.JournalRepository(database.journalDao(), FakeActiveProfileProvider())
         repository.deleteEntries(listOf(deletedId))
 
         // 2. Prepare mock cloud data containing that ID
@@ -234,7 +236,7 @@ class SyncDownloadTest {
 
     @Test
     fun testSyncWorker_PurgesExpiredTombstonesOnlyAfterBothPipelines() = runBlocking {
-        val repository = com.example.healthjournal.data.JournalRepository(database.journalDao())
+        val repository = com.example.healthjournal.data.JournalRepository(database.journalDao(), FakeActiveProfileProvider())
         val graceMs = com.example.healthjournal.data.JournalRepository.TOMBSTONE_GRACE_PERIOD_MS
         val now = System.currentTimeMillis()
         val expiredId = "expired_tombstone_id"
@@ -324,7 +326,7 @@ class SyncDownloadTest {
         assertEquals(ListenableWorker.Result.success(), result)
 
         // The remotely deleted entry must be gone locally...
-        val localMeasurements = measurementDao.getAllEntriesList()
+        val localMeasurements = measurementDao.getAllEntriesList(SELF_PROFILE_ID)
         assertFalse(localMeasurements.any { it.entry_id == removedId })
 
         // ...and must not be resurrected into the cloud measurements file.
@@ -384,7 +386,7 @@ class SyncDownloadTest {
         assertEquals(ListenableWorker.Result.success(), result)
 
         // A local edit newer than the remote deletion wins (LWW): the entry survives.
-        val localMeasurements = measurementDao.getAllEntriesList()
+        val localMeasurements = measurementDao.getAllEntriesList(SELF_PROFILE_ID)
         assertTrue(localMeasurements.any { it.entry_id == survivorId })
         val measurementsUpload = uploadedFiles[DriveServiceHelper.MEASUREMENTS_DATA_FILE]
         assertNotNull(measurementsUpload)
@@ -444,7 +446,7 @@ class SyncDownloadTest {
         assertEquals(ListenableWorker.Result.success(), result)
 
         // The newer edit must survive this cycle and converge back to the cloud.
-        val localMeasurements = measurementDao.getAllEntriesList()
+        val localMeasurements = measurementDao.getAllEntriesList(SELF_PROFILE_ID)
         assertTrue(localMeasurements.any { it.entry_id == survivorId })
         val measurementsUpload = uploadedFiles[DriveServiceHelper.MEASUREMENTS_DATA_FILE]
         assertNotNull(measurementsUpload)

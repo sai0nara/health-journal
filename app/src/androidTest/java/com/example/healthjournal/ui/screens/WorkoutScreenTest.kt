@@ -2,6 +2,8 @@ package com.example.healthjournal.ui.screens
 
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -31,6 +33,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import com.example.healthjournal.util.FakeActiveProfileProvider
 
 class WorkoutScreenTest {
 
@@ -50,7 +53,7 @@ class WorkoutScreenTest {
     }
 
     private fun buildViewModel(): WorkoutViewModel = WorkoutViewModel(
-        repository = WorkoutRepository(dao),
+        repository = WorkoutRepository(dao, FakeActiveProfileProvider()),
         healthSource = FakeWorkoutHealthDataSource(),
         journalRepository = journalRepository,
         onHaptic = {}
@@ -493,5 +496,64 @@ class WorkoutScreenTest {
                 UnitSystem.METRIC
             )
         }
+    }
+}
+
+
+class WorkoutProfileSwitchTest {
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
+    private lateinit var viewModel: WorkoutViewModel
+
+    @Before
+    fun setup() {
+        val journalRepository: JournalRepository = mockk(relaxed = true)
+        coEvery { journalRepository.insert(any()) } returns Unit
+        viewModel = WorkoutViewModel(
+            repository = WorkoutRepository(FakeWorkoutSessionDao(), FakeActiveProfileProvider()),
+            healthSource = FakeWorkoutHealthDataSource(),
+            journalRepository = journalRepository,
+            onHaptic = {}
+        )
+    }
+
+    private fun openScreen() {
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                WorkoutScreen(
+                    viewModel = viewModel,
+                    onBack = {},
+                    onPresetsClick = {},
+                    profileSwitcher = { enabled, onSwitch ->
+                        androidx.compose.material3.Button(
+                            onClick = { onSwitch("sibling") },
+                            enabled = enabled
+                        ) {
+                            androidx.compose.material3.Text("Switch")
+                        }
+                    },
+                    onSwitchProfile = {}
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+    }
+
+    @Test
+    fun activeWorkout_disablesProfileSwitching_untilFinished() {
+        openScreen()
+        composeTestRule.onNodeWithText("Switch").assertIsEnabled()
+
+        composeTestRule.onNodeWithText("Run").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("workout_target_field").performTextInput("5")
+        composeTestRule.onNodeWithText("Start").performClick()
+        composeTestRule.waitForIdle()
+        viewModel.advanceTime(WorkoutViewModel.COUNTDOWN_SECONDS.toLong())
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Switch").assertIsNotEnabled()
     }
 }

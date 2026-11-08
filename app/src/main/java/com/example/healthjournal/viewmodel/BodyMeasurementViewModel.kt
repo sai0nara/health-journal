@@ -5,8 +5,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.healthjournal.data.BodyMeasurementRepository
 import com.example.healthjournal.data.JournalRepository
+import com.example.healthjournal.data.ProfileRepository
 import com.example.healthjournal.data.local.BodyMeasurementEntry
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.ProfileEntity
 import com.example.healthjournal.data.local.UnitConverter
 import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.EntryKindTag
@@ -16,8 +18,10 @@ import com.example.healthjournal.domain.toSummary
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -43,11 +47,24 @@ class BodyMeasurementViewModel(
     private val repository: BodyMeasurementRepository,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     unitSystem: UnitSystem = UnitSystem.METRIC,
-    private val journalRepository: JournalRepository
+    private val journalRepository: JournalRepository,
+    profileRepository: ProfileRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BodyMeasurementUiState(unitSystem = unitSystem))
     val uiState: StateFlow<BodyMeasurementUiState> = _uiState.asStateFlow()
+    private var captureProfileId: String? = null
+
+    val activeProfile: StateFlow<ProfileEntity?> =
+        profileRepository?.activeProfile?.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        ) ?: MutableStateFlow(null)
+
+    fun startCapture() {
+        captureProfileId = repository.currentProfileId()
+    }
 
     companion object {
         /** Inline alert text for future-dated forms; Save stays disabled while set. */
@@ -164,16 +181,27 @@ class BodyMeasurementViewModel(
         // rejected at save time instead of polluting the history feed.
         if (state.timestamp > System.currentTimeMillis()) return
 
+        val targetProfileId = captureProfileId
         _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch(ioDispatcher) {
             val measurement = state.toEntry()
-            repository.insert(measurement)
+            if (targetProfileId != null) {
+                repository.insert(targetProfileId, measurement)
+            } else {
+                repository.insert(measurement)
+            }
             val linkedEntry = JournalEntry(
                 timestamp = state.timestamp,
                 description = measurement.toSummary()
             )
-            journalRepository.insert(linkedEntry)
-            journalRepository.addTag(linkedEntry.entry_id, EntryKindTag.forMeasurement())
+            if (targetProfileId != null) {
+                journalRepository.insert(targetProfileId, linkedEntry)
+                journalRepository.addTag(targetProfileId, linkedEntry.entry_id, EntryKindTag.forMeasurement())
+            } else {
+                journalRepository.insert(linkedEntry)
+                journalRepository.addTag(linkedEntry.entry_id, EntryKindTag.forMeasurement())
+            }
+            captureProfileId = null
             _uiState.update {
                 BodyMeasurementUiState().copy(justSaved = true)
             }
@@ -209,12 +237,17 @@ class BodyMeasurementViewModel(
 
 class BodyMeasurementViewModelFactory(
     private val repository: BodyMeasurementRepository,
-    private val journalRepository: JournalRepository
+    private val journalRepository: JournalRepository,
+    private val profileRepository: ProfileRepository? = null
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(BodyMeasurementViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return BodyMeasurementViewModel(repository, journalRepository = journalRepository) as T
+            return BodyMeasurementViewModel(
+                repository,
+                journalRepository = journalRepository,
+                profileRepository = profileRepository
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

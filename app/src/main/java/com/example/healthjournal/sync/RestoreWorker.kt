@@ -5,6 +5,9 @@ import android.net.Uri
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
+import com.example.healthjournal.data.ProfileRepository
+import com.example.healthjournal.data.RoomProfileDataEraser
+import com.example.healthjournal.data.SharedPreferencesActiveProfileStore
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.export.BackupDataReader
 import com.example.healthjournal.export.BackupReader
@@ -62,6 +65,7 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
             .putInt(KEY_RESULT_MEDIA, result.mediaFileCount)
             .putInt(KEY_RESULT_WORKOUTS, result.workoutCount)
             .putInt(KEY_RESULT_PRESETS, result.presetCount)
+            .putInt(KEY_RESULT_PROFILES, result.profileCount)
             .build()
 
     /** Resolves a content:// or file:// URI into a local [File] (content URIs are copied to cache). */
@@ -107,6 +111,7 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
         const val KEY_RESULT_MEDIA = "key_result_media"
         const val KEY_RESULT_WORKOUTS = "key_result_workouts"
         const val KEY_RESULT_PRESETS = "key_result_presets"
+        const val KEY_RESULT_PROFILES = "key_result_profiles"
 
         const val ERROR_TYPE_WRONG_PASSPHRASE = "wrong_passphrase"
         const val ERROR_TYPE_VERSION_MISMATCH = "version_mismatch"
@@ -116,8 +121,9 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
 
         /**
          * Provider hook for tests/DI (mirrors [SyncWorker]'s companion providers).
-         * `onRestoreFinished` enqueues a manual re-sync so restored data is treated as
-         * the source of truth and re-uploaded to Google Drive.
+         * `onRestoreFinished` ensures Self profile invariants hold and enqueues a
+         * manual re-sync so restored data is treated as the source of truth and
+         * re-uploaded to Google Drive.
          */
         var coordinatorProvider: (Context) -> RestoreCoordinator = { context ->
             val db = JournalDatabase.getDatabase(context)
@@ -128,7 +134,14 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
                 extractor = SafeBackupExtractor(),
                 backupDataReader = BackupDataReader(Gson()),
                 restoreRepository = RestoreRepository(db, context.filesDir),
-                onRestoreFinished = { SyncManager.triggerManualSync(context) }
+                onRestoreFinished = {
+                    ProfileRepository(
+                        profileDao = db.profileDao(),
+                        settings = SharedPreferencesActiveProfileStore(context),
+                        eraser = RoomProfileDataEraser(db)
+                    ).ensureSelfProfile()
+                    SyncManager.triggerManualSync(context)
+                }
             )
         }
     }

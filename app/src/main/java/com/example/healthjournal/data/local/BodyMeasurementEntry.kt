@@ -2,9 +2,13 @@ package com.example.healthjournal.data.local
 
 import java.util.UUID
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "body_measurements")
+@Entity(
+    tableName = "body_measurements",
+    indices = [Index(value = ["profileId", "timestamp"])]
+)
 data class BodyMeasurementEntry(
     @PrimaryKey val entry_id: String = UUID.randomUUID().toString(),
     val timestamp: Long = System.currentTimeMillis(),
@@ -17,5 +21,6 @@ data class BodyMeasurementEntry(
     val calf_cm: Double? = null,
     val bicep_cm: Double? = null,
     val isSynced: Boolean? = false,
-    val syncStatus: String? = "PENDING_SYNC"
+    val syncStatus: String? = "PENDING_SYNC",
+    val profileId: String = SELF_PROFILE_ID
 )

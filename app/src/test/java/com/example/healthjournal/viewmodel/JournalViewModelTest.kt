@@ -13,6 +13,7 @@ import com.example.healthjournal.auth.SessionManager
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.JournalEntry
+import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.domain.EntryVitals
 import com.example.healthjournal.health.HealthConnectManager
 import com.example.healthjournal.sync.SyncManager
@@ -98,6 +99,7 @@ class JournalViewModelTest {
             }
         }
         
+        every { repository.activeProfileId } returns MutableStateFlow(SELF_PROFILE_ID)
         coEvery { repository.allEntries } returns flowOf(emptyList())
         coEvery { repository.archivedEntries } returns flowOf(emptyList())
         coEvery { repository.allTags } returns flowOf(emptyList())
@@ -115,112 +117,170 @@ class JournalViewModelTest {
     @Test
     fun addEntryCallsRepository() = runTest {
         val description = "Test Description"
-        coEvery { repository.insert(any()) } returns Unit
-        
-        viewModel.addEntry(description)
+        coEvery { repository.insert(any<String>(), any()) } returns Unit
+
+        viewModel.addEntry(description, profileId = SELF_PROFILE_ID)
         testDispatcher.scheduler.advanceUntilIdle()
-        
-        coVerify { repository.insert(match { it.description == description }) }
+
+        coVerify {
+            repository.insert(SELF_PROFILE_ID, match { it.description == description })
+        }
     }
 
     @Test
     fun addEntryPreventsFutureDates() = runTest {
         val futureTimestamp = System.currentTimeMillis() + 100000
-        coEvery { repository.insert(any()) } returns Unit
-        
-        viewModel.addEntry("Future", futureTimestamp)
+        coEvery { repository.insert(any<String>(), any()) } returns Unit
+
+        viewModel.addEntry("Future", futureTimestamp, profileId = SELF_PROFILE_ID)
         testDispatcher.scheduler.advanceUntilIdle()
-        
-        coVerify(exactly = 0) { repository.insert(any()) }
+
+        coVerify(exactly = 0) { repository.insert(any<String>(), any()) }
+    }
+
+    @Test
+    fun addEntry_stampsCapturedProfileOnEntryAndTags() = runTest {
+        coEvery { repository.insert(any<String>(), any()) } returns Unit
+        coEvery { repository.addTag(any<String>(), any(), any()) } returns Unit
+
+        viewModel.addEntry(
+            description = "Sibling entry #Fitness",
+            tags = setOf("DOCTOR"),
+            profileId = "sibling"
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { repository.insert("sibling", match { it.description.contains("Sibling") }) }
+        coVerify { repository.addTag("sibling", any(), "fitness") }
+        coVerify { repository.addTag("sibling", any(), "doctor") }
     }
 
     @Test
     fun updateEntryCallsRepository() = runTest {
         val entry = JournalEntry(description = "Old")
-        coEvery { repository.insert(any()) } returns Unit
-        coEvery { repository.getTagsForEntry(any()) } returns emptyList()
-        coEvery { repository.removeTag(any(), any()) } returns Unit
-        coEvery { repository.addTag(any(), any()) } returns Unit
+        coEvery { repository.insert(any<String>(), any()) } returns Unit
+        coEvery { repository.getTagsForEntry(any<String>(), any()) } returns emptyList()
+        coEvery { repository.removeTag(any<String>(), any(), any()) } returns Unit
+        coEvery { repository.addTag(any<String>(), any(), any()) } returns Unit
 
-        viewModel.updateEntry(entry.copy(description = "New"), emptySet())
+        viewModel.updateEntry(
+            entry.copy(description = "New"),
+            emptySet(),
+            profileId = SELF_PROFILE_ID
+        )
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { repository.insert(match { it.description == "New" }) }
+        coVerify {
+            repository.insert(SELF_PROFILE_ID, match { it.description == "New" })
+        }
+    }
+
+    @Test
+    fun updateEntry_rejectsEntryOwnedByAnotherProfile() = runTest {
+        val entry = JournalEntry(
+            entry_id = "foreign",
+            description = "Someone else's",
+            profileId = SELF_PROFILE_ID
+        )
+
+        viewModel.updateEntry(entry, emptySet(), profileId = "sibling")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.insert(any<String>(), any()) }
+        coVerify(exactly = 0) { repository.addTag(any<String>(), any(), any()) }
     }
 
     @Test
     fun addEntry_unionsParsedHashtagsWithManualTags() = runTest {
-        coEvery { repository.insert(any()) } returns Unit
-        coEvery { repository.addTag(any(), any()) } returns Unit
+        coEvery { repository.insert(any<String>(), any()) } returns Unit
+        coEvery { repository.addTag(any<String>(), any(), any()) } returns Unit
 
-        viewModel.addEntry("Evening #Recovery walk", tags = setOf("DOCTOR"))
+        viewModel.addEntry(
+            "Evening #Recovery walk",
+            tags = setOf("DOCTOR"),
+            profileId = SELF_PROFILE_ID
+        )
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { repository.addTag(any(), "recovery") }
-        coVerify { repository.addTag(any(), "doctor") }
+        coVerify { repository.addTag(SELF_PROFILE_ID, any(), "recovery") }
+        coVerify { repository.addTag(SELF_PROFILE_ID, any(), "doctor") }
     }
 
     @Test
     fun addEntry_canonicalizesPresetAndHashtagToSingleTag() = runTest {
-        coEvery { repository.insert(any()) } returns Unit
-        coEvery { repository.addTag(any(), any()) } returns Unit
+        coEvery { repository.insert(any<String>(), any()) } returns Unit
+        coEvery { repository.addTag(any<String>(), any(), any()) } returns Unit
 
-        viewModel.addEntry("Morning #Fitness", tags = setOf("FITNESS"))
+        viewModel.addEntry(
+            "Morning #Fitness",
+            tags = setOf("FITNESS"),
+            profileId = SELF_PROFILE_ID
+        )
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify(exactly = 1) { repository.addTag(any(), "fitness") }
-        coVerify(exactly = 1) { repository.addTag(any(), any()) }
+        coVerify(exactly = 1) { repository.addTag(SELF_PROFILE_ID, any(), "fitness") }
+        coVerify(exactly = 1) { repository.addTag(SELF_PROFILE_ID, any(), any()) }
     }
 
     @Test
     fun updateEntry_collapsesSelectedCaseVariantsToOneTag() = runTest {
         val entry = JournalEntry(entry_id = "e2", description = "New #Fitness text")
-        coEvery { repository.insert(any()) } returns Unit
-        coEvery { repository.getTagsForEntry("e2") } returns
+        coEvery { repository.insert(any<String>(), any()) } returns Unit
+        coEvery { repository.getTagsForEntry(SELF_PROFILE_ID, "e2") } returns
             listOf("FITNESS", "fitness", "Fitness", "DOCTOR", "stale")
-        coEvery { repository.removeTag(any(), any()) } returns Unit
-        coEvery { repository.addTag(any(), any()) } returns Unit
+        coEvery { repository.removeTag(any<String>(), any(), any()) } returns Unit
+        coEvery { repository.addTag(any<String>(), any(), any()) } returns Unit
 
-        viewModel.updateEntry(entry, setOf("FITNESS", "Fitness", "DOCTOR"))
+        viewModel.updateEntry(
+            entry,
+            setOf("FITNESS", "Fitness", "DOCTOR"),
+            profileId = SELF_PROFILE_ID
+        )
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify(exactly = 1) { repository.addTag("e2", "fitness") }
-        coVerify(exactly = 1) { repository.addTag("e2", "doctor") }
-        coVerify(exactly = 0) { repository.addTag("e2", "FITNESS") }
-        coVerify(exactly = 0) { repository.addTag("e2", "Fitness") }
-        coVerify(exactly = 0) { repository.addTag("e2", "DOCTOR") }
-        coVerify(exactly = 0) { repository.addTag("e2", "stale") }
+        coVerify(exactly = 1) { repository.addTag(SELF_PROFILE_ID, "e2", "fitness") }
+        coVerify(exactly = 1) { repository.addTag(SELF_PROFILE_ID, "e2", "doctor") }
+        coVerify(exactly = 0) { repository.addTag(SELF_PROFILE_ID, "e2", "FITNESS") }
+        coVerify(exactly = 0) { repository.addTag(SELF_PROFILE_ID, "e2", "Fitness") }
+        coVerify(exactly = 0) { repository.addTag(SELF_PROFILE_ID, "e2", "DOCTOR") }
+        coVerify(exactly = 0) { repository.addTag(SELF_PROFILE_ID, "e2", "stale") }
     }
 
     @Test
     fun updateEntry_reparsesHashtagsAndKeepsSelectedAutoTag() = runTest {
         val entry = JournalEntry(entry_id = "e1", description = "Old #stale text")
-        coEvery { repository.insert(any()) } returns Unit
-        coEvery { repository.getTagsForEntry("e1") } returns listOf("fitness", "DOCTOR", "stale")
-        coEvery { repository.removeTag(any(), any()) } returns Unit
-        coEvery { repository.addTag(any(), any()) } returns Unit
+        coEvery { repository.insert(any<String>(), any()) } returns Unit
+        coEvery { repository.getTagsForEntry(SELF_PROFILE_ID, "e1") } returns
+            listOf("fitness", "DOCTOR", "stale")
+        coEvery { repository.removeTag(any<String>(), any(), any()) } returns Unit
+        coEvery { repository.addTag(any<String>(), any(), any()) } returns Unit
 
-        viewModel.updateEntry(entry.copy(description = "New #sleep text"), setOf("DOCTOR", "fitness"))
+        viewModel.updateEntry(
+            entry.copy(description = "New #sleep text"),
+            setOf("DOCTOR", "fitness"),
+            profileId = SELF_PROFILE_ID
+        )
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { repository.addTag("e1", "sleep") }
-        coVerify { repository.addTag("e1", "fitness") }
-        coVerify(exactly = 0) { repository.addTag("e1", "stale") }
+        coVerify { repository.addTag(SELF_PROFILE_ID, "e1", "sleep") }
+        coVerify { repository.addTag(SELF_PROFILE_ID, "e1", "fitness") }
+        coVerify(exactly = 0) { repository.addTag(SELF_PROFILE_ID, "e1", "stale") }
     }
 
     @Test
     fun updateEntry_removesDeselectedSystemTag() = runTest {
         val entry = JournalEntry(entry_id = "e3", description = "Workout logged")
-        coEvery { repository.insert(any()) } returns Unit
-        coEvery { repository.getTagsForEntry("e3") } returns listOf("fitness", "recovery")
-        coEvery { repository.removeTag(any(), any()) } returns Unit
-        coEvery { repository.addTag(any(), any()) } returns Unit
+        coEvery { repository.insert(any<String>(), any()) } returns Unit
+        coEvery { repository.getTagsForEntry(SELF_PROFILE_ID, "e3") } returns
+            listOf("fitness", "recovery")
+        coEvery { repository.removeTag(any<String>(), any(), any()) } returns Unit
+        coEvery { repository.addTag(any<String>(), any(), any()) } returns Unit
 
-        viewModel.updateEntry(entry, tags = setOf("recovery"))
+        viewModel.updateEntry(entry, tags = setOf("recovery"), profileId = SELF_PROFILE_ID)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify(exactly = 0) { repository.addTag("e3", "fitness") }
-        coVerify { repository.addTag("e3", "recovery") }
+        coVerify(exactly = 0) { repository.addTag(SELF_PROFILE_ID, "e3", "fitness") }
+        coVerify { repository.addTag(SELF_PROFILE_ID, "e3", "recovery") }
     }
 
     @Test
@@ -668,6 +728,32 @@ class JournalViewModelTest {
     }
 
     @Test
+    fun syncHealthData_withExplicitTargetProfile_preservesCapturedTargetEvenIfActiveSwitches() = runTest {
+        val activeFlow = MutableStateFlow("profile-a")
+        every { repository.activeProfileId } returns activeFlow
+        coEvery { healthManager.getLatestBloodPressure(any(), any()) } returns (116.0 to 74.0)
+        coEvery { healthManager.getAverageHeartRate(any(), any()) } returns 68L
+        coEvery { healthManager.getSleepDurationHours(any(), any()) } returns 8.0f
+        val enabled = JournalViewModel(
+            application, repository, authManager, sessionManager,
+            healthManager, mediaService, testDispatcher,
+            healthSyncEnabledInitial = true
+        )
+
+        // Simulate active profile switching while the confirmation dialog was open
+        activeFlow.value = "profile-b"
+
+        val result = enabled.syncHealthData(1_700_000_000_000L, targetProfileId = "profile-a")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("profile-a", result.targetProfileId)
+        assertEquals(116.0, result.bpSystolic)
+        assertEquals(74.0, result.bpDiastolic)
+        assertEquals(68, result.heartRate)
+        assertEquals(8.0f, result.sleepHours!!, 0.001f)
+    }
+
+    @Test
     fun hasHealthPermissions_whenDisabled_returnsFalseWithoutManagerCall() = runTest {
         assertFalse(viewModel.hasHealthPermissions())
 
@@ -794,10 +880,11 @@ class JournalViewModelTest {
     @Test
     fun addEntry_persistsManualVitals() = runTest {
         val inserted = slot<JournalEntry>()
-        coEvery { repository.insert(capture(inserted)) } returns Unit
+        coEvery { repository.insert(SELF_PROFILE_ID, capture(inserted)) } returns Unit
 
         viewModel.addEntry(
             description = "With vitals",
+            profileId = SELF_PROFILE_ID,
             bpSystolic = 120.0,
             bpDiastolic = 80.0,
             heartRate = 72,
@@ -821,13 +908,13 @@ class JournalViewModelTest {
     @Test
     fun updateEntry_marksEntryUnsynced() = runTest {
         val entry = JournalEntry(entry_id = "e4", description = "Edited", isSynced = true)
-        coEvery { repository.getTagsForEntry("e4") } returns emptyList()
-        coEvery { repository.addTag(any(), any()) } returns Unit
-        coEvery { repository.removeTag(any(), any()) } returns Unit
+        coEvery { repository.getTagsForEntry(SELF_PROFILE_ID, "e4") } returns emptyList()
+        coEvery { repository.addTag(any<String>(), any(), any()) } returns Unit
+        coEvery { repository.removeTag(any<String>(), any(), any()) } returns Unit
         val inserted = slot<JournalEntry>()
-        coEvery { repository.insert(capture(inserted)) } returns Unit
+        coEvery { repository.insert(SELF_PROFILE_ID, capture(inserted)) } returns Unit
 
-        viewModel.updateEntry(entry, emptySet())
+        viewModel.updateEntry(entry, emptySet(), profileId = SELF_PROFILE_ID)
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(inserted.captured.isSynced!!)

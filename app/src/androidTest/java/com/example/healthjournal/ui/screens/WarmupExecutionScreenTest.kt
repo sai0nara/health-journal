@@ -32,6 +32,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import com.example.healthjournal.util.FakeActiveProfileProvider
 
 class WarmupExecutionScreenTest {
 
@@ -88,10 +89,10 @@ class WarmupExecutionScreenTest {
             )
         }
         viewModel = WorkoutViewModel(
-            repository = WorkoutRepository(sessionDao),
+            repository = WorkoutRepository(sessionDao, FakeActiveProfileProvider()),
             healthSource = FakeWorkoutHealthDataSource(),
             journalRepository = journalRepository,
-            presetRepository = PresetRepository(presetDao),
+            presetRepository = PresetRepository(presetDao, FakeActiveProfileProvider()),
             catalogDao = catalogDao
         )
     }
@@ -134,7 +135,7 @@ class WarmupExecutionScreenTest {
 
         composeTestRule.onNodeWithTag("warmup_panel").assertDoesNotExist()
         composeTestRule.onNodeWithTag("routine_exercise_0").assertExists()
-        val persisted = runBlocking { sessionDao.getSessionById(activeSessionId())!! }
+        val persisted = runBlocking { sessionDao.getSessionById(com.example.healthjournal.data.local.SELF_PROFILE_ID, activeSessionId())!! }
         assertEquals(WarmupOutcome.SKIPPED.name, persisted.warmupOutcome)
     }
 
@@ -147,7 +148,7 @@ class WarmupExecutionScreenTest {
 
         composeTestRule.onNodeWithTag("warmup_panel").assertDoesNotExist()
         composeTestRule.onNodeWithTag("routine_exercise_0").assertExists()
-        val persisted = runBlocking { sessionDao.getSessionById(activeSessionId())!! }
+        val persisted = runBlocking { sessionDao.getSessionById(com.example.healthjournal.data.local.SELF_PROFILE_ID, activeSessionId())!! }
         assertEquals(WarmupOutcome.COMPLETED.name, persisted.warmupOutcome)
         assertEquals(60, persisted.warmupElapsedSeconds)
     }
@@ -163,7 +164,7 @@ class WarmupExecutionScreenTest {
         composeTestRule.onNodeWithText("Workout Complete").assertExists()
         composeTestRule.onNodeWithTag("summary_warmup").assertTextContains("Rowing", substring = true)
         composeTestRule.onNodeWithTag("summary_warmup").assertTextContains("Skipped", substring = true)
-        val completed = runBlocking { sessionDao.getSessionById(sessionId)!! }
+        val completed = runBlocking { sessionDao.getSessionById(com.example.healthjournal.data.local.SELF_PROFILE_ID, sessionId)!! }
         assertEquals(WarmupOutcome.SKIPPED.name, completed.warmupOutcome)
     }
 

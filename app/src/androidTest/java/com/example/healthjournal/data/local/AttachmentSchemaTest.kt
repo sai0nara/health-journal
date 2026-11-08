@@ -50,7 +50,7 @@ class AttachmentSchemaTest {
             attachments = listOf(attachment)
         )
         journalDao.insertEntry(entry)
-        val retrieved = journalDao.getEntryById(entry.entry_id)
+        val retrieved = journalDao.getEntryById(SELF_PROFILE_ID, entry.entry_id)
         assertNotNull(retrieved)
         assertEquals(1, retrieved!!.attachments?.size)
         val retrievedAttachment = retrieved.attachments!![0]

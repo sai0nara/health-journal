@@ -79,9 +79,13 @@ import com.example.healthjournal.viewmodel.PersonalCardViewModel
 @Composable
 fun PersonalCardScreen(
     viewModel: PersonalCardViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
+        { _, _ -> },
+    onSwitchProfile: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var pendingSwitchId by remember { mutableStateOf<String?>(null) }
 
     // The card holds its own unit state but the global Settings preference is
     // the source of truth: re-sync on appear so a Settings change made
@@ -91,6 +95,30 @@ fun PersonalCardScreen(
         if (viewModel.uiState.value.unitSystem != globalUnits) {
             viewModel.onUnitSystemChanged(globalUnits)
         }
+    }
+
+    pendingSwitchId?.let { targetProfileId ->
+        AlertDialog(
+            onDismissRequest = { pendingSwitchId = null },
+            title = { Text(stringResource(R.string.profile_switch_discard_title)) },
+            text = { Text(stringResource(R.string.profile_switch_discard_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingSwitchId = null
+                        viewModel.cancelEditing()
+                        onSwitchProfile(targetProfileId)
+                    }
+                ) {
+                    Text(stringResource(R.string.profile_switch_discard_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingSwitchId = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -109,6 +137,15 @@ fun PersonalCardScreen(
                     }
                 },
                 actions = {
+                    if (!uiState.isSaving) {
+                        profileSwitcher(true) { targetProfileId ->
+                            if (uiState.isEditing) {
+                                pendingSwitchId = targetProfileId
+                            } else {
+                                onSwitchProfile(targetProfileId)
+                            }
+                        }
+                    }
                     if (uiState.isEditing) {
                         TextButton(onClick = { viewModel.cancelEditing() }) {
                             Text(stringResource(R.string.action_cancel))

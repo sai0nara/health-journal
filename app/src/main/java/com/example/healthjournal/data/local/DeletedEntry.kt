@@ -1,10 +1,10 @@
 package com.example.healthjournal.data.local
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
-@Entity(tableName = "deleted_entries")
+@Entity(tableName = "deleted_entries", primaryKeys = ["profileId", "entry_id"])
 data class DeletedEntry(
-    @PrimaryKey val entry_id: String,
-    val deletedAt: Long = System.currentTimeMillis()
+    val entry_id: String,
+    val deletedAt: Long = System.currentTimeMillis(),
+    val profileId: String = SELF_PROFILE_ID
 )

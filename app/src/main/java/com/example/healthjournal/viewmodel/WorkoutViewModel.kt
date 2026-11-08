@@ -123,6 +123,8 @@ class WorkoutViewModel(
             val unfinished = repository.getUnfinishedSession()
             if (unfinished != null) {
                 _uiState.value = WorkoutUiState.RecoveryRequired(unfinished)
+            } else if (_uiState.value is WorkoutUiState.RecoveryRequired) {
+                _uiState.value = WorkoutUiState.Idle
             }
         }
     }
@@ -139,7 +141,8 @@ class WorkoutViewModel(
     fun startSession() {
         val current = _uiState.value as? WorkoutUiState.Configuring ?: return
         viewModelScope.launch(dispatcher) {
-            val unfinished = repository.getUnfinishedSession()
+            val profileId = repository.currentProfileId()
+            val unfinished = repository.getUnfinishedSession(profileId)
             if (unfinished != null) {
                 // Never start a second session while one is unfinished.
                 _uiState.value = WorkoutUiState.RecoveryRequired(unfinished)
@@ -164,10 +167,16 @@ class WorkoutViewModel(
                 status = WorkoutStatus.ACTIVE.name,
                 startTimestamp = clock(),
                 targetDistanceM = targetDistanceM,
-                targetDurationMin = targetDurationMin
+                targetDurationMin = targetDurationMin,
+                profileId = profileId
             )
             lastTickMillis = clock()
-            repository.saveSession(session)
+            if (!repository.insertSessionIfNoUnfinished(profileId, session)) {
+                repository.getUnfinishedSession(profileId)?.let {
+                    _uiState.value = WorkoutUiState.RecoveryRequired(it)
+                }
+                return@launch
+            }
             _uiState.value = WorkoutUiState.Countdown(
                 session = session,
                 secondsRemaining = COUNTDOWN_SECONDS
@@ -181,7 +190,7 @@ class WorkoutViewModel(
         if (current.isWarmupActive) return
         viewModelScope.launch(dispatcher) {
             val paused = current.session.copy(status = WorkoutStatus.PAUSED.name)
-            repository.saveSession(paused)
+            repository.saveSession(paused.profileId, paused)
             _uiState.value = WorkoutUiState.Paused(paused)
             onHaptic(WorkoutHaptic.STOP)
         }
@@ -192,7 +201,7 @@ class WorkoutViewModel(
         viewModelScope.launch(dispatcher) {
             val active = current.session.copy(status = WorkoutStatus.ACTIVE.name)
             lastTickMillis = clock()
-            repository.saveSession(active)
+            repository.saveSession(active.profileId, active)
             _uiState.value = WorkoutUiState.Active(active)
             onHaptic(WorkoutHaptic.START)
         }
@@ -267,7 +276,7 @@ class WorkoutViewModel(
                     onHaptic(WorkoutHaptic.REST_ENDED)
                 }
                 if (warmupCompleted || elapsed % PERSIST_EVERY_SECONDS == 0L) {
-                    repository.saveSession(advanced)
+                    repository.saveSession(advanced.profileId, advanced)
                 }
             }
             else -> Unit
@@ -286,7 +295,7 @@ class WorkoutViewModel(
         val updatedTracker = tracker.advance()
         viewModelScope.launch(dispatcher) {
             val updated = current.session.copy(intervalState = updatedTracker)
-            repository.saveSession(updated)
+            repository.saveSession(updated.profileId, updated)
             _uiState.value = current.copy(session = updated)
             onHaptic(WorkoutHaptic.INTERVAL)
         }
@@ -308,7 +317,7 @@ class WorkoutViewModel(
         viewModelScope.launch(dispatcher) {
             val matrix = (current.session.setMatrix ?: emptyList()) + exercise
             val updated = current.session.copy(setMatrix = matrix)
-            repository.saveSession(updated)
+            repository.saveSession(updated.profileId, updated)
             _uiState.value = current.copy(session = updated, setMatrixError = null)
         }
     }
@@ -336,7 +345,7 @@ class WorkoutViewModel(
                 }
             }
             val updated = current.session.copy(setMatrix = matrix)
-            repository.saveSession(updated)
+            repository.saveSession(updated.profileId, updated)
             _uiState.value = current.copy(
                 session = updated,
                 setMatrixError = null,
@@ -356,13 +365,14 @@ class WorkoutViewModel(
         val presetRepository = presetRepository ?: return
         val catalogDao = catalogDao ?: return
         viewModelScope.launch(dispatcher) {
-            val unfinished = repository.getUnfinishedSession()
+            val profileId = repository.currentProfileId()
+            val unfinished = repository.getUnfinishedSession(profileId)
             if (unfinished != null) {
                 // Never start a second session while one is unfinished.
                 _uiState.value = WorkoutUiState.RecoveryRequired(unfinished)
                 return@launch
             }
-            val preset = presetRepository.getPreset(presetId)
+            val preset = presetRepository.getPreset(profileId, presetId)
             if (preset == null) {
                 _uiState.value = WorkoutUiState.Error("Preset not found")
                 return@launch
@@ -399,10 +409,16 @@ class WorkoutViewModel(
                 routineName = preset.name,
                 warmupName = preset.warmupName.takeIf { hasWarmup },
                 warmupDurationSeconds = preset.warmupDurationSeconds.takeIf { hasWarmup },
-                warmupElapsedSeconds = if (hasWarmup) 0 else null
+                warmupElapsedSeconds = if (hasWarmup) 0 else null,
+                profileId = profileId
             )
             lastTickMillis = clock()
-            repository.saveSession(session)
+            if (!repository.insertSessionIfNoUnfinished(profileId, session)) {
+                repository.getUnfinishedSession(profileId)?.let {
+                    _uiState.value = WorkoutUiState.RecoveryRequired(it)
+                }
+                return@launch
+            }
             _uiState.value = WorkoutUiState.Countdown(
                 session = session,
                 secondsRemaining = COUNTDOWN_SECONDS
@@ -420,7 +436,7 @@ class WorkoutViewModel(
                 warmupElapsedSeconds = current.session.warmupElapsedSeconds ?: 0,
                 warmupOutcome = WarmupOutcome.SKIPPED.name
             )
-            repository.saveSession(updated)
+            repository.saveSession(updated.profileId, updated)
             _uiState.value = current.copy(
                 session = updated,
                 warmupSecondsRemaining = 0
@@ -477,7 +493,7 @@ class WorkoutViewModel(
                 if (i == exerciseIndex) updatedExercise else ex
             }
             val updated = current.session.copy(setMatrix = matrix)
-            repository.saveSession(updated)
+            repository.saveSession(updated.profileId, updated)
             val allComplete = matrix
                 .filter { it.isPlanned }
                 .all { planned -> planned.sets.all { it.completed } }
@@ -544,7 +560,7 @@ class WorkoutViewModel(
                 if (i == exerciseIndex) updatedExercise else ex
             }
             val updated = current.session.copy(setMatrix = updatedMatrix)
-            repository.saveSession(updated)
+            repository.saveSession(updated.profileId, updated)
             _uiState.value = current.copy(session = updated, setMatrixError = null)
         }
     }
@@ -587,7 +603,7 @@ class WorkoutViewModel(
                 if (i == exerciseIndex) swapped else ex
             }
             val updated = current.session.copy(setMatrix = updatedMatrix)
-            repository.saveSession(updated)
+            repository.saveSession(updated.profileId, updated)
             _uiState.value = current.copy(
                 session = updated,
                 setMatrixError = null,
@@ -624,7 +640,7 @@ class WorkoutViewModel(
                 if (i == exerciseIndex) grown else ex
             }
             val updated = current.session.copy(setMatrix = updatedMatrix)
-            repository.saveSession(updated)
+            repository.saveSession(updated.profileId, updated)
             _uiState.value = current.copy(session = updated, setMatrixError = null)
         }
     }
@@ -659,13 +675,20 @@ class WorkoutViewModel(
                     current.warmupOutcome
                 }
             )
-            repository.saveSession(completed)
+            val profileId = completed.profileId
+            repository.saveSession(profileId, completed)
             val linkedEntry = JournalEntry(
                 timestamp = current.startTimestamp,
-                description = describe(completed, calories)
+                description = describe(completed, calories),
+                profileId = profileId
             )
-            journalRepository.insert(linkedEntry)
-            journalRepository.addTag(linkedEntry.entry_id, EntryKindTag.forWorkout())
+            if (profileId == repository.currentProfileId()) {
+                journalRepository.insert(linkedEntry)
+                journalRepository.addTag(linkedEntry.entry_id, EntryKindTag.forWorkout())
+            } else {
+                journalRepository.insert(profileId, linkedEntry)
+                journalRepository.addTag(profileId, linkedEntry.entry_id, EntryKindTag.forWorkout())
+            }
             val healthSynced = if (!isHealthSyncEnabled.value) {
                 false
             } else try {
@@ -714,6 +737,7 @@ class WorkoutViewModel(
             val minutes = durationMinutes.trim().replace(',', '.').toDouble()
             val kcal = calories.trim().takeIf { it.isNotEmpty() }?.replace(',', '.')?.toDouble()
                 ?: CalorieEstimator.estimate(type, minutes)
+            val profileId = repository.currentProfileId()
             val completed = WorkoutSession(
                 type = type.name,
                 status = WorkoutStatus.COMPLETED.name,
@@ -721,12 +745,14 @@ class WorkoutViewModel(
                 endTimestamp = timestamp + (minutes * 60_000).toLong(),
                 elapsedSeconds = (minutes * 60).toLong(),
                 calories = kcal,
-                notes = note
+                notes = note,
+                profileId = profileId
             )
-            repository.saveSession(completed)
+            repository.saveSession(profileId, completed)
             val linkedEntry = JournalEntry(
                 timestamp = timestamp,
-                description = describe(completed, kcal)
+                description = describe(completed, kcal),
+                profileId = profileId
             )
             journalRepository.insert(linkedEntry)
             journalRepository.addTag(linkedEntry.entry_id, EntryKindTag.forWorkout())
@@ -760,7 +786,7 @@ class WorkoutViewModel(
                 }
             )
             lastTickMillis = clock()
-            repository.saveSession(recovered)
+            repository.saveSession(recovered.profileId, recovered)
             _uiState.value = WorkoutUiState.Active(recovered)
             onHaptic(WorkoutHaptic.START)
         }
@@ -769,9 +795,8 @@ class WorkoutViewModel(
     fun discardRecovery() {
         val current = _uiState.value as? WorkoutUiState.RecoveryRequired ?: return
         viewModelScope.launch(dispatcher) {
-            repository.saveSession(
-                current.session.copy(status = WorkoutStatus.DISCARDED.name)
-            )
+            val discarded = current.session.copy(status = WorkoutStatus.DISCARDED.name)
+            repository.saveSession(discarded.profileId, discarded)
             _uiState.value = WorkoutUiState.Idle
         }
     }

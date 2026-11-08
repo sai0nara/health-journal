@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-10-30
+Last updated: 2026-11-06
 
 ## What lives here
 
@@ -53,6 +53,24 @@ The summary and controls are driven from the viewmodel's `WorkoutUiState` (see
 [[viewmodel-layer]]); the countdown and rest timer advance through the viewmodel's
 `advanceTime`, keeping the composed UI deterministic under test.
 
+## Profiles in the UI
+
+Every root screen and the entry/personal-card/workout/preset/export surfaces receive
+a `profileSwitcher` slot plus an `onSwitchProfile` callback. `MainActivity` supplies
+the real switcher: the active profile's initials and name, a dropdown of active
+profiles, and a Manage Profiles destination. The Manage Profiles screen owns create,
+edit, archive/restore, typed-name permanent delete, relationship, and accent-color
+flows; the last active profile and the one-Self rule are enforced by the
+[[data-layer]] repository, not by the UI.
+
+Switching is guarded when leaving would lose work or corrupt a session. `AddEntry`
+and `PersonalCard` prompt before discarding a dirty draft; `PresetLibrary` does the
+same while editing. `Workout` disables the chip outside idle/configuration/summary
+states, `Export` disables it while generating, and `Archive` hides it in selection
+mode. `PersonalCard` and `PresetLibrary` also disable it while a save is in flight.
+An accepted switch navigates back to the dashboard so root tabs reload against the
+new active profile.
+
 ## Key areas
 
 - **Screens** — `AddEntryScreen`, `HistoryScreen`, `ArchiveScreen`,
@@ -89,15 +107,19 @@ dashboard tiles.
 
 ## Sources
 
-- `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` — the main history feed screen.
-- `app/src/main/java/com/example/healthjournal/ui/screens/AddEntryScreen.kt` — the entry create/edit/read-only screen with inline manual vitals.
+- `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` — the main history feed screen; its empty state names the active profile.
+- `app/src/main/java/com/example/healthjournal/ui/screens/AddEntryScreen.kt` — the entry create/edit/read-only screen with inline manual vitals; it captures the target profile when the form opens and confirms the target profile before Health Connect import.
+- `app/src/main/java/com/example/healthjournal/ui/screens/MeasurementsScreen.kt` — body measurements and goals screen; its empty state names the active profile.
 - `app/src/main/java/com/example/healthjournal/ui/components/JournalEntryItem.kt` — the entry card with vitals chips and the quick-add action.
 - `app/src/main/java/com/example/healthjournal/ui/components/VitalsEntrySheet.kt` — the card's vitals quick-add/edit sheet.
 - `app/src/main/java/com/example/healthjournal/ui/components/VitalsFieldsEditor.kt` — the shared manual-vitals fields.
 - `app/src/main/java/com/example/healthjournal/domain/ValidateVitals.kt` — vitals validation and display formatting.
 - `app/src/main/java/com/example/healthjournal/ui/screens/MainScreen.kt` — the dashboard screen and its branded top bar.
-- `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` — the workout hub, session screen, warm-up panel, summary, and manual-log dialog.
+- `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` — the workout hub, session screen, warm-up panel, summary, and manual-log dialog; switching is blocked while a session is live.
 - `app/src/main/java/com/example/healthjournal/ui/screens/PresetLibraryScreen.kt` — the preset library and warm-up editor.
+- `app/src/main/java/com/example/healthjournal/ui/screens/PersonalCardScreen.kt` — the personal card and its edit/switch guard.
+- `app/src/main/java/com/example/healthjournal/ui/screens/ExportScreen.kt` — export options including PDF active-profile selection; switching is blocked while an export generates.
+- `app/src/main/java/com/example/healthjournal/MainActivity.kt` — owns the profile switcher slot, switch navigation, and Manage Profiles route.
 - `app/src/main/java/com/example/healthjournal/ui/format/AndroidWarmupHistoryFormatter.kt` — resource-backed formatter for the persisted warm-up history line.
 - `app/src/main/java/com/example/healthjournal/ui/theme` — theme and color system sources.
 

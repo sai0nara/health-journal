@@ -55,7 +55,13 @@ import com.example.healthjournal.viewmodel.IJournalViewModel
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: IJournalViewModel, onBack: () -> Unit) {
+fun SettingsScreen(
+    viewModel: IJournalViewModel,
+    onBack: () -> Unit,
+    profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
+        { _, _ -> },
+    onSwitchProfile: (String) -> Unit = {}
+) {
     val context = LocalContext.current
     var unitSystem by remember { mutableStateOf(UnitSettings.read(context)) }
     var unitSystemExpanded by remember { mutableStateOf(false) }
@@ -81,7 +87,8 @@ fun SettingsScreen(viewModel: IJournalViewModel, onBack: () -> Unit) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back_label))
                     }
                 },
-                title = { Text(stringResource(R.string.settings_title)) }
+                title = { Text(stringResource(R.string.settings_title)) },
+                actions = { profileSwitcher(true, onSwitchProfile) }
             )
         }
     ) { innerPadding ->

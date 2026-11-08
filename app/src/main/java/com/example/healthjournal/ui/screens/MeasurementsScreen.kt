@@ -82,9 +82,13 @@ import kotlinx.coroutines.launch
 fun MeasurementsScreen(
     viewModel: BodyMeasurementViewModel,
     analyticsViewModel: BodyAnalyticsViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
+        { _, _ -> },
+    onSwitchProfile: (String) -> Unit = {}
 ) {
     val entries by viewModel.entries.collectAsState()
+    val activeProfile by viewModel.activeProfile.collectAsState()
     val analyticsState by analyticsViewModel.uiState.collectAsState()
     val measurementState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -141,11 +145,17 @@ fun MeasurementsScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
-                }
+                },
+                actions = { profileSwitcher(true, onSwitchProfile) }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showMeasurementSheet = true }) {
+            FloatingActionButton(
+                onClick = {
+                    viewModel.startCapture()
+                    showMeasurementSheet = true
+                }
+            ) {
                 Icon(
                     Icons.Default.Straighten,
                     contentDescription = stringResource(R.string.history_cd_add_measurements)
@@ -233,7 +243,9 @@ fun MeasurementsScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = stringResource(R.string.measurements_empty_title),
+                            text = activeProfile?.let {
+                                stringResource(R.string.measurements_empty_title_profile, it.name)
+                            } ?: stringResource(R.string.measurements_empty_title),
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.testTag("bm_empty_state")
                         )

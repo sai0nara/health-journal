@@ -112,4 +112,38 @@ class BodyAnalyticsViewModelTest {
         assertEquals(82.0, targets["WAIST"]!!, 0.001)
         assertEquals(75.0, targets["WEIGHT"]!!, 0.001)
     }
+
+    @Test
+    fun goalsAndSeries_reloadOnProfileSwitch_andClearOnlyActiveProfile() = runTest {
+        val activeProfile = com.example.healthjournal.data.FakeActiveProfileProvider("self")
+        val meEntries = listOf(
+            BodyMeasurementEntry(entry_id = "m-me", timestamp = 1_000L, weight_kg = 80.0, profileId = "self")
+        )
+        val sibEntries = listOf(
+            BodyMeasurementEntry(entry_id = "m-sib", timestamp = 2_000L, weight_kg = 60.0, profileId = "sibling")
+        )
+        val measurementDao = mockk<com.example.healthjournal.data.local.BodyMeasurementDao>(relaxed = true) {
+            every { getAllEntries("self") } returns kotlinx.coroutines.flow.flowOf(meEntries)
+            every { getAllEntries("sibling") } returns kotlinx.coroutines.flow.flowOf(sibEntries)
+        }
+        val meGoals = MutableStateFlow(listOf(GoalEntity("WEIGHT", 75.0, 1_000L, profileId = "self")))
+        val sibGoals = MutableStateFlow(listOf(GoalEntity("WEIGHT", 58.0, 2_000L, profileId = "sibling")))
+        val goalDao = mockk<com.example.healthjournal.data.local.GoalDao>(relaxed = true) {
+            every { observeAll("self") } returns meGoals
+            every { observeAll("sibling") } returns sibGoals
+        }
+        val measurementRepository = BodyMeasurementRepository(measurementDao, activeProfile)
+        val goalsRepository = GoalsRepository(goalDao, activeProfile)
+        val vm = BodyAnalyticsViewModel(measurementRepository, goalsRepository, testDispatcher)
+
+        assertEquals(75.0, vm.uiState.value.goalTargets["WEIGHT"]!!, 0.001)
+        assertEquals(listOf(1_000L to 80.0), vm.awaitSeries())
+
+        activeProfile.switchTo("sibling")
+        assertEquals(58.0, vm.uiState.value.goalTargets["WEIGHT"]!!, 0.001)
+
+        vm.clearGoal(MeasurementField.WEIGHT)
+        io.mockk.coVerify(exactly = 1) { goalDao.deleteById("sibling", "WEIGHT") }
+        io.mockk.coVerify(exactly = 0) { goalDao.deleteById("self", "WEIGHT") }
+    }
 }

@@ -43,4 +43,11 @@ class GoalSyncPayloadTest {
         // A missing goals cloud file downloads as null content.
         assertEquals(emptyList<GoalEntity>(), GoalSyncPayload.fromJson(null))
     }
+
+    @Test
+    fun payload_legacyMissingProfileId_normalizesToSelf() {
+        val json = """[{"parameterId":"WEIGHT","target":70.0,"lastModified":1000}]"""
+        val parsed = GoalSyncPayload.fromJson(json)
+        assertEquals("self", parsed.single().profileId)
+    }
 }

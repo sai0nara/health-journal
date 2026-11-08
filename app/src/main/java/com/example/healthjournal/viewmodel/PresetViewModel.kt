@@ -58,18 +58,23 @@ class PresetViewModel(
 
     /** Opens a blank create draft. */
     fun openCreate() {
-        _uiState.value = PresetUiState.Editing(presetId = null)
+        _uiState.value = PresetUiState.Editing(
+            presetId = null,
+            profileId = repository.currentProfileId()
+        )
     }
 
     /** Loads [presetId] into an edit draft; unknown ids fall back to the library. */
     fun openEdit(presetId: String) {
         viewModelScope.launch(dispatcher) {
-            val preset = repository.getPreset(presetId)
+            val profileId = repository.currentProfileId()
+            val preset = repository.getPreset(profileId, presetId)
             _uiState.value = if (preset == null) {
                 PresetUiState.Library
             } else {
                 PresetUiState.Editing(
                     presetId = preset.id,
+                    profileId = preset.profileId,
                     name = preset.name,
                     scheduledDay = runCatching { ScheduledDay.valueOf(preset.scheduledDay) }
                         .getOrDefault(ScheduledDay.ANY),
@@ -209,8 +214,11 @@ class PresetViewModel(
             )
             return
         }
+        _uiState.value = current.copy(isSaving = true)
         viewModelScope.launch(dispatcher) {
+            val targetProfileId = current.profileId ?: repository.currentProfileId()
             repository.savePreset(
+                targetProfileId,
                 WorkoutPreset(
                     id = current.presetId ?: UUID.randomUUID().toString(),
                     name = current.name.trim(),
@@ -225,7 +233,8 @@ class PresetViewModel(
                         durationMinutes!! * 60
                     } else {
                         null
-                    }
+                    },
+                    profileId = targetProfileId
                 )
             )
             _uiState.value = PresetUiState.Library

@@ -1,6 +1,7 @@
 package com.example.healthjournal.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.healthjournal.data.BodyMeasurementRepository
 import com.example.healthjournal.data.GoalsRepository
@@ -71,5 +72,18 @@ class BodyAnalyticsViewModel(
         viewModelScope.launch(ioDispatcher) {
             goalsRepository.clearGoal(field.name)
         }
+    }
+}
+
+class BodyAnalyticsViewModelFactory(
+    private val repository: BodyMeasurementRepository,
+    private val goalsRepository: GoalsRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(BodyAnalyticsViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return BodyAnalyticsViewModel(repository, goalsRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

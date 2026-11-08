@@ -15,7 +15,10 @@ import java.util.UUID
  */
 @Entity(
     tableName = "workout_presets",
-    indices = [Index(value = ["name"])]
+    indices = [
+        Index(value = ["profileId", "name"]),
+        Index(value = ["profileId", "lastModified"])
+    ]
 )
 data class WorkoutPreset(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
@@ -25,5 +28,6 @@ data class WorkoutPreset(
     /** Optional single timed warm-up; null means the routine starts at work sets. */
     val warmupName: String? = null,
     val warmupDurationSeconds: Int? = null,
-    val lastModified: Long = System.currentTimeMillis()
+    val lastModified: Long = System.currentTimeMillis(),
+    val profileId: String = SELF_PROFILE_ID
 )

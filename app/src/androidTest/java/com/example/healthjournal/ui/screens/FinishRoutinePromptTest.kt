@@ -32,6 +32,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import com.example.healthjournal.util.FakeActiveProfileProvider
 
 /**
  * Compose UI tests for the end-of-routine confirmation: the dialog appears
@@ -82,10 +83,10 @@ class FinishRoutinePromptTest {
             catalogDao.insertAll(listOf(squat))
         }
         viewModel = WorkoutViewModel(
-            repository = WorkoutRepository(dao),
+            repository = WorkoutRepository(dao, FakeActiveProfileProvider()),
             healthSource = FakeWorkoutHealthDataSource(),
             journalRepository = journalRepository,
-            presetRepository = PresetRepository(presetDao),
+            presetRepository = PresetRepository(presetDao, FakeActiveProfileProvider()),
             catalogDao = catalogDao
         )
     }

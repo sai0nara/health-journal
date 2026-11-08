@@ -3,7 +3,7 @@
 > How this repo reads wearable health metrics (steps, heart rate, sleep) from
 > Android Health Connect and writes completed workouts as exercise records.
 
-Last updated: 2026-10-29
+Last updated: 2026-11-06
 
 ## Opt-in gate
 
@@ -22,7 +22,11 @@ Entry vitals are not a separate Health Connect-owned store: the entry UI keeps o
 draft seeded from the stored entry, and an import overwrites only blood pressure,
 heart rate, and sleep. Manually typed blood glucose, body temperature, and SpO2
 survive the import, and a later manual save replaces the imported BP/HR values in
-the same columns (see [[ui-layer]] and [[data-layer]]).
+the same columns (see [[ui-layer]] and [[data-layer]]). Before reading from Health
+Connect, `AddEntryScreen` shows a confirmation dialog naming the entry's captured
+profile and passes that `targetProfileId` to `JournalViewModel.syncHealthData` so
+a profile switch while the dialog is open cannot redirect imported metrics to
+another profile.
 
 ## Relationship to Android Health Connect
 
