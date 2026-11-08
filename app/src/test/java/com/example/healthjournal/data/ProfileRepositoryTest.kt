@@ -191,6 +191,34 @@ class ProfileRepositoryTest {
     }
 
     @Test
+    fun deletePermanently_allowsDeletingArchivedSelfWhenAnotherActiveExists() = runTest {
+        repository.ensureSelfProfile()
+        val sibling = repository.create("Alex", ProfileRelationship.SIBLING, null).getOrThrow()
+        repository.archive(SELF_PROFILE_ID)
+
+        val result = repository.deletePermanently(SELF_PROFILE_ID, "Me")
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf(SELF_PROFILE_ID), eraser.erased)
+        assertEquals(null, dao.get(SELF_PROFILE_ID))
+        assertEquals(1, dao.countActive())
+    }
+
+    @Test
+    fun deletePermanently_isIdempotent() = runTest {
+        repository.ensureSelfProfile()
+        val profile = repository.create("Alex", ProfileRelationship.SIBLING, null).getOrThrow()
+        repository.archive(profile.id)
+
+        val first = repository.deletePermanently(profile.id, "Alex")
+        val second = repository.deletePermanently(profile.id, "Alex")
+
+        assertTrue(first.isSuccess)
+        assertEquals(ProfileError.NotFound, second.exceptionOrNull())
+        assertEquals(listOf(profile.id), eraser.erased)
+    }
+
+    @Test
     fun switchTo_rejectsArchivedProfile() = runTest {
         repository.ensureSelfProfile()
         val profile = repository.create("Alex", ProfileRelationship.SIBLING, null).getOrThrow()
