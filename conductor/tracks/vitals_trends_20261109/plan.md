@@ -5,14 +5,14 @@
     - [x] Write failing unit tests for vitals queries in `JournalRepositoryTest.kt`
     - [x] Implement `getVitalsEntriesByProfile(profileId)` in `JournalDao.kt` and `JournalRepository.kt`
     - [x] Confirm tests pass and refactor
-- [ ] Task: Implement `VitalsViewModel` state pipeline & statistics computation
-    - [ ] Write failing unit tests in `VitalsViewModelTest.kt` (tab switching, 7D/30D/90D/1Y/All filtering, mean/min/max statistics, same-day aggregation decimation)
-    - [ ] Implement `VitalsViewModel.kt` combining profile, unit system, and repository flows into `StateFlow<VitalsUiState>`
-    - [ ] Confirm tests pass and refactor
-- [ ] Task: Implement quick-log save & deletion/undo logic in ViewModel
-    - [ ] Write failing unit tests for `logVital(entry)` and `deleteVital(id)` with undo restoration
-    - [ ] Implement quick-log save and undo lifecycle in `VitalsViewModel.kt`
-    - [ ] Confirm tests pass and refactor
+- [x] Task: Implement `VitalsViewModel` state pipeline & statistics computation f49d698
+    - [x] Write failing unit tests in `VitalsViewModelTest.kt` (tab switching, 7D/30D/90D/1Y/All filtering, mean/min/max statistics, same-day aggregation decimation)
+    - [x] Implement `VitalsViewModel.kt` combining profile, unit system, and repository flows into `StateFlow<VitalsUiState>`
+    - [x] Confirm tests pass and refactor
+- [x] Task: Implement quick-log save & deletion/undo logic in ViewModel f49d698
+    - [x] Write failing unit tests for `logVital(entry)` and `deleteVital(id)` with undo restoration
+    - [x] Implement quick-log save and undo lifecycle in `VitalsViewModel.kt`
+    - [x] Confirm tests pass and refactor
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Domain, Data Access & ViewModel' (Protocol in workflow.md)
 
 ## Phase 2: Canvas Trend Chart Component
