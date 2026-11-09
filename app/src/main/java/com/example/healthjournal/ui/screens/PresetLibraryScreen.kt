@@ -294,41 +294,57 @@ private fun EditingContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        OutlinedTextField(
-            value = state.name,
-            onValueChange = onUpdateName,
-            label = { Text(stringResource(R.string.preset_name_label)) },
-            supportingText = state.nameError?.let { { Text(it) } },
-            isError = state.nameError != null,
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("preset_name_field")
-        )
-        DayDropdown(
-            selectedDay = state.scheduledDay,
-            onSelect = onUpdateDay
-        )
-        WarmupSection(
-            state = state,
-            onToggle = onToggleWarmup,
-            onUpdateName = onUpdateWarmupName,
-            onUpdateDuration = onUpdateWarmupDuration
-        )
-        if (state.exerciseError != null) {
-            Text(state.exerciseError!!, color = MaterialTheme.colorScheme.error)
-        }
-        Text(stringResource(R.string.preset_exercises_title), style = MaterialTheme.typography.titleSmall)
-        ExerciseSearchDropdown(
-            catalog = catalog,
-            onAddExercise = onAddExercise
-        )
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
+                .fillMaxWidth()
                 .testTag("preset_draft_list"),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item(key = "header_name") {
+                OutlinedTextField(
+                    value = state.name,
+                    onValueChange = onUpdateName,
+                    label = { Text(stringResource(R.string.preset_name_label)) },
+                    supportingText = state.nameError?.let { { Text(it) } },
+                    isError = state.nameError != null,
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("preset_name_field")
+                )
+            }
+            item(key = "header_day") {
+                DayDropdown(
+                    selectedDay = state.scheduledDay,
+                    onSelect = onUpdateDay
+                )
+            }
+            item(key = "header_warmup") {
+                WarmupSection(
+                    state = state,
+                    onToggle = onToggleWarmup,
+                    onUpdateName = onUpdateWarmupName,
+                    onUpdateDuration = onUpdateWarmupDuration
+                )
+            }
+            if (state.exerciseError != null) {
+                item(key = "header_exercise_error") {
+                    Text(state.exerciseError!!, color = MaterialTheme.colorScheme.error)
+                }
+            }
+            item(key = "header_search") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.preset_exercises_title),
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    ExerciseSearchDropdown(
+                        catalog = catalog,
+                        onAddExercise = onAddExercise
+                    )
+                }
+            }
             itemsIndexed(state.exercises, key = { idx, _ -> idx }) { idx, exercise ->
                 DraftExerciseRow(
                     exercise = exercise,

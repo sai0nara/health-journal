@@ -574,6 +574,36 @@ class PresetLibraryScreenTest {
             )
         }
     }
+
+    @Test
+    fun presetEditor_scrollingMovesWarmupOffScreen_andKeepsSaveButtonPinned() {
+        openScreen()
+        composeTestRule.onNodeWithText("Create Preset", useUnmergedTree = true).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("preset_name_field").performTextInput("Full Body Routine")
+        composeTestRule.onNodeWithTag("preset_warmup_toggle").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("preset_warmup_name").performTextInput("Warmup Jog")
+
+        // Add 5 exercises
+        repeat(5) {
+            composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Bench")
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithText("Bench Press").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        // Before scrolling: warm-up toggle and name are visible
+        composeTestRule.onNodeWithTag("preset_warmup_name").assertIsDisplayed()
+
+        // Scroll to the bottom of the draft list
+        composeTestRule.onNodeWithTag("preset_draft_list")
+            .performScrollToNode(hasText("Bench Press"))
+
+        // Pinned save button must remain visible at the bottom
+        composeTestRule.onNodeWithTag("save_preset_button").assertIsDisplayed()
+    }
 }
 
 class PresetProfileSwitchTest {

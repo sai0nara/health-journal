@@ -348,34 +348,12 @@ private fun IdleContent(
             .testTag("workout_catalog")
     ) {
         item {
-            Text(stringResource(R.string.workout_choose), style = MaterialTheme.typography.titleMedium)
-        }
-        items(WorkoutType.entries) { type ->
-            OutlinedButton(
-                onClick = { onSelectType(type) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(type.labelRes))
-            }
-        }
-        item {
-            Button(
-                onClick = onPresetsClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("presets_entry")
-            ) {
-                Text(stringResource(R.string.workout_presets))
-            }
+            Text(
+                stringResource(R.string.workout_routines),
+                style = MaterialTheme.typography.titleMedium
+            )
         }
         if (presets.isNotEmpty()) {
-            item {
-                Text(
-                    stringResource(R.string.workout_routines),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
             items(presets, key = { it.id }) { preset ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -399,6 +377,31 @@ private fun IdleContent(
                         }
                     }
                 }
+            }
+        }
+        item {
+            Button(
+                onClick = onPresetsClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("presets_entry")
+            ) {
+                Text(stringResource(R.string.workout_presets))
+            }
+        }
+        item {
+            Text(
+                stringResource(R.string.workout_choose),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+        items(WorkoutType.entries) { type ->
+            OutlinedButton(
+                onClick = { onSelectType(type) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(type.labelRes))
             }
         }
         if (recentLabels.isNotEmpty()) {
