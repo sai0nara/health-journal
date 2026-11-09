@@ -549,5 +549,11 @@
     <string name="main_tile_archive">Архив</string>
     <string name="main_tile_export">Экспорт данных</string>
     <string name="main_tile_personal_card">Личная карточка</string>
+    <string name="main_tile_vitals">Показатели</string>
     <string name="main_tile_settings">Настройки</string>
+
+    <!-- Vitals & Trends -->
+    <string name="vitals_chart_empty">Нет записей за этот период</string>
+    <string name="vitals_chart_content_description">График динамики: %1$s, точек: %2$d</string>
+    <string name="vitals_chart_daily_mean">Среднесуточное (N=%1$d, диапазон: %2$s - %3$s)</string>
 </resources>

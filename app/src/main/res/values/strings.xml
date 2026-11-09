@@ -546,5 +546,11 @@
     <string name="main_tile_archive">Archive</string>
     <string name="main_tile_export">Export Data</string>
     <string name="main_tile_personal_card">Personal Card</string>
+    <string name="main_tile_vitals">Vitals</string>
     <string name="main_tile_settings">Settings</string>
+
+    <!-- Vitals & Trends -->
+    <string name="vitals_chart_empty">No readings recorded in this window</string>
+    <string name="vitals_chart_content_description">%1$s trend chart, %2$d data points</string>
+    <string name="vitals_chart_daily_mean">Daily Mean (N=%1$d, range: %2$s - %3$s)</string>
 </resources>

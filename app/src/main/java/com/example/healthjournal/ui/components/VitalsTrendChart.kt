@@ -1,8 +1,5 @@
 package com.example.healthjournal.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -34,7 +31,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -43,12 +39,19 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.healthjournal.R
 import com.example.healthjournal.data.local.UnitSystem
+import com.example.healthjournal.ui.theme.ColorTransparent
+import com.example.healthjournal.ui.theme.VitalsDiastolicColor
+import com.example.healthjournal.ui.theme.VitalsReferenceBandColor
+import com.example.healthjournal.ui.theme.VitalsReferenceLineColor
+import com.example.healthjournal.ui.theme.VitalsSystolicColor
 import com.example.healthjournal.viewmodel.VitalMetricTab
 import com.example.healthjournal.viewmodel.VitalPoint
 import com.example.healthjournal.viewmodel.VitalsTimeWindow
@@ -59,11 +62,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 import kotlin.math.roundToInt
-
-private val SystolicColor = Color(0xFFE57373)
-private val DiastolicColor = Color(0xFF4DB6AC)
-private val ReferenceLineColor = Color(0xFF9E9E9E)
-private val ReferenceBandColor = Color(0xFF4CAF50).copy(alpha = 0.08f)
 
 @Composable
 fun VitalsTrendChart(
@@ -82,7 +80,7 @@ fun VitalsTrendChart(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "No readings recorded in this window",
+                text = stringResource(R.string.vitals_chart_empty),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -109,13 +107,19 @@ fun VitalsTrendChart(
         getReferenceLines(metric, unitSystem)
     }
 
+    val chartCd = stringResource(
+        R.string.vitals_chart_content_description,
+        metric.label,
+        points.size
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(220.dp)
             .testTag("vitals_trend_chart")
             .semantics {
-                contentDescription = "${metric.label} trend chart, ${points.size} data points"
+                contentDescription = chartCd
             }
             .pointerInput(sortedPoints) {
                 detectTapGestures(
@@ -131,7 +135,7 @@ fun VitalsTrendChart(
                         change.consume()
                         touchX = change.position.x
                     },
-                    onDragEnd = { /* Keep last touched point visible or let tap reset */ },
+                    onDragEnd = { },
                     onDragCancel = { }
                 )
             }
@@ -188,7 +192,7 @@ fun VitalsTrendChart(
                 val bottomY = yFor(bandMin)
                 val height = abs(bottomY - topY)
                 drawRect(
-                    color = ReferenceBandColor,
+                    color = VitalsReferenceBandColor,
                     topLeft = Offset(horizontalPad, topY),
                     size = Size(drawableWidth, height)
                 )
@@ -198,7 +202,7 @@ fun VitalsTrendChart(
             referenceLines.forEach { refVal ->
                 val refY = yFor(refVal)
                 drawLine(
-                    color = ReferenceLineColor.copy(alpha = 0.5f),
+                    color = VitalsReferenceLineColor.copy(alpha = 0.5f),
                     start = Offset(horizontalPad, refY),
                     end = Offset(size.width - horizontalPad, refY),
                     strokeWidth = 2f,
@@ -238,11 +242,11 @@ fun VitalsTrendChart(
                         moveTo(primaryOffsets.first().x, primaryOffsets.first().y)
                         primaryOffsets.drop(1).forEach { lineTo(it.x, it.y) }
                     }
-                    drawPath(sysPath, color = SystolicColor, style = Stroke(width = 6f))
+                    drawPath(sysPath, color = VitalsSystolicColor, style = Stroke(width = 6f))
                 }
                 primaryOffsets.forEach {
                     drawCircle(color = surfaceColor, radius = 7f, center = it)
-                    drawCircle(color = SystolicColor, radius = 5f, center = it)
+                    drawCircle(color = VitalsSystolicColor, radius = 5f, center = it)
                 }
 
                 // Diastolic line
@@ -251,11 +255,11 @@ fun VitalsTrendChart(
                         moveTo(secondaryOffsets.first().x, secondaryOffsets.first().y)
                         secondaryOffsets.drop(1).forEach { lineTo(it.x, it.y) }
                     }
-                    drawPath(diaPath, color = DiastolicColor, style = Stroke(width = 6f))
+                    drawPath(diaPath, color = VitalsDiastolicColor, style = Stroke(width = 6f))
                 }
                 secondaryOffsets.forEach {
                     drawCircle(color = surfaceColor, radius = 7f, center = it)
-                    drawCircle(color = DiastolicColor, radius = 5f, center = it)
+                    drawCircle(color = VitalsDiastolicColor, radius = 5f, center = it)
                 }
             } else {
                 // Single-value metric curve with gradient fill
@@ -270,7 +274,7 @@ fun VitalsTrendChart(
                     drawPath(
                         fillPath,
                         brush = Brush.verticalGradient(
-                            colors = listOf(primaryColor.copy(alpha = 0.22f), Color.Transparent),
+                            colors = listOf(primaryColor.copy(alpha = 0.22f), ColorTransparent),
                             startY = verticalPad,
                             endY = size.height - verticalPad
                         )
@@ -303,7 +307,7 @@ fun VitalsTrendChart(
 
                     // Target highlight circles
                     drawCircle(
-                        color = if (metric == VitalMetricTab.BLOOD_PRESSURE) SystolicColor else primaryColor,
+                        color = if (metric == VitalMetricTab.BLOOD_PRESSURE) VitalsSystolicColor else primaryColor,
                         radius = 11f,
                         center = primaryOffsets[idx],
                         style = Stroke(width = 3f)
@@ -311,7 +315,7 @@ fun VitalsTrendChart(
 
                     if (metric == VitalMetricTab.BLOOD_PRESSURE && idx in secondaryOffsets.indices) {
                         drawCircle(
-                            color = DiastolicColor,
+                            color = VitalsDiastolicColor,
                             radius = 11f,
                             center = secondaryOffsets[idx],
                             style = Stroke(width = 3f)
@@ -348,11 +352,11 @@ fun VitalsTrendChart(
                     modifier = Modifier
                         .size(8.dp)
                         .clip(CircleShape)
-                        .background(SystolicColor)
+                        .background(VitalsSystolicColor)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Systolic",
+                    text = stringResource(R.string.vitals_field_systolic),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -361,11 +365,11 @@ fun VitalsTrendChart(
                     modifier = Modifier
                         .size(8.dp)
                         .clip(CircleShape)
-                        .background(DiastolicColor)
+                        .background(VitalsDiastolicColor)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Diastolic",
+                    text = stringResource(R.string.vitals_field_diastolic),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -432,7 +436,12 @@ private fun ChartTooltip(
                 val minStr = point.min?.let { formatOneDec(it) } ?: "--"
                 val maxStr = point.max?.let { formatOneDec(it) } ?: "--"
                 Text(
-                    text = "Daily Mean (N=${point.count}, range: $minStr - $maxStr)",
+                    text = stringResource(
+                        R.string.vitals_chart_daily_mean,
+                        point.count,
+                        minStr,
+                        maxStr
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 10.sp
