@@ -12,10 +12,10 @@
 
 ## Phase 1: Test & Documentation Alignment
 
-- [ ] Task: Update PSD and Tests documentation
-    - [ ] Update `Docs/psd/workout-presets.md` with top-placed Routines section in `IdleContent`
-    - [ ] Update `Docs/tests/workout-presets.md` with new test case for top routine placement
-- [ ] Task: Write failing Compose UI test in `WorkoutScreenTest.kt`
+- [x] Task: Update PSD and Tests documentation (86305c7)
+    - [x] Update `Docs/psd/workout-presets.md` with top-placed Routines section in `IdleContent`
+    - [x] Update `Docs/tests/workout-presets.md` with new test case for top routine placement
+- [~] Task: Write failing Compose UI test in `WorkoutScreenTest.kt`
     - [ ] Add test verifying that in idle state with saved presets, routine cards and presets button appear at the top without scrolling past generic activity buttons
     - [ ] Run test and confirm expected failure against current bottom placement
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Test & Documentation Alignment' (Protocol in workflow.md)
