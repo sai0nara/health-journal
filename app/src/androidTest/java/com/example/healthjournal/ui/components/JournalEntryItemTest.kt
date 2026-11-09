@@ -191,4 +191,80 @@ class JournalEntryItemTest {
         composeTestRule.onNodeWithTag("entry_vitals_bp").assertIsDisplayed()
         composeTestRule.onNodeWithTag("entry_vitals_action").assertDoesNotExist()
     }
+
+    @Test
+    fun entryItem_nonArchived_longPressOpensArchiveMenu() {
+        var archived = false
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                JournalEntryItem(
+                    entry = JournalEntry(entry_id = "test_item", description = "Card with menu"),
+                    onClick = {},
+                    onPhotoClick = {},
+                    onArchiveClick = { archived = true }
+                )
+            }
+        }
+
+        // Long press card
+        composeTestRule.onNodeWithText("Card with menu").performTouchInput { longClick() }
+        composeTestRule.waitForIdle()
+
+        // Menu should display Archive item
+        composeTestRule.onNodeWithText("Archive").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Archive").performClick()
+        assertEquals(true, archived)
+    }
+
+    @Test
+    fun entryItem_nonArchived_customAccessibilityActionArchives() {
+        var archived = false
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                JournalEntryItem(
+                    entry = JournalEntry(entry_id = "test_item", description = "Card for TalkBack"),
+                    onClick = {},
+                    onPhotoClick = {},
+                    onArchiveClick = { archived = true }
+                )
+            }
+        }
+
+        val cardNode = composeTestRule.onNodeWithText("Card for TalkBack")
+        val config = cardNode.fetchSemanticsNode().config
+        val customActions: List<androidx.compose.ui.semantics.CustomAccessibilityAction>? =
+            config.getOrElseNullable(androidx.compose.ui.semantics.SemanticsActions.CustomActions) { null }
+        val archiveAction = customActions?.firstOrNull { it.label == "Archive" }
+        org.junit.Assert.assertNotNull(archiveAction)
+        archiveAction?.action?.invoke()
+        assertEquals(true, archived)
+    }
+
+    @Test
+    fun entryItem_archived_noArchiveMenuOrAction() {
+        var archived = false
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                JournalEntryItem(
+                    entry = JournalEntry(entry_id = "test_item", description = "Archived Card", isArchived = true),
+                    onClick = {},
+                    onPhotoClick = {},
+                    onArchiveClick = { archived = true }
+                )
+            }
+        }
+
+        // Long click should not show Archive menu
+        composeTestRule.onNodeWithText("Archived Card").performTouchInput { longClick() }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Archive").assertDoesNotExist()
+
+        // Accessibility action should not exist
+        val cardNode = composeTestRule.onNodeWithText("Archived Card")
+        val config = cardNode.fetchSemanticsNode().config
+        val customActions: List<androidx.compose.ui.semantics.CustomAccessibilityAction>? =
+            config.getOrElseNullable(androidx.compose.ui.semantics.SemanticsActions.CustomActions) { null }
+        val archiveAction = customActions?.firstOrNull { it.label == "Archive" }
+        org.junit.Assert.assertNull(archiveAction)
+    }
 }

@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,196 +47,241 @@ fun JournalEntryItem(
     onClick: () -> Unit,
     onPhotoClick: (String) -> Unit,
     onLongClick: (() -> Unit)? = null,
+    onArchiveClick: (() -> Unit)? = null,
     tags: List<String> = emptyList(),
     onTagClick: (String) -> Unit = {},
     unitSystem: UnitSystem = UnitSystem.METRIC,
     onVitalsClick: (JournalEntry) -> Unit = {}
 ) {
     var isExpanded by remember { mutableStateOf(false) }
+    var showContextMenu by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (onLongClick != null) {
-                    Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
-                } else {
-                    Modifier.clickable(onClick = onClick)
+    val archiveLabel = stringResource(R.string.history_archive_label)
+    val isNonArchived = entry.isArchived != true
+    val effectiveLongClick = if (onLongClick != null) {
+        onLongClick
+    } else if (isNonArchived && onArchiveClick != null) {
+        { showContextMenu = true }
+    } else {
+        null
+    }
+
+    Box {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics {
+                    if (isNonArchived && onArchiveClick != null) {
+                        customActions = listOf(
+                            androidx.compose.ui.semantics.CustomAccessibilityAction(archiveLabel) {
+                                onArchiveClick()
+                                true
+                            }
+                        )
+                    }
                 }
-            ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .then(
+                    if (effectiveLongClick != null) {
+                        Modifier.combinedClickable(onClick = onClick, onLongClick = effectiveLongClick)
+                    } else {
+                        Modifier.clickable(onClick = onClick)
+                    }
+                ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(Date(entry.timestamp)),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Light
-                    )
-                    if (entry.lastModified > entry.timestamp + 60000) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = stringResource(R.string.entry_edited),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.ExtraLight,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    val richTextState = rememberRichTextState()
-                    LaunchedEffect(entry.description) {
-                        richTextState.setHtml(entry.description)
-                    }
-                    RichText(
-                        state = richTextState,
-                        modifier = Modifier.fillMaxWidth(),
-                        style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
-                        maxLines = if (isExpanded) Int.MAX_VALUE else 3
-                    )
-                }
-
-                // Show More / Show Less interaction point
-                // Note: In a real app, we'd detect if truncation actually happened.
-                // For this track, we'll provide the interaction point as requested.
-                if (entry.description.length > 100) { // Simple heuristic
-                    TextButton(
-                        onClick = { isExpanded = !isExpanded },
-                        contentPadding = PaddingValues(0.dp),
-                        modifier = Modifier.height(32.dp).testTag("show_more_button")
-                    ) {
-                        Text(
-                            text = if (isExpanded) stringResource(R.string.entry_show_less) else stringResource(R.string.entry_show_more),
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        Icon(
-                            imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-                
-                if (tags.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .testTag("entry_tag_row")
-                    ) {
-                        tags.forEach { tag ->
-                            FilterChip(
-                                selected = false,
-                                onClick = { onTagClick(tag) },
-                                label = {
-                                    Text(
-                                        "#${tagDisplayName(tag)}",
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                },
-                                modifier = Modifier.testTag("entry_tag_$tag")
-                            )
-                        }
-                    }
-                }
-
-                if (!entry.photo_urls.isNullOrEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    androidx.compose.foundation.lazy.LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxWidth().testTag("photo_thumbnails")
-                    ) {
-                        items(entry.photo_urls!!.size) { index ->
-                            val photoUrl = entry.photo_urls!![index]
-                            AsyncImage(
-                                model = photoUrl,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(MaterialTheme.shapes.extraSmall)
-                                    .clickable { onPhotoClick(photoUrl) },
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                    }
-                }
-
-                if (entry.attachments?.isNotEmpty() == true) {
-                    Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Description, 
-                            contentDescription = null, 
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = pluralStringResource(R.plurals.entry_attachments_format, entry.attachments?.size ?: 0, entry.attachments?.size ?: 0),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary
+                            text = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(Date(entry.timestamp)),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Light
+                        )
+                        if (entry.lastModified > entry.timestamp + 60000) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.entry_edited),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraLight,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        val richTextState = rememberRichTextState()
+                        LaunchedEffect(entry.description) {
+                            richTextState.setHtml(entry.description)
+                        }
+                        RichText(
+                            state = richTextState,
+                            modifier = Modifier.fillMaxWidth(),
+                            style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                            maxLines = if (isExpanded) Int.MAX_VALUE else 3
                         )
                     }
-                }
 
-                if (entry.hasAnyVitals()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    VitalsChipRow(entry = entry, unitSystem = unitSystem)
-                }
+                    // Show More / Show Less interaction point
+                    // Note: In a real app, we'd detect if truncation actually happened.
+                    // For this track, we'll provide the interaction point as requested.
+                    if (entry.description.length > 100) { // Simple heuristic
+                        TextButton(
+                            onClick = { isExpanded = !isExpanded },
+                            contentPadding = PaddingValues(0.dp),
+                            modifier = Modifier.height(32.dp).testTag("show_more_button")
+                        ) {
+                            Text(
+                                text = if (isExpanded) stringResource(R.string.entry_show_less) else stringResource(R.string.entry_show_more),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Icon(
+                                imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                    
+                    if (tags.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .testTag("entry_tag_row")
+                        ) {
+                            tags.forEach { tag ->
+                                FilterChip(
+                                    selected = false,
+                                    onClick = { onTagClick(tag) },
+                                    label = {
+                                        Text(
+                                            "#${tagDisplayName(tag)}",
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    },
+                                    modifier = Modifier.testTag("entry_tag_$tag")
+                                )
+                            }
+                        }
+                    }
 
-                if (entry.isArchived != true) {
-                    TextButton(
-                        onClick = { onVitalsClick(entry) },
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
-                        modifier = Modifier
-                            .height(32.dp)
-                            .testTag("entry_vitals_action")
-                    ) {
-                        Icon(
-                            imageVector = if (entry.hasEditableVitals()) {
-                                Icons.Default.Edit
-                            } else {
-                                Icons.Default.Add
-                            },
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(
-                                if (entry.hasEditableVitals()) {
-                                    R.string.entry_vitals_action_edit
+                    if (!entry.photo_urls.isNullOrEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        androidx.compose.foundation.lazy.LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.fillMaxWidth().testTag("photo_thumbnails")
+                        ) {
+                            items(entry.photo_urls!!.size) { index ->
+                                val photoUrl = entry.photo_urls!![index]
+                                AsyncImage(
+                                    model = photoUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(80.dp)
+                                        .clip(MaterialTheme.shapes.extraSmall)
+                                        .clickable { onPhotoClick(photoUrl) },
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
+
+                    if (entry.attachments?.isNotEmpty() == true) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Description, 
+                                contentDescription = null, 
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = pluralStringResource(R.plurals.entry_attachments_format, entry.attachments?.size ?: 0, entry.attachments?.size ?: 0),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                    }
+
+                    if (entry.hasAnyVitals()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        VitalsChipRow(entry = entry, unitSystem = unitSystem)
+                    }
+
+                    if (entry.isArchived != true) {
+                        TextButton(
+                            onClick = { onVitalsClick(entry) },
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                            modifier = Modifier
+                                .height(32.dp)
+                                .testTag("entry_vitals_action")
+                        ) {
+                            Icon(
+                                imageVector = if (entry.hasEditableVitals()) {
+                                    Icons.Default.Edit
                                 } else {
-                                    R.string.entry_vitals_action_add
-                                }
-                            ),
-                            style = MaterialTheme.typography.labelMedium
-                        )
+                                    Icons.Default.Add
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = stringResource(
+                                    if (entry.hasEditableVitals()) {
+                                        R.string.entry_vitals_action_edit
+                                    } else {
+                                        R.string.entry_vitals_action_add
+                                    }
+                                ),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
                     }
+                }
+                
+                if (entry.isSynced == true) {
+                    Icon(
+                        Icons.Default.CloudDone,
+                        contentDescription = stringResource(R.string.common_cd_synced),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.CloudSync,
+                        contentDescription = stringResource(R.string.common_cd_local),
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
-            
-            if (entry.isSynced == true) {
-                Icon(
-                    Icons.Default.CloudDone,
-                    contentDescription = stringResource(R.string.common_cd_synced),
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            } else {
-                Icon(
-                    Icons.Default.CloudSync,
-                    contentDescription = stringResource(R.string.common_cd_local),
-                    tint = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.size(20.dp)
+        }
+
+        if (isNonArchived && onArchiveClick != null) {
+            DropdownMenu(
+                expanded = showContextMenu,
+                onDismissRequest = { showContextMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text(archiveLabel) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Archive,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        showContextMenu = false
+                        onArchiveClick()
+                    }
                 )
             }
         }

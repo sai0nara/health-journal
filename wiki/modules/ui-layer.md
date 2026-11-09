@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-11-06
+Last updated: 2026-11-09
 
 ## What lives here
 
@@ -97,7 +97,10 @@ The dashboard (`MainScreen`) top app bar carries the bundled app logo
 (`app/src/main/res/drawable-nodpi/app_logo.png`) next to the title; the same artwork
 backs the launcher icon via the `mipmap-*` resources. The History top bar is back
 arrow, title, and the actions-only overflow — destination shortcuts live on the
-dashboard tiles.
+dashboard tiles. Non-archived History cards use a custom `SwipeToArchiveWrapper`
+backed by `SwipeArchivePolicy` (50% width threshold, horizontal axis lock, scroll
+guard, armed haptic/visual state) alongside a card long-press `"Archive"` menu item,
+a TalkBack custom accessibility action, and a long/indefinite Undo snackbar.
 
 ## Cross-references
 
@@ -107,7 +110,8 @@ dashboard tiles.
 
 ## Sources
 
-- `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` — the main history feed screen; its empty state names the active profile.
+- `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` — the main history feed screen and `SwipeToArchiveWrapper`; its empty state names the active profile.
+- `app/src/main/java/com/example/healthjournal/domain/SwipeArchivePolicy.kt` — pure swipe-to-archive threshold, release, and axis-lock policy.
 - `app/src/main/java/com/example/healthjournal/ui/screens/AddEntryScreen.kt` — the entry create/edit/read-only screen with inline manual vitals; it captures the target profile when the form opens and confirms the target profile before Health Connect import.
 - `app/src/main/java/com/example/healthjournal/ui/screens/MeasurementsScreen.kt` — body measurements and goals screen; its empty state names the active profile.
 - `app/src/main/java/com/example/healthjournal/ui/components/JournalEntryItem.kt` — the entry card with vitals chips and the quick-add action.

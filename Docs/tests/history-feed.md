@@ -4,7 +4,7 @@
 > coverage, including the swipe-archive/undo interaction, batch operations,
 > and the trimmed top bar.
 
-Last updated: 2026-10-29
+Last updated: 2026-11-09
 
 ## Automated coverage
 
@@ -46,6 +46,7 @@ Last updated: 2026-10-29
 
 - `Docs/prd/history-feed.md` — requirements under test.
 - `Docs/psd/history-feed.md` — design the cases verify.
+- `Docs/tests/swipe-to-archive-safety.md` — swipe-to-archive gesture safety and fallback test suite.
 - `Docs/prd/photos-media.md` — file-cleanup coverage.
 - [[unit-tests]] / [[instrumented]] — test stacks.
 
