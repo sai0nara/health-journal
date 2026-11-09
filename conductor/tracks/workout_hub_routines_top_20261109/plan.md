@@ -18,15 +18,15 @@
 - [x] Task: Write failing Compose UI test in `WorkoutScreenTest.kt` (20afe76)
     - [x] Add test verifying that in idle state with saved presets, routine cards and presets button appear at the top without scrolling past generic activity buttons
     - [x] Run test and confirm expected failure against current bottom placement
-- [~] Task: Conductor - User Manual Verification 'Phase 1: Test & Documentation Alignment' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Test & Documentation Alignment' (Protocol in workflow.md)
 
-## Phase 2: Implementation & Verification
+## Phase 2: Implementation & Verification [checkpoint: fb387a5]
 
-- [ ] Task: Reorder sections in `IdleContent` in `WorkoutScreen.kt`
-    - [ ] Move Routines header, routine cards, and `presets_entry` button above the "Choose a workout" header and generic type buttons
-    - [ ] Verify both empty-presets and with-presets states render correctly
-    - [ ] Run `WorkoutScreenTest` and verify all tests pass
-- [ ] Task: Run JVM unit tests and wiki lint
-    - [ ] Run `./gradlew :app:testDebugUnitTest`
-    - [ ] Run `python3 wiki/lint.py` and confirm 0 errors
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Implementation & Verification' (Protocol in workflow.md)
+- [x] Task: Reorder sections in `IdleContent` in `WorkoutScreen.kt` (fb387a5)
+    - [x] Move Routines header, routine cards, and `presets_entry` button above the "Choose a workout" header and generic type buttons
+    - [x] Verify both empty-presets and with-presets states render correctly
+    - [x] Run `WorkoutScreenTest` and verify all tests pass
+- [x] Task: Run JVM unit tests and wiki lint (fb387a5)
+    - [x] Run `./gradlew :app:testDebugUnitTest`
+    - [x] Run `python3 wiki/lint.py` and confirm 0 errors
+- [~] Task: Conductor - User Manual Verification 'Phase 2: Implementation & Verification' (Protocol in workflow.md)
