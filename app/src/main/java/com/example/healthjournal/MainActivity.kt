@@ -88,6 +88,14 @@ class MainActivity : ComponentActivity() {
             },
             initialUnitSystem = com.example.healthjournal.data.local.UnitSettings.read(this)
         )
+        val vitalsUnitSystemFlow = kotlinx.coroutines.flow.MutableStateFlow(
+            com.example.healthjournal.data.local.UnitSettings.read(this)
+        )
+        val vitalsViewModelFactory = com.example.healthjournal.viewmodel.VitalsViewModelFactory(
+            journalRepository = journalRepository,
+            activeProfileProvider = profileRepository,
+            unitSystemFlow = vitalsUnitSystemFlow
+        )
         val workoutRepository = com.example.healthjournal.data.WorkoutRepository(database.workoutSessionDao(), profileRepository)
         val workoutHealthSource = com.example.healthjournal.health.HealthConnectWorkoutDataSource(this)
 
@@ -215,6 +223,16 @@ class MainActivity : ComponentActivity() {
                             androidx.lifecycle.viewmodel.compose.viewModel(factory = presetFactory)
                         com.example.healthjournal.ui.screens.PresetLibraryScreen(
                             viewModel = presetViewModel,
+                            onBack = { navController.popBackStack() },
+                            profileSwitcher = profileSwitcher,
+                            onSwitchProfile = switchProfile
+                        )
+                    }
+                    composable("vitals") {
+                        val vitalsViewModel: com.example.healthjournal.viewmodel.VitalsViewModel =
+                            viewModel(factory = vitalsViewModelFactory)
+                        com.example.healthjournal.ui.screens.VitalsScreen(
+                            viewModel = vitalsViewModel,
                             onBack = { navController.popBackStack() },
                             profileSwitcher = profileSwitcher,
                             onSwitchProfile = switchProfile

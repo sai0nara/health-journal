@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
@@ -56,6 +57,7 @@ private data class MainTile(
 
 private val mainTiles = listOf(
     MainTile("history", R.string.main_tile_history, Icons.Default.History),
+    MainTile("vitals", R.string.main_tile_vitals, Icons.Default.MonitorHeart),
     MainTile("workout", R.string.main_tile_workout, Icons.Default.FitnessCenter),
     MainTile("measurements", R.string.main_tile_measurements, Icons.Default.Straighten),
     MainTile("presets", R.string.main_tile_presets, Icons.Default.List),
