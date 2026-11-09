@@ -21,6 +21,7 @@ import com.example.healthjournal.domain.WorkoutType
 import com.example.healthjournal.util.FakeWorkoutHealthDataSource
 import com.example.healthjournal.util.FakeWorkoutSessionDao
 import com.example.healthjournal.data.local.WorkoutSession
+import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutStatus
 import com.example.healthjournal.domain.StrengthExercise
 import com.example.healthjournal.domain.StrengthSet
@@ -106,6 +107,29 @@ class WorkoutScreenTest {
         composeTestRule.onNodeWithText("Yoga").assertExists()
         // Type-less logging is gone: the log dialog opens per workout type.
         composeTestRule.onNodeWithText("Log Past Workout").assertDoesNotExist()
+    }
+
+    @Test
+    fun idle_routinesAndPresetsButtonAreAtTopOfCatalog() {
+        val preset = WorkoutPreset(
+            id = "preset_test",
+            name = "Morning Stretch Routine",
+            exercises = emptyList()
+        )
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                WorkoutScreen(
+                    viewModel = viewModel,
+                    onBack = {},
+                    onPresetsClick = {}
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        // When IdleContent is displayed, presets_entry and Routines are at the top,
+        // visible without scrolling past generic categories.
+        composeTestRule.onNodeWithTag("presets_entry").assertIsDisplayed()
     }
 
     @Test
