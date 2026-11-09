@@ -97,7 +97,10 @@ class JournalRepository(
     }
 
     suspend fun deleteEntries(entryIds: List<String>) {
-        val profileId = currentProfileId()
+        deleteEntries(currentProfileId(), entryIds)
+    }
+
+    suspend fun deleteEntries(profileId: String, entryIds: List<String>) {
         // Remove tag cross-refs first: the table has no FK cascade, and orphaned
         // rows would silently re-attach stale tags if the entry is ever
         // re-imported (e.g. tombstone expired while another device kept it).
@@ -106,6 +109,10 @@ class JournalRepository(
         entryIds.forEach { id ->
             journalDao.insertDeletedEntry(DeletedEntry(id, profileId = profileId))
         }
+    }
+
+    suspend fun delete(profileId: String, entryId: String) {
+        deleteEntries(profileId, listOf(entryId))
     }
 
     suspend fun deleteAllArchived() {
