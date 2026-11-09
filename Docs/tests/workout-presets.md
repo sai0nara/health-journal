@@ -69,6 +69,7 @@ Last updated: 2026-11-09
 | T-35 | History and summary line | completed/skipped warm-up session | open Summary and history | exactly one localized warm-up line containing name, planned duration, and Completed/Skipped outcome (English template: `Warm-up: <name> · <min> min · <Completed / Skipped>`); absent for presets without warm-up |
 | T-36 | Backup and legacy restore | preset/session with warm-up; legacy archive without presets file or warm-up keys | full backup → restore; restore legacy archive | warm-up fields survive; legacy presets/sessions restore with null warm-up fields |
 | T-37 | Preset editor full-form scrolling | preset create/edit open with warm-up and 3+ exercises | scroll downward in `preset_draft_list` | header items (name, warm-up) scroll off-screen, exercise rows take full height, Cancel/Save remain pinned at bottom |
+| T-38 | Workout hub routines at top | Workout screen idle state with presets | open Workout screen | Routines section and Presets button appear above "Choose a workout" and 10 activity buttons without scrolling |
 
 ## Manual checks
 

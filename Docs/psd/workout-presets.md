@@ -48,6 +48,12 @@ outcome.
   section, exercise validation error, and catalog search are keyed `item`s
   followed by keyed draft exercise rows (`DraftExerciseRow`), ensuring the
   entire form scrolls together and gives draft exercises the full viewport height.
+- In `WorkoutScreen.kt`, `IdleContent` renders the Routines section and the
+  `presets_entry` button at the top of the scrollable catalog (`workout_catalog`),
+  preceding "Choose a workout" and the 10 generic activity buttons. When presets
+  exist, routine cards appear first so lifters can start their planned routines
+  immediately; when empty, the Presets button remains at the top as the primary
+  entry point to create presets.
 - `WorkoutViewModel.advanceTime` completes the warm-up when its timer reaches
   zero, and `skipWarmup` ends it early; both persist the current elapsed seconds
   and `WarmupOutcome`. Finish during the warm-up and recovery of an interrupted
