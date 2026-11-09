@@ -4,7 +4,7 @@
 > verification. The "Automated coverage" table cites the real test files; keep
 > it in sync when coverage moves.
 
-Last updated: 2026-10-27
+Last updated: 2026-11-09
 
 ## Automated coverage
 
@@ -68,6 +68,7 @@ Last updated: 2026-10-27
 | T-34 | Pause and crash recovery | active warm-up | press Pause; separately kill/recover during warm-up | Pause disabled (Compose); recovery resumes Active with the warm-up marked SKIPPED (JVM) |
 | T-35 | History and summary line | completed/skipped warm-up session | open Summary and history | exactly one localized warm-up line containing name, planned duration, and Completed/Skipped outcome (English template: `Warm-up: <name> · <min> min · <Completed / Skipped>`); absent for presets without warm-up |
 | T-36 | Backup and legacy restore | preset/session with warm-up; legacy archive without presets file or warm-up keys | full backup → restore; restore legacy archive | warm-up fields survive; legacy presets/sessions restore with null warm-up fields |
+| T-37 | Preset editor full-form scrolling | preset create/edit open with warm-up and 3+ exercises | scroll downward in `preset_draft_list` | header items (name, warm-up) scroll off-screen, exercise rows take full height, Cancel/Save remain pinned at bottom |
 
 ## Manual checks
 

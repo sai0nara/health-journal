@@ -7,7 +7,7 @@
 > into the journal + Health Connect — with (planned) use cases for 1RM and
 > alternative-exercise conversion.
 
-Last updated: 2026-10-27
+Last updated: 2026-11-09
 
 ## Overview
 
@@ -41,6 +41,13 @@ outcome.
   `warmupDurationMinutes` as text plus inline errors; warm-up messages are
   `@StringRes` ids resolved by the editor. Save validates 1–60 whole minutes and
   stores `null` fields when disabled. Library edit reloads the persisted values.
+- In `PresetLibraryScreen.kt`, `EditingContent` renders the entire editing form
+  inside a single unified `LazyColumn` (`preset_draft_list`) occupying
+  `Modifier.weight(1f)` between the top app bar and the bottom pinned action row
+  (`Cancel` and `Save Preset`). The preset name, scheduled day dropdown, warm-up
+  section, exercise validation error, and catalog search are keyed `item`s
+  followed by keyed draft exercise rows (`DraftExerciseRow`), ensuring the
+  entire form scrolls together and gives draft exercises the full viewport height.
 - `WorkoutViewModel.advanceTime` completes the warm-up when its timer reaches
   zero, and `skipWarmup` ends it early; both persist the current elapsed seconds
   and `WarmupOutcome`. Finish during the warm-up and recovery of an interrupted
@@ -183,6 +190,7 @@ or without the columns restore with nulls.
 | Recovery choice | resume re-activates; discard marks `DISCARDED` → `Idle` |
 | Blank catalog search | no results shown |
 | Cancel preset edit | draft dropped, back to library, nothing persisted |
+| Preset editor with many exercises & warm-up | all form fields scroll together in `LazyColumn`; `Cancel`/`Save` remain pinned at bottom |
 | Warm-up disabled | duration/name hidden and stored as null |
 | Warm-up duration invalid | inline error; preset save blocked |
 | Warm-up timer reaches zero | marked `COMPLETED`; work timer continues |

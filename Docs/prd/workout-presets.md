@@ -5,7 +5,7 @@
 > with ordered completion, a searchable exercise catalog, and (planned) weight
 > analytics with alternative-exercise weight conversion.
 
-Last updated: 2026-10-27
+Last updated: 2026-11-09
 
 ## Overview
 
@@ -55,6 +55,31 @@ exercises instead of a bare tonnage figure.
   history card, so past sessions read as a plan, not a tonnage total.
 - As a lifter, I want a short warm-up timer attached to my routine, so I can
   start moving without tracking it separately.
+- As a lifter editing a preset with warm-up and multiple exercises, I want the
+  entire editor form (name, day, warm-up, exercise search, and exercise list) to
+  scroll together as one full-height form with only the Cancel/Save row pinned
+  at the bottom, so that warm-up and search controls do not pin the top of the
+  screen and restrict scrolling to the bottom 20 %.
+
+## Preset editor scrolling approaches
+
+In the initial preset editor layout (`EditingContent` in
+`app/src/main/java/com/example/healthjournal/ui/screens/PresetLibraryScreen.kt`),
+the preset name field, day selector, warm-up toggle + warm-up name/duration
+fields, exercises header, and catalog search input were placed as fixed children
+of a non-scrollable outer `Column` above a `LazyColumn(Modifier.weight(1f))`,
+with the Cancel/Save row below. With warm-up enabled (or catalog search results
+expanded), the pinned upper controls consumed ~75–80 % of the viewport height,
+leaving only ~20 % at the bottom for the exercise list to scroll.
+
+| # | Approach | What it does | Viewport available for scrolling | Trade-offs | Recommendation |
+|---|---|---|---|---|---|
+| S1 | **Single unified `LazyColumn` + pinned bottom CTA row** | Place preset name, scheduled-day dropdown, warm-up section, exercises header + catalog search, and draft exercise rows as items inside one `LazyColumn(Modifier.weight(1f))`; keep only the `Cancel` / `Save Preset` row pinned at the bottom. | ≥ 80 % of screen height (entire area between top app bar and bottom CTA row) | Metadata and search scroll off-screen while deep in the exercise list (standard mobile form behavior) | **Adopt (Best Solution)** |
+| S2 | **Bounded / overlay catalog search results inside S1** | Cap or overlay catalog search matches so a broad query does not push all draft exercises far down the list, and clear the query on selection. | ≥ 80 % of screen height | None | **Adopt alongside S1** |
+| S3 | **Sticky "Exercises + Search" header inside `LazyColumn`** | Use `stickyHeader` to keep the search input pinned at the top once scrolled past warm-up. | ~65–70 % (reduced further when search results expand or IME opens) | Still pins ~100–200 dp of header over the exercise list, hurting small screens and keyboard editing | Reject (keep search as a normal scrolling item) |
+| S4 | **Collapsible Warm-up accordion over split scroll** | Keep the split layout (`Column` + `LazyColumn`) but collapse warm-up into a summary chip when unfocused. | ~45–55 % when collapsed; drops back to ~20 % when warm-up is expanded or IME opens | Does not fix the root cause when editing warm-up or on compact screens | Reject |
+| S5 | **Two-step wizard / tabs (Metadata tab vs Exercises tab)** | Split preset editing into two screens or tabs. | ≥ 80 % per tab | Extra navigation taps for a 3-field header; harder to review the full preset at a glance | Reject |
+| S6 | **`Column` + `verticalScroll` (non-lazy)** | Replace `LazyColumn` with a regular vertically scrolling `Column`. | ≥ 80 % of screen height | Eagerly composes 4 `OutlinedTextField`s per exercise row; loses keyed lazy list semantics | Reject |
 
 ## Functional requirements
 
@@ -123,6 +148,19 @@ exercises instead of a bare tonnage figure.
   history description show one localized warm-up line when configured. Full backup and
   restore round-trip preset and session warm-up fields, and records without
   them restore with nulls.
+- FR-13: Preset editor full-form scrolling (Planned) — the preset create/edit
+  form (`EditingContent` in
+  `app/src/main/java/com/example/healthjournal/ui/screens/PresetLibraryScreen.kt`)
+  places all form sections — preset name field, scheduled-day dropdown, warm-up
+  toggle and warm-up name/duration fields, exercise validation error, exercises
+  section header, catalog search input and matching results, and draft exercise
+  rows — inside a single unified `LazyColumn` (`preset_draft_list`) occupying
+  `Modifier.weight(1f)` between the top app bar and the pinned bottom
+  `Cancel` / `Save Preset` action bar (≥ 80 % of the screen height in portrait
+  with the soft keyboard hidden). Warm-up and the Exercises header/search are
+  never pinned above the scroll container; scrolling down moves them off the
+  top of the viewport so draft exercise rows can be viewed and edited across the
+  full form height.
 
 ## Non-functional requirements
 
@@ -157,6 +195,24 @@ exercises instead of a bare tonnage figure.
   history line, and leaves tonnage, set count, finish-prompt state, and Health Connect
   records unchanged. A pre-warm-up preset or backup still opens and restores
   with no warm-up.
+- AC-10: (Planned) In the preset create/edit form with warm-up enabled and
+  multiple exercises added, the single scrollable form container spans the full
+  height between the top app bar and the pinned bottom `Cancel` / `Save Preset`
+  bar (≥ 80 % of the screen height with the keyboard closed); scrolling down
+  scrolls the preset name, scheduled day, warm-up section, and exercise search
+  off the top of the viewport so every draft exercise row and its
+  Sets/Reps/Weight/Rest inputs can be scrolled into view and edited while
+  `Cancel` and `Save Preset` remain pinned and reachable at the bottom.
+
+## Grooming decisions (Preset editor scrolling)
+
+| ID | Topic | Decision |
+|---|---|---|
+| G1 | Scroll container boundary | **Resolved (S1):** Single `LazyColumn` (`preset_draft_list`) holds header fields, warm-up, exercise search, and draft exercise rows; only the top app bar and bottom `Cancel` / `Save Preset` row stay pinned (`FR-13`, `AC-10`). |
+| G2 | Catalog search results while scrolling | **Resolved (S2):** Catalog search input and results live inside the `LazyColumn` above draft exercises (with bounded height or overlay) and collapse on selection so they never pin the viewport. |
+| G3 | Soft keyboard (IME) interaction | **Resolved:** Focusing any header, warm-up, search, or exercise field scrolls the focused field into view inside the unified `LazyColumn` while keeping the bottom action bar or keyboard-accessible scroll intact. |
+| V1 | "Scrolling available only for 20% of the screen at the bottom. Warm-up and Exercises pinned" | **Resolved:** Replaced with measurable layout requirement in `FR-13` and `AC-10` — unified `LazyColumn` occupies ≥ 80 % of portrait viewport height (full space between `TopAppBar` and bottom CTA row), with 0 dp of pinned form content above the scroll container. |
+| V2 | "Suggest best solution" | **Resolved:** Selected **S1 + S2** (single unified `LazyColumn` + pinned bottom CTA row with bounded/collapsible search results). |
 
 ## Out of scope
 
