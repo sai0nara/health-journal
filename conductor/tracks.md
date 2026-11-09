@@ -61,10 +61,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Refactor Workouts screen, move Routines at the top of the screen**
-  *Link: [./tracks/workout_hub_routines_top_20261109/](./tracks/workout_hub_routines_top_20261109/)*
-
----
-
 - [x] **Track: Sibling Profiles**
   *Link: [./archive/sibling_profiles_20261031/](./archive/sibling_profiles_20261031/)*
