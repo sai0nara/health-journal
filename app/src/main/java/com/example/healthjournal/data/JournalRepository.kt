@@ -18,6 +18,8 @@ class JournalRepository(
 ) {
     val allEntries: Flow<List<JournalEntry>> =
         activeProfile.activeProfileId.flatMapLatest { journalDao.getAllEntries(it) }
+    val vitalsEntries: Flow<List<JournalEntry>> =
+        activeProfile.activeProfileId.flatMapLatest { journalDao.getVitalsEntries(it) }
     val allTags: Flow<List<EntryTagCrossRef>> =
         activeProfile.activeProfileId.flatMapLatest { journalDao.observeAllTags(it) }
     val archivedEntries: Flow<List<JournalEntry>> =
@@ -25,6 +27,9 @@ class JournalRepository(
     val activeProfileId: StateFlow<String> = activeProfile.activeProfileId
 
     fun currentProfileId(): String = activeProfile.currentProfileId()
+
+    fun getVitalsEntries(profileId: String): Flow<List<JournalEntry>> =
+        journalDao.getVitalsEntries(profileId)
 
     fun getEntriesSortedByDate(isAsc: Boolean): Flow<List<JournalEntry>> =
         activeProfile.activeProfileId.flatMapLatest { journalDao.getEntriesSortedByDate(it, isAsc) }
