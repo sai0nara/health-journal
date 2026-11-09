@@ -12,7 +12,9 @@ Last updated: 2026-11-09
 ## Features
 
 - `Docs/prd/ai-insights.md` — planned
-- `Docs/prd/vitals-trends.md` — planned
+- `Docs/prd/vitals-trends.md` — PRD
+- `Docs/psd/vitals-trends.md` — PSD
+- `Docs/tests/vitals-trends.md` — tests
 - `Docs/prd/swipe-to-archive-safety.md` — PRD
 - `Docs/psd/swipe-to-archive-safety.md` — PSD
 - `Docs/tests/swipe-to-archive-safety.md` — tests
