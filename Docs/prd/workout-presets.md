@@ -47,6 +47,10 @@ exercises instead of a bare tonnage figure.
 
 - As a lifter, I want a saved "Leg Day" routine I can start in two taps, so I
   don't rebuild the plan every session.
+- As a lifter opening the Workout screen, I want saved Routines (and the Presets
+  library entry button) displayed prominently at the top of the screen before the
+  generic 10-activity list, so I can start my planned routine immediately
+  without scrolling past unselected activities.
 - As a lifter, I want my sets preloaded with planned weight/reps, so I only
   adjust when the plan changes.
 - As a lifter, I want to swap a movement mid-session and get sane starting
@@ -161,6 +165,17 @@ leaving only ~20 % at the bottom for the exercise list to scroll.
   never pinned above the scroll container; scrolling down moves them off the
   top of the viewport so draft exercise rows can be viewed and edited across the
   full form height.
+- FR-14: Workout hub routine placement (Planned) — in the Workout hub idle state
+  (`IdleContent` in
+  `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt`),
+  the Routines section (and the "Presets" library button `presets_entry`) is
+  positioned at the top of the scrollable catalog (`workout_catalog`), before
+  the generic 10-activity list ("Choose a workout") and recent session history.
+  When saved presets exist for the active profile, each routine card
+  (`routine_start_<presetId>`) renders at the very top of the list so a routine
+  can be started in a single tap without scrolling. When no presets exist, the
+  "Presets" button remains at the top as the primary call-to-action to create or
+  manage presets, followed by the generic activity list.
 
 ## Non-functional requirements
 
@@ -203,6 +218,12 @@ leaving only ~20 % at the bottom for the exercise list to scroll.
   off the top of the viewport so every draft exercise row and its
   Sets/Reps/Weight/Rest inputs can be scrolled into view and edited while
   `Cancel` and `Save Preset` remain pinned and reachable at the bottom.
+- AC-11: (Planned) On the Workout screen in the idle state, the "Routines"
+  header, saved routine cards, and the "Presets" button (`presets_entry`) appear
+  at the top of `workout_catalog` above "Choose a workout" and all 10 activity
+  buttons (`Run`, `Walk`, etc.); starting a routine (`routine_start_<presetId>`)
+  or navigating to presets (`presets_entry`) does not require scrolling past
+  the generic activity catalog.
 
 ## Grooming decisions (Preset editor scrolling)
 
@@ -213,6 +234,13 @@ leaving only ~20 % at the bottom for the exercise list to scroll.
 | G3 | Soft keyboard (IME) interaction | **Resolved:** Focusing any header, warm-up, search, or exercise field scrolls the focused field into view inside the unified `LazyColumn` while keeping the bottom action bar or keyboard-accessible scroll intact. |
 | V1 | "Scrolling available only for 20% of the screen at the bottom. Warm-up and Exercises pinned" | **Resolved:** Replaced with measurable layout requirement in `FR-13` and `AC-10` — unified `LazyColumn` occupies ≥ 80 % of portrait viewport height (full space between `TopAppBar` and bottom CTA row), with 0 dp of pinned form content above the scroll container. |
 | V2 | "Suggest best solution" | **Resolved:** Selected **S1 + S2** (single unified `LazyColumn` + pinned bottom CTA row with bounded/collapsible search results). |
+
+## Grooming decisions (Workout hub routine placement)
+
+| ID | Topic | Decision |
+|---|---|---|
+| G4 | Section ordering on Workout screen | **Resolved:** In `IdleContent`, order sections top-to-bottom: (1) Routines section (`R.string.workout_routines`) with routine cards if presets exist, (2) "Presets" library button (`presets_entry`), (3) "Choose a workout" header (`workout_choose`) + 10 generic activity buttons, (4) "Recent" workouts history list (`workout_recent`). (`FR-14`, `AC-11`). |
+| G5 | Empty routines state on Workout hub | **Resolved:** When active profile has no presets, show "Routines" section header and the "Presets" button prominently at the top, directing users to create their first preset before the generic catalog. |
 
 ## Out of scope
 
