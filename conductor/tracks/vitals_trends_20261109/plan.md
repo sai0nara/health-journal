@@ -21,14 +21,14 @@
     - [x] Implement `VitalsTrendChart.kt` with dual-curve Blood Pressure (systolic/diastolic) and single-curve metrics
     - [x] Implement interactive touch scrubber cursor with haptic feedback tick and tooltip popup
     - [x] Confirm UI tests pass on Compose test runner
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Canvas Trend Chart Component' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Canvas Trend Chart Component' (Protocol in workflow.md)
 
 ## Phase 3: Screen Assembly, Navigation & Quick Log Sheet
-- [ ] Task: Implement `VitalLogSheet` Composable
-    - [ ] Write Compose UI test for `VitalLogSheetTest.kt` (prefill, range validation, future date block, Save/Cancel)
-    - [ ] Implement `VitalLogSheet.kt` with numeric inputs, inline validation messages, and date/time picker
-    - [ ] Confirm tests pass
-- [ ] Task: Assemble `VitalsScreen` Composable
+- [x] Task: Implement `VitalLogSheet` Composable a4efa83
+    - [x] Write Compose UI test for `VitalLogSheetTest.kt` (prefill, range validation, future date block, Save/Cancel)
+    - [x] Implement `VitalLogSheet.kt` with numeric inputs, inline validation messages, and date/time picker
+    - [x] Confirm tests pass
+- [~] Task: Assemble `VitalsScreen` Composable
     - [ ] Implement `VitalsScreen.kt` with TopAppBar, `ProfileSwitcher`, metric tab row, time-range chips, summary card, chart, history list, and Undo snackbar
     - [ ] Add empty state illustration and CTA when zero readings exist in selected window
 - [ ] Task: Wire `"vitals"` destination into `MainActivity.kt` and `MainScreen.kt`
