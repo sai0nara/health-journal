@@ -1,10 +1,10 @@
 # Implementation Plan: Vitals & Trends
 
 ## Phase 1: Domain, Data Access & ViewModel (TDD)
-- [ ] Task: Implement `JournalDao` / `JournalRepository` vitals query flow filtered by active profile
-    - [ ] Write failing unit tests for vitals queries in `JournalRepositoryTest.kt`
-    - [ ] Implement `getVitalsEntriesByProfile(profileId)` in `JournalDao.kt` and `JournalRepository.kt`
-    - [ ] Confirm tests pass and refactor
+- [x] Task: Implement `JournalDao` / `JournalRepository` vitals query flow filtered by active profile 5e20307
+    - [x] Write failing unit tests for vitals queries in `JournalRepositoryTest.kt`
+    - [x] Implement `getVitalsEntriesByProfile(profileId)` in `JournalDao.kt` and `JournalRepository.kt`
+    - [x] Confirm tests pass and refactor
 - [ ] Task: Implement `VitalsViewModel` state pipeline & statistics computation
     - [ ] Write failing unit tests in `VitalsViewModelTest.kt` (tab switching, 7D/30D/90D/1Y/All filtering, mean/min/max statistics, same-day aggregation decimation)
     - [ ] Implement `VitalsViewModel.kt` combining profile, unit system, and repository flows into `StateFlow<VitalsUiState>`
