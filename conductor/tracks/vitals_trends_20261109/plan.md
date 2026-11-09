@@ -13,14 +13,14 @@
     - [x] Write failing unit tests for `logVital(entry)` and `deleteVital(id)` with undo restoration
     - [x] Implement quick-log save and undo lifecycle in `VitalsViewModel.kt`
     - [x] Confirm tests pass and refactor
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Domain, Data Access & ViewModel' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Domain, Data Access & ViewModel' (Protocol in workflow.md)
 
 ## Phase 2: Canvas Trend Chart Component
-- [ ] Task: Implement `VitalsTrendChart` Composable with Compose Canvas
-    - [ ] Write Compose UI tests for chart rendering, curve auto-scaling, and reference bands
-    - [ ] Implement `VitalsTrendChart.kt` with dual-curve Blood Pressure (systolic/diastolic) and single-curve metrics
-    - [ ] Implement interactive touch scrubber cursor with haptic feedback tick and tooltip popup
-    - [ ] Confirm UI tests pass on Compose test runner
+- [x] Task: Implement `VitalsTrendChart` Composable with Compose Canvas 19cfec2
+    - [x] Write Compose UI tests for chart rendering, curve auto-scaling, and reference bands
+    - [x] Implement `VitalsTrendChart.kt` with dual-curve Blood Pressure (systolic/diastolic) and single-curve metrics
+    - [x] Implement interactive touch scrubber cursor with haptic feedback tick and tooltip popup
+    - [x] Confirm UI tests pass on Compose test runner
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Canvas Trend Chart Component' (Protocol in workflow.md)
 
 ## Phase 3: Screen Assembly, Navigation & Quick Log Sheet
