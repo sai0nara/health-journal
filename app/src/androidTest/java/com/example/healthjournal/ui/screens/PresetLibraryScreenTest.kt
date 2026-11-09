@@ -590,7 +590,7 @@ class PresetLibraryScreenTest {
         repeat(5) {
             composeTestRule.onNodeWithTag("exercise_search_field").performTextInput("Bench")
             composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithText("Bench Press").performClick()
+            composeTestRule.onNodeWithTag("exercise_search_result").performClick()
             composeTestRule.waitForIdle()
         }
 

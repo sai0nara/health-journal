@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.example.healthjournal.data.JournalRepository
 import com.example.healthjournal.data.local.JournalEntry
@@ -91,7 +92,7 @@ class VitalsScreenTest {
         composeTestRule.onNodeWithTag("vitals_field_systolic").performTextInput("120")
         composeTestRule.onNodeWithTag("vitals_field_diastolic").performTextInput("80")
 
-        composeTestRule.onNodeWithTag("vital_log_save").performClick()
+        composeTestRule.onNodeWithTag("vital_log_save").performScrollTo().performClick()
 
         coVerify {
             journalRepository.insert(

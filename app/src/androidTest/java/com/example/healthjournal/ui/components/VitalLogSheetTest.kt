@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.EntryVitals
@@ -63,7 +64,7 @@ class VitalLogSheetTest {
         composeTestRule.onNodeWithTag("vitals_field_systolic").performTextInput("122")
         composeTestRule.onNodeWithTag("vitals_field_diastolic").performTextInput("82")
 
-        composeTestRule.onNodeWithTag("vital_log_save").assertIsEnabled()
+        composeTestRule.onNodeWithTag("vital_log_save").performScrollTo().assertIsEnabled()
         composeTestRule.onNodeWithTag("vital_log_save").performClick()
 
         assertNotNull(savedVitals)
