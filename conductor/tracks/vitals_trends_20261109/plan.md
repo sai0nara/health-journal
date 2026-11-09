@@ -37,14 +37,14 @@
 - [x] Task: End-to-end Compose UI test suite for `VitalsScreen` ffaaa21
     - [x] Write comprehensive UI tests in `VitalsScreenTest.kt` (navigation from MainScreen, tab switching, quick log flow, deletion undo, profile switching)
     - [x] Execute UI tests and confirm passing
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Screen Assembly, Navigation & Quick Log Sheet' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Screen Assembly, Navigation & Quick Log Sheet' (Protocol in workflow.md)
 
 ## Phase 4: Product Documentation & Final Verification
-- [ ] Task: Create product specification and test documentation
-    - [ ] Author `Docs/psd/vitals-trends.md` detailing architecture, composables, and data flow
-    - [ ] Author `Docs/tests/vitals-trends.md` mapping test cases to files
-    - [ ] Update `Docs/index.md` removing `— planned` marker
-- [ ] Task: Execute full verification suite
-    - [ ] Run full JVM unit test suite (`./gradlew :app:testDebugUnitTest`)
-    - [ ] Run wiki lint (`python3 wiki/lint.py`)
+- [x] Task: Create product specification and test documentation 509a582
+    - [x] Author `Docs/psd/vitals-trends.md` detailing architecture, composables, and data flow
+    - [x] Author `Docs/tests/vitals-trends.md` mapping test cases to files
+    - [x] Update `Docs/index.md` removing `— planned` marker
+- [x] Task: Execute full verification suite 509a582
+    - [x] Run full JVM unit test suite (`./gradlew :app:testDebugUnitTest`)
+    - [x] Run wiki lint (`python3 wiki/lint.py`)
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Product Documentation & Final Verification' (Protocol in workflow.md)
