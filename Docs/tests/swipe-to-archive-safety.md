@@ -2,7 +2,7 @@
 
 > Verification suite for gesture thresholds, axis locking, scroll guards, pre-commit armed feedback, long-press context menu, and accessibility actions.
 
-Last updated: 2026-11-08
+Last updated: 2026-11-09
 
 ## Automated coverage
 

@@ -7,7 +7,7 @@
 > Cross-references between documents use backticked paths, not wikilinks,
 > because the same feature slug exists in three directories.
 
-Last updated: 2026-11-08
+Last updated: 2026-11-09
 
 ## Features
 

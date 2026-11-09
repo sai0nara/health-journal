@@ -5,7 +5,7 @@
 > entry's vitals from its card. The History overflow menu also opens the workout
 > hub.
 
-Last updated: 2026-11-08
+Last updated: 2026-11-09
 
 ## Overview
 

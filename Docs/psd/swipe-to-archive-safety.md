@@ -2,7 +2,7 @@
 
 > Pure gesture policy with 50 % width commit threshold, dominant-axis lock, scroll guard, and pre-commit armed feedback, paired with card long-press menu and accessibility actions.
 
-Last updated: 2026-11-08
+Last updated: 2026-11-09
 
 ## Overview
 

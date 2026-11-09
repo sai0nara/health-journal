@@ -3,7 +3,7 @@
 > Make archiving from the History feed a deliberate gesture, so that scrolling
 > the feed never archives an entry by accident.
 
-Last updated: 2026-11-08
+Last updated: 2026-11-09
 
 ## Overview
 
