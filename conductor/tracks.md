@@ -61,5 +61,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
+- [x] **Track: Refactor Preset editor scrolling: unified LazyColumn**
+  *Link: [./tracks/preset_editor_scroll_20261109/](./tracks/preset_editor_scroll_20261109/)*
+
+---
+
 - [x] **Track: Sibling Profiles**
   *Link: [./archive/sibling_profiles_20261031/](./archive/sibling_profiles_20261031/)*
