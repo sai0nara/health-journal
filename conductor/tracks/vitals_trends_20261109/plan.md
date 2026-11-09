@@ -28,15 +28,15 @@
     - [x] Write Compose UI test for `VitalLogSheetTest.kt` (prefill, range validation, future date block, Save/Cancel)
     - [x] Implement `VitalLogSheet.kt` with numeric inputs, inline validation messages, and date/time picker
     - [x] Confirm tests pass
-- [~] Task: Assemble `VitalsScreen` Composable
-    - [ ] Implement `VitalsScreen.kt` with TopAppBar, `ProfileSwitcher`, metric tab row, time-range chips, summary card, chart, history list, and Undo snackbar
-    - [ ] Add empty state illustration and CTA when zero readings exist in selected window
-- [ ] Task: Wire `"vitals"` destination into `MainActivity.kt` and `MainScreen.kt`
-    - [ ] Add "Vitals" tile to `MainScreen.kt` tile grid
-    - [ ] Register `composable("vitals")` route with `VitalsViewModelFactory` in `MainActivity.kt`
-- [ ] Task: End-to-end Compose UI test suite for `VitalsScreen`
-    - [ ] Write comprehensive UI tests in `VitalsScreenTest.kt` (navigation from MainScreen, tab switching, quick log flow, deletion undo, profile switching)
-    - [ ] Execute UI tests and confirm passing
+- [x] Task: Assemble `VitalsScreen` Composable ffaaa21
+    - [x] Implement `VitalsScreen.kt` with TopAppBar, `ProfileSwitcher`, metric tab row, time-range chips, summary card, chart, history list, and Undo snackbar
+    - [x] Add empty state illustration and CTA when zero readings exist in selected window
+- [x] Task: Wire `"vitals"` destination into `MainActivity.kt` and `MainScreen.kt` ffaaa21
+    - [x] Add "Vitals" tile to `MainScreen.kt` tile grid
+    - [x] Register `composable("vitals")` route with `VitalsViewModelFactory` in `MainActivity.kt`
+- [x] Task: End-to-end Compose UI test suite for `VitalsScreen` ffaaa21
+    - [x] Write comprehensive UI tests in `VitalsScreenTest.kt` (navigation from MainScreen, tab switching, quick log flow, deletion undo, profile switching)
+    - [x] Execute UI tests and confirm passing
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Screen Assembly, Navigation & Quick Log Sheet' (Protocol in workflow.md)
 
 ## Phase 4: Product Documentation & Final Verification
