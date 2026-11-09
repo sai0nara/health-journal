@@ -29,4 +29,4 @@
 - [x] Task: Run JVM unit tests and wiki lint (fb387a5)
     - [x] Run `./gradlew :app:testDebugUnitTest`
     - [x] Run `python3 wiki/lint.py` and confirm 0 errors
-- [~] Task: Conductor - User Manual Verification 'Phase 2: Implementation & Verification' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Implementation & Verification' (Protocol in workflow.md)
