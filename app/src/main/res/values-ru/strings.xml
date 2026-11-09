@@ -156,6 +156,7 @@
     <string name="history_empty_profile">Пока нет записей для %1$s. Добавьте первую!</string>
     <string name="history_entry_archived">Запись архивирована</string>
     <string name="history_undo">Отменить</string>
+    <string name="history_archive_label">Архивировать</string>
     <string name="history_search_placeholder">Поиск по журналу…</string>
     <string name="history_cd_more">Другие действия</string>
     <string name="history_cd_add_measurements">Добавить измерения тела</string>

@@ -63,3 +63,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Sibling Profiles**
   *Link: [./archive/sibling_profiles_20261031/](./archive/sibling_profiles_20261031/)*
+
+---
+
+- [x] **Track: Refactor archive gesture in History feed to prevent accidental archiving while scrolling**
+  *Link: [./tracks/swipe_to_archive_safety_20261108/](./tracks/swipe_to_archive_safety_20261108/)*

@@ -2,7 +2,7 @@
 
 > The on-device test stack under `app/src/androidTest` — Compose UI tests plus Room DAO and migration tests that need the Android framework.
 
-Last updated: 2026-11-06
+Last updated: 2026-11-09
 
 ## What this stack is
 
@@ -89,7 +89,7 @@ fatal at boot, not as a test failure.
 
 ## Sources
 
-- `app/src/androidTest/java/com/example/healthjournal/ui/screens` — Compose screen tests live here, including the workout hub/session screens, preset warm-up editor, execution panel, summary, Manage Profiles flows, Add Entry Health Connect confirmation, and Export PDF profile selector.
+- `app/src/androidTest/java/com/example/healthjournal/ui/screens` — Compose screen tests live here, including the workout hub/session screens, preset warm-up editor, execution panel, summary, Manage Profiles flows, Add Entry Health Connect confirmation, Export PDF profile selector, and History swipe-to-archive safety/fallback tests.
 - `app/src/androidTest/java/com/example/healthjournal/export/RestoreIntegrationTest.kt` — full v2 multi-profile and v1 legacy restore against a real Room database, including preset warm-up fields and profile-scoped media remapping.
 - `app/src/androidTest/java/com/example/healthjournal/pages` — page objects for the deletion suites (selectors and actions only).
 - `app/src/androidTest/java/com/example/healthjournal/util/RecordingHapticFeedback.kt` — recording `LocalHapticFeedback` used to assert gesture feedback.

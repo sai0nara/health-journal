@@ -2,7 +2,7 @@
 
 > The JVM test stack under `app/src/test` — fast, framework-level tests that run without a device.
 
-Last updated: 2026-11-06
+Last updated: 2026-11-09
 
 ## What this stack is
 
@@ -42,7 +42,7 @@ in place.
 - `app/src/test/java/com/example/healthjournal/sync` — Drive sync payload and merge unit tests live here, including `profiles.json` round-trips, composite `(profileId, recordId)` merges, tombstone propagation, and remote profile deletion.
 - `app/src/test/java/com/example/healthjournal/data` — repository and profile-lifecycle tests live here, including active-profile flow switching, explicit-profile journal/personal-card/measurement/workout/preset writes, and profile erase rules.
 - `app/src/test/java/com/example/healthjournal/viewmodel` — also covers `ProfileViewModel` lifecycle/error state, captured-profile journal/personal-card/measurement/workout/preset saves, Health Connect target capture, foreign-entry rejection, and the preset editor's saving flag alongside the existing screen ViewModel suites.
-- `app/src/test/java/com/example/healthjournal/domain` — workout/manual-log validation tests live here.
+- `app/src/test/java/com/example/healthjournal/domain` — workout/manual-log validation and swipe-to-archive policy tests live here.
 - `app/build.gradle.kts` — the JVM test dependencies.
 
 Back to [[overview]]

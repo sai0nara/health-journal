@@ -1,5 +1,6 @@
 package com.example.healthjournal.ui.screens
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -234,6 +235,243 @@ class HistoryScreenTest {
             // unless we update it. But we can verify if the method was called if we tracked it.
             // For now, testing the UI interaction is the primary goal.
             composeTestRule.onNodeWithText("Test Swipe").assertExists()
+        }
+    }
+
+    @Test
+    fun testHistoryScreen_DragUnderFiftyPercent_DoesNotArchive() {
+        val entry = JournalEntry(entry_id = "1", description = "Test Threshold")
+        
+        step("Open History Screen") {
+            viewModel.allEntries.value = listOf(entry)
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        onAddEntryClick = {},
+                        onEntryClick = {}
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Drag left by less than 50% width and release") {
+            val node = composeTestRule.onNodeWithText("Test Threshold")
+            val bounds = node.fetchSemanticsNode().boundsInRoot
+            val width = bounds.width
+            val startX = bounds.right - 10f
+            val endX = startX - (width * 0.3f) // Drag only 30%
+
+            node.performTouchInput {
+                down(androidx.compose.ui.geometry.Offset(startX, bounds.center.y))
+                moveTo(androidx.compose.ui.geometry.Offset(endX, bounds.center.y))
+                up()
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify archive is not triggered (no Undo snackbar)") {
+            composeTestRule.onNodeWithText("Undo").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun testHistoryScreen_DiagonalOrVerticalDrag_DoesNotArchive() {
+        val entry = JournalEntry(entry_id = "1", description = "Test Axis Lock")
+        
+        step("Open History Screen") {
+            viewModel.allEntries.value = listOf(entry)
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        onAddEntryClick = {},
+                        onEntryClick = {}
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Drag with vertical dominance (|dx| < 2 * |dy|)") {
+            val node = composeTestRule.onNodeWithText("Test Axis Lock")
+            val bounds = node.fetchSemanticsNode().boundsInRoot
+            val startX = bounds.right - 10f
+            val startY = bounds.center.y
+            // dx = -50, dy = 100 -> |dx| < 2 * |dy|
+            val endX = startX - 50f
+            val endY = startY + 100f
+
+            node.performTouchInput {
+                down(androidx.compose.ui.geometry.Offset(startX, startY))
+                moveTo(androidx.compose.ui.geometry.Offset(endX, endY))
+                up()
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify archive is not triggered (no Undo snackbar)") {
+            composeTestRule.onNodeWithText("Undo").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun testHistoryScreen_FastShortFlickUnderFiftyPercent_DoesNotArchive() {
+        val entry = JournalEntry(entry_id = "1", description = "Test Fast Short Flick")
+
+        step("Open History Screen") {
+            viewModel.allEntries.value = listOf(entry)
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        onAddEntryClick = {},
+                        onEntryClick = {}
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Perform a high-velocity short flick (< 50% width)") {
+            val node = composeTestRule.onNodeWithText("Test Fast Short Flick")
+            val bounds = node.fetchSemanticsNode().boundsInRoot
+            val width = bounds.width
+            val startX = bounds.right - 20f
+            val endX = startX - (width * 0.25f) // 25% of card width, fast 30ms flick
+
+            node.performTouchInput {
+                swipe(
+                    start = androidx.compose.ui.geometry.Offset(startX, bounds.center.y),
+                    end = androidx.compose.ui.geometry.Offset(endX, bounds.center.y),
+                    durationMillis = 30L
+                )
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify archive is not triggered") {
+            composeTestRule.onNodeWithText("Undo").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun testSwipeToArchiveWrapper_WhenListScrolling_DoesNotArchive() {
+        var archived = false
+
+        step("Render SwipeToArchiveWrapper with isListScrollInProgress = true") {
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    SwipeToArchiveWrapper(
+                        isListScrollInProgress = true,
+                        onArchive = { archived = true }
+                    ) {
+                        androidx.compose.material3.Text(
+                            text = "Scrolling Card",
+                            modifier = androidx.compose.ui.Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Perform full swipe left while list is scrolling") {
+            composeTestRule.onNodeWithText("Scrolling Card").performTouchInput {
+                swipeLeft()
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify archive callback was not invoked") {
+            assertEquals(false, archived)
+        }
+    }
+
+    @Test
+    fun testSwipeToArchiveWrapper_ThresholdCrossingAndUncrossing_FiresHapticTick() {
+        val haptics = com.example.healthjournal.util.RecordingHapticFeedback()
+
+        step("Render SwipeToArchiveWrapper with RecordingHapticFeedback") {
+            composeTestRule.setContent {
+                androidx.compose.runtime.CompositionLocalProvider(
+                    androidx.compose.ui.platform.LocalHapticFeedback provides haptics
+                ) {
+                    HealthJournalTheme {
+                        SwipeToArchiveWrapper(
+                            isListScrollInProgress = false,
+                            onArchive = {}
+                        ) {
+                            androidx.compose.material3.Text(
+                                text = "Haptic Card",
+                                modifier = androidx.compose.ui.Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Drag past 50% threshold and back below 50% before releasing") {
+            val node = composeTestRule.onNodeWithText("Haptic Card")
+            val bounds = node.fetchSemanticsNode().boundsInRoot
+            val width = bounds.width
+            val startX = bounds.right - 20f
+            val pastThresholdX = startX - (width * 0.65f)
+            val belowThresholdX = startX - (width * 0.25f)
+
+            node.performTouchInput {
+                down(androidx.compose.ui.geometry.Offset(startX, bounds.center.y))
+                moveTo(androidx.compose.ui.geometry.Offset(pastThresholdX, bounds.center.y))
+                moveTo(androidx.compose.ui.geometry.Offset(belowThresholdX, bounds.center.y))
+                up()
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify TextHandleMove fired on crossing and uncrossing") {
+            assertEquals(
+                listOf(
+                    androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove,
+                    androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove
+                ),
+                haptics.events
+            )
+        }
+    }
+
+    @Test
+    fun testHistoryScreen_LongPressArchiveMenu_ArchivesAndShowsUndo() {
+        val entry = JournalEntry(entry_id = "1", description = "Test Long Press Archive")
+
+        step("Open History Screen") {
+            viewModel.allEntries.value = listOf(entry)
+            composeTestRule.setContent {
+                HealthJournalTheme {
+                    HistoryScreen(
+                        viewModel = viewModel,
+                        onAddEntryClick = {},
+                        onEntryClick = {}
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        step("Long-press card and tap Archive in context menu") {
+            composeTestRule.onNodeWithText("Test Long Press Archive").performTouchInput {
+                longClick()
+            }
+            composeTestRule.waitForIdle()
+            composeTestRule.onNodeWithText("Archive").performClick()
+            composeTestRule.waitForIdle()
+        }
+
+        step("Verify Undo snackbar is displayed") {
+            composeTestRule.onNodeWithText("Entry archived").assertIsDisplayed()
+            composeTestRule.onNodeWithText("Undo").assertIsDisplayed()
         }
     }
 

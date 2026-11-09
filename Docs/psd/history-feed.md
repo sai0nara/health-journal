@@ -6,7 +6,7 @@
 > filters over the archived rows and adds multi-select delete/restore. A Workouts
 > overflow-menu action opens the workout hub.
 
-Last updated: 2026-10-29
+Last updated: 2026-11-09
 
 ## Overview
 
@@ -79,11 +79,12 @@ included — live on the dashboard tiles (`Docs/psd/main-page-tiles.md`).
 ## Dependencies
 
 - Room reactive flows; the shared `JournalViewModel`/fake testing seam.
-- Material 3 swipe-to-dismiss and snackbar for archive/undo.
+- Custom 50%-threshold `SwipeToArchiveWrapper` (`SwipeArchivePolicy`), card long-press/TalkBack Archive action, and Material 3 snackbar (`SnackbarDuration.Long` / `Indefinite`) for archive/undo (see `Docs/psd/swipe-to-archive-safety.md`).
 
 ## Sources
 
 - `app/src/main/java/com/example/healthjournal/ui/screens/HistoryScreen.kt` — feed interactions.
+- `app/src/main/java/com/example/healthjournal/domain/SwipeArchivePolicy.kt` — 50% swipe-to-archive threshold and axis-lock policy.
 - `app/src/main/java/com/example/healthjournal/ui/screens/ArchiveScreen.kt` — archive management.
 - `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` — feed state + actions.
 - `app/src/main/java/com/example/healthjournal/data/JournalRepository.kt` — archive/delete logic.

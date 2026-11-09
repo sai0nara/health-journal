@@ -1,10 +1,18 @@
 package com.example.healthjournal.ui.screens
 
+import android.view.accessibility.AccessibilityManager
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
@@ -16,15 +24,25 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
@@ -35,6 +53,9 @@ import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.UnitSettings
 import com.example.healthjournal.ui.components.AboutAppDialog
 import com.example.healthjournal.R
+import com.example.healthjournal.domain.GestureAxis
+import com.example.healthjournal.domain.SwipeArchivePolicy
+import com.example.healthjournal.domain.SwipeAxisLockTracker
 import com.example.healthjournal.ui.components.JournalEntryItem
 import com.example.healthjournal.ui.components.SharedSearchBar
 import com.example.healthjournal.ui.components.TagSelectionRow
@@ -44,6 +65,7 @@ import com.example.healthjournal.viewmodel.IJournalViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,10 +90,35 @@ fun HistoryScreen(
     val syncStatus by viewModel.syncStatus.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
     val entryArchivedMessage = stringResource(R.string.history_entry_archived)
     val undoActionLabel = stringResource(R.string.history_undo)
+
+    val accessibilityManager = remember(context) {
+        context.getSystemService(android.content.Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
+    }
+    val snackbarDuration = if (accessibilityManager?.isEnabled == true && accessibilityManager.isTouchExplorationEnabled) {
+        SnackbarDuration.Indefinite
+    } else {
+        SnackbarDuration.Long
+    }
+
+    val archiveEntryWithUndo: (String) -> Unit = { entryId ->
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        viewModel.archiveEntry(entryId)
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = entryArchivedMessage,
+                actionLabel = undoActionLabel,
+                duration = snackbarDuration
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.restoreEntry(entryId)
+            }
+        }
+    }
 
     var isRefreshing by remember { mutableStateOf(false) }
 
@@ -195,31 +242,22 @@ fun HistoryScreen(
                         )
                     }
                 } else {
+                    val listState = rememberLazyListState()
                     LazyColumn(
+                        state = listState,
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(entries, key = { it.entry_id }) { entry ->
                             SwipeToArchiveWrapper(
-                                onArchive = { 
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    viewModel.archiveEntry(entry.entry_id)
-                                    scope.launch {
-                                        val result = snackbarHostState.showSnackbar(
-                                            message = entryArchivedMessage,
-                                            actionLabel = undoActionLabel,
-                                            duration = SnackbarDuration.Short
-                                        )
-                                        if (result == SnackbarResult.ActionPerformed) {
-                                            viewModel.restoreEntry(entry.entry_id)
-                                        }
-                                    }
-                                }
+                                isListScrollInProgress = listState.isScrollInProgress,
+                                onArchive = { archiveEntryWithUndo(entry.entry_id) }
                             ) {
                                 JournalEntryItem(
                                     entry = entry,
                                     onClick = { onEntryClick(entry.entry_id) },
                                     onPhotoClick = { expandedImageUri = it },
+                                    onArchiveClick = { archiveEntryWithUndo(entry.entry_id) },
                                     tags = tagsByEntry[entry.entry_id] ?: emptyList(),
                                     onTagClick = { tag -> viewModel.toggleTag(tag) },
                                     unitSystem = unitSystem,
@@ -268,41 +306,162 @@ fun HistoryScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeToArchiveWrapper(
+    isListScrollInProgress: Boolean = false,
     onArchive: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = {
-            if (it == SwipeToDismissBoxValue.EndToStart) {
-                onArchive()
-                true
-            } else false
-        }
+    val haptic = LocalHapticFeedback.current
+    val viewConfig = LocalViewConfiguration.current
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val coroutineScope = rememberCoroutineScope()
+    val currentIsListScrollInProgress by rememberUpdatedState(isListScrollInProgress)
+
+    var cardWidthPx by remember { mutableFloatStateOf(0f) }
+    val offsetX = remember { Animatable(0f) }
+    val policy = remember(cardWidthPx) { SwipeArchivePolicy(cardWidthPx = cardWidthPx) }
+    val isArmed = remember(offsetX.value, cardWidthPx, isRtl) {
+        policy.isArmed(offsetX.value, isRtl)
+    }
+
+    val backgroundAlpha by animateFloatAsState(
+        targetValue = if (isArmed) 1f else 0.7f,
+        label = "swipe_bg_alpha"
+    )
+    val iconScale by animateFloatAsState(
+        targetValue = if (isArmed) 1.2f else 1.0f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "swipe_icon_scale"
     )
 
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        backgroundContent = {
-            val color = MaterialTheme.colorScheme.errorContainer
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onSizeChanged { cardWidthPx = it.width.toFloat() }
+    ) {
+        // Background reveal (only composed while card is displaced from rest)
+        if (offsetX.value != 0f) {
             Box(
-                Modifier
-                    .fillMaxSize()
+                modifier = Modifier
+                    .matchParentSize()
                     .clip(MaterialTheme.shapes.medium)
-                    .background(color)
+                    .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = backgroundAlpha))
                     .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd
+                contentAlignment = if (isRtl) Alignment.CenterStart else Alignment.CenterEnd
             ) {
-                Icon(
-                    Icons.Default.Archive,
-                    contentDescription = stringResource(R.string.history_cd_archive),
-                    tint = MaterialTheme.colorScheme.onErrorContainer
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.scale(iconScale)
+                ) {
+                    if (isRtl) {
+                        Icon(
+                            Icons.Default.Archive,
+                            contentDescription = stringResource(R.string.history_cd_archive),
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Text(
+                            text = stringResource(R.string.history_archive_label),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = if (isArmed) FontWeight.Bold else FontWeight.Medium
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.history_archive_label),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = if (isArmed) FontWeight.Bold else FontWeight.Medium
+                        )
+                        Icon(
+                            Icons.Default.Archive,
+                            contentDescription = stringResource(R.string.history_cd_archive),
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
             }
-        },
-        content = { content() }
-    )
+        }
+
+        // Foreground card with custom pointer gestures
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .pointerInput(cardWidthPx, isRtl) {
+                    val tracker = SwipeAxisLockTracker(touchSlopPx = viewConfig.touchSlop)
+                    val velocityTracker = VelocityTracker()
+
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        tracker.onDown(currentIsListScrollInProgress)
+                        velocityTracker.resetTracking()
+                        velocityTracker.addPosition(down.uptimeMillis, down.position)
+
+                        var cumulativeDx = 0f
+                        var cumulativeDy = 0f
+
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val dragChange = event.changes.firstOrNull { it.id == down.id } ?: break
+
+                            if (!dragChange.pressed) {
+                                // Pointer lifted - handle release
+                                val velocity = velocityTracker.calculateVelocity().x
+                                val releaseResult = policy.onRelease(
+                                    dragOffsetPx = offsetX.value,
+                                    velocityPxPerSec = velocity,
+                                    isRtl = isRtl
+                                )
+
+                                if (releaseResult.shouldCommit) {
+                                    coroutineScope.launch {
+                                        offsetX.animateTo(
+                                            targetValue = releaseResult.targetOffsetPx,
+                                            animationSpec = spring(stiffness = Spring.StiffnessMedium)
+                                        )
+                                        onArchive()
+                                        offsetX.snapTo(0f)
+                                    }
+                                } else {
+                                    coroutineScope.launch {
+                                        offsetX.animateTo(
+                                            targetValue = 0f,
+                                            animationSpec = spring(stiffness = Spring.StiffnessMedium)
+                                        )
+                                    }
+                                }
+                                tracker.reset()
+                                dragChange.consume()
+                                break
+                            }
+
+                            val positionChange = dragChange.positionChange()
+                            cumulativeDx += positionChange.x
+                            cumulativeDy += positionChange.y
+                            velocityTracker.addPosition(dragChange.uptimeMillis, dragChange.position)
+
+                            val axis = tracker.update(cumulativeDx, cumulativeDy)
+                            if (axis == GestureAxis.HORIZONTAL) {
+                                dragChange.consume()
+                                val prevOffset = offsetX.value
+                                val newOffset = policy.clampOffset(prevOffset + positionChange.x, isRtl)
+
+                                if (policy.hasCrossedThreshold(prevOffset, newOffset, isRtl)) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
+
+                                coroutineScope.launch {
+                                    offsetX.snapTo(newOffset)
+                                }
+                            } else if (axis == GestureAxis.VERTICAL || axis == GestureAxis.BLOCKED) {
+                                // Locked vertically or blocked - let parent scroll handle it
+                            }
+                        }
+                    }
+                }
+        ) {
+            content()
+        }
+    }
 }

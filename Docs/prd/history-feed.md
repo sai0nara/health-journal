@@ -5,7 +5,7 @@
 > entry's vitals from its card. The History overflow menu also opens the workout
 > hub.
 
-Last updated: 2026-10-29
+Last updated: 2026-11-08
 
 ## Overview
 
@@ -95,6 +95,7 @@ from the active feed.
 
 - `Docs/prd/entry-logging.md` — how entries are captured.
 - `Docs/prd/manual-vitals.md` — the vitals shown and edited on the card.
+- `Docs/prd/swipe-to-archive-safety.md` — planned gesture safety refinement for FR-4 / AC-4.
 - [[data-layer]] — the entry/archive schema and DAO queries.
 - [[ui-layer]] — the History and Archive screens.
 
