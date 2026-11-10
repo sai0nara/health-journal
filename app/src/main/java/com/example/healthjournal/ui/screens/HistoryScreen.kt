@@ -247,8 +247,9 @@ fun HistoryScreen(
                                 if (current.date == date) {
                                     viewModel.clearDateFilter()
                                 } else {
-                                    // Start period or switch
-                                    viewModel.setDateFilter(HistoryDateFilter.SingleDay(date))
+                                    viewModel.setDateFilter(
+                                        HistoryDateFilter.periodOf(current.date, date)
+                                    )
                                 }
                             }
                             is HistoryDateFilter.All -> {
