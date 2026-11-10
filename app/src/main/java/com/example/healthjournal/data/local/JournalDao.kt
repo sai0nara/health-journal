@@ -35,6 +35,12 @@ interface JournalDao {
     )
     suspend fun getAllEntriesInDateRange(profileId: String, startDate: Long, endDate: Long): List<JournalEntry>
 
+    @Query(
+        "SELECT timestamp FROM journal_entries WHERE profileId = :profileId " +
+            "AND isArchived = 0 AND timestamp BETWEEN :startDate AND :endDate"
+    )
+    fun getActiveEntryTimestampsInDateRange(profileId: String, startDate: Long, endDate: Long): Flow<List<Long>>
+
     @Query("""
         SELECT * FROM journal_entries
         WHERE profileId = :profileId AND isArchived = 0

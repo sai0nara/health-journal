@@ -573,4 +573,20 @@
     <string name="vitals_snackbar_deleted">Запись удалена</string>
     <string name="vitals_fab_log">Записать</string>
     <string name="vitals_history_header">История</string>
+
+    <!-- Calendar History -->
+    <string name="history_calendar_toggle_cd">Переключить фильтр по календарю</string>
+    <string name="history_calendar_prev_month_cd">Предыдущий месяц</string>
+    <string name="history_calendar_next_month_cd">Следующий месяц</string>
+    <string name="history_calendar_day_cd">%1$s %2$s, %3$s</string>
+    <string name="history_calendar_has_entries">есть записи</string>
+    <string name="history_calendar_no_entries">нет записей</string>
+    <string name="history_preset_today">Сегодня</string>
+    <string name="history_preset_yesterday">Вчера</string>
+    <string name="history_preset_last_7_days">Последние 7 дней</string>
+    <string name="history_preset_last_30_days">Последние 30 дней</string>
+    <string name="history_date_filter_clear_cd">Сбросить фильтр по дате</string>
+    <string name="history_empty_date_title">Нет записей на эту дату</string>
+    <string name="history_empty_period_title">Нет записей за этот период</string>
+    <string name="history_empty_date_cta">Сбросить фильтр по дате</string>
 </resources>

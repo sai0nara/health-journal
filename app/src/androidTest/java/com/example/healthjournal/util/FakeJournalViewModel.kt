@@ -33,6 +33,12 @@ open class FakeJournalViewModel : IJournalViewModel {
     override val tagsByEntry: MutableStateFlow<Map<String, List<String>>> = MutableStateFlow(emptyMap())
     override val activeProfileId: MutableStateFlow<String> = MutableStateFlow(SELF_PROFILE_ID)
     override val activeProfile: MutableStateFlow<ProfileEntity?> = MutableStateFlow(null)
+    override val dateFilter: MutableStateFlow<com.example.healthjournal.domain.HistoryDateFilter> =
+        MutableStateFlow(com.example.healthjournal.domain.HistoryDateFilter.All)
+    override val visibleMonth: MutableStateFlow<java.time.YearMonth> =
+        MutableStateFlow(java.time.YearMonth.now())
+    override val daysWithEntriesInVisibleMonth: MutableStateFlow<Set<java.time.LocalDate>> =
+        MutableStateFlow(emptySet())
 
     var addEntryCalledWith: AddEntryCall? = null
     var updateEntryCalledWith: Pair<JournalEntry, Set<String>>? = null
@@ -159,6 +165,18 @@ open class FakeJournalViewModel : IJournalViewModel {
         } else {
             selectedTags.value + tag
         }
+    }
+
+    override fun setDateFilter(filter: com.example.healthjournal.domain.HistoryDateFilter) {
+        dateFilter.value = filter
+    }
+
+    override fun clearDateFilter() {
+        dateFilter.value = com.example.healthjournal.domain.HistoryDateFilter.All
+    }
+
+    override fun setVisibleMonth(yearMonth: java.time.YearMonth) {
+        visibleMonth.value = yearMonth
     }
 
     override val healthPermissions: Set<String> = emptySet()

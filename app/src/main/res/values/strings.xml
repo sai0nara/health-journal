@@ -570,4 +570,20 @@
     <string name="vitals_snackbar_deleted">Reading deleted</string>
     <string name="vitals_fab_log">Log Vital</string>
     <string name="vitals_history_header">History</string>
+
+    <!-- Calendar History -->
+    <string name="history_calendar_toggle_cd">Toggle calendar date filter</string>
+    <string name="history_calendar_prev_month_cd">Previous month</string>
+    <string name="history_calendar_next_month_cd">Next month</string>
+    <string name="history_calendar_day_cd">%1$s %2$s, %3$s</string>
+    <string name="history_calendar_has_entries">has entries</string>
+    <string name="history_calendar_no_entries">no entries</string>
+    <string name="history_preset_today">Today</string>
+    <string name="history_preset_yesterday">Yesterday</string>
+    <string name="history_preset_last_7_days">Last 7 Days</string>
+    <string name="history_preset_last_30_days">Last 30 Days</string>
+    <string name="history_date_filter_clear_cd">Clear date filter</string>
+    <string name="history_empty_date_title">No entries on this date</string>
+    <string name="history_empty_period_title">No entries in this period</string>
+    <string name="history_empty_date_cta">Clear date filter</string>
 </resources>

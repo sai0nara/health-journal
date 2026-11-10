@@ -50,6 +50,14 @@ class JournalRepository(
             journalDao.searchArchivedEntriesWithTags(it, query, tags, tags.size)
         }
 
+    fun getActiveEntryTimestampsInDateRange(startDate: Long, endDate: Long): Flow<List<Long>> =
+        activeProfile.activeProfileId.flatMapLatest {
+            journalDao.getActiveEntryTimestampsInDateRange(it, startDate, endDate)
+        }
+
+    fun getActiveEntryTimestampsInDateRange(profileId: String, startDate: Long, endDate: Long): Flow<List<Long>> =
+        journalDao.getActiveEntryTimestampsInDateRange(profileId, startDate, endDate)
+
     suspend fun insert(entry: JournalEntry) {
         insert(currentProfileId(), entry)
     }

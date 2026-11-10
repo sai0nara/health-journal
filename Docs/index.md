@@ -7,10 +7,13 @@
 > Cross-references between documents use backticked paths, not wikilinks,
 > because the same feature slug exists in three directories.
 
-Last updated: 2026-11-09
+Last updated: 2026-11-10
 
 ## Features
 
+- `Docs/prd/calendar-history.md` — PRD
+- `Docs/psd/calendar-history.md` — PSD
+- `Docs/tests/calendar-history.md` — tests
 - `Docs/prd/ai-insights.md` — planned
 - `Docs/prd/vitals-trends.md` — PRD
 - `Docs/psd/vitals-trends.md` — PSD
