@@ -290,4 +290,24 @@ class JournalRepositoryTest {
             })
         }
     }
+
+    @Test
+    fun getVitalsEntries_queriesDaoWithActiveProfile() = runBlocking {
+        val entry = JournalEntry(entry_id = "v1", description = "", bp_systolic = 120.0, bp_diastolic = 80.0)
+        every { journalDao.getVitalsEntries(SELF_PROFILE_ID) } returns flowOf(listOf(entry))
+
+        val result = repository.vitalsEntries.first()
+
+        assertEquals(listOf(entry), result)
+    }
+
+    @Test
+    fun getVitalsEntries_withExplicitProfile_queriesDao() = runBlocking {
+        val entry = JournalEntry(entry_id = "v2", description = "", blood_glucose_mmol = 5.5, profileId = "child_1")
+        every { journalDao.getVitalsEntries("child_1") } returns flowOf(listOf(entry))
+
+        val result = repository.getVitalsEntries("child_1").first()
+
+        assertEquals(listOf(entry), result)
+    }
 }

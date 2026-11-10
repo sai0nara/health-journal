@@ -18,6 +18,8 @@ class JournalRepository(
 ) {
     val allEntries: Flow<List<JournalEntry>> =
         activeProfile.activeProfileId.flatMapLatest { journalDao.getAllEntries(it) }
+    val vitalsEntries: Flow<List<JournalEntry>> =
+        activeProfile.activeProfileId.flatMapLatest { journalDao.getVitalsEntries(it) }
     val allTags: Flow<List<EntryTagCrossRef>> =
         activeProfile.activeProfileId.flatMapLatest { journalDao.observeAllTags(it) }
     val archivedEntries: Flow<List<JournalEntry>> =
@@ -25,6 +27,9 @@ class JournalRepository(
     val activeProfileId: StateFlow<String> = activeProfile.activeProfileId
 
     fun currentProfileId(): String = activeProfile.currentProfileId()
+
+    fun getVitalsEntries(profileId: String): Flow<List<JournalEntry>> =
+        journalDao.getVitalsEntries(profileId)
 
     fun getEntriesSortedByDate(isAsc: Boolean): Flow<List<JournalEntry>> =
         activeProfile.activeProfileId.flatMapLatest { journalDao.getEntriesSortedByDate(it, isAsc) }
@@ -92,7 +97,10 @@ class JournalRepository(
     }
 
     suspend fun deleteEntries(entryIds: List<String>) {
-        val profileId = currentProfileId()
+        deleteEntries(currentProfileId(), entryIds)
+    }
+
+    suspend fun deleteEntries(profileId: String, entryIds: List<String>) {
         // Remove tag cross-refs first: the table has no FK cascade, and orphaned
         // rows would silently re-attach stale tags if the entry is ever
         // re-imported (e.g. tombstone expired while another device kept it).
@@ -101,6 +109,10 @@ class JournalRepository(
         entryIds.forEach { id ->
             journalDao.insertDeletedEntry(DeletedEntry(id, profileId = profileId))
         }
+    }
+
+    suspend fun delete(profileId: String, entryId: String) {
+        deleteEntries(profileId, listOf(entryId))
     }
 
     suspend fun deleteAllArchived() {

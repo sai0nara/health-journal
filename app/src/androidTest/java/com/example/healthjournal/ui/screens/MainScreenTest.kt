@@ -17,6 +17,7 @@ class MainScreenTest {
 
     private val expectedRoutes = listOf(
         "history",
+        "vitals",
         "workout",
         "measurements",
         "presets",

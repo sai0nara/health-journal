@@ -30,6 +30,13 @@ val DarkTextPrimary = Color(0xFFE9ECEF)
 val DarkTextSecondary = Color(0xFFA0AAB2)
 val DarkError = Color(0xFFEF5350)
 
+/** Vitals trend chart colors */
+val VitalsSystolicColor = Color(0xFFE57373)
+val VitalsDiastolicColor = Color(0xFF4DB6AC)
+val VitalsReferenceLineColor = Color(0xFF9E9E9E)
+val VitalsReferenceBandColor = Color(0x144CAF50)
+val ColorTransparent = Color(0x00000000)
+
 /**
  * Builds the Material 3 [ColorScheme] for the Light ("Medical Standard") theme.
  */

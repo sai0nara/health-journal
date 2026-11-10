@@ -12,6 +12,20 @@ interface JournalDao {
     @Query("SELECT * FROM journal_entries WHERE profileId = :profileId AND isArchived = 0 ORDER BY timestamp DESC")
     fun getAllEntries(profileId: String): Flow<List<JournalEntry>>
 
+    @Query("""
+        SELECT * FROM journal_entries
+        WHERE profileId = :profileId AND isArchived = 0
+        AND (
+            (bp_systolic IS NOT NULL AND bp_diastolic IS NOT NULL)
+            OR blood_glucose_mmol IS NOT NULL
+            OR heart_rate_avg IS NOT NULL
+            OR body_temperature_c IS NOT NULL
+            OR spo2_percent IS NOT NULL
+        )
+        ORDER BY timestamp ASC
+    """)
+    fun getVitalsEntries(profileId: String): Flow<List<JournalEntry>>
+
     @Query("SELECT * FROM journal_entries WHERE profileId = :profileId ORDER BY lastModified DESC")
     fun getAllEntriesIncludingArchived(profileId: String): Flow<List<JournalEntry>>
 
