@@ -589,4 +589,5 @@
     <string name="history_empty_date_title">Нет записей на эту дату</string>
     <string name="history_empty_period_title">Нет записей за этот период</string>
     <string name="history_empty_date_cta">Сбросить фильтр по дате</string>
+    <string name="history_calendar_apply">Применить</string>
 </resources>

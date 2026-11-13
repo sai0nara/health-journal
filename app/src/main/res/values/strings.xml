@@ -586,4 +586,5 @@
     <string name="history_empty_date_title">No entries on this date</string>
     <string name="history_empty_period_title">No entries in this period</string>
     <string name="history_empty_date_cta">Clear date filter</string>
+    <string name="history_calendar_apply">Apply</string>
 </resources>

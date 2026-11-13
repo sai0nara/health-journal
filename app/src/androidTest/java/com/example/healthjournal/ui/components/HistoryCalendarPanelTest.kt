@@ -84,4 +84,29 @@ class HistoryCalendarPanelTest {
         composeTestRule.onNodeWithTag("clear_date_filter_icon", useUnmergedTree = true).performClick()
         assertTrue(clearClicked)
     }
+
+    @Test
+    fun calendarPanel_applyButton_invokesOnApply() {
+        val nov2026 = YearMonth.of(2026, 11)
+        var applyClicked = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                HistoryCalendarPanel(
+                    visibleMonth = nov2026,
+                    dateFilter = HistoryDateFilter.All,
+                    daysWithEntries = emptySet(),
+                    onPreviousMonth = {},
+                    onNextMonth = {},
+                    onDateSelected = {},
+                    onPresetSelected = {},
+                    onClearDateFilter = {},
+                    onApply = { applyClicked = true }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("calendar_apply_button").assertIsDisplayed().performClick()
+        assertTrue(applyClicked)
+    }
 }

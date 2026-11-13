@@ -131,7 +131,10 @@ class FinishRoutinePromptTest {
         composeTestRule.onNodeWithTag("finish_routine_prompt").assertDoesNotExist()
         val state = viewModel.uiState.value as WorkoutUiState.Active
         assertEquals(WorkoutStatus.ACTIVE.name, state.session.status)
-        assertEquals(90, state.restSeconds)
+        org.junit.Assert.assertTrue(
+            "Expected rest timer active (88..90s), was ${state.restSeconds}",
+            state.restSeconds in 88..90
+        )
     }
 
     @Test

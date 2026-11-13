@@ -139,6 +139,16 @@ interface JournalDao {
     @Query("DELETE FROM journal_entries WHERE profileId = :profileId AND entry_id IN (:entryIds)")
     suspend fun deleteEntriesByIds(profileId: String, entryIds: List<String>)
 
+    @Transaction
+    suspend fun deleteEntriesWithTombstones(profileId: String, entryIds: List<String>) {
+        // Remove tag cross-refs first: the table has no FK cascade, and orphaned
+        // rows would silently re-attach stale tags if the entry is ever
+        // re-imported (e.g. tombstone expired while another device kept it).
+        deleteAllTagsForEntries(profileId, entryIds)
+        deleteEntriesByIds(profileId, entryIds)
+        insertAllDeletedEntries(entryIds.map { id -> DeletedEntry(id, profileId = profileId) })
+    }
+
     @Query("DELETE FROM journal_entries WHERE profileId = :profileId AND isArchived = 1")
     suspend fun deleteAllArchivedEntries(profileId: String)
 

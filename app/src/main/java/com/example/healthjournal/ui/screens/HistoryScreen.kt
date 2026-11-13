@@ -264,6 +264,7 @@ fun HistoryScreen(
                         viewModel.setDateFilter(HistoryDateFilter.preset(preset, java.time.LocalDate.now()))
                     },
                     onClearDateFilter = { viewModel.clearDateFilter() },
+                    onApply = { isCalendarExpanded = false },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                 )
             }

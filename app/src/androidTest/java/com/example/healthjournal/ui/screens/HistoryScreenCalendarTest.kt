@@ -133,4 +133,30 @@ class HistoryScreenCalendarTest {
         composeTestRule.waitForIdle()
         assertTrue(addEntryClicked)
     }
+
+    @Test
+    fun calendarApplyButton_closesExpandedCalendarPanel() {
+        val fakeViewModel = FakeJournalViewModel()
+
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                HistoryScreen(
+                    viewModel = fakeViewModel,
+                    onAddEntryClick = {},
+                    onEntryClick = {}
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        // Expand calendar
+        composeTestRule.onNodeWithTag("history_calendar_toggle").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("history_calendar_panel").assertIsDisplayed()
+
+        // Tap Apply button -> collapses calendar panel
+        composeTestRule.onNodeWithTag("calendar_apply_button").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("history_calendar_panel").assertDoesNotExist()
+    }
 }

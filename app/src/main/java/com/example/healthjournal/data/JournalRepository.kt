@@ -109,14 +109,7 @@ class JournalRepository(
     }
 
     suspend fun deleteEntries(profileId: String, entryIds: List<String>) {
-        // Remove tag cross-refs first: the table has no FK cascade, and orphaned
-        // rows would silently re-attach stale tags if the entry is ever
-        // re-imported (e.g. tombstone expired while another device kept it).
-        journalDao.deleteAllTagsForEntries(profileId, entryIds)
-        journalDao.deleteEntriesByIds(profileId, entryIds)
-        entryIds.forEach { id ->
-            journalDao.insertDeletedEntry(DeletedEntry(id, profileId = profileId))
-        }
+        journalDao.deleteEntriesWithTombstones(profileId, entryIds)
     }
 
     suspend fun delete(profileId: String, entryId: String) {

@@ -48,6 +48,7 @@ fun HistoryCalendarPanel(
     onDateSelected: (LocalDate) -> Unit,
     onPresetSelected: (DatePreset) -> Unit,
     onClearDateFilter: () -> Unit,
+    onApply: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -98,6 +99,19 @@ fun HistoryCalendarPanel(
                     onClear = onClearDateFilter,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
+            }
+
+            // Apply button to close the calendar panel
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Button(
+                    onClick = onApply,
+                    modifier = Modifier.testTag("calendar_apply_button")
+                ) {
+                    Text(text = stringResource(R.string.history_calendar_apply))
+                }
             }
         }
     }
