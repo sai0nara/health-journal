@@ -40,7 +40,7 @@ class StatusBarAppearanceTest {
 
     @Test
     fun statusBar_showsDarkIconsAndTransparentBarInLightMode() {
-        composeTestRule.activity.enableEdgeToEdge()
+        composeTestRule.runOnUiThread { composeTestRule.activity.enableEdgeToEdge() }
         composeTestRule.setContent {
             HealthJournalTheme(darkTheme = false) {
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
@@ -54,7 +54,7 @@ class StatusBarAppearanceTest {
 
     @Test
     fun statusBar_showsLightIconsAndTransparentBarInDarkMode() {
-        composeTestRule.activity.enableEdgeToEdge()
+        composeTestRule.runOnUiThread { composeTestRule.activity.enableEdgeToEdge() }
         composeTestRule.setContent {
             HealthJournalTheme(darkTheme = true) {
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
@@ -69,7 +69,7 @@ class StatusBarAppearanceTest {
     @Test
     fun statusBar_iconAppearance_updatesInstantlyWhenThemeToggles() {
         val darkTheme = mutableStateOf(false)
-        composeTestRule.activity.enableEdgeToEdge()
+        composeTestRule.runOnUiThread { composeTestRule.activity.enableEdgeToEdge() }
         composeTestRule.setContent {
             HealthJournalTheme(darkTheme = darkTheme.value) {
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))

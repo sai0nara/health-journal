@@ -310,4 +310,28 @@ class JournalRepositoryTest {
 
         assertEquals(listOf(entry), result)
     }
+
+    @Test
+    fun getActiveEntryTimestampsInDateRange_delegatesToDaoWithActiveProfile() = runBlocking {
+        val timestamps = listOf(1700000000000L, 1700001000000L)
+        every {
+            journalDao.getActiveEntryTimestampsInDateRange(SELF_PROFILE_ID, 1700000000000L, 1700050000000L)
+        } returns flowOf(timestamps)
+
+        val result = repository.getActiveEntryTimestampsInDateRange(1700000000000L, 1700050000000L).first()
+
+        assertEquals(timestamps, result)
+    }
+
+    @Test
+    fun getActiveEntryTimestampsInDateRange_withExplicitProfile_delegatesToDao() = runBlocking {
+        val timestamps = listOf(1700002000000L)
+        every {
+            journalDao.getActiveEntryTimestampsInDateRange("sibling", 1700000000000L, 1700050000000L)
+        } returns flowOf(timestamps)
+
+        val result = repository.getActiveEntryTimestampsInDateRange("sibling", 1700000000000L, 1700050000000L).first()
+
+        assertEquals(timestamps, result)
+    }
 }

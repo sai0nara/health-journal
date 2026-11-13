@@ -74,3 +74,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Vitals & Trends: Dedicated screen for blood pressure, glucose, and other vitals with interactive trend charts**
   *Link: [./archive/vitals_trends_20261109/](./archive/vitals_trends_20261109/)*
 
+---
+
+- [x] **Track: Calendar history with events from one day or period**
+  *Link: [./archive/calendar_history_20261110/](./archive/calendar_history_20261110/)*
+

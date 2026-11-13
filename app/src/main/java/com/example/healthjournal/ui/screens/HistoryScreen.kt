@@ -1,6 +1,9 @@
 package com.example.healthjournal.ui.screens
 
 import android.view.accessibility.AccessibilityManager
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -51,6 +54,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.UnitSettings
+import com.example.healthjournal.domain.HistoryDateFilter
 import com.example.healthjournal.ui.components.AboutAppDialog
 import com.example.healthjournal.R
 import com.example.healthjournal.domain.GestureAxis
@@ -135,6 +139,11 @@ fun HistoryScreen(
 
     var showAboutDialog by remember { mutableStateOf(false) }
     var showOverflow by remember { mutableStateOf(false) }
+    var isCalendarExpanded by remember { mutableStateOf(false) }
+
+    val dateFilter by viewModel.dateFilter.collectAsState()
+    val visibleMonth by viewModel.visibleMonth.collectAsState()
+    val daysWithEntries by viewModel.daysWithEntriesInVisibleMonth.collectAsState()
 
     if (showAboutDialog) {
         AboutAppDialog(onDismiss = { showAboutDialog = false })
@@ -161,6 +170,20 @@ fun HistoryScreen(
                 },
                 actions = {
                     profileSwitcher(true, onSwitchProfile)
+                    IconButton(
+                        onClick = { isCalendarExpanded = !isCalendarExpanded },
+                        modifier = Modifier.testTag("history_calendar_toggle")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = stringResource(R.string.history_calendar_toggle_cd),
+                            tint = if (isCalendarExpanded || dateFilter !is HistoryDateFilter.All) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                    }
                     IconButton(
                         onClick = { showOverflow = true },
                         modifier = Modifier.testTag("overflow_menu")
@@ -206,6 +229,57 @@ fun HistoryScreen(
                 placeholder = stringResource(R.string.history_search_placeholder)
             )
 
+            // Collapsible Calendar Panel
+            AnimatedVisibility(
+                visible = isCalendarExpanded,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                com.example.healthjournal.ui.components.HistoryCalendarPanel(
+                    visibleMonth = visibleMonth,
+                    dateFilter = dateFilter,
+                    daysWithEntries = daysWithEntries,
+                    onPreviousMonth = { viewModel.setVisibleMonth(visibleMonth.minusMonths(1)) },
+                    onNextMonth = { viewModel.setVisibleMonth(visibleMonth.plusMonths(1)) },
+                    onDateSelected = { date ->
+                        when (val current = dateFilter) {
+                            is HistoryDateFilter.SingleDay -> {
+                                if (current.date == date) {
+                                    viewModel.clearDateFilter()
+                                } else {
+                                    viewModel.setDateFilter(
+                                        HistoryDateFilter.periodOf(current.date, date)
+                                    )
+                                }
+                            }
+                            is HistoryDateFilter.All -> {
+                                viewModel.setDateFilter(HistoryDateFilter.SingleDay(date))
+                            }
+                            is HistoryDateFilter.Period -> {
+                                viewModel.setDateFilter(HistoryDateFilter.SingleDay(date))
+                            }
+                        }
+                    },
+                    onPresetSelected = { preset ->
+                        viewModel.setDateFilter(HistoryDateFilter.preset(preset, java.time.LocalDate.now()))
+                    },
+                    onClearDateFilter = { viewModel.clearDateFilter() },
+                    onApply = { isCalendarExpanded = false },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
+
+            // Standalone Active Date Filter Chip (when calendar is collapsed but filter is active)
+            if (!isCalendarExpanded && dateFilter !is HistoryDateFilter.All) {
+                com.example.healthjournal.ui.components.ActiveDateFilterChip(
+                    dateFilter = dateFilter,
+                    onClear = { viewModel.clearDateFilter() },
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .align(Alignment.Start)
+                )
+            }
+
             TagSelectionRow(
                 selectedTags = selectedTags,
                 onTagToggle = { tag -> viewModel.toggleTag(tag) },
@@ -235,11 +309,35 @@ fun HistoryScreen(
             ) {
                 if (entries.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            activeProfile?.let {
-                                stringResource(R.string.history_empty_profile, it.name)
-                            } ?: stringResource(R.string.history_empty)
-                        )
+                        if (dateFilter !is HistoryDateFilter.All) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(24.dp).testTag("history_date_empty_state")
+                            ) {
+                                Text(
+                                    text = if (dateFilter is HistoryDateFilter.SingleDay) {
+                                        stringResource(R.string.history_empty_date_title)
+                                    } else {
+                                        stringResource(R.string.history_empty_period_title)
+                                    },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Button(
+                                    onClick = { viewModel.clearDateFilter() },
+                                    modifier = Modifier.testTag("clear_date_filter_cta")
+                                ) {
+                                    Text(stringResource(R.string.history_empty_date_cta))
+                                }
+                            }
+                        } else {
+                            Text(
+                                activeProfile?.let {
+                                    stringResource(R.string.history_empty_profile, it.name)
+                                } ?: stringResource(R.string.history_empty)
+                            )
+                        }
                     }
                 } else {
                     val listState = rememberLazyListState()

@@ -73,7 +73,23 @@ fun AddEntryScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val richTextState = rememberRichTextState()
-    var selectedTimestamp by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val initialTimestamp = remember(entryId) {
+        val currentFilter = viewModel.dateFilter.value
+        val now = System.currentTimeMillis()
+        if (entryId == null && currentFilter is com.example.healthjournal.domain.HistoryDateFilter.SingleDay) {
+            val zone = java.time.ZoneId.systemDefault()
+            val today = java.time.LocalDate.now(zone)
+            if (currentFilter.date != today) {
+                val nowTime = java.time.Instant.ofEpochMilli(now).atZone(zone).toLocalTime()
+                currentFilter.date.atTime(nowTime).atZone(zone).toInstant().toEpochMilli()
+            } else {
+                now
+            }
+        } else {
+            now
+        }
+    }
+    var selectedTimestamp by remember { mutableLongStateOf(initialTimestamp) }
     var attachedPhotoUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var attachedFiles by remember { mutableStateOf<List<AttachmentData>>(emptyList()) }
     var existingEntry by remember { mutableStateOf<JournalEntry?>(null) }

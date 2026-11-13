@@ -920,4 +920,56 @@ class JournalViewModelTest {
         assertFalse(inserted.captured.isSynced!!)
         assertEquals("PENDING_SYNC", inserted.captured.syncStatus)
     }
+
+    @Test
+    fun dateFilter_defaultsToAll() {
+        assertEquals(com.example.healthjournal.domain.HistoryDateFilter.All, viewModel.dateFilter.value)
+    }
+
+    @Test
+    fun setDateFilter_updatesStateFlow() {
+        val filter = com.example.healthjournal.domain.HistoryDateFilter.SingleDay(java.time.LocalDate.of(2026, 11, 10))
+        viewModel.setDateFilter(filter)
+        assertEquals(filter, viewModel.dateFilter.value)
+    }
+
+    @Test
+    fun clearDateFilter_resetsToAll() {
+        viewModel.setDateFilter(com.example.healthjournal.domain.HistoryDateFilter.SingleDay(java.time.LocalDate.of(2026, 11, 10)))
+        viewModel.clearDateFilter()
+        assertEquals(com.example.healthjournal.domain.HistoryDateFilter.All, viewModel.dateFilter.value)
+    }
+
+    @Test
+    fun setVisibleMonth_updatesStateFlow() {
+        val ym = java.time.YearMonth.of(2026, 11)
+        viewModel.setVisibleMonth(ym)
+        assertEquals(ym, viewModel.visibleMonth.value)
+    }
+
+    @Test
+    fun allEntries_filtersByDateRange_combinedWithSearchAndTags() = runTest {
+        val now = java.time.LocalDate.of(2026, 11, 10)
+        val zone = java.time.ZoneId.systemDefault()
+        val todayMillis = now.atStartOfDay(zone).toInstant().toEpochMilli() + 3600_000L
+        val yesterdayMillis = now.minusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() + 3600_000L
+
+        val e1 = JournalEntry(entry_id = "1", description = "Morning headache", timestamp = todayMillis)
+        val e2 = JournalEntry(entry_id = "2", description = "Old headache", timestamp = yesterdayMillis)
+
+        every { repository.searchEntries("headache", false) } returns flowOf(listOf(e1, e2))
+
+        val collected = mutableListOf<List<JournalEntry>>()
+        val job = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.allEntries.collect { collected.add(it) }
+        }
+
+        viewModel.setSearchQuery("headache")
+        viewModel.setDateFilter(com.example.healthjournal.domain.HistoryDateFilter.SingleDay(now))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val results = viewModel.allEntries.value
+        assertEquals(listOf(e1), results)
+        job.cancel()
+    }
 }

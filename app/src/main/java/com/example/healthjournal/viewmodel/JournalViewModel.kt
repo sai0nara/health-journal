@@ -58,6 +58,9 @@ interface IJournalViewModel {
     val tagsByEntry: StateFlow<Map<String, List<String>>>
     val activeProfileId: StateFlow<String>
     val activeProfile: StateFlow<ProfileEntity?>
+    val dateFilter: StateFlow<com.example.healthjournal.domain.HistoryDateFilter>
+    val visibleMonth: StateFlow<java.time.YearMonth>
+    val daysWithEntriesInVisibleMonth: StateFlow<Set<java.time.LocalDate>>
 
     fun addEntry(
         description: String,
@@ -88,6 +91,9 @@ interface IJournalViewModel {
     fun setArchiveSearchQuery(query: String)
     fun setSortOrder(isAsc: Boolean)
     fun toggleTag(tag: String)
+    fun setDateFilter(filter: com.example.healthjournal.domain.HistoryDateFilter)
+    fun clearDateFilter()
+    fun setVisibleMonth(yearMonth: java.time.YearMonth)
 
     // Health Connect
     val healthPermissions: Set<String>
@@ -108,6 +114,13 @@ interface IJournalViewModel {
     fun emptyArchive()
     suspend fun savePersistentFile(uri: android.net.Uri, isPhoto: Boolean): String?
 }
+
+private data class FilterParams(
+    val query: String,
+    val isAsc: Boolean,
+    val tags: Set<String>,
+    val dateFilter: com.example.healthjournal.domain.HistoryDateFilter
+)
 
 class JournalViewModel(
     application: Application,
@@ -137,6 +150,30 @@ class JournalViewModel(
 
     private val _selectedTags = MutableStateFlow(setOf<String>())
     override val selectedTags: StateFlow<Set<String>> = _selectedTags.asStateFlow()
+
+    private val _dateFilter = MutableStateFlow<com.example.healthjournal.domain.HistoryDateFilter>(com.example.healthjournal.domain.HistoryDateFilter.All)
+    override val dateFilter: StateFlow<com.example.healthjournal.domain.HistoryDateFilter> = _dateFilter.asStateFlow()
+
+    private val _visibleMonth = MutableStateFlow(java.time.YearMonth.now())
+    override val visibleMonth: StateFlow<java.time.YearMonth> = _visibleMonth.asStateFlow()
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    override val daysWithEntriesInVisibleMonth: StateFlow<Set<java.time.LocalDate>> = _visibleMonth
+        .flatMapLatest { ym ->
+            val zone = java.time.ZoneId.systemDefault()
+            val startMillis = ym.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
+            val endMillis = ym.atEndOfMonth().plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1L
+            repository.getActiveEntryTimestampsInDateRange(startMillis, endMillis).map { timestamps ->
+                timestamps.map { ts ->
+                    java.time.Instant.ofEpochMilli(ts).atZone(zone).toLocalDate()
+                }.toSet()
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptySet()
+        )
+
     override val tagsByEntry: StateFlow<Map<String, List<String>>> =
         repository.allTags.map { refs -> refs.groupBy({ it.entryId }, { it.tag }) }
             .stateIn(
@@ -147,18 +184,29 @@ class JournalViewModel(
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     override val allEntries: StateFlow<List<JournalEntry>> = combine(
-        _searchQuery, _isAscending, _selectedTags
-    ) { query, isAsc, tags ->
-        Triple(query, isAsc, tags)
-    }.flatMapLatest { (query, isAsc, tags) ->
-        if (tags.isEmpty()) {
-            if (query.isBlank()) {
-                repository.getEntriesSortedByDate(isAsc)
+        _searchQuery, _isAscending, _selectedTags, _dateFilter
+    ) { query, isAsc, tags, dateFilter ->
+        FilterParams(query, isAsc, tags, dateFilter)
+    }.flatMapLatest { params ->
+        val baseFlow = if (params.tags.isEmpty()) {
+            if (params.query.isBlank()) {
+                repository.getEntriesSortedByDate(params.isAsc)
             } else {
-                repository.searchEntries(query, isAsc)
+                repository.searchEntries(params.query, params.isAsc)
             }
         } else {
-            repository.searchEntriesWithTags(query, tags.toList(), isAsc)
+            repository.searchEntriesWithTags(params.query, params.tags.toList(), params.isAsc)
+        }
+
+        when (val filter = params.dateFilter) {
+            is com.example.healthjournal.domain.HistoryDateFilter.All -> baseFlow
+            is com.example.healthjournal.domain.HistoryDateFilter.SingleDay,
+            is com.example.healthjournal.domain.HistoryDateFilter.Period -> {
+                val epochRange = filter.toEpochRange()
+                baseFlow.map { entries ->
+                    entries.filter { epochRange.contains(it.timestamp) }
+                }
+            }
         }
     }.stateIn(
         scope = viewModelScope,
@@ -483,6 +531,18 @@ class JournalViewModel(
 
     override fun setSortOrder(isAsc: Boolean) {
         _isAscending.value = isAsc
+    }
+
+    override fun setDateFilter(filter: com.example.healthjournal.domain.HistoryDateFilter) {
+        _dateFilter.value = filter
+    }
+
+    override fun clearDateFilter() {
+        _dateFilter.value = com.example.healthjournal.domain.HistoryDateFilter.All
+    }
+
+    override fun setVisibleMonth(yearMonth: java.time.YearMonth) {
+        _visibleMonth.value = yearMonth
     }
 
     override fun toggleTag(tag: String) {

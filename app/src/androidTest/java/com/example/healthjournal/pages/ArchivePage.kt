@@ -39,8 +39,10 @@ class ArchivePage(private val rule: ComposeTestRule) {
      * node center: a row with photo thumbnails has no long-press target in its
      * middle, and the center would land on the photo strip instead.
      */
-    fun longPressEntry(id: String) =
-        entry(id).performTouchInput { longClick(percentOffset(0.05f, 0.5f)) }
+    fun longPressEntry(id: String) {
+        entry(id).performTouchInput { longClick(percentOffset(0.15f, 0.25f)) }
+        rule.waitForIdle()
+    }
 
     fun clickEntry(id: String) = entry(id).performClick()
 
