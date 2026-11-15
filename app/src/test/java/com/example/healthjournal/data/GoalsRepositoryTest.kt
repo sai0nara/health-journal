@@ -75,4 +75,48 @@ class GoalsRepositoryTest {
 
         assertEquals(siblingGoals, repository.goals.first())
     }
+
+    @Test
+    fun workoutWeeklyTarget_defaultsToFourWhenUnset() = runTest {
+        every { dao.observeAll(SELF_PROFILE_ID) } returns flowOf(emptyList())
+
+        assertEquals(4, repository.workoutWeeklyTarget.first())
+    }
+
+    @Test
+    fun setWorkoutWeeklyTarget_persistsForActiveProfileWithinRange() = runTest {
+        repository.setWorkoutWeeklyTarget(6)
+
+        val captured = slot<GoalEntity>()
+        coVerify { dao.upsertGoal(capture(captured)) }
+        assertEquals(GoalsRepository.WORKOUT_WEEKLY_TARGET, captured.captured.parameterId)
+        assertEquals(6.0, captured.captured.target, 0.001)
+        assertEquals(SELF_PROFILE_ID, captured.captured.profileId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun setWorkoutWeeklyTarget_rejectsZero() = runTest {
+        repository.setWorkoutWeeklyTarget(0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun setWorkoutWeeklyTarget_rejectsAboveFourteen() = runTest {
+        repository.setWorkoutWeeklyTarget(15)
+    }
+
+    @Test
+    fun workoutWeeklyTarget_reloadsPerProfile() = runTest {
+        every { dao.observeAll(SELF_PROFILE_ID) } returns flowOf(
+            listOf(GoalEntity(GoalsRepository.WORKOUT_WEEKLY_TARGET, 5.0, 1_000L, SELF_PROFILE_ID))
+        )
+        every { dao.observeAll("sibling") } returns flowOf(
+            listOf(GoalEntity(GoalsRepository.WORKOUT_WEEKLY_TARGET, 2.0, 2_000L, "sibling"))
+        )
+
+        assertEquals(5, repository.workoutWeeklyTarget.first())
+
+        activeProfile.switchTo("sibling")
+
+        assertEquals(2, repository.workoutWeeklyTarget.first())
+    }
 }

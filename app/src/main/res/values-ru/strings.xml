@@ -590,4 +590,33 @@
     <string name="history_empty_period_title">Нет записей за этот период</string>
     <string name="history_empty_date_cta">Сбросить фильтр по дате</string>
     <string name="history_calendar_apply">Применить</string>
+
+    <!-- Today Dashboard -->
+    <string name="nav_today">Сегодня</string>
+    <string name="nav_history">История</string>
+    <string name="nav_trends">Тренды</string>
+    <string name="nav_more">Ещё</string>
+    <string name="profile_switcher_personal_card">Личная карта</string>
+    <string name="history_menu_archive">Архив</string>
+    <string name="today_overview_header">Обзор дня</string>
+    <string name="today_recent_activity_header">Недавняя активность</string>
+    <string name="today_view_all">Все</string>
+    <string name="today_vitals_title">Показатели</string>
+    <string name="today_workouts_title">Тренировки</string>
+    <string name="today_measurements_title">Замеры</string>
+    <string name="today_this_week">%1$d/%2$d за неделю</string>
+    <string name="today_delta_this_week">%1$s за неделю</string>
+    <string name="today_empty_card_prompt">Нет данных • Нажмите, чтобы добавить</string>
+    <string name="today_recent_activity_empty">Нет недавней активности</string>
+    <string name="today_fab_log">Запись</string>
+    <string name="today_quick_log_title">Быстрая запись</string>
+    <string name="today_quick_log_presets">Пресеты тренировок</string>
+    <string name="today_quick_log_manage_presets">Управление пресетами</string>
+    <string name="today_quick_log_vitals">Записать показатели</string>
+    <string name="today_quick_log_workout">Начать тренировку</string>
+    <string name="today_quick_log_measurement">Записать замер</string>
+    <string name="today_quick_log_journal">Новая заметка</string>
+    <string name="today_weekly_workout_goal_label">Цель тренировок в неделю</string>
+    <string name="today_weekly_workout_goal_unit">%1$d / нед.</string>
+    <string name="today_more_title">Ещё</string>
 </resources>

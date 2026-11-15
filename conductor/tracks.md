@@ -79,3 +79,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Calendar history with events from one day or period**
   *Link: [./archive/calendar_history_20261110/](./archive/calendar_history_20261110/)*
 
+---
+
+- [x] **Track: Today Dashboard (Glanceable Home, Quick-Log FAB & Bottom Navigation)**
+  *Link: [./tracks/today_dashboard_20261115/](./tracks/today_dashboard_20261115/)*
+

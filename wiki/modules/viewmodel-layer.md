@@ -2,7 +2,7 @@
 
 > The MVVM state holders: each feature's ViewModel exposes `StateFlow` state and orchestrates calls into the data layer.
 
-Last updated: 2026-11-06
+Last updated: 2026-11-15
 
 ## What lives here
 
@@ -16,6 +16,7 @@ data layer directly — ViewModels are the only path between the two.
 
 ## Key components
 
+- `TodayDashboardViewModel` — aggregates active-profile vitals slides, rolling 7-day workout progress against `GoalsRepository.workoutWeeklyTarget`, weight sparkline and weekly delta, recent workout presets, and the 5-item Recent Activity timeline into `TodayDashboardUiState`.
 - `JournalViewModel` — the journal feed and entry editing flows, plus the
   Drive-sync state mapped from WorkManager progress: status text, the
   manual-sync spinner gate, and an auth-required flag the Settings screen
@@ -59,6 +60,7 @@ data layer directly — ViewModels are the only path between the two.
 
 ## Sources
 
+- `app/src/main/java/com/example/healthjournal/viewmodel/TodayDashboardViewModel.kt` — Today dashboard state aggregation across vitals, workouts, measurements, goals, presets, and recent activity.
 - `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` — journal feed state, explicit-profile writes, and Health Connect target capture.
 - `app/src/main/java/com/example/healthjournal/viewmodel/BodyMeasurementViewModel.kt` — measurement capture state and explicit-profile writes.
 - `app/src/main/java/com/example/healthjournal/viewmodel/BodyAnalyticsViewModel.kt` — profile-scoped measurement trends and goal analytics.

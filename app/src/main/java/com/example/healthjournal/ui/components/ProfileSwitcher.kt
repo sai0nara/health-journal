@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -45,7 +46,8 @@ fun ProfileSwitcher(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     onProfileSelected: (String) -> Unit,
-    onManageProfiles: () -> Unit
+    onManageProfiles: () -> Unit,
+    onPersonalCard: (() -> Unit)? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
     val active = profiles.firstOrNull { it.id == activeProfileId } ?: profiles.firstOrNull()
@@ -126,6 +128,22 @@ fun ProfileSwitcher(
             )
         }
         HorizontalDivider()
+        if (onPersonalCard != null) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.profile_switcher_personal_card)) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null
+                    )
+                },
+                onClick = {
+                    expanded = false
+                    onPersonalCard()
+                },
+                modifier = Modifier.testTag("profile_switcher_personal_card")
+            )
+        }
         DropdownMenuItem(
             text = { Text(stringResource(R.string.profile_switcher_manage)) },
             leadingIcon = {

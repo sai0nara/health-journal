@@ -37,6 +37,13 @@ val VitalsReferenceLineColor = Color(0xFF9E9E9E)
 val VitalsReferenceBandColor = Color(0x144CAF50)
 val ColorTransparent = Color(0x00000000)
 
+/** Today Dashboard category & FAB semantic accents */
+val TodayVitalsAccent = Color(0xFFEF6C57)
+val TodayWorkoutsAccent = Color(0xFF5FB878)
+val TodayMeasurementsAccent = Color(0xFF5D9CE6)
+val TodayFabGradientStart = Color(0xFF26C6DA)
+val TodayFabGradientEnd = Color(0xFF0097A7)
+
 /**
  * Builds the Material 3 [ColorScheme] for the Light ("Medical Standard") theme.
  */

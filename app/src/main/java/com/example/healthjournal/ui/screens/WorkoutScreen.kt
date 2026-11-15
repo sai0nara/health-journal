@@ -95,6 +95,8 @@ fun WorkoutScreen(
     viewModel: WorkoutViewModel,
     onBack: () -> Unit,
     onPresetsClick: () -> Unit,
+    weeklyWorkoutTarget: Int = com.example.healthjournal.data.GoalsRepository.DEFAULT_WORKOUT_WEEKLY_TARGET,
+    onWeeklyWorkoutTargetChange: ((Int) -> Unit)? = null,
     profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
         { _, _ -> },
     onSwitchProfile: (String) -> Unit = {}
@@ -164,6 +166,8 @@ fun WorkoutScreen(
                         )
                     },
                     presets = presets,
+                    weeklyWorkoutTarget = weeklyWorkoutTarget,
+                    onWeeklyWorkoutTargetChange = onWeeklyWorkoutTargetChange,
                     onSelectType = { viewModel.selectType(it) },
                     onStartRoutine = { presetId -> viewModel.startPreset(presetId) },
                     onPresetsClick = onPresetsClick
@@ -337,6 +341,8 @@ fun WorkoutScreen(
 private fun IdleContent(
     recentLabels: List<String>,
     presets: List<WorkoutPreset>,
+    weeklyWorkoutTarget: Int = com.example.healthjournal.data.GoalsRepository.DEFAULT_WORKOUT_WEEKLY_TARGET,
+    onWeeklyWorkoutTargetChange: ((Int) -> Unit)? = null,
     onSelectType: (WorkoutType) -> Unit,
     onStartRoutine: (presetId: String) -> Unit,
     onPresetsClick: () -> Unit
@@ -347,6 +353,60 @@ private fun IdleContent(
             .fillMaxWidth()
             .testTag("workout_catalog")
     ) {
+        if (onWeeklyWorkoutTargetChange != null) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("workout_weekly_goal_card")
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.today_weekly_workout_goal_label),
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            Text(
+                                text = stringResource(R.string.today_weekly_workout_goal_unit, weeklyWorkoutTarget),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.testTag("workout_weekly_goal_value")
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = {
+                                    if (weeklyWorkoutTarget > com.example.healthjournal.data.GoalsRepository.MIN_WORKOUT_WEEKLY_TARGET) {
+                                        onWeeklyWorkoutTargetChange(weeklyWorkoutTarget - 1)
+                                    }
+                                },
+                                enabled = weeklyWorkoutTarget > com.example.healthjournal.data.GoalsRepository.MIN_WORKOUT_WEEKLY_TARGET,
+                                modifier = Modifier.testTag("workout_weekly_goal_dec")
+                            ) {
+                                Text("−", style = MaterialTheme.typography.titleLarge)
+                            }
+                            IconButton(
+                                onClick = {
+                                    if (weeklyWorkoutTarget < com.example.healthjournal.data.GoalsRepository.MAX_WORKOUT_WEEKLY_TARGET) {
+                                        onWeeklyWorkoutTargetChange(weeklyWorkoutTarget + 1)
+                                    }
+                                },
+                                enabled = weeklyWorkoutTarget < com.example.healthjournal.data.GoalsRepository.MAX_WORKOUT_WEEKLY_TARGET,
+                                modifier = Modifier.testTag("workout_weekly_goal_inc")
+                            ) {
+                                Text("+", style = MaterialTheme.typography.titleLarge)
+                            }
+                        }
+                    }
+                }
+            }
+        }
         item {
             Text(
                 stringResource(R.string.workout_routines),
