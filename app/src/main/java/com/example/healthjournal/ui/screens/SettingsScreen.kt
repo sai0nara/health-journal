@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.IconButton as M3IconButton
+import com.example.healthjournal.data.GoalsRepository
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -58,6 +61,8 @@ import com.example.healthjournal.viewmodel.IJournalViewModel
 fun SettingsScreen(
     viewModel: IJournalViewModel,
     onBack: () -> Unit,
+    weeklyWorkoutTarget: Int? = null,
+    onWeeklyWorkoutTargetChange: ((Int) -> Unit)? = null,
     profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
         { _, _ -> },
     onSwitchProfile: (String) -> Unit = {}
@@ -248,6 +253,53 @@ fun SettingsScreen(
                         .testTag("settings_sign_in")
                 ) {
                     Text(stringResource(R.string.settings_sign_in))
+                }
+            }
+            if (weeklyWorkoutTarget != null && onWeeklyWorkoutTargetChange != null) {
+                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.today_weekly_workout_goal_label),
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            Text(
+                                text = stringResource(R.string.today_weekly_workout_goal_unit, weeklyWorkoutTarget),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.testTag("settings_weekly_workout_goal_value")
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = {
+                                    if (weeklyWorkoutTarget > GoalsRepository.MIN_WORKOUT_WEEKLY_TARGET) {
+                                        onWeeklyWorkoutTargetChange(weeklyWorkoutTarget - 1)
+                                    }
+                                },
+                                enabled = weeklyWorkoutTarget > GoalsRepository.MIN_WORKOUT_WEEKLY_TARGET,
+                                modifier = Modifier.testTag("settings_weekly_workout_goal_dec")
+                            ) {
+                                Text("−", style = MaterialTheme.typography.titleLarge)
+                            }
+                            IconButton(
+                                onClick = {
+                                    if (weeklyWorkoutTarget < GoalsRepository.MAX_WORKOUT_WEEKLY_TARGET) {
+                                        onWeeklyWorkoutTargetChange(weeklyWorkoutTarget + 1)
+                                    }
+                                },
+                                enabled = weeklyWorkoutTarget < GoalsRepository.MAX_WORKOUT_WEEKLY_TARGET,
+                                modifier = Modifier.testTag("settings_weekly_workout_goal_inc")
+                            ) {
+                                Text("+", style = MaterialTheme.typography.titleLarge)
+                            }
+                        }
+                    }
                 }
             }
         }

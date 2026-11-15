@@ -2,7 +2,7 @@
 
 > The Jetpack Compose (Material 3) screens, reusable components, and theme that make up the app's interface.
 
-Last updated: 2026-11-09
+Last updated: 2026-11-15
 
 ## What lives here
 
@@ -73,10 +73,10 @@ new active profile.
 
 ## Key areas
 
-- **Screens** — `AddEntryScreen`, `HistoryScreen`, `ArchiveScreen`,
+- **Screens** — `MainScreen` (Today Dashboard), `MoreScreen`, `AddEntryScreen`, `HistoryScreen`, `ArchiveScreen`, `VitalsScreen`,
   `MeasurementsScreen`, `PersonalCardScreen`, `WorkoutScreen`, plus the
   export and restore screens in the [[export-restore]] feature.
-- **Components** — reusable pieces such as `JournalEntryItem`, `RichTextToolbar`,
+- **Components** — reusable pieces such as `TodayBottomBar`, `QuickLogBottomSheet`, `ProfileSwitcher`, `JournalEntryItem`, `RichTextToolbar`,
   `MeasurementEntrySheet`, `VitalsEntrySheet`, `VitalsFieldsEditor`,
   `ParamTrendChart`, and `SharedSearchBar`.
 - **Theme** — a custom material theme and the medical color system under `ui/theme`.
@@ -94,10 +94,8 @@ read-only. Both surfaces format through
 display consistent.
 
 The dashboard (`MainScreen`) top app bar carries the bundled app logo
-(`app/src/main/res/drawable-nodpi/app_logo.png`) next to the title; the same artwork
-backs the launcher icon via the `mipmap-*` resources. The History top bar is back
-arrow, title, and the actions-only overflow — destination shortcuts live on the
-dashboard tiles. Non-archived History cards use a custom `SwipeToArchiveWrapper`
+(`app/src/main/res/drawable-nodpi/app_logo.png`) next to the title and `ProfileSwitcher` (which also exposes `Personal Card`); the same artwork
+backs the launcher icon via the `mipmap-*` resources. `MainScreen` renders glanceable Today's Overview cards (Vitals carousel, Workouts weekly progress ring, Measurements sparkline), a Recent Activity timeline, a `+ Log` FAB opening `QuickLogBottomSheet`, and the persistent 4-tab `TodayBottomBar` (`Today`, `History`, `Trends`, `More`). `MoreScreen` hosts `Settings`, `Export Data`, `Presets`, and `About`, while the History top bar overflow exposes `Archive`. Non-archived History cards use a custom `SwipeToArchiveWrapper`
 backed by `SwipeArchivePolicy` (50% width threshold, horizontal axis lock, scroll
 guard, armed haptic/visual state) alongside a card long-press `"Archive"` menu item,
 a TalkBack custom accessibility action, and a long/indefinite Undo snackbar.
@@ -118,7 +116,11 @@ a TalkBack custom accessibility action, and a long/indefinite Undo snackbar.
 - `app/src/main/java/com/example/healthjournal/ui/components/VitalsEntrySheet.kt` — the card's vitals quick-add/edit sheet.
 - `app/src/main/java/com/example/healthjournal/ui/components/VitalsFieldsEditor.kt` — the shared manual-vitals fields.
 - `app/src/main/java/com/example/healthjournal/domain/ValidateVitals.kt` — vitals validation and display formatting.
-- `app/src/main/java/com/example/healthjournal/ui/screens/MainScreen.kt` — the dashboard screen and its branded top bar.
+- `app/src/main/java/com/example/healthjournal/ui/screens/MainScreen.kt` — the Today dashboard screen, overview cards, recent activity timeline, and branded top bar.
+- `app/src/main/java/com/example/healthjournal/ui/screens/MoreScreen.kt` — secondary tools destination under the `More` bottom tab.
+- `app/src/main/java/com/example/healthjournal/ui/components/TodayBottomBar.kt` — persistent 4-tab bottom navigation bar.
+- `app/src/main/java/com/example/healthjournal/ui/components/QuickLogBottomSheet.kt` — quick-entry bottom sheet opened by the Today `+ Log` FAB.
+- `app/src/main/java/com/example/healthjournal/ui/components/ProfileSwitcher.kt` — top-bar profile switcher chip and dropdown (`Personal Card` and `Manage Profiles`).
 - `app/src/main/java/com/example/healthjournal/ui/screens/WorkoutScreen.kt` — the workout hub, session screen, warm-up panel, summary, and manual-log dialog; switching is blocked while a session is live.
 - `app/src/main/java/com/example/healthjournal/ui/screens/PresetLibraryScreen.kt` — the preset library and warm-up editor.
 - `app/src/main/java/com/example/healthjournal/ui/screens/PersonalCardScreen.kt` — the personal card and its edit/switch guard.

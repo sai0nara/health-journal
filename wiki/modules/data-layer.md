@@ -2,7 +2,7 @@
 
 > The Room persistence layer: entities, DAOs, converters, and the repositories that own local reads and writes.
 
-Last updated: 2026-11-06
+Last updated: 2026-11-15
 
 ## What lives here
 
@@ -93,6 +93,7 @@ of this same repository layer and Room database rather than maintaining its own 
 - `app/src/main/java/com/example/healthjournal/data/JournalRepository.kt` — local persistence orchestration, including explicit-profile insert/tag overloads and the active-profile flow.
 - `app/src/main/java/com/example/healthjournal/data/PersonalCardRepository.kt` — active-profile reads plus explicit-profile writes for an open editor.
 - `app/src/main/java/com/example/healthjournal/data/BodyMeasurementRepository.kt` — active-profile and explicit-profile body measurement reads and writes.
+- `app/src/main/java/com/example/healthjournal/data/GoalsRepository.kt` — profile-scoped body-measurement goals and `WORKOUT_WEEKLY_TARGET` persistence.
 - `app/src/main/java/com/example/healthjournal/data/WorkoutRepository.kt` — per-profile workout session storage and single-active-session guard.
 - `app/src/main/java/com/example/healthjournal/data/PresetRepository.kt` — per-profile preset storage with shared exercise catalog access.
 - `app/src/main/java/com/example/healthjournal/data/ProfileRepository.kt` — active profile preference, CRUD, archive/restore, and deletion rules.

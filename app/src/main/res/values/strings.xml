@@ -587,4 +587,33 @@
     <string name="history_empty_period_title">No entries in this period</string>
     <string name="history_empty_date_cta">Clear date filter</string>
     <string name="history_calendar_apply">Apply</string>
+
+    <!-- Today Dashboard -->
+    <string name="nav_today">Today</string>
+    <string name="nav_history">History</string>
+    <string name="nav_trends">Trends</string>
+    <string name="nav_more">More</string>
+    <string name="profile_switcher_personal_card">Personal Card</string>
+    <string name="history_menu_archive">Archive</string>
+    <string name="today_overview_header">Today\'s Overview</string>
+    <string name="today_recent_activity_header">Recent Activity</string>
+    <string name="today_view_all">View all</string>
+    <string name="today_vitals_title">Vitals</string>
+    <string name="today_workouts_title">Workouts</string>
+    <string name="today_measurements_title">Measurements</string>
+    <string name="today_this_week">%1$d/%2$d this week</string>
+    <string name="today_delta_this_week">%1$s this week</string>
+    <string name="today_empty_card_prompt">No data yet • Tap to log</string>
+    <string name="today_recent_activity_empty">No recent activity</string>
+    <string name="today_fab_log">Log</string>
+    <string name="today_quick_log_title">Quick Log</string>
+    <string name="today_quick_log_presets">Workout Presets</string>
+    <string name="today_quick_log_manage_presets">Manage Presets</string>
+    <string name="today_quick_log_vitals">Log Vitals</string>
+    <string name="today_quick_log_workout">Start Workout</string>
+    <string name="today_quick_log_measurement">Log Measurement</string>
+    <string name="today_quick_log_journal">New Journal Entry</string>
+    <string name="today_weekly_workout_goal_label">Weekly Workout Target</string>
+    <string name="today_weekly_workout_goal_unit">%1$d / week</string>
+    <string name="today_more_title">More</string>
 </resources>

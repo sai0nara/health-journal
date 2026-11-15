@@ -683,4 +683,23 @@ class HistoryScreenTest {
             ).assertExists()
         }
     }
+
+    @Test
+    fun overflowMenu_includesArchiveOptionAndInvokesCallback() {
+        var archiveOpened = false
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                HistoryScreen(
+                    viewModel = viewModel,
+                    onAddEntryClick = {},
+                    onEntryClick = {},
+                    onOpenArchive = { archiveOpened = true }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("overflow_menu").performClick()
+        composeTestRule.onNodeWithTag("history_menu_archive").performClick()
+        org.junit.Assert.assertTrue(archiveOpened)
+    }
 }

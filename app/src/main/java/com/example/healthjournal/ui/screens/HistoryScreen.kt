@@ -78,6 +78,8 @@ fun HistoryScreen(
     onAddEntryClick: () -> Unit,
     onEntryClick: (String) -> Unit,
     onBack: () -> Unit = {},
+    onOpenArchive: (() -> Unit)? = null,
+    bottomBar: @Composable () -> Unit = {},
     profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
         { _, _ -> },
     onSwitchProfile: (String) -> Unit = {}
@@ -151,6 +153,7 @@ fun HistoryScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        bottomBar = bottomBar,
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -206,6 +209,14 @@ fun HistoryScreen(
                             onClick = { showOverflow = false; viewModel.setSortOrder(!isAscending) },
                             leadingIcon = { Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = null) }
                         )
+                        if (onOpenArchive != null) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.history_menu_archive)) },
+                                onClick = { showOverflow = false; onOpenArchive() },
+                                leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) },
+                                modifier = Modifier.testTag("history_menu_archive")
+                            )
+                        }
                         DropdownMenuItem(
                                 text = { Text(stringResource(R.string.history_menu_about)) },
                             onClick = { showOverflow = false; showAboutDialog = true },
