@@ -215,7 +215,8 @@ class MeasurementEntrySheetTest {
         openSheet()
 
         val expectedDate = Calendar.getInstance().apply {
-            set(Calendar.DAY_OF_MONTH, 15)
+            val targetDay = if (get(Calendar.DAY_OF_MONTH) == 15) 14 else 15
+            set(Calendar.DAY_OF_MONTH, targetDay)
         }.time
         val dayCellLabel = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
             .format(expectedDate)
@@ -229,8 +230,8 @@ class MeasurementEntrySheetTest {
             composeTestRule.waitForIdle()
         }
 
-        step("Select the 15th of the displayed month and confirm") {
-            composeTestRule.onNodeWithText(dayCellLabel).performClick()
+        step("Select a non-today day of the displayed month and confirm") {
+            composeTestRule.onNodeWithText(dayCellLabel, substring = true).performClick()
             composeTestRule.onNodeWithText("OK").performClick()
             composeTestRule.waitForIdle()
         }
