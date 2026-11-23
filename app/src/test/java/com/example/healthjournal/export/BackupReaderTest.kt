@@ -133,4 +133,32 @@ class BackupReaderTest {
             assertTrue(true)
         }
     }
+
+    @Test
+    fun readManifest_encryptedBackup_createsNonExistentScratchDir() {
+        val plain = writePlainBackup()
+        val encrypted = encryptedVariantOf(plain, "s3cret")
+        val nonExistent = File(tempFolder.root, "nested/scratch")
+        val customReader = BackupReader(gson = gson, scratchDir = nonExistent)
+
+        val manifest = customReader.readManifest(encrypted, passphrase = "s3cret")
+
+        assertEquals(12, manifest.schemaVersion)
+        assertTrue(nonExistent.isDirectory)
+    }
+
+    @Test
+    fun readManifest_encryptedBackup_unwritableScratchDir_throwsIOFailure() {
+        val plain = writePlainBackup()
+        val encrypted = encryptedVariantOf(plain, "s3cret")
+        val blockingFile = tempFolder.newFile("not_a_dir")
+        val brokenReader = BackupReader(gson = gson, scratchDir = blockingFile)
+
+        try {
+            brokenReader.readManifest(encrypted, passphrase = "s3cret")
+            fail("Expected IOFailure")
+        } catch (e: RestoreError.IOFailure) {
+            assertTrue(true)
+        }
+    }
 }

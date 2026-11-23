@@ -22,6 +22,7 @@ import com.example.healthjournal.data.local.WorkoutSessionDao
 import io.mockk.coEvery
 import io.mockk.coJustRun
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.mockk
 import java.io.File
 import java.io.IOException
@@ -329,5 +330,72 @@ class RestoreRepositoryTest {
         assertEquals(1, result.profileCount)
         coVerify(exactly = 1) { harness.journalDao.clearAllEntries(SELF_PROFILE_ID) }
         coVerify(exactly = 0) { harness.journalDao.clearAllEntries("sib-1") }
+    }
+
+    @Test
+    fun restore_v1_clearsTagsBeforeEntries() = runTest {
+        val filesDir = tempFolder.newFolder("files_tag_order_v1")
+        val harness = mockRepository(filesDir)
+
+        harness.repo.restore(sampleData, mediaStagingDir = null)
+
+        coVerifyOrder {
+            harness.journalDao.clearAllTags(SELF_PROFILE_ID)
+            harness.journalDao.clearAllEntries(SELF_PROFILE_ID)
+        }
+    }
+
+    @Test
+    fun restore_v2_clearsTagsBeforeEntries() = runTest {
+        val filesDir = tempFolder.newFolder("files_tag_order_v2")
+        val db = mockk<JournalDatabase>(relaxed = true)
+        val profileDao = mockk<ProfileDao>(relaxed = true)
+        val journalDao = mockk<JournalDao>(relaxed = true)
+        coEvery { db.profileDao() } returns profileDao
+        coEvery { db.journalDao() } returns journalDao
+        coEvery { profileDao.getAll() } returns listOf(
+            ProfileEntity(id = SELF_PROFILE_ID, name = "Me", relationship = "SELF")
+        )
+        val data = BackupData(
+            profiles = listOf(ProfileEntity(id = SELF_PROFILE_ID, name = "Me", relationship = "SELF")),
+            journalEntries = listOf(JournalEntry(entry_id = "e1", description = "x"))
+        )
+        val repo = RestoreRepository(db, filesDir, runInTransaction = { block -> block() })
+
+        repo.restore(data, mediaStagingDir = null)
+
+        coVerifyOrder {
+            journalDao.clearAllTags(SELF_PROFILE_ID)
+            journalDao.clearAllEntries(SELF_PROFILE_ID)
+        }
+    }
+
+    @Test
+    fun restore_reimportsAttachmentArchivedUnderDisplayName() = runTest {
+        val filesDir = tempFolder.newFolder("files_att_fallback")
+        val staging = tempFolder.newFolder("stage_att_fallback")
+        File(staging, "lab_report.pdf").writeBytes(byteArrayOf(7, 8, 9))
+
+        val entry = JournalEntry(
+            entry_id = "e1",
+            description = "report",
+            attachments = listOf(
+                AttachmentData(
+                    name = "lab_report.pdf",
+                    uri = "content://com.android.providers.downloads.documents/document/42",
+                    mimeType = "application/pdf"
+                )
+            )
+        )
+        val data = BackupData(journalEntries = listOf(entry))
+        val harness = mockRepository(filesDir, recordInsertAll = true)
+
+        val result = harness.repo.restore(data, mediaStagingDir = staging)
+
+        val copiedDoc = File(filesDir, "attachments/lab_report.pdf")
+        assertEquals(true, copiedDoc.exists())
+        assertEquals(1, result.mediaFileCount)
+        val remapped = harness.published.single().single()
+        assertEquals("file://${copiedDoc.absolutePath}", remapped.attachments!![0].uri)
     }
 }

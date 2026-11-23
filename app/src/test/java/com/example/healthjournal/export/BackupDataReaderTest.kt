@@ -13,6 +13,8 @@ import com.example.healthjournal.data.local.WorkoutSession
 import com.google.gson.Gson
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -181,5 +183,29 @@ class BackupDataReaderTest {
         assertEquals(SELF_PROFILE_ID, result.journalEntries.single().profileId)
         assertEquals(SELF_PROFILE_ID, result.bodyMeasurements.single().profileId)
         assertEquals(SELF_PROFILE_ID, result.goals.single().profileId)
+    }
+
+    @Test
+    fun read_selfEntitiesWithNullFields_normalizesDefaults() {
+        val staging = tempFolder.newFolder("self_nulls_stage")
+        File(staging, BackupWriter.EntityFile.JOURNAL).writeText(
+            """[{"entry_id":"e1","profileId":"self","description":"Restored","timestamp":1,"lastModified":1}]"""
+        )
+        File(staging, BackupWriter.EntityFile.PERSONAL_CARD).writeText(
+            """[{"id":"personal_card","profileId":"self","timestamp":1,"lastModified":1}]"""
+        )
+
+        val result = BackupDataReader(gson).read(staging)
+
+        val entry = result.journalEntries.single()
+        assertEquals(false, entry.isArchived)
+        assertEquals(emptyList<String>(), entry.photo_urls)
+        assertEquals(emptyList<com.example.healthjournal.data.local.AttachmentData>(), entry.attachments)
+
+        val card = result.personalCards.single()
+        assertNotNull(card.demographics)
+        assertNotNull(card.medicalProfile)
+        assertNotNull(card.medicalHistory)
+        assertNotNull(card.emergencyContacts)
     }
 }

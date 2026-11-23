@@ -2,6 +2,7 @@ package com.example.healthjournal.export
 
 import com.google.gson.Gson
 import java.io.File
+import java.io.IOException
 import java.util.zip.ZipFile
 import kotlin.text.Charsets
 import net.lingala.zip4j.exception.ZipException
@@ -65,17 +66,26 @@ class BackupReader(
         if (passphrase == null || passphrase.isBlank()) {
             throw RestoreError.WrongPassphrase()
         }
+        scratchDir.mkdirs()
         val inner = File(scratchDir, "restore_${System.currentTimeMillis()}_${BackupEncryptor.INNER_ENTRY_NAME}")
         try {
             net.lingala.zip4j.ZipFile(backupFile, passphrase.toCharArray()).use { zf ->
                 val header = zf.getFileHeader(BackupEncryptor.INNER_ENTRY_NAME)
                     ?: throw RestoreError.CorruptedFile("No encrypted backup entry found.")
-                inner.outputStream().use { out ->
+                val outStream = try {
+                    inner.outputStream()
+                } catch (e: IOException) {
+                    throw RestoreError.IOFailure(
+                        "Unable to prepare temporary storage for backup decryption.",
+                        e
+                    )
+                }
+                outStream.use { out ->
                     zf.getInputStream(header).use { it.copyTo(out) }
                 }
             }
             return readPlainManifest(inner)
-        } catch (e: RestoreError.CorruptedFile) {
+        } catch (e: RestoreError) {
             throw e
         } catch (e: ZipException) {
             throw RestoreError.WrongPassphrase(e)
