@@ -227,8 +227,13 @@ fun HistoryScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddEntryClick) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.history_cd_add_entry))
+            if (!isCalendarExpanded) {
+                FloatingActionButton(
+                    onClick = onAddEntryClick,
+                    modifier = Modifier.testTag("history_add_entry_fab")
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.history_cd_add_entry))
+                }
             }
         }
     ) { padding ->

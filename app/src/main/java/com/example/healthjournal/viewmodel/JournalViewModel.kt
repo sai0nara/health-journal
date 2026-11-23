@@ -18,6 +18,7 @@ import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.HealthSyncSettings
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.ProfileEntity
+import com.example.healthjournal.domain.EntryKindTag
 import com.example.healthjournal.domain.EntryVitals
 import com.example.healthjournal.domain.HashtagParser
 import com.example.healthjournal.domain.TagIdentity
@@ -433,8 +434,15 @@ class JournalViewModel(
     override fun updateVitals(entryId: String, vitals: EntryVitals) {
         viewModelScope.launch {
             val entry = repository.getEntryById(entryId) ?: return@launch
+            val hasUpdatedVitals = vitals.hasAny()
+            val updatedDescription = if (hasUpdatedVitals && entry.description.isBlank()) {
+                EntryKindTag.VITALS_DESCRIPTION
+            } else {
+                entry.description
+            }
             repository.insert(
                 entry.copy(
+                    description = updatedDescription,
                     bp_systolic = vitals.bpSystolic,
                     bp_diastolic = vitals.bpDiastolic,
                     heart_rate_avg = vitals.heartRate,
@@ -446,6 +454,9 @@ class JournalViewModel(
                     lastModified = System.currentTimeMillis()
                 )
             )
+            if (hasUpdatedVitals) {
+                repository.addTag(entry.profileId, entry.entry_id, EntryKindTag.forVitals())
+            }
 
             if (_isUserSignedIn.value) {
                 SyncManager.enqueuePeriodicSync(getApplication())

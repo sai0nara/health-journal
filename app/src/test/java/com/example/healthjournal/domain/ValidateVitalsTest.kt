@@ -2,6 +2,7 @@ package com.example.healthjournal.domain
 
 import com.example.healthjournal.data.local.UnitSystem
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -273,5 +274,16 @@ class ValidateVitalsTest {
             ),
             ValidateVitals.formatVitals(vitals, UnitSystem.IMPERIAL)
         )
+    }
+
+    @Test
+    fun entryVitalsHasAny_reflectsPopulatedFields() {
+        assertFalse(EntryVitals().hasAny())
+        assertTrue(EntryVitals(bpSystolic = 120.0).hasAny())
+        assertTrue(EntryVitals(bpDiastolic = 80.0).hasAny())
+        assertTrue(EntryVitals(heartRate = 70).hasAny())
+        assertTrue(EntryVitals(bloodGlucoseMmol = 5.2).hasAny())
+        assertTrue(EntryVitals(bodyTemperatureC = 36.7).hasAny())
+        assertTrue(EntryVitals(spo2Percent = 98).hasAny())
     }
 }

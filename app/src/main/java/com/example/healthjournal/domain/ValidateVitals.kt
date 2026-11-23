@@ -24,7 +24,16 @@ data class EntryVitals(
     val bloodGlucoseMmol: Double? = null,
     val bodyTemperatureC: Double? = null,
     val spo2Percent: Int? = null
-)
+) {
+    /** True when at least one editable vital field is populated. */
+    fun hasAny(): Boolean =
+        bpSystolic != null ||
+            bpDiastolic != null ||
+            heartRate != null ||
+            bloodGlucoseMmol != null ||
+            bodyTemperatureC != null ||
+            spo2Percent != null
+}
 
 enum class VitalField {
     SYSTOLIC,

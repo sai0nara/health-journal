@@ -290,4 +290,25 @@ class TodayDashboardViewModelTest {
         assertTrue(vm.uiState.value.recentActivity.isEmpty())
         assertTrue(vm.uiState.value.vitalsSlides.first().isEmptyState)
     }
+
+    @Test
+    fun `recent activity strips html markup and entities from journal summaries`() = runTest {
+        val vm = createViewModel()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect() }
+
+        allEntriesFlow.value = listOf(
+            JournalEntry(entry_id = "html1", timestamp = ts(0, 9, 0), description = "<p>Text</><br>"),
+            JournalEntry(entry_id = "html2", timestamp = ts(0, 8, 0), description = "<p><b>Morning</b> walk</p><p>Felt &amp; slept well&nbsp;!</p>"),
+            JournalEntry(entry_id = "html3", timestamp = ts(0, 7, 30), description = "<p>Run &num;Fitness&excl;</p>"),
+            JournalEntry(entry_id = "html_empty", timestamp = ts(0, 7, 0), description = "<p><br></p>&nbsp;")
+        )
+        advanceUntilIdle()
+
+        val activity = vm.uiState.value.recentActivity
+        assertEquals(4, activity.size)
+        assertEquals("Text", activity[0].summary)
+        assertEquals("Morning walk Felt & slept well !", activity[1].summary)
+        assertEquals("Run #Fitness!", activity[2].summary)
+        assertEquals("Journal", activity[3].summary)
+    }
 }

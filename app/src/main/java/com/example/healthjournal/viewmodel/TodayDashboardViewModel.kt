@@ -16,6 +16,7 @@ import com.example.healthjournal.data.local.UnitConverter
 import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
+import com.example.healthjournal.util.HtmlPlainText
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -337,7 +338,7 @@ class TodayDashboardViewModel(
             val summary = if (firstVitalTab != null) {
                 formatVitalValues(entry, firstVitalTab, unitSystem).first
             } else {
-                entry.description.trim().ifEmpty { "Journal" }
+                HtmlPlainText.toPlainText(entry.description).ifEmpty { "Journal" }
             }
             val dateTime = Instant.ofEpochMilli(entry.timestamp).atZone(zone)
             val isToday = dateTime.toLocalDate() == today

@@ -211,13 +211,7 @@ internal fun JournalEntry.toVitals(): EntryVitals = EntryVitals(
     spo2Percent = spo2_percent
 )
 
-internal fun JournalEntry.hasEditableVitals(): Boolean =
-    bp_systolic != null ||
-        bp_diastolic != null ||
-        heart_rate_avg != null ||
-        blood_glucose_mmol != null ||
-        body_temperature_c != null ||
-        spo2_percent != null
+internal fun JournalEntry.hasEditableVitals(): Boolean = toVitals().hasAny()
 
 internal fun JournalEntry.hasAnyVitals(): Boolean =
     hasEditableVitals() || sleep_hours != null
