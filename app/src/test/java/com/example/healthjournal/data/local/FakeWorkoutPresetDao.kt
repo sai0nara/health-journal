@@ -12,6 +12,7 @@ class FakeWorkoutPresetDao : WorkoutPresetDao {
 
     private val store = linkedMapOf<String, WorkoutPreset>()
     private val feed = MutableStateFlow<List<WorkoutPreset>>(emptyList())
+    val deletedEntries = mutableListOf<DeletedEntry>()
 
     override fun getAllPresets(profileId: String): Flow<List<WorkoutPreset>> =
         feed.map { all -> all.filter { it.profileId == profileId } }
@@ -38,6 +39,10 @@ class FakeWorkoutPresetDao : WorkoutPresetDao {
     override suspend fun clearAll(profileId: String) {
         store.entries.removeAll { it.value.profileId == profileId }
         emit()
+    }
+
+    override suspend fun insertDeletedEntry(deletedEntry: DeletedEntry) {
+        deletedEntries += deletedEntry
     }
 
     fun visiblePresets(): List<WorkoutPreset> = store.values.toList()

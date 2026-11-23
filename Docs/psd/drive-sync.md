@@ -5,16 +5,18 @@
 > last-modified with cloud-winning ties, and a shared tombstone ledger carries
 > cross-device deletions.
 
-Last updated: 2026-10-19
+Last updated: 2026-11-23
 
 ## Overview
 
-The sync engine lives in `sync/`. Each domain is a sibling JSON file in Drive's
-private app-data folder, holding a full snapshot. On every run the worker
-downloads the cloud snapshot(s), downloads missing media binaries, merges with
-the local rows via a pure merge module, persists the result, then uploads the
-entire merged set back. Scheduling uses WorkManager periodic (about 15 min,
-unmetered) plus one-shot jobs after mutations and on manual demand.
+The sync engine lives in `sync/`. Each domain (journal, body measurements,
+goals, personal card, workout presets/routines, and tombstones) is a sibling
+JSON file in Drive's private app-data folder, holding a full snapshot. On every
+run the worker downloads the cloud snapshot(s), downloads missing media
+binaries, merges with the local rows via a pure merge module, persists the
+result, then uploads the entire merged set back. Scheduling uses WorkManager
+periodic (about 15 min, unmetered) plus one-shot jobs after mutations and on
+manual demand.
 
 ## Architecture
 
@@ -44,7 +46,7 @@ unmetered) plus one-shot jobs after mutations and on manual demand.
 | Component | File | Responsibility |
 |---|---|---|
 | Sync worker | `app/src/main/java/com/example/healthjournal/sync/SyncWorker.kt` | orchestration + scheduling; photo/media sync |
-| Sync merge | `app/src/main/java/com/example/healthjournal/sync/SyncMerge.kt` | pure LWW merge for entries/measurements/goals/card |
+| Sync merge | `app/src/main/java/com/example/healthjournal/sync/SyncMerge.kt` | pure LWW merge for entries/measurements/goals/card/presets |
 | Drive helper | `app/src/main/java/com/example/healthjournal/sync/DriveServiceHelper.kt` | Drive REST client; upload/download; file-name constants |
 | Payloads | `app/src/main/java/com/example/healthjournal/sync/GoalSyncPayload.kt` etc. | Gson JSON serialization, null-defensive parse |
 | Auth | `app/src/main/java/com/example/healthjournal/auth/GoogleAuthManager.kt` | sign-in, Drive scope, silent token |
@@ -78,6 +80,7 @@ unmetered) plus one-shot jobs after mutations and on manual demand.
 - `app/src/main/java/com/example/healthjournal/sync/MeasurementSyncPayload.kt` — measurement payload.
 - `app/src/main/java/com/example/healthjournal/sync/MeasurementTombstonePayload.kt` — tombstone payload.
 - `app/src/main/java/com/example/healthjournal/sync/PersonalCardSyncPayload.kt` — personal card payload.
+- `app/src/main/java/com/example/healthjournal/sync/PresetSyncPayload.kt` — workout presets (routines) payload.
 - `app/src/main/java/com/example/healthjournal/auth/GoogleAuthManager.kt` — authorization.
 - `app/src/main/java/com/example/healthjournal/auth/SessionManager.kt` — account persistence.
 - `app/src/main/java/com/example/healthjournal/data/local/DeletedEntry.kt` — tombstone ledger.

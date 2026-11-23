@@ -138,6 +138,7 @@ class DriveServiceHelper(private val context: Context, private val driveService:
         const val MEASUREMENTS_TOMBSTONES_FILE = "body_measurements_tombstones.json"
 
         const val PERSONAL_CARD_FILE = "personal_card.json"
+        const val WORKOUT_PRESETS_FILE = "workout_presets.json"
 
         fun journalFileName(profileId: String): String =
             if (profileId == SELF_PROFILE_ID) JOURNAL_DATA_FILE else "health_journal_data_${profileId}.json"
@@ -154,12 +155,16 @@ class DriveServiceHelper(private val context: Context, private val driveService:
         fun personalCardFileName(profileId: String): String =
             if (profileId == SELF_PROFILE_ID) PERSONAL_CARD_FILE else "personal_card_${profileId}.json"
 
+        fun presetsFileName(profileId: String): String =
+            if (profileId == SELF_PROFILE_ID) WORKOUT_PRESETS_FILE else "workout_presets_${profileId}.json"
+
         fun profileDataFileNames(profileId: String): List<String> = listOf(
             journalFileName(profileId),
             measurementsFileName(profileId),
             goalsFileName(profileId),
             tombstonesFileName(profileId),
-            personalCardFileName(profileId)
+            personalCardFileName(profileId),
+            presetsFileName(profileId)
         )
     }
 }

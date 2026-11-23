@@ -28,4 +28,7 @@ interface WorkoutPresetDao {
 
     @Query("DELETE FROM workout_presets WHERE profileId = :profileId")
     suspend fun clearAll(profileId: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDeletedEntry(deletedEntry: DeletedEntry)
 }

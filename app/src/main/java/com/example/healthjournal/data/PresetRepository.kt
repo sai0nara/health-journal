@@ -1,5 +1,6 @@
 package com.example.healthjournal.data
 
+import com.example.healthjournal.data.local.DeletedEntry
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutPresetDao
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,8 +44,14 @@ class PresetRepository(
         )
     }
 
+    /**
+     * Permanently deletes a preset: records a sync tombstone first so a
+     * stale cloud copy cannot resurrect the routine, then removes it locally.
+     */
     suspend fun deletePreset(presetId: String) {
-        dao.deletePresetById(currentProfileId(), presetId)
+        val profileId = currentProfileId()
+        dao.insertDeletedEntry(DeletedEntry(presetId, profileId = profileId))
+        dao.deletePresetById(profileId, presetId)
     }
 
     suspend fun getAllPresets(profileId: String): List<WorkoutPreset> =

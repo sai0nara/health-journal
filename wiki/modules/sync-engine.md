@@ -2,7 +2,7 @@
 
 > The Google Drive synchronization engine: a WorkManager worker plus the Drive REST client wrapper, built on the same Room database.
 
-Last updated: 2026-11-06
+Last updated: 2026-11-23
 
 ## What lives here
 
@@ -20,15 +20,15 @@ stale relative to the code.
   first syncs `profiles.json` metadata and deletion tombstones across devices,
   applies remote deletions via `ProfileDataEraser` (switching the active profile first
   if needed), deletes per-profile cloud files for deleted profiles, and then iterates
-  every local profile to sync journal entries, body measurements, goals, and personal
-  cards. It delegates merging to `SyncMerge`.
+  every local profile to sync journal entries, body measurements, goals, personal
+  cards, and workout presets (routines). It delegates merging to `SyncMerge`.
 - **Drive client.** `DriveServiceHelper` wraps the Google Drive REST service, keeping
   the `Self` profile on legacy filenames while partitioning sibling profiles into
   UUID-suffixed files and providing `deleteDataFile` for profile cleanup.
 - **Payloads.** Sync payload models (`ProfileSyncPayload`, `JournalSyncPayload`,
   `GoalSyncPayload`, `MeasurementSyncPayload`, `MeasurementTombstonePayload`,
-  `PersonalCardSyncPayload`) shape what each domain pushes and pulls, normalizing
-  missing legacy `profileId` fields to `Self`.
+  `PersonalCardSyncPayload`, `PresetSyncPayload`) shape what each domain pushes and
+  pulls, normalizing missing legacy `profileId` fields to `Self`.
 - **Restore.** `RestoreWorker` is the worker behind the restore side of
   [[export-restore]]; after restore completes it ensures the `Self` profile is
   initialized before triggering a manual sync.
@@ -58,6 +58,7 @@ repo does not hold or claim to own any of Drive's internals.
 - `app/src/main/java/com/example/healthjournal/sync/MeasurementTombstonePayload.kt` — measurement tombstone codec.
 - `app/src/main/java/com/example/healthjournal/sync/GoalSyncPayload.kt` — goal sync codec.
 - `app/src/main/java/com/example/healthjournal/sync/PersonalCardSyncPayload.kt` — personal card sync codec.
+- `app/src/main/java/com/example/healthjournal/sync/PresetSyncPayload.kt` — workout preset (routine) sync codec.
 - `app/src/main/java/com/example/healthjournal/sync/RestoreWorker.kt` — post-restore worker ensuring `Self` profile and triggering Drive sync.
 
 Back to [[overview]]
