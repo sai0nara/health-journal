@@ -18,11 +18,13 @@ import com.example.healthjournal.data.ProfileDataEraser
 import com.example.healthjournal.data.ProfileRepository
 import com.example.healthjournal.data.RoomProfileDataEraser
 import com.example.healthjournal.data.SharedPreferencesActiveProfileStore
+import com.example.healthjournal.data.local.DeletedEntry
 import com.example.healthjournal.data.local.JournalDatabase
 import com.example.healthjournal.data.local.ProfileDao
 import com.example.healthjournal.data.local.ProfileDeletionDao
 import com.example.healthjournal.data.local.ProfileEntity
 import com.example.healthjournal.data.local.SELF_PROFILE_ID
+import com.example.healthjournal.data.local.WorkoutPresetDao
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
@@ -63,6 +65,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
             val measurementDao = database.bodyMeasurementDao()
             val goalDao = database.goalDao()
             val personalCardDao = database.personalCardDao()
+            val workoutPresetDao = database.workoutPresetDao()
             val eraser = RoomProfileDataEraser(database, applicationContext.filesDir)
             val profileRepository = ProfileRepository(
                 profileDao = database.profileDao(),
@@ -345,6 +348,12 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                     return Result.retry()
                 }
 
+                // ============ Workout presets (routines) sync ============
+                Log.d("SyncWorker", "Syncing workout presets...")
+                if (!syncWorkoutPresets(profileId, workoutPresetDao, ledgerById, driveHelper)) {
+                    return Result.retry()
+                }
+
                 // 7. Purge expired tombstones for this profile after all pipelines finish
                 repository.clearDeletedEntries(profileId)
             }
@@ -456,6 +465,61 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
                 return null
             }
             return profileDao.getAll()
+        }
+
+        /**
+         * Synchronizes workout presets (routines) for [profileId] using the shared
+         * deletion tombstone ledger [ledgerById] and LWW merge.
+         */
+        suspend fun syncWorkoutPresets(
+            profileId: String,
+            presetDao: WorkoutPresetDao,
+            ledgerById: Map<String, DeletedEntry>,
+            driveHelper: DriveServiceHelper
+        ): Boolean {
+            val presetsFile = DriveServiceHelper.presetsFileName(profileId)
+            val cloudPresetsJson = driveHelper.downloadDataFile(presetsFile)
+            var cloudPresets = PresetSyncPayload.fromJson(
+                cloudPresetsJson,
+                defaultProfileId = profileId
+            ).filter { it.profileId == profileId }
+
+            if (cloudPresets.isNotEmpty() && ledgerById.isNotEmpty()) {
+                cloudPresets = cloudPresets.filterNot { preset ->
+                    val tombstone = ledgerById[preset.id]
+                    tombstone != null && tombstone.deletedAt >= preset.lastModified
+                }
+            }
+
+            val localPresetsAll = presetDao.getAllPresets(profileId).first()
+            val remotelyDeletedLocalIds = localPresetsAll.mapNotNull { preset ->
+                val tombstone = ledgerById[preset.id]
+                if (tombstone != null && tombstone.deletedAt >= preset.lastModified) {
+                    preset.id
+                } else {
+                    null
+                }
+            }
+            if (remotelyDeletedLocalIds.isNotEmpty()) {
+                remotelyDeletedLocalIds.forEach { id -> presetDao.deletePresetById(profileId, id) }
+            }
+            val removedIds = remotelyDeletedLocalIds.toSet()
+            val localPresets = localPresetsAll.filterNot { it.id in removedIds }
+
+            val mergedPresets = SyncMerge.mergePresets(cloudPresets, localPresets)
+            if (mergedPresets.isNotEmpty()) {
+                presetDao.insertAll(mergedPresets.map { it.copy(profileId = profileId) })
+            }
+
+            val uploadedId = driveHelper.uploadDataFile(
+                presetsFile,
+                PresetSyncPayload.toJson(mergedPresets)
+            )
+            if (uploadedId == null) {
+                runCatching { Log.e("SyncWorker", "Workout presets upload failed.") }
+                return false
+            }
+            return true
         }
     }
 }

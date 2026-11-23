@@ -8,7 +8,9 @@ import com.example.healthjournal.data.local.GoalEntity
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.PersonalCard
 import com.google.gson.Gson
+import io.mockk.every
 import io.mockk.mockk
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipOutputStream
@@ -20,6 +22,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -284,5 +287,132 @@ class RestoreViewModelTest {
         dispatcher.scheduler.advanceUntilIdle()
         val success = vm.state() as RestoreUiState.Success
         assertEquals(2, success.result.profileCount)
+    }
+
+    @Test
+    fun selectBackup_contentUri_stagesOncePassesStagedFileToWorkerAndCleansUpOnSuccess() = runTest {
+        val cacheDir = tempFolder.newFolder("vm_cache")
+        every { application.cacheDir } returns cacheDir
+        val backupBytes = buildBackup().readBytes()
+        val captured = mutableListOf<Pair<String, String?>>()
+        var openCalls = 0
+        val vm = RestoreViewModel(
+            application = application,
+            dispatcher = dispatcher,
+            backupReader = BackupReader(Gson(), scratchDir = cacheDir),
+            restoreToCompletion = { _, uri, pass ->
+                captured.add(uri to pass)
+                assertTrue(uri.startsWith("file://"))
+                assertTrue(File(uri.removePrefix("file://")).isFile)
+                RestoreResult(1, 0, 0, 0, 0, 0)
+            },
+            openUriInputStream = { _, _ ->
+                openCalls++
+                ByteArrayInputStream(backupBytes)
+            }
+        )
+
+        vm.selectBackup("content://com.android.providers.downloads/document/42")
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.state() is RestoreUiState.ConfirmationRequired)
+        assertEquals(1, openCalls)
+
+        vm.confirmRestore()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(vm.state() is RestoreUiState.Success)
+        assertEquals(1, openCalls)
+        assertEquals(1, captured.size)
+        val stagedFile = File(captured.single().first.removePrefix("file://"))
+        assertFalse(stagedFile.exists())
+    }
+
+    @Test
+    fun selectBackup_encryptedContentUri_reusesStagedFileAcrossPassphraseRetry() = runTest {
+        val cacheDir = tempFolder.newFolder("vm_cache_enc")
+        every { application.cacheDir } returns cacheDir
+        val encBytes = encrypt(buildBackup(), "secret").readBytes()
+        var openCalls = 0
+        val captured = mutableListOf<Pair<String, String?>>()
+        val vm = RestoreViewModel(
+            application = application,
+            dispatcher = dispatcher,
+            backupReader = BackupReader(Gson(), scratchDir = cacheDir),
+            restoreToCompletion = { _, uri, pass ->
+                captured.add(uri to pass)
+                RestoreResult(1, 0, 0, 0, 0, 0)
+            },
+            openUriInputStream = { _, _ ->
+                openCalls++
+                ByteArrayInputStream(encBytes)
+            }
+        )
+
+        vm.selectBackup("content://com.android.externalstorage.documents/document/enc")
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.state() is RestoreUiState.PassphraseRequired)
+
+        vm.submitPassphrase("wrong")
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.state() is RestoreUiState.PassphraseRequired)
+
+        vm.submitPassphrase("secret")
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.state() is RestoreUiState.ConfirmationRequired)
+
+        vm.confirmRestore()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(vm.state() is RestoreUiState.Success)
+        assertEquals(1, openCalls)
+        assertEquals("secret", captured.single().second)
+    }
+
+    @Test
+    fun selectBackup_contentUri_unreadableStream_showsIOFailureError() = runTest {
+        val cacheDir = tempFolder.newFolder("vm_cache_err")
+        every { application.cacheDir } returns cacheDir
+        val vm = RestoreViewModel(
+            application = application,
+            dispatcher = dispatcher,
+            backupReader = BackupReader(Gson(), scratchDir = cacheDir),
+            openUriInputStream = { _, _ -> null }
+        )
+
+        vm.selectBackup("content://com.example/missing")
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.state() as RestoreUiState.Error
+        assertTrue(state.error is RestoreError.IOFailure)
+    }
+
+    @Test
+    fun reset_deletesStagedContentFile() = runTest {
+        val cacheDir = tempFolder.newFolder("vm_cache_reset")
+        every { application.cacheDir } returns cacheDir
+        val backupBytes = buildBackup().readBytes()
+        val vm = RestoreViewModel(
+            application = application,
+            dispatcher = dispatcher,
+            backupReader = BackupReader(Gson(), scratchDir = cacheDir),
+            openUriInputStream = { _, _ -> ByteArrayInputStream(backupBytes) }
+        )
+
+        vm.selectBackup("content://com.example/backup")
+        dispatcher.scheduler.advanceUntilIdle()
+        val conf = vm.state() as RestoreUiState.ConfirmationRequired
+        val stagedFile = File(conf.fileUri.removePrefix("file://"))
+        assertTrue(stagedFile.exists())
+
+        vm.reset()
+        assertEquals(RestoreUiState.Idle, vm.state())
+        assertFalse(stagedFile.exists())
+    }
+
+    @Test
+    fun factory_createsRestoreViewModel() {
+        val cacheDir = tempFolder.newFolder("vm_cache_factory")
+        every { application.cacheDir } returns cacheDir
+        val vm = RestoreViewModel.Factory(application).create(RestoreViewModel::class.java)
+        assertEquals(RestoreUiState.Idle, vm.uiState.value)
     }
 }

@@ -145,5 +145,24 @@ class DriveServiceHelperTest {
             "personal_card_sib-1.json",
             DriveServiceHelper.personalCardFileName("sib-1")
         )
+        assertEquals(
+            DriveServiceHelper.WORKOUT_PRESETS_FILE,
+            DriveServiceHelper.presetsFileName("self")
+        )
+        assertEquals(
+            "workout_presets_sib-1.json",
+            DriveServiceHelper.presetsFileName("sib-1")
+        )
+        assertEquals(
+            listOf(
+                "health_journal_data_sib-1.json",
+                "body_measurements_sib-1.json",
+                "body_measurements_goals_sib-1.json",
+                "body_measurements_tombstones_sib-1.json",
+                "personal_card_sib-1.json",
+                "workout_presets_sib-1.json"
+            ),
+            DriveServiceHelper.profileDataFileNames("sib-1")
+        )
     }
 }

@@ -1,5 +1,6 @@
 package com.example.healthjournal.export
 
+import com.example.healthjournal.data.local.AttachmentData
 import com.example.healthjournal.data.local.BodyMeasurementEntry
 import com.example.healthjournal.data.local.DeletedEntry
 import com.example.healthjournal.data.local.EntryTagCrossRef
@@ -10,6 +11,7 @@ import com.example.healthjournal.data.local.ProfileEntity
 import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutSession
+import com.example.healthjournal.data.local.sanitized
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
@@ -38,95 +40,75 @@ class BackupDataReader(private val gson: Gson) {
         val journalEntries = readList(stagingDir, BackupWriter.EntityFile.JOURNAL, JournalEntry::class.java)
             .map { e ->
                 val pid = (e.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
-                if (e.profileId == pid) {
-                    e
-                } else {
-                    e.copy(
-                        entry_id = (e.entry_id as String?) ?: "",
-                        description = (e.description as String?) ?: "",
-                        profileId = pid
-                    ).also { it.tags = e.tags }
-                }
+                e.copy(
+                    entry_id = (e.entry_id as String?) ?: "",
+                    description = (e.description as String?) ?: "",
+                    photo_urls = (e.photo_urls as List<String>?)?.filterNotNull() ?: emptyList(),
+                    attachments = (e.attachments as List<AttachmentData>?)?.mapNotNull { att ->
+                        att?.copy(
+                            syncStatus = att.syncStatus ?: "PENDING",
+                            isLocalOnly = att.isLocalOnly ?: true
+                        )
+                    } ?: emptyList(),
+                    isArchived = e.isArchived ?: false,
+                    isSynced = e.isSynced ?: false,
+                    syncStatus = e.syncStatus ?: "PENDING_SYNC",
+                    profileId = pid
+                ).also { it.tags = e.tags }
             }
         val bodyMeasurements = readList(stagingDir, BackupWriter.EntityFile.BODY_MEASUREMENTS, BodyMeasurementEntry::class.java)
             .map { m ->
                 val pid = (m.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
-                if (m.profileId == pid) {
-                    m
-                } else {
-                    m.copy(
-                        entry_id = (m.entry_id as String?) ?: "",
-                        syncStatus = (m.syncStatus as String?) ?: "PENDING_SYNC",
-                        profileId = pid
-                    )
-                }
+                m.copy(
+                    entry_id = (m.entry_id as String?) ?: "",
+                    isSynced = m.isSynced ?: false,
+                    syncStatus = (m.syncStatus as String?) ?: "PENDING_SYNC",
+                    profileId = pid
+                )
             }
         val goals = readList(stagingDir, BackupWriter.EntityFile.GOALS, GoalEntity::class.java)
             .map { g ->
                 val pid = (g.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
-                if (g.profileId == pid) {
-                    g
-                } else {
-                    g.copy(
-                        parameterId = (g.parameterId as String?) ?: "",
-                        profileId = pid
-                    )
-                }
+                g.copy(
+                    parameterId = (g.parameterId as String?) ?: "",
+                    profileId = pid
+                )
             }
         val personalCards = readList(stagingDir, BackupWriter.EntityFile.PERSONAL_CARD, PersonalCard::class.java)
             .map { c ->
                 val pid = (c.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
-                if (c.profileId == pid) {
-                    c
-                } else {
-                    c.copy(
-                        id = (c.id as String?) ?: "personal_card",
-                        profileId = pid
-                    )
-                }
+                c.sanitized(pid)
             }
         val deletedEntries = readList(stagingDir, BackupWriter.EntityFile.DELETED_ENTRIES, DeletedEntry::class.java)
             .map { d ->
                 val pid = (d.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
-                if (d.profileId == pid) {
-                    d
-                } else {
-                    d.copy(
-                        entry_id = (d.entry_id as String?) ?: "",
-                        profileId = pid
-                    )
-                }
+                d.copy(
+                    entry_id = (d.entry_id as String?) ?: "",
+                    profileId = pid
+                )
             }
         val entryTags = readList(stagingDir, BackupWriter.EntityFile.ENTRY_TAGS, EntryTagCrossRef::class.java)
         val workoutSessions = readList(stagingDir, BackupWriter.EntityFile.WORKOUTS, WorkoutSession::class.java)
             .map { w ->
                 val pid = (w.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
-                if (w.profileId == pid) {
-                    w
-                } else {
-                    w.copy(
-                        session_id = (w.session_id as String?) ?: "",
-                        type = (w.type as String?) ?: "RUN",
-                        status = (w.status as String?) ?: "ACTIVE",
-                        notes = (w.notes as String?) ?: "",
-                        profileId = pid
-                    )
-                }
+                w.copy(
+                    session_id = (w.session_id as String?) ?: "",
+                    type = (w.type as String?) ?: "RUN",
+                    status = (w.status as String?) ?: "ACTIVE",
+                    notes = (w.notes as String?) ?: "",
+                    profileId = pid
+                )
             }
         val presets = readList(stagingDir, BackupWriter.EntityFile.PRESETS, WorkoutPreset::class.java)
             .map { p ->
                 val pid = (p.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
-                if (p.profileId == pid) {
-                    p
-                } else {
-                    p.copy(
-                        id = (p.id as String?) ?: "",
-                        name = (p.name as String?) ?: "",
-                        scheduledDay = (p.scheduledDay as String?) ?: "ANY",
-                        exercises = p.exercises ?: emptyList(),
-                        profileId = pid
-                    )
-                }
+                p.copy(
+                    id = (p.id as String?) ?: "",
+                    name = (p.name as String?) ?: "",
+                    scheduledDay = (p.scheduledDay as String?) ?: "ANY",
+                    exercises = p.exercises ?: emptyList(),
+                    profileId = pid
+                )
             }
         return BackupData(
             journalEntries = journalEntries,

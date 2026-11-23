@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
             exportsDir = java.io.File(application.cacheDir, "exports")
         )
         val exportViewModel = ExportViewModel(application, journalRepository, fullBackupUseCase, profileRepository)
-        val restoreViewModel = com.example.healthjournal.export.RestoreViewModel(application)
+        val restoreViewModelFactory = com.example.healthjournal.export.RestoreViewModel.Factory(application)
         val personalCardViewModelFactory = com.example.healthjournal.viewmodel.PersonalCardViewModelFactory(
             personalCardRepository,
             persistUnitSystem = { unitSystem ->
@@ -121,6 +121,8 @@ class MainActivity : ComponentActivity() {
                 val todayState by todayDashboardViewModel.uiState.collectAsState()
                 val profileViewModel: ProfileViewModel =
                     viewModel(factory = profileViewModelFactory)
+                val restoreViewModel: com.example.healthjournal.export.RestoreViewModel =
+                    viewModel(factory = restoreViewModelFactory)
                 val profileState by profileViewModel.uiState.collectAsState()
                 val scope = rememberCoroutineScope()
                 val pendingVitalTab = androidx.compose.runtime.remember {
