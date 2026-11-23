@@ -24,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,9 +35,8 @@ import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.domain.ValidateVitals
 import com.example.healthjournal.domain.VitalField
-import com.mohamedrejeb.richeditor.model.rememberRichTextState
-import com.mohamedrejeb.richeditor.ui.material3.RichText
-import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
+import com.example.healthjournal.util.HtmlPlainText
+import com.mohamedrejeb.richeditor.model.RichTextState
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -113,15 +113,19 @@ fun JournalEntryItem(
                     Spacer(modifier = Modifier.height(4.dp))
                     
                     Box(modifier = Modifier.fillMaxWidth()) {
-                        val richTextState = rememberRichTextState()
-                        LaunchedEffect(entry.description) {
-                            richTextState.setHtml(entry.description)
+                        val renderedDescription = remember(entry.description) {
+                            runCatching {
+                                RichTextState().apply { setHtml(entry.description) }.annotatedString
+                            }.getOrElse {
+                                AnnotatedString(HtmlPlainText.toPlainText(entry.description))
+                            }
                         }
-                        RichText(
-                            state = richTextState,
+                        Text(
+                            text = renderedDescription,
                             modifier = Modifier.fillMaxWidth(),
                             style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
-                            maxLines = if (isExpanded) Int.MAX_VALUE else 3
+                            maxLines = if (isExpanded) Int.MAX_VALUE else 3,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 

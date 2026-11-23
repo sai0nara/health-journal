@@ -1,7 +1,11 @@
 package com.example.healthjournal.ui.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.dp
 import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.UnitSystem
 import com.example.healthjournal.ui.theme.HealthJournalTheme
@@ -266,5 +270,64 @@ class JournalEntryItemTest {
             config.getOrElseNullable(androidx.compose.ui.semantics.SemanticsActions.CustomActions) { null }
         val archiveAction = customActions?.firstOrNull { it.label == "Archive" }
         org.junit.Assert.assertNull(archiveAction)
+    }
+
+    @Test
+    fun entryItem_multiParagraphRichText_truncatesWithoutCrash() {
+        val multiParagraph =
+            "<p>Paragraph one with enough text to wrap.</p>" +
+                "<p>Paragraph two continuing the summary.</p>" +
+                "<p>Paragraph three crossing line limit.</p>" +
+                "<p>Paragraph four truncated at rest.</p>"
+
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                Box(modifier = Modifier.width(240.dp)) {
+                    JournalEntryItem(
+                        entry = JournalEntry(
+                            entry_id = "rich_p",
+                            description = multiParagraph
+                        ),
+                        onClick = {},
+                        onPhotoClick = {}
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("show_more_button").assertIsDisplayed().performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Paragraph four truncated at rest.", substring = true)
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun entryItem_listRichText_truncatesWithoutCrash() {
+        val wrappingBulletListHtml =
+            "<ul>" +
+                "<li>First bullet item with plenty of words so that it wraps across at least two lines inside the journal entry card when selection mode narrows the width</li>" +
+                "<li>Second bullet item taking up the third visible line</li>" +
+                "<li>Third bullet item truncated past max lines</li>" +
+                "</ul>"
+
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                Box(modifier = Modifier.width(240.dp)) {
+                    JournalEntryItem(
+                        entry = JournalEntry(
+                            entry_id = "rich_ul",
+                            description = wrappingBulletListHtml
+                        ),
+                        onClick = {},
+                        onPhotoClick = {}
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("show_more_button").assertIsDisplayed().performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Third bullet item truncated past max lines", substring = true)
+            .assertIsDisplayed()
     }
 }
