@@ -7,9 +7,13 @@
 > Cross-references between documents use backticked paths, not wikilinks,
 > because the same feature slug exists in three directories.
 
-Last updated: 2026-11-10
+Last updated: 2026-11-15
 
 ## Features
+
+- `Docs/prd/today-dashboard.md` — PRD
+- `Docs/psd/today-dashboard.md` — PSD
+- `Docs/tests/today-dashboard.md` — tests
 
 - `Docs/prd/calendar-history.md` — PRD
 - `Docs/psd/calendar-history.md` — PSD

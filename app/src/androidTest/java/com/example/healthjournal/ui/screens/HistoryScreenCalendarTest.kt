@@ -1,6 +1,11 @@
 package com.example.healthjournal.ui.screens
 
 import androidx.activity.ComponentActivity
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -158,5 +163,60 @@ class HistoryScreenCalendarTest {
         composeTestRule.onNodeWithTag("calendar_apply_button").performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("history_calendar_panel").assertDoesNotExist()
+    }
+
+    @Test
+    fun calendarExpanded_hidesAddEntryFab_andKeepsApplyButtonVisibleAboveBottomBar() {
+        val fakeViewModel = FakeJournalViewModel()
+        // Use a 6-row month with an active date filter chip so the calendar panel is at max height
+        fakeViewModel.setVisibleMonth(java.time.YearMonth.of(2026, 8))
+        fakeViewModel.setDateFilter(HistoryDateFilter.SingleDay(LocalDate.of(2026, 8, 15)))
+
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                HistoryScreen(
+                    viewModel = fakeViewModel,
+                    onAddEntryClick = {},
+                    onEntryClick = {},
+                    bottomBar = {
+                        NavigationBar(modifier = Modifier.testTag("test_bottom_bar")) {
+                            NavigationBarItem(
+                                selected = true,
+                                onClick = {},
+                                icon = {},
+                                label = { Text("History") }
+                            )
+                        }
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        // FAB is visible when calendar is collapsed
+        composeTestRule.onNodeWithContentDescription("Add Entry", substring = true, ignoreCase = true)
+            .assertIsDisplayed()
+
+        // Expand calendar -> FAB hides so it cannot cover Apply
+        composeTestRule.onNodeWithTag("history_calendar_toggle").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription("Add Entry", substring = true, ignoreCase = true)
+            .assertDoesNotExist()
+
+        // Apply button is visible, clears the bottom bar, and collapses the panel + restores FAB
+        val applyNode = composeTestRule.onNodeWithTag("calendar_apply_button")
+        applyNode.assertIsDisplayed()
+        val applyBounds = applyNode.getBoundsInRoot()
+        val barBounds = composeTestRule.onNodeWithTag("test_bottom_bar").getBoundsInRoot()
+        assertTrue(
+            "Expected Apply button bottom (${applyBounds.bottom}) <= bottom bar top (${barBounds.top})",
+            applyBounds.bottom <= barBounds.top
+        )
+        applyNode.performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("history_calendar_panel").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Add Entry", substring = true, ignoreCase = true)
+            .assertIsDisplayed()
     }
 }

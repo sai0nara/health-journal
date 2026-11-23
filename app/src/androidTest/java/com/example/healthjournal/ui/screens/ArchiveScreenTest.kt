@@ -137,4 +137,70 @@ class ArchiveScreenTest {
             assert(viewModel.archiveSearchQuery.value == "walk")
         }
     }
+
+    @Test
+    fun testArchiveScreen_selectItemsAndScroll_withMultiParagraphRichText_doesNotCrash() {
+        val wrappingParagraphThenBulletHtml =
+            "<p>First paragraph with plenty of words so that it wraps across at least two lines inside the journal entry card on mobile screens.</p>" +
+                "<p>Second paragraph occupying the third visible line.</p>" +
+                "<ul><li>Bullet item on paragraph index two beyond max lines</li></ul>"
+        val wrappingBulletListHtml =
+            "<ul>" +
+                "<li>First bullet item with plenty of words so that it wraps across at least two lines inside the journal entry card when selection mode narrows the width</li>" +
+                "<li>Second bullet item taking up the third visible line</li>" +
+                "<li>Third bullet item truncated past max lines</li>" +
+                "</ul>"
+        val wrappingOrderedListHtml =
+            "<ol>" +
+                "<li>First ordered step with plenty of words so that it wraps across at least two lines inside the journal entry card on mobile screens</li>" +
+                "<li>Second ordered step occupying the third visible line</li>" +
+                "<li>Third ordered step truncated past max lines</li>" +
+                "</ol>"
+
+        val entries = (1..12).map { index ->
+            val description = when (index % 3) {
+                0 -> wrappingOrderedListHtml
+                1 -> wrappingParagraphThenBulletHtml
+                else -> wrappingBulletListHtml
+            }
+            JournalEntry(
+                entry_id = index.toString(),
+                description = description,
+                timestamp = 1_700_000_000_000L - index * 60_000L,
+                isArchived = true
+            )
+        }
+
+        viewModel.reactiveArchivedEntries.value = entries
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                ArchiveScreen(viewModel = viewModel, onBack = {}, onEntryClick = {})
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        // Long-press first item to enter selection mode, then select second item
+        composeTestRule.onNodeWithTag("archive_entry_1").performTouchInput {
+            down(center)
+        }
+        composeTestRule.mainClock.advanceTimeBy(1000)
+        composeTestRule.onNodeWithTag("archive_entry_1").performTouchInput {
+            up()
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("archive_entry_2").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("2 Selected").assertIsDisplayed()
+
+        // Scroll through the list while items are selected (triggers layout at narrowed width)
+        composeTestRule.onNodeWithTag("archive_list")
+            .performScrollToNode(hasTestTag("archive_entry_12"))
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("archive_entry_12").assertIsDisplayed()
+
+        composeTestRule.onNodeWithTag("archive_list")
+            .performScrollToNode(hasTestTag("archive_entry_1"))
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("2 Selected").assertIsDisplayed()
+    }
 }

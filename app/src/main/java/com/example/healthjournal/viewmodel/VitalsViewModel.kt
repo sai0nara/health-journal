@@ -9,6 +9,7 @@ import com.example.healthjournal.data.local.JournalEntry
 import com.example.healthjournal.data.local.SELF_PROFILE_ID
 import com.example.healthjournal.data.local.UnitConverter
 import com.example.healthjournal.data.local.UnitSystem
+import com.example.healthjournal.domain.EntryKindTag
 import com.example.healthjournal.domain.EntryVitals
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -147,7 +148,7 @@ class VitalsViewModel(
             val entry = JournalEntry(
                 entry_id = UUID.randomUUID().toString(),
                 profileId = profileId,
-                description = "",
+                description = EntryKindTag.VITALS_DESCRIPTION,
                 timestamp = timestamp,
                 bp_systolic = vitals.bpSystolic,
                 bp_diastolic = vitals.bpDiastolic,
@@ -157,6 +158,7 @@ class VitalsViewModel(
                 spo2_percent = vitals.spo2Percent
             )
             journalRepository.insert(profileId, entry)
+            journalRepository.addTag(profileId, entry.entry_id, EntryKindTag.forVitals())
         }
     }
 

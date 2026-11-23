@@ -27,9 +27,14 @@ object EntryKindTag {
     const val HEALTH = "health"
     const val MEDICATION = "medication"
 
+    /** Default journal description applied to entries logged/updated from Vitals. */
+    const val VITALS_DESCRIPTION = "Vitals"
+
     fun forWorkout(): String = FITNESS
 
     fun forMeasurement(): String = HEALTH
+
+    fun forVitals(): String = HEALTH
 
     fun forMedication(): String = MEDICATION
 

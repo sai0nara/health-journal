@@ -1,5 +1,6 @@
 package com.example.healthjournal.util
 
+import com.example.healthjournal.data.local.DeletedEntry
 import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.data.local.WorkoutPresetDao
 import kotlinx.coroutines.flow.Flow
@@ -38,6 +39,8 @@ class FakeWorkoutPresetDao : WorkoutPresetDao {
         store.entries.removeAll { it.value.profileId == profileId }
         emit()
     }
+
+    override suspend fun insertDeletedEntry(deletedEntry: DeletedEntry) {}
 
     private fun emit() {
         feed.value = store.values.sortedByDescending { it.lastModified }.toList()

@@ -240,6 +240,9 @@ fun ArchiveScreen(
                 }
             } else {
                 LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag("archive_list"),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -260,18 +263,20 @@ fun ArchiveScreen(
                                         modifier = Modifier.padding(start = 8.dp)
                                     )
                                 }
-                                JournalEntryItem(
-                                    entry = entry,
-                                    onClick = { if (isSelectionMode) onToggleSelect(entry.entry_id) else onEntryClick(entry.entry_id) },
-                                    onPhotoClick = { expandedImageUri = it },
-                                    unitSystem = unitSystem,
-                                    onLongClick = {
-                                        if (!isSelectionMode) {
-                                            isSelectionMode = true
-                                            onToggleSelect(entry.entry_id)
+                                Box(modifier = Modifier.weight(1f)) {
+                                    JournalEntryItem(
+                                        entry = entry,
+                                        onClick = { if (isSelectionMode) onToggleSelect(entry.entry_id) else onEntryClick(entry.entry_id) },
+                                        onPhotoClick = { expandedImageUri = it },
+                                        unitSystem = unitSystem,
+                                        onLongClick = {
+                                            if (!isSelectionMode) {
+                                                isSelectionMode = true
+                                                onToggleSelect(entry.entry_id)
+                                            }
                                         }
-                                    }
-                                )
+                                    )
+                                }
                             }
                             if (isSelected) {
                                 Box(

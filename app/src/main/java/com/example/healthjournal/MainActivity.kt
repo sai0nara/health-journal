@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
             exportsDir = java.io.File(application.cacheDir, "exports")
         )
         val exportViewModel = ExportViewModel(application, journalRepository, fullBackupUseCase, profileRepository)
-        val restoreViewModel = com.example.healthjournal.export.RestoreViewModel(application)
+        val restoreViewModelFactory = com.example.healthjournal.export.RestoreViewModel.Factory(application)
         val personalCardViewModelFactory = com.example.healthjournal.viewmodel.PersonalCardViewModelFactory(
             personalCardRepository,
             persistUnitSystem = { unitSystem ->
@@ -97,7 +97,17 @@ class MainActivity : ComponentActivity() {
             unitSystemFlow = vitalsUnitSystemFlow
         )
         val workoutRepository = com.example.healthjournal.data.WorkoutRepository(database.workoutSessionDao(), profileRepository)
+        val presetRepository = com.example.healthjournal.data.PresetRepository(database.workoutPresetDao(), profileRepository)
         val workoutHealthSource = com.example.healthjournal.health.HealthConnectWorkoutDataSource(this)
+        val todayDashboardViewModelFactory = com.example.healthjournal.viewmodel.TodayDashboardViewModel.Factory(
+            journalRepository = journalRepository,
+            workoutRepository = workoutRepository,
+            measurementRepository = measurementRepository,
+            goalsRepository = goalsRepository,
+            presetRepository = presetRepository,
+            activeProfileProvider = profileRepository,
+            unitSystemFlow = vitalsUnitSystemFlow
+        )
 
         // Trigger sync on start
         SyncManager.enqueuePeriodicSync(this)
@@ -106,10 +116,36 @@ class MainActivity : ComponentActivity() {
             HealthJournalTheme {
                 val navController = rememberNavController()
                 val viewModel: JournalViewModel = viewModel(factory = viewModelFactory)
+                val todayDashboardViewModel: com.example.healthjournal.viewmodel.TodayDashboardViewModel =
+                    viewModel(factory = todayDashboardViewModelFactory)
+                val todayState by todayDashboardViewModel.uiState.collectAsState()
                 val profileViewModel: ProfileViewModel =
                     viewModel(factory = profileViewModelFactory)
+                val restoreViewModel: com.example.healthjournal.export.RestoreViewModel =
+                    viewModel(factory = restoreViewModelFactory)
                 val profileState by profileViewModel.uiState.collectAsState()
                 val scope = rememberCoroutineScope()
+                val pendingVitalTab = androidx.compose.runtime.remember {
+                    androidx.compose.runtime.mutableStateOf<com.example.healthjournal.viewmodel.VitalMetricTab?>(null)
+                }
+                val pendingPresetId = androidx.compose.runtime.remember {
+                    androidx.compose.runtime.mutableStateOf<String?>(null)
+                }
+                val navigateTopLevelTab: (String) -> Unit = { route ->
+                    navController.navigate(route) {
+                        popUpTo("main") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+                val bottomBarForRoute: (String) -> @Composable () -> Unit = { route ->
+                    {
+                        com.example.healthjournal.ui.components.TodayBottomBar(
+                            currentRoute = route,
+                            onNavigate = navigateTopLevelTab
+                        )
+                    }
+                }
                 val switchProfile: (String) -> Unit = { profileId ->
                     if (profileId != profileState.activeProfile?.id) {
                         scope.launch {
@@ -121,6 +157,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 val manageProfiles = { navController.navigate("manage_profiles") }
+                val openPersonalCard = { navController.navigate("personal_card") }
                 val profileSwitcher: @Composable (Boolean, (String) -> Unit) -> Unit =
                     { enabled, onSwitch ->
                         ProfileSwitcher(
@@ -128,16 +165,47 @@ class MainActivity : ComponentActivity() {
                             activeProfileId = profileState.activeProfile?.id,
                             enabled = enabled,
                             onProfileSelected = onSwitch,
-                            onManageProfiles = manageProfiles
+                            onManageProfiles = manageProfiles,
+                            onPersonalCard = openPersonalCard
                         )
                     }
 
                 NavHost(navController = navController, startDestination = "main") {
                     composable("main") {
                         MainScreen(
-                            onTileClick = { route -> navController.navigate(route) },
+                            state = todayState,
+                            onOpenVitals = { tab ->
+                                pendingVitalTab.value = tab
+                                navigateTopLevelTab("vitals")
+                            },
+                            onOpenWorkouts = { navController.navigate("workout") },
+                            onOpenMeasurements = { navController.navigate("measurements") },
+                            onOpenHistory = { navigateTopLevelTab("history") },
+                            onOpenPresets = { navController.navigate("presets") },
+                            onStartPresetWorkout = { preset ->
+                                pendingPresetId.value = preset.id
+                                navController.navigate("workout")
+                            },
+                            onNewJournalEntry = { navController.navigate("add_entry") },
+                            onActivityClick = { item ->
+                                when (item.category) {
+                                    com.example.healthjournal.viewmodel.TodayActivityCategory.VITALS -> {
+                                        pendingVitalTab.value = item.vitalTab ?: com.example.healthjournal.viewmodel.VitalMetricTab.BLOOD_PRESSURE
+                                        navigateTopLevelTab("vitals")
+                                    }
+                                    com.example.healthjournal.viewmodel.TodayActivityCategory.WORKOUT ->
+                                        navController.navigate("workout")
+                                    com.example.healthjournal.viewmodel.TodayActivityCategory.MEASUREMENT ->
+                                        navController.navigate("measurements")
+                                    com.example.healthjournal.viewmodel.TodayActivityCategory.JOURNAL -> {
+                                        val entryId = item.id.removePrefix("j_")
+                                        navController.navigate("add_entry?entryId=$entryId")
+                                    }
+                                }
+                            },
                             profileSwitcher = profileSwitcher,
-                            onSwitchProfile = switchProfile
+                            onSwitchProfile = switchProfile,
+                            bottomBar = bottomBarForRoute("main")
                         )
                     }
                     composable("history") {
@@ -146,14 +214,33 @@ class MainActivity : ComponentActivity() {
                             onAddEntryClick = { navController.navigate("add_entry") },
                             onEntryClick = { entryId -> navController.navigate("add_entry?entryId=$entryId") },
                             onBack = { navController.popBackStack() },
+                            onOpenArchive = { navController.navigate("archive") },
+                            bottomBar = bottomBarForRoute("history"),
                             profileSwitcher = profileSwitcher,
                             onSwitchProfile = switchProfile
                         )
                     }
+                    composable("more") {
+                        com.example.healthjournal.ui.screens.MoreScreen(
+                            onOpenSettings = { navController.navigate("settings") },
+                            onOpenExport = { navController.navigate("export") },
+                            onOpenPresets = { navController.navigate("presets") },
+                            profileSwitcher = profileSwitcher,
+                            onSwitchProfile = switchProfile,
+                            bottomBar = bottomBarForRoute("more")
+                        )
+                    }
                     composable("settings") {
+                        val weeklyTarget by goalsRepository.workoutWeeklyTarget.collectAsState(
+                            initial = com.example.healthjournal.data.GoalsRepository.DEFAULT_WORKOUT_WEEKLY_TARGET
+                        )
                         com.example.healthjournal.ui.screens.SettingsScreen(
                             viewModel = viewModel,
                             onBack = { navController.popBackStack() },
+                            weeklyWorkoutTarget = weeklyTarget,
+                            onWeeklyWorkoutTargetChange = { newTarget ->
+                                scope.launch { goalsRepository.setWorkoutWeeklyTarget(newTarget) }
+                            },
                             profileSwitcher = profileSwitcher,
                             onSwitchProfile = switchProfile
                         )
@@ -201,10 +288,24 @@ class MainActivity : ComponentActivity() {
                         }
                         val workoutViewModel: com.example.healthjournal.viewmodel.WorkoutViewModel =
                             viewModel(factory = workoutViewModelFactory)
+                        val weeklyTarget by goalsRepository.workoutWeeklyTarget.collectAsState(
+                            initial = com.example.healthjournal.data.GoalsRepository.DEFAULT_WORKOUT_WEEKLY_TARGET
+                        )
+                        val presetToStart = pendingPresetId.value
+                        androidx.compose.runtime.LaunchedEffect(presetToStart) {
+                            if (presetToStart != null) {
+                                workoutViewModel.startPreset(presetToStart)
+                                pendingPresetId.value = null
+                            }
+                        }
                         com.example.healthjournal.ui.screens.WorkoutScreen(
                             viewModel = workoutViewModel,
                             onBack = { navController.popBackStack() },
                             onPresetsClick = { navController.navigate("presets") },
+                            weeklyWorkoutTarget = weeklyTarget,
+                            onWeeklyWorkoutTargetChange = { newTarget ->
+                                scope.launch { goalsRepository.setWorkoutWeeklyTarget(newTarget) }
+                            },
                             profileSwitcher = profileSwitcher,
                             onSwitchProfile = switchProfile
                         )
@@ -231,9 +332,18 @@ class MainActivity : ComponentActivity() {
                     composable("vitals") {
                         val vitalsViewModel: com.example.healthjournal.viewmodel.VitalsViewModel =
                             viewModel(factory = vitalsViewModelFactory)
+                        val initialTab = pendingVitalTab.value
+                        androidx.compose.runtime.LaunchedEffect(initialTab) {
+                            if (initialTab != null) {
+                                vitalsViewModel.selectMetricTab(initialTab)
+                                pendingVitalTab.value = null
+                            }
+                        }
                         com.example.healthjournal.ui.screens.VitalsScreen(
                             viewModel = vitalsViewModel,
                             onBack = { navController.popBackStack() },
+                            initialMetric = initialTab,
+                            bottomBar = bottomBarForRoute("vitals"),
                             profileSwitcher = profileSwitcher,
                             onSwitchProfile = switchProfile
                         )

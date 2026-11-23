@@ -2,6 +2,7 @@ package com.example.healthjournal.sync
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
@@ -16,6 +17,7 @@ import com.example.healthjournal.export.RestoreCoordinator
 import com.example.healthjournal.export.RestoreError
 import com.example.healthjournal.export.RestoreRepository
 import com.example.healthjournal.export.RestoreResult
+import com.example.healthjournal.export.RestoreViewModel
 import com.example.healthjournal.export.SafeBackupExtractor
 import com.google.gson.Gson
 import java.io.File
@@ -36,21 +38,46 @@ import java.io.File
 class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
 
+    private data class ResolvedBackup(val file: File, val workerOwnedTemp: Boolean)
+
     override suspend fun doWork(): Result {
         val uri = inputData.getString(KEY_BACKUP_URI)
             ?: return workerFailure(RestoreError.CorruptedFile("No backup URI provided."))
         val passphrase = inputData.getString(KEY_PASSPHRASE)
-        val backupFile = resolveBackupFile(uri)
+        var resolved: ResolvedBackup? = null
+        var isRetryablePassphraseFailure = false
 
         return try {
+            val backup = resolveBackupFile(uri).also { resolved = it }
             val coordinator = coordinatorProvider(applicationContext)
-            when (val outcome = coordinator.run(backupFile, passphrase)) {
+            when (val outcome = coordinator.run(backup.file, passphrase)) {
                 is RestoreCoordinator.Outcome.Success -> Result.success(successOutput(outcome.result))
-                is RestoreCoordinator.Outcome.Failure -> workerFailure(outcome.error)
+                is RestoreCoordinator.Outcome.Failure -> {
+                    if (outcome.error is RestoreError.WrongPassphrase) {
+                        isRetryablePassphraseFailure = true
+                    }
+                    logWorkerError(outcome.error)
+                    workerFailure(outcome.error)
+                }
             }
+        } catch (e: RestoreError) {
+            if (e is RestoreError.WrongPassphrase) {
+                isRetryablePassphraseFailure = true
+            }
+            logWorkerError(e)
+            workerFailure(e)
+        } catch (e: Exception) {
+            val error = RestoreError.IOFailure("Restore failed: ${e.message ?: e.javaClass.simpleName}", e)
+            logWorkerError(error)
+            workerFailure(error)
         } finally {
-            if (backupFile.parentFile == applicationContext.cacheDir) {
-                backupFile.delete()
+            resolved?.let { backup ->
+                val stagedDir = File(applicationContext.cacheDir, RestoreViewModel.STAGED_DIR_NAME)
+                if (backup.workerOwnedTemp ||
+                    (!isRetryablePassphraseFailure && backup.file.parentFile == stagedDir)
+                ) {
+                    backup.file.delete()
+                }
             }
         }
     }
@@ -69,24 +96,56 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
             .build()
 
     /** Resolves a content:// or file:// URI into a local [File] (content URIs are copied to cache). */
-    private fun resolveBackupFile(uri: String): File {
+    private fun resolveBackupFile(uri: String): ResolvedBackup {
         val parsed = Uri.parse(uri)
         if (parsed.scheme == "file") {
-            parsed.path?.let { return File(it) }
+            val path = parsed.path ?: uri.removePrefix("file://")
+            val file = File(path)
+            if (!file.isFile || file.length() == 0L) {
+                throw RestoreError.IOFailure("Selected backup file is no longer accessible.")
+            }
+            return ResolvedBackup(file, workerOwnedTemp = false)
         }
         val tmp = File(applicationContext.cacheDir, "restore_input_${System.currentTimeMillis()}.zip")
-        applicationContext.contentResolver.openInputStream(parsed)?.use { input ->
-            tmp.outputStream().use { input.copyTo(it) }
+        try {
+            val stream = applicationContext.contentResolver.openInputStream(parsed)
+                ?: throw RestoreError.IOFailure("Unable to open backup file.")
+            stream.use { input ->
+                tmp.outputStream().use { input.copyTo(it) }
+            }
+        } catch (e: RestoreError) {
+            tmp.delete()
+            throw e
+        } catch (e: Exception) {
+            tmp.delete()
+            throw RestoreError.IOFailure("Unable to read backup file.", e)
         }
-        return tmp
+        if (!tmp.isFile || tmp.length() == 0L) {
+            tmp.delete()
+            throw RestoreError.CorruptedFile("Backup file is empty or unreadable.")
+        }
+        return ResolvedBackup(tmp, workerOwnedTemp = true)
+    }
+
+    private fun logWorkerError(error: RestoreError) {
+        runCatching { Log.e(TAG, "Restore failed: ${error.message}", error) }
     }
 
     private fun workerFailure(error: RestoreError): Result {
-        val output = Data.Builder()
+        val builder = Data.Builder()
             .putString(KEY_ERROR_TYPE, errorType(error))
             .putString(KEY_ERROR_MESSAGE, error.message)
-            .build()
-        return Result.failure(output)
+        when (error) {
+            is RestoreError.VersionMismatch -> {
+                builder.putInt(KEY_BACKUP_SCHEMA_VERSION, error.backupSchemaVersion)
+                builder.putInt(KEY_CURRENT_SCHEMA_VERSION, error.currentSchemaVersion)
+            }
+            is RestoreError.UnsupportedFormat -> {
+                builder.putInt(KEY_BACKUP_FORMAT_VERSION, error.backupFormatVersion)
+            }
+            else -> Unit
+        }
+        return Result.failure(builder.build())
     }
 
     private fun errorType(error: RestoreError): String = when (error) {
@@ -94,14 +153,19 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
         is RestoreError.VersionMismatch -> ERROR_TYPE_VERSION_MISMATCH
         is RestoreError.UnsupportedFormat -> ERROR_TYPE_UNSUPPORTED_FORMAT
         is RestoreError.InsufficientStorage -> ERROR_TYPE_INSUFFICIENT_STORAGE
+        is RestoreError.IOFailure -> ERROR_TYPE_IO_FAILURE
         else -> ERROR_TYPE_CORRUPTED
     }
 
     companion object {
+        private const val TAG = "RestoreWorker"
         const val KEY_BACKUP_URI = "key_backup_uri"
         const val KEY_PASSPHRASE = "key_passphrase"
         const val KEY_ERROR_TYPE = "key_error_type"
         const val KEY_ERROR_MESSAGE = "key_error_message"
+        const val KEY_BACKUP_SCHEMA_VERSION = "key_backup_schema_version"
+        const val KEY_CURRENT_SCHEMA_VERSION = "key_current_schema_version"
+        const val KEY_BACKUP_FORMAT_VERSION = "key_backup_format_version"
 
         const val KEY_RESULT_JOURNAL = "key_result_journal"
         const val KEY_RESULT_BODY = "key_result_body"
@@ -117,6 +181,7 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
         const val ERROR_TYPE_VERSION_MISMATCH = "version_mismatch"
         const val ERROR_TYPE_UNSUPPORTED_FORMAT = "unsupported_format"
         const val ERROR_TYPE_INSUFFICIENT_STORAGE = "insufficient_storage"
+        const val ERROR_TYPE_IO_FAILURE = "io_failure"
         const val ERROR_TYPE_CORRUPTED = "corrupted"
 
         /**
@@ -129,7 +194,7 @@ class RestoreWorker(appContext: Context, workerParams: WorkerParameters) :
             val db = JournalDatabase.getDatabase(context)
             RestoreCoordinator(
                 scratchDir = File(context.cacheDir, "restore_scratch_${System.currentTimeMillis()}"),
-                backupReader = BackupReader(Gson()),
+                backupReader = BackupReader(Gson(), scratchDir = context.cacheDir),
                 manifestValidator = ManifestValidator(JournalDatabase.CURRENT_SCHEMA_VERSION),
                 extractor = SafeBackupExtractor(),
                 backupDataReader = BackupDataReader(Gson()),

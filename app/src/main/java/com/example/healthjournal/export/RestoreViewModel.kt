@@ -3,7 +3,10 @@ package com.example.healthjournal.export
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -13,6 +16,7 @@ import androidx.work.workDataOf
 import com.example.healthjournal.sync.RestoreWorker
 import com.google.gson.Gson
 import java.io.File
+import java.io.InputStream
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,37 +26,69 @@ import kotlinx.coroutines.launch
 
 /**
  * MVI ViewModel for the restore-from-backup flow. Pure state transitions are
- * JVM-testable via injected [backupReader] and [restoreToCompletion]; the only
- * Android-specific steps (content-URI copying, WorkManager) live behind those
- * seams and are exercised by the on-device integration tests.
+ * JVM-testable via injected [backupReader], [restoreToCompletion], and
+ * [openUriInputStream]; the Android-specific steps (content-URI copying,
+ * WorkManager) live behind those seams and are exercised by the on-device
+ * integration tests.
  */
 class RestoreViewModel(
     application: Application,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val backupReader: BackupReader = BackupReader(Gson()),
+    private val backupReader: BackupReader = BackupReader(Gson(), scratchDir = resolveCacheDir(application)),
     private val restoreToCompletion: suspend (Context, String, String?) -> RestoreResult = { context, uri, pass ->
         runRestoreThroughWorker(context, uri, pass)
+    },
+    private val openUriInputStream: (Context, String) -> InputStream? = { context, uriString ->
+        context.contentResolver.openInputStream(Uri.parse(uriString))
     }
 ) : AndroidViewModel(application) {
+
+    class Factory(private val application: Application) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(RestoreViewModel::class.java)) {
+                return RestoreViewModel(application) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+        }
+    }
 
     private val _uiState = MutableStateFlow<RestoreUiState>(RestoreUiState.Idle)
     val uiState: StateFlow<RestoreUiState> = _uiState
 
     private data class PendingSelection(val workerUri: String, val passphrase: String?)
+    private data class ResolvedSelection(val file: File, val workerUri: String, val isStaged: Boolean)
 
+    @Volatile
     private var pending: PendingSelection? = null
 
-    /** User picked a backup file; validate its manifest before confirming. */
+    @Volatile
+    private var stagedCacheFile: File? = null
+
+    private fun clearStagedFile() {
+        stagedCacheFile?.delete()
+        stagedCacheFile = null
+    }
+
+    /** User picked a backup file; stage content URIs once and validate the manifest. */
     fun selectBackup(uri: String) {
         viewModelScope.launch(dispatcher) {
+            clearStagedFile()
+            pending = null
             _uiState.value = RestoreUiState.Validating
             try {
-                confirmAfterValidation(uri, passphrase = null, isEncrypted = false)
+                val resolved = resolveInitialSelection(uri)
+                confirmAfterValidation(resolved, passphrase = null, isEncrypted = false)
             } catch (e: RestoreError.WrongPassphrase) {
-                _uiState.value = RestoreUiState.PassphraseRequired(uri)
+                val workerUri = stagedCacheFile?.let { "file://${it.absolutePath}" } ?: uri
+                _uiState.value = RestoreUiState.PassphraseRequired(workerUri)
             } catch (e: RestoreError) {
+                clearStagedFile()
+                logRestoreError("selectBackup failed: ${e.message}", e)
                 _uiState.value = RestoreUiState.Error(e)
             } catch (e: Exception) {
+                clearStagedFile()
+                logRestoreError("selectBackup unexpected failure", e)
                 _uiState.value = RestoreUiState.Error(
                     RestoreError.CorruptedFile("Unable to open the selected backup.", e)
                 )
@@ -66,14 +102,19 @@ class RestoreViewModel(
         viewModelScope.launch(dispatcher) {
             _uiState.value = RestoreUiState.Validating
             try {
-                confirmAfterValidation(current.fileUri, passphrase, isEncrypted = true)
+                val resolved = resolveLocalFile(current.fileUri)
+                confirmAfterValidation(resolved, passphrase, isEncrypted = true)
             } catch (e: RestoreError.WrongPassphrase) {
-                // Return to PassphraseRequired so the user can retry with a fresh passphrase,
-                // rather than an Error that would otherwise no-op on retry.
+                // Keep stagedCacheFile alive and return to PassphraseRequired so the user
+                // can retry with a fresh passphrase rather than re-opening content:// URIs.
                 _uiState.value = RestoreUiState.PassphraseRequired(current.fileUri)
             } catch (e: RestoreError) {
+                clearStagedFile()
+                logRestoreError("submitPassphrase failed: ${e.message}", e)
                 _uiState.value = RestoreUiState.Error(e)
             } catch (e: Exception) {
+                clearStagedFile()
+                logRestoreError("submitPassphrase unexpected failure", e)
                 _uiState.value = RestoreUiState.Error(
                     RestoreError.CorruptedFile("Unable to open the selected backup.", e)
                 )
@@ -82,28 +123,24 @@ class RestoreViewModel(
     }
 
     /**
-     * Copies the selection to a temporary file (content URIs), reads + validates its
-     * manifest, and records the ORIGINAL [workerUri] in [pending]. The worker receives the
-     * original selection URI (it copies the file itself and owns its cleanup) rather than a
-     * cache temp path that this ViewModel might delete before the async worker runs. A
-     * temporary cache copy created only for validation is deleted immediately after reading;
-     * a real `file://` selection is never deleted here.
+     * Reads + validates the manifest and records [PendingSelection] pointing either to the
+     * user's original `file://` URI or to our retained staged cache copy for `content://`
+     * selections, avoiding ephemeral SAF URI grant expiration.
      */
-    private suspend fun confirmAfterValidation(workerUri: String, passphrase: String?, isEncrypted: Boolean) {
-        val resolved = resolveUriToFile(workerUri)
-        try {
-            val manifest = backupReader.readManifest(resolved.file, passphrase)
-            pending = PendingSelection(workerUri, passphrase)
-            _uiState.value = RestoreUiState.ConfirmationRequired(
-                fileUri = workerUri,
-                isEncrypted = isEncrypted,
-                schemaVersion = manifest.schemaVersion,
-                backupTimestamp = manifest.backupTimestamp,
-                formatVersion = manifest.formatVersion
-            )
-        } finally {
-            if (resolved.isTemp) resolved.file.delete()
-        }
+    private fun confirmAfterValidation(
+        resolved: ResolvedSelection,
+        passphrase: String?,
+        isEncrypted: Boolean
+    ) {
+        val manifest = backupReader.readManifest(resolved.file, passphrase)
+        pending = PendingSelection(resolved.workerUri, passphrase)
+        _uiState.value = RestoreUiState.ConfirmationRequired(
+            fileUri = resolved.workerUri,
+            isEncrypted = isEncrypted,
+            schemaVersion = manifest.schemaVersion,
+            backupTimestamp = manifest.backupTimestamp,
+            formatVersion = manifest.formatVersion
+        )
     }
 
     /** User confirmed the restore; enqueue/run it and surface the outcome. */
@@ -113,12 +150,21 @@ class RestoreViewModel(
             _uiState.value = RestoreUiState.Processing
             try {
                 val result = restoreToCompletion(getApplication(), selection.workerUri, selection.passphrase)
+                clearStagedFile()
+                pending = null
                 _uiState.value = RestoreUiState.Success(result)
             } catch (e: RestoreError.WrongPassphrase) {
+                // Keep staged file alive so the user can retry passphrase entry.
                 _uiState.value = RestoreUiState.PassphraseRequired(selection.workerUri)
             } catch (e: RestoreError) {
+                clearStagedFile()
+                pending = null
+                logRestoreError("confirmRestore failed: ${e.message}", e)
                 _uiState.value = RestoreUiState.Error(e)
             } catch (e: Exception) {
+                clearStagedFile()
+                pending = null
+                logRestoreError("confirmRestore unexpected failure", e)
                 _uiState.value = RestoreUiState.Error(
                     RestoreError.IOFailure("Restore could not be completed.", e)
                 )
@@ -127,6 +173,7 @@ class RestoreViewModel(
     }
 
     fun reset() {
+        clearStagedFile()
         pending = null
         _uiState.value = RestoreUiState.Idle
     }
@@ -135,36 +182,87 @@ class RestoreViewModel(
         reset()
     }
 
-    /**
-     * Resolves a content:// or file:// URI to a local [File] for manifest validation. For a
-     * content:// URI the file is copied into the app cache and [ResolvedFile.isTemp] is true
-     * (so the copy can be deleted after validation); a `file://` URI maps directly to the
-     * user's file and [ResolvedFile.isTemp] is false (never deleted here).
-     */
-    private fun resolveUriToFile(uriString: String): ResolvedFile {
-        if (uriString.startsWith("file://")) {
-            return ResolvedFile(File(uriString.removePrefix("file://")), isTemp = false)
+    override fun onCleared() {
+        super.onCleared()
+        if (_uiState.value !is RestoreUiState.Processing) {
+            clearStagedFile()
         }
-        val uri = Uri.parse(uriString)
-        val tmp = File(getApplication<Application>().cacheDir, "restore_selected_${System.currentTimeMillis()}.zip")
-        getApplication<Application>().contentResolver.openInputStream(uri)?.use { input ->
-            tmp.outputStream().use { input.copyTo(it) }
-        }
-        return ResolvedFile(tmp, isTemp = true)
     }
 
-    private data class ResolvedFile(val file: File, val isTemp: Boolean)
+    private fun resolveInitialSelection(uriString: String): ResolvedSelection {
+        if (uriString.startsWith("file://")) {
+            return resolveLocalFile(uriString)
+        }
+        val app = getApplication<Application>()
+        val stagingDir = File(resolveCacheDir(app), STAGED_DIR_NAME).apply { mkdirs() }
+        val tmp = File.createTempFile("restore_staged_", ".zip", stagingDir)
+        try {
+            val stream = openUriInputStream(app, uriString)
+                ?: throw RestoreError.IOFailure("Unable to open the selected backup file.")
+            stream.use { input ->
+                tmp.outputStream().use { out -> input.copyTo(out) }
+            }
+        } catch (e: RestoreError) {
+            tmp.delete()
+            throw e
+        } catch (e: Exception) {
+            tmp.delete()
+            throw RestoreError.IOFailure("Unable to read the selected backup file.", e)
+        }
+        if (!tmp.isFile || tmp.length() == 0L) {
+            tmp.delete()
+            throw RestoreError.CorruptedFile("The selected backup file is empty or unreadable.")
+        }
+        stagedCacheFile = tmp
+        return ResolvedSelection(
+            file = tmp,
+            workerUri = "file://${tmp.absolutePath}",
+            isStaged = true
+        )
+    }
 
+    private fun resolveLocalFile(uriString: String): ResolvedSelection {
+        if (uriString.startsWith("file://")) {
+            val stripped = File(uriString.removePrefix("file://"))
+            val file = if (stripped.exists()) {
+                stripped
+            } else {
+                runCatching { Uri.parse(uriString)?.path?.let(::File) }.getOrNull() ?: stripped
+            }
+            return ResolvedSelection(
+                file = file,
+                workerUri = uriString,
+                isStaged = file.parentFile == File(resolveCacheDir(getApplication()), STAGED_DIR_NAME)
+            )
+        }
+        return resolveInitialSelection(uriString)
+    }
+
+    private fun logRestoreError(message: String, error: Throwable) {
+        runCatching { Log.e(TAG, message, error) }
+    }
+
+    companion object {
+        internal const val STAGED_DIR_NAME = "restore_staged"
+        private const val TAG = "RestoreViewModel"
+    }
+}
+
+private fun resolveCacheDir(application: Application): File {
+    val dir = runCatching { application.cacheDir }.getOrNull()
+    return if (dir != null && dir.path.isNotBlank()) {
+        dir
+    } else {
+        File(System.getProperty("java.io.tmpdir") ?: ".")
+    }
 }
 
 private const val WORK_NAME = "restore_backup"
 
 /**
  * Production restore path: enqueues [RestoreWorker] as a unique one-time work and
- * suspends until it finishes, mapping success/failure back to a [RestoreResult] or
- * a typed [RestoreError]. Kept top-level so the constructor's default
- * [RestoreViewModel.restoreToCompletion] can reference it (default-arg expressions
- * cannot access instance members).
+ * suspends until that exact request ID finishes, mapping success/failure/cancellation
+ * back to a [RestoreResult] or a typed [RestoreError].
  */
 private suspend fun runRestoreThroughWorker(context: Context, fileUri: String, passphrase: String?): RestoreResult {
     val request = OneTimeWorkRequestBuilder<RestoreWorker>()
@@ -178,10 +276,10 @@ private suspend fun runRestoreThroughWorker(context: Context, fileUri: String, p
     val wm = WorkManager.getInstance(context)
     wm.enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.REPLACE, request)
 
-    val flow = wm.getWorkInfosForUniqueWorkFlow(WORK_NAME)
-    val finished = flow.first { infos ->
-        infos.any { it.state == WorkInfo.State.SUCCEEDED || it.state == WorkInfo.State.FAILED }
-    }.first { it.state == WorkInfo.State.SUCCEEDED || it.state == WorkInfo.State.FAILED }
+    val finished = checkNotNull(
+        wm.getWorkInfoByIdFlow(request.id)
+            .first { info -> info != null && info.state.isFinished }
+    )
 
     if (finished.state == WorkInfo.State.SUCCEEDED) {
         val data = finished.outputData
@@ -198,16 +296,26 @@ private suspend fun runRestoreThroughWorker(context: Context, fileUri: String, p
         )
     }
 
-    throw when (finished.outputData.getString(RestoreWorker.KEY_ERROR_TYPE)) {
+    if (finished.state == WorkInfo.State.CANCELLED) {
+        throw RestoreError.IOFailure("Restore was cancelled.")
+    }
+
+    val data = finished.outputData
+    throw when (data.getString(RestoreWorker.KEY_ERROR_TYPE)) {
         RestoreWorker.ERROR_TYPE_WRONG_PASSPHRASE -> RestoreError.WrongPassphrase()
         RestoreWorker.ERROR_TYPE_VERSION_MISMATCH -> RestoreError.VersionMismatch(
-            backupSchemaVersion = -1,
-            currentSchemaVersion = -1
+            backupSchemaVersion = data.getInt(RestoreWorker.KEY_BACKUP_SCHEMA_VERSION, -1),
+            currentSchemaVersion = data.getInt(RestoreWorker.KEY_CURRENT_SCHEMA_VERSION, -1)
         )
-        RestoreWorker.ERROR_TYPE_UNSUPPORTED_FORMAT -> RestoreError.UnsupportedFormat(-1)
+        RestoreWorker.ERROR_TYPE_UNSUPPORTED_FORMAT -> RestoreError.UnsupportedFormat(
+            data.getInt(RestoreWorker.KEY_BACKUP_FORMAT_VERSION, -1)
+        )
         RestoreWorker.ERROR_TYPE_INSUFFICIENT_STORAGE -> RestoreError.InsufficientStorage()
+        RestoreWorker.ERROR_TYPE_IO_FAILURE -> RestoreError.IOFailure(
+            data.getString(RestoreWorker.KEY_ERROR_MESSAGE) ?: "Restore failed."
+        )
         else -> RestoreError.CorruptedFile(
-            finished.outputData.getString(RestoreWorker.KEY_ERROR_MESSAGE) ?: "Restore failed."
+            data.getString(RestoreWorker.KEY_ERROR_MESSAGE) ?: "Restore failed."
         )
     }
 }

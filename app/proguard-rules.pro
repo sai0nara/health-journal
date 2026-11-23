@@ -42,6 +42,26 @@
 -keep class com.example.healthjournal.data.local.WorkoutPreset { *; }
 -keep class com.example.healthjournal.data.local.ExerciseCatalogItem { *; }
 -keep class com.example.healthjournal.data.local.AttachmentData { *; }
+-keep class com.example.healthjournal.export.BackupManifest { *; }
+-keep class com.example.healthjournal.domain.StrengthSet { *; }
+-keep class com.example.healthjournal.domain.WorkoutIntervalPhase { *; }
+-keep class com.example.healthjournal.data.local.ProfileEntity { *; }
+-keep class com.example.healthjournal.data.local.ProfileDeletionEntity { *; }
+-keep class com.example.healthjournal.data.local.BloodType { *; }
+-keep class com.example.healthjournal.data.local.MedicationEntry { *; }
+-keep class com.example.healthjournal.data.local.EmergencyContact { *; }
+-keep class com.example.healthjournal.data.local.Demographics { *; }
+-keep class com.example.healthjournal.data.local.MedicalProfile { *; }
+-keep class com.example.healthjournal.data.local.MedicalHistory { *; }
+-keep class com.example.healthjournal.data.local.EmergencyContacts { *; }
+-keep class com.example.healthjournal.sync.ProfileSyncSnapshot { *; }
+
+# WorkManager 2.9.0 consumer rules omit `{ <init>(); }` on InputMerger, so R8
+# full mode strips OverwritingInputMerger.<init>() and breaks OneTimeWorkRequest
+# workers (RestoreWorker, manual SyncWorker) in minified builds.
+-keep class * extends androidx.work.InputMerger {
+    public <init>();
+}
 
 # Desktop-only transitive references never loaded on Android (AWT image
 # paths, Jackson fallback in iText-commons, Kerberos in Apache HTTP,

@@ -1,5 +1,6 @@
 package com.example.healthjournal.data
 
+import com.example.healthjournal.data.local.DeletedEntry
 import com.example.healthjournal.data.local.FakeWorkoutPresetDao
 import com.example.healthjournal.data.local.WorkoutPreset
 import kotlinx.coroutines.flow.first
@@ -98,5 +99,21 @@ class PresetRepositoryTest {
 
         assertEquals(emptyList<String>(), repository.getAllPresets("self").map { it.id })
         assertEquals(listOf("p-sibling"), repository.getAllPresets("sibling").map { it.id })
+        assertEquals(
+            listOf("p-self", "p-sibling"),
+            dao.deletedEntries.filter { it.profileId == "self" }.map { it.entry_id }
+        )
+    }
+
+    @Test
+    fun deletePreset_recordsDeletedEntryTombstoneForActiveProfile() = runBlocking {
+        activeProfile.switchTo("sibling")
+        repository.savePreset("sibling", WorkoutPreset(id = "p-sib", name = "Pull"))
+
+        repository.deletePreset("p-sib")
+
+        assertEquals(1, dao.deletedEntries.size)
+        val tombstone = dao.deletedEntries.single()
+        assertEquals(DeletedEntry(entry_id = "p-sib", deletedAt = tombstone.deletedAt, profileId = "sibling"), tombstone)
     }
 }

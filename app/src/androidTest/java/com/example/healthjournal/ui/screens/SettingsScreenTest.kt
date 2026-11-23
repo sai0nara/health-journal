@@ -137,4 +137,26 @@ class SettingsScreenTest {
 
         composeTestRule.onNodeWithTag("settings_reauth").assertDoesNotExist()
     }
+
+    @Test
+    fun settingsScreen_weeklyWorkoutGoal_stepperUpdatesTarget() {
+        val targetUpdates = mutableListOf<Int>()
+        composeTestRule.setContent {
+            HealthJournalTheme {
+                SettingsScreen(
+                    viewModel = FakeJournalViewModel(),
+                    onBack = {},
+                    weeklyWorkoutTarget = 4,
+                    onWeeklyWorkoutTargetChange = { targetUpdates.add(it) }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("settings_weekly_workout_goal_value")
+            .assertIsDisplayed()
+            .assertTextEquals("4 / week")
+        composeTestRule.onNodeWithTag("settings_weekly_workout_goal_inc").performClick()
+        composeTestRule.onNodeWithTag("settings_weekly_workout_goal_dec").performClick()
+        org.junit.Assert.assertEquals(listOf(5, 3), targetUpdates)
+    }
 }

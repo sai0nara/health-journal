@@ -270,4 +270,29 @@ class RestoreIntegrationTest {
         assertEquals(listOf("Keep Sibling Entry"), journalDao.getAllEntries("sib-keep").first().map { it.description })
         assertTrue(profileDao.getAll().any { it.id == "sib-keep" })
     }
+
+    @Test
+    fun restore_clearsStaleTagsWhenReplacingEntries() = runBlocking {
+        val journalDao = db.journalDao()
+        journalDao.insertEntry(JournalEntry(entry_id = "e-old", description = "Old entry"))
+        journalDao.insertTag(EntryTagCrossRef("e-old", "stale_tag"))
+        journalDao.insertTag(EntryTagCrossRef("e-old", "old_tag"))
+
+        val archive = buildBackup(
+            BackupData(
+                journalEntries = listOf(JournalEntry(entry_id = "e-new", description = "Fresh entry")),
+                entryTags = listOf(EntryTagCrossRef("e-new", "fresh_tag"))
+            ),
+            mediaFile = null,
+            target = File(filesDir, "tags_${System.nanoTime()}.zip")
+        )
+
+        val outcome = coordinator().run(archive, passphrase = null)
+
+        assertTrue(outcome is RestoreCoordinator.Outcome.Success)
+        assertEquals(
+            listOf(EntryTagCrossRef("e-new", "fresh_tag")),
+            journalDao.getAllTags(SELF_PROFILE_ID)
+        )
+    }
 }

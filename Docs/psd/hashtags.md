@@ -5,7 +5,7 @@
 > encodes `#` as `&num;`), the ViewModels union tags at save, and feed
 > items render tappable chips.
 
-Last updated: 2026-10-20
+Last updated: 2026-11-23
 
 ## Overview
 
@@ -21,8 +21,10 @@ stored HTML. See `Docs/prd/hashtags.md` for the requirements.
 ## Architecture
 
 - No new layers: domain owns parsing/mapping; `JournalViewModel` unions
-  tags at the single save/update choke point; `WorkoutViewModel` and
-  `BodyMeasurementViewModel` attach kind tags to the entries they create.
+  tags at the single save/update choke point (and tags entries with Health
+  when vitals are added/updated via `updateVitals`); `WorkoutViewModel`,
+  `BodyMeasurementViewModel`, and `VitalsViewModel` attach kind tags to
+  the entries they create.
 - Tags on edit are exactly the chip selection plus tags re-parsed from the
   current text; there is no separate sticky set. Auto-tags are applied at
   creation but a deselected auto-tag is removed like any other tag, so no
@@ -42,7 +44,10 @@ stored HTML. See `Docs/prd/hashtags.md` for the requirements.
 2. ViewModel re-parses defensively, unions selected chips + inline tags
    (no sticky set), canonicalizes, and writes via `EntryTagCrossRef`.
 3. Workout finish/manual log inserts the linked entry, then tags it
-   Fitness; measurement save inserts its entry, then tags it Health.
+   Fitness; measurement save and vitals logging (Vitals screen via
+   `VitalsViewModel.logVital`, or adding/updating vitals on an existing
+   entry via `JournalViewModel.updateVitals`) insert/update the entry,
+   setting a default `"Vitals"` description when blank, then tag it Health.
 4. History collects the tags map; feed items render `#chips`; tap
    toggles the tag filter; filter row offers all enum categories.
 
@@ -54,6 +59,7 @@ stored HTML. See `Docs/prd/hashtags.md` for the requirements.
 | Save/update union | `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` | selected chips + parsed hashtags, canonicalized; `tagsByEntry` map |
 | Workout auto-tag | `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutViewModel.kt` | Fitness tag on linked entries (finish + manual) |
 | Measurement link | `app/src/main/java/com/example/healthjournal/viewmodel/BodyMeasurementViewModel.kt` | linked entry + Health tag on save |
+| Vitals auto-tag | `app/src/main/java/com/example/healthjournal/viewmodel/VitalsViewModel.kt` | Health tag + default `"Vitals"` description on logged vitals |
 | Tag categories | `app/src/main/java/com/example/healthjournal/data/JournalTag.kt` | enum incl. new auto-tag categories |
 | Display labels | `app/src/main/java/com/example/healthjournal/ui/components/TagSelectionRow.kt` | `tagDisplayName` resolver |
 | Feed chips | `app/src/main/java/com/example/healthjournal/ui/components/JournalEntryItem.kt` | tappable `#chips` per entry |
@@ -89,6 +95,7 @@ stored HTML. See `Docs/prd/hashtags.md` for the requirements.
 - `app/src/main/java/com/example/healthjournal/viewmodel/JournalViewModel.kt` — save/update union, tags map.
 - `app/src/main/java/com/example/healthjournal/viewmodel/WorkoutViewModel.kt` — workout auto-tag.
 - `app/src/main/java/com/example/healthjournal/viewmodel/BodyMeasurementViewModel.kt` — measurement link.
+- `app/src/main/java/com/example/healthjournal/viewmodel/VitalsViewModel.kt` — vitals auto-tag.
 - `app/src/main/java/com/example/healthjournal/data/JournalTag.kt` — categories.
 - `app/src/main/java/com/example/healthjournal/ui/components/TagSelectionRow.kt` — display resolver.
 - `app/src/main/java/com/example/healthjournal/ui/components/JournalEntryItem.kt` — feed chips.

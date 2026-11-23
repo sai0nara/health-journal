@@ -9,6 +9,7 @@ import com.example.healthjournal.data.local.ProfileDeletionEntity
 import com.example.healthjournal.data.local.ProfileEntity
 import com.example.healthjournal.data.local.ProfileRelationship
 import com.example.healthjournal.data.local.SELF_PROFILE_ID
+import com.example.healthjournal.data.local.WorkoutPreset
 import com.example.healthjournal.domain.TagIdentity
 
 data class ProfileMergeResult(
@@ -247,6 +248,37 @@ object SyncMerge {
             val id = (rawLocal.id as String?)?.takeIf { it.isNotBlank() } ?: "personal_card"
             val local = if (rawLocal.profileId == profileId && rawLocal.id == id) rawLocal else rawLocal.copy(profileId = profileId, id = id)
             val key = profileId to id
+            val cloud = result[key]
+            if (cloud == null || local.lastModified > cloud.lastModified) {
+                result[key] = local
+            }
+        }
+
+        return result.values.toList()
+    }
+
+    /**
+     * Merge for workout presets (routines): Last-Write-Wins on [WorkoutPreset.lastModified]
+     * per `(profileId, id)`, with cloud winning ties. Tombstones are filtered by
+     * [SyncWorker] before merging.
+     */
+    @Suppress("UNNECESSARY_SAFE_CALL", "UNNECESSARY_ELVIS", "USELESS_ELVIS")
+    fun mergePresets(
+        cloudPresets: List<WorkoutPreset>,
+        localPresets: List<WorkoutPreset>
+    ): List<WorkoutPreset> {
+        val result = mutableMapOf<Pair<String, String>, WorkoutPreset>()
+
+        cloudPresets.forEach { rawCloud ->
+            val profileId = (rawCloud.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
+            val cloud = if (rawCloud.profileId == profileId) rawCloud else rawCloud.copy(profileId = profileId)
+            result[profileId to cloud.id] = cloud
+        }
+
+        localPresets.forEach { rawLocal ->
+            val profileId = (rawLocal.profileId as String?)?.takeIf { it.isNotBlank() } ?: SELF_PROFILE_ID
+            val local = if (rawLocal.profileId == profileId) rawLocal else rawLocal.copy(profileId = profileId)
+            val key = profileId to local.id
             val cloud = result[key]
             if (cloud == null || local.lastModified > cloud.lastModified) {
                 result[key] = local

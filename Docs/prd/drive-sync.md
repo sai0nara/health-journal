@@ -4,7 +4,7 @@
 > entry tombstones to a private Google Drive app-data folder, keeping multiple
 > devices consistent in the background.
 
-Last updated: 2026-10-19
+Last updated: 2026-11-23
 
 ## Overview
 
@@ -22,7 +22,7 @@ only the app-data scope; a background worker refreshes an access token silently.
 
 - Keep a user's data consistent across devices and re-installs via Drive.
 - Sync journal entries (incl. archived), body measurements, goals, personal
-  card, and cross-device deletions.
+  card, workout presets (routines), and cross-device deletions.
 - Resolve conflicts deterministically by last-modified, cloud wins ties.
 - Run in the background (periodic + after mutations) and on manual demand.
 - Keep credentials out of persistent storage: only the account email is saved.
@@ -44,8 +44,8 @@ only the app-data scope; a background worker refreshes an access token silently.
 ## Functional requirements
 
 - FR-1: Journal entries (including archived) sync as a full snapshot.
-- FR-2: Body measurements, measurement goals, and the personal card each sync
-  as their own snapshot file.
+- FR-2: Body measurements, measurement goals, the personal card, and workout
+  presets (routines) each sync as their own snapshot file.
 - FR-3: Deletions are tracked in a shared tombstone ledger; the newest deletion
   wins and a cloud copy cannot resurrect a deleted item.
 - FR-4: Conflicts resolve by latest `lastModified`, cloud wins ties.
@@ -97,6 +97,7 @@ only the app-data scope; a background worker refreshes an access token silently.
 - `app/src/main/java/com/example/healthjournal/sync/MeasurementSyncPayload.kt` — measurement payload.
 - `app/src/main/java/com/example/healthjournal/sync/MeasurementTombstonePayload.kt` — tombstone payload.
 - `app/src/main/java/com/example/healthjournal/sync/PersonalCardSyncPayload.kt` — personal card payload.
+- `app/src/main/java/com/example/healthjournal/sync/PresetSyncPayload.kt` — workout presets (routines) payload.
 - `app/src/main/java/com/example/healthjournal/auth/GoogleAuthManager.kt` — sign-in and Drive authorization.
 - `app/src/main/java/com/example/healthjournal/auth/SessionManager.kt` — persisted account identity.
 - `app/src/main/java/com/example/healthjournal/data/local/DeletedEntry.kt` — the tombstone entity.

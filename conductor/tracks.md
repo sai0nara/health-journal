@@ -79,3 +79,14 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Calendar history with events from one day or period**
   *Link: [./archive/calendar_history_20261110/](./archive/calendar_history_20261110/)*
 
+---
+
+- [x] **Track: Today Dashboard (Glanceable Home, Quick-Log FAB & Bottom Navigation)**
+  *Link: [./tracks/today_dashboard_20261115/](./tracks/today_dashboard_20261115/)*
+
+---
+
+- [x] **Track: Fix defects from Docs/Defects.md (vitals journal text & #Health tag, HTML stripping in Recent Activity, and History calendar Apply button visibility)**
+  *Link: [./tracks/fix_defects_20261122/](./tracks/fix_defects_20261122/)*
+
+

@@ -52,6 +52,7 @@ class ExportScreenTest {
     private var samProfileId: String = ""
 
     private fun navigateToExportScreen() {
+        composeTestRule.onNodeWithTag("bottom_nav_more").performClick()
         composeTestRule.onNodeWithText("Export Data").performClick()
     }
 

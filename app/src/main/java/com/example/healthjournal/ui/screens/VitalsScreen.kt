@@ -79,10 +79,17 @@ import kotlinx.coroutines.launch
 fun VitalsScreen(
     viewModel: VitalsViewModel,
     onBack: () -> Unit,
+    initialMetric: VitalMetricTab? = null,
+    bottomBar: @Composable () -> Unit = {},
     profileSwitcher: @Composable (enabled: Boolean, onSwitch: (String) -> Unit) -> Unit =
         { _, _ -> },
     onSwitchProfile: (String) -> Unit = {}
 ) {
+    androidx.compose.runtime.LaunchedEffect(initialMetric) {
+        if (initialMetric != null) {
+            viewModel.selectMetricTab(initialMetric)
+        }
+    }
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -93,6 +100,7 @@ fun VitalsScreen(
     var showLogSheet by remember { mutableStateOf(false) }
 
     Scaffold(
+        bottomBar = bottomBar,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.main_tile_vitals)) },

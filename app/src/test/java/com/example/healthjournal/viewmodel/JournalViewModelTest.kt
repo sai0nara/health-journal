@@ -803,6 +803,7 @@ class JournalViewModelTest {
         coEvery { repository.getEntryById("vitals-1") } returns existing
         val inserted = slot<JournalEntry>()
         coEvery { repository.insert(capture(inserted)) } returns Unit
+        coEvery { repository.addTag(any<String>(), any(), any()) } returns Unit
 
         viewModel.updateVitals(
             "vitals-1",
@@ -833,9 +834,35 @@ class JournalViewModelTest {
         assertFalse(saved.isSynced!!)
         assertEquals("PENDING_SYNC", saved.syncStatus)
         assertTrue(saved.lastModified > 1_000L)
-        coVerify(exactly = 0) { repository.addTag(any(), any()) }
+        coVerify(exactly = 1) {
+            repository.addTag(SELF_PROFILE_ID, "vitals-1", com.example.healthjournal.domain.EntryKindTag.HEALTH)
+        }
         coVerify(exactly = 0) { repository.removeTag(any(), any()) }
         verify { SyncManager.enqueuePeriodicSync(any()) }
+    }
+
+    @Test
+    fun updateVitals_blankDescription_setsVitalsDescriptionAndAddsHealthTag() = runTest {
+        val existing = JournalEntry(
+            entry_id = "vitals-blank",
+            description = "   ",
+            profileId = SELF_PROFILE_ID
+        )
+        coEvery { repository.getEntryById("vitals-blank") } returns existing
+        val inserted = slot<JournalEntry>()
+        coEvery { repository.insert(capture(inserted)) } returns Unit
+        coEvery { repository.addTag(any<String>(), any(), any()) } returns Unit
+
+        viewModel.updateVitals(
+            "vitals-blank",
+            EntryVitals(bpSystolic = 118.0, bpDiastolic = 76.0)
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Vitals", inserted.captured.description)
+        coVerify(exactly = 1) {
+            repository.addTag(SELF_PROFILE_ID, "vitals-blank", com.example.healthjournal.domain.EntryKindTag.HEALTH)
+        }
     }
 
     @Test
@@ -864,6 +891,7 @@ class JournalViewModelTest {
         assertNull(saved.blood_glucose_mmol)
         assertNull(saved.body_temperature_c)
         assertNull(saved.spo2_percent)
+        coVerify(exactly = 0) { repository.addTag(any<String>(), any(), any()) }
     }
 
     @Test

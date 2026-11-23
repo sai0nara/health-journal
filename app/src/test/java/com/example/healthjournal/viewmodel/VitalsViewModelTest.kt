@@ -43,6 +43,7 @@ class VitalsViewModelTest {
         every { journalRepository.vitalsEntries } returns vitalsFlow
         every { journalRepository.currentProfileId() } returns SELF_PROFILE_ID
         coEvery { journalRepository.insert(any<String>(), any()) } returns Unit
+        coEvery { journalRepository.addTag(any<String>(), any(), any()) } returns Unit
         coEvery { journalRepository.delete(any<String>(), any<String>()) } returns Unit
         every { activeProfileProvider.activeProfileId } returns profileIdFlow
         every { activeProfileProvider.currentProfileId() } returns SELF_PROFILE_ID
@@ -229,15 +230,23 @@ class VitalsViewModelTest {
         viewModel.logVital(vitals, timestamp = 1762700000000L)
         testDispatcher.scheduler.advanceUntilIdle()
 
+        val inserted = io.mockk.slot<JournalEntry>()
         coVerify {
             journalRepository.insert(
                 SELF_PROFILE_ID,
-                match {
-                    it.bp_systolic == 120.0 &&
-                        it.bp_diastolic == 80.0 &&
-                        it.heart_rate_avg == 72 &&
-                        it.timestamp == 1762700000000L
-                }
+                capture(inserted)
+            )
+        }
+        assertEquals("Vitals", inserted.captured.description)
+        assertEquals(120.0, inserted.captured.bp_systolic!!, 0.001)
+        assertEquals(80.0, inserted.captured.bp_diastolic!!, 0.001)
+        assertEquals(72, inserted.captured.heart_rate_avg)
+        assertEquals(1762700000000L, inserted.captured.timestamp)
+        coVerify {
+            journalRepository.addTag(
+                SELF_PROFILE_ID,
+                inserted.captured.entry_id,
+                com.example.healthjournal.domain.EntryKindTag.HEALTH
             )
         }
     }

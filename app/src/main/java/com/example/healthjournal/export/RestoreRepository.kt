@@ -94,10 +94,11 @@ class RestoreRepository(
 
                 if (!isMultiProfileV2) {
                     // A v1 backup has no profile ownership: restore it into Self
-                    // and leave any sibling profiles untouched.
-                    journalDao.clearAllEntries(SELF_PROFILE_ID)
-                    journalDao.clearAllDeletedEntries(SELF_PROFILE_ID)
+                    // and leave any sibling profiles untouched. Clear tag cross-refs
+                    // before entries because clearAllTags uses a journal_entries subquery.
                     journalDao.clearAllTags(SELF_PROFILE_ID)
+                    journalDao.clearAllDeletedEntries(SELF_PROFILE_ID)
+                    journalDao.clearAllEntries(SELF_PROFILE_ID)
                     bodyDao.clearAll(SELF_PROFILE_ID)
                     goalDao.clear(SELF_PROFILE_ID)
                     personalCardDao.clearAll(SELF_PROFILE_ID)
@@ -153,9 +154,10 @@ class RestoreRepository(
                         ).filter { it.isNotBlank() }.toSet()
 
                     allProfileIdsToWipe.forEach { pid ->
-                        journalDao.clearAllEntries(pid)
-                        journalDao.clearAllDeletedEntries(pid)
+                        // Clear tag cross-refs before entries because clearAllTags queries journal_entries.
                         journalDao.clearAllTags(pid)
+                        journalDao.clearAllDeletedEntries(pid)
+                        journalDao.clearAllEntries(pid)
                         bodyDao.clearAll(pid)
                         goalDao.clear(pid)
                         personalCardDao.clearAll(pid)
@@ -270,14 +272,26 @@ class RestoreRepository(
             } ?: emptyList()
 
             val newAttachments = entry.attachments?.map { att ->
-                val filename = att.uri.substringAfterLast('/')
-                val dest = File(attachmentsDir, filename)
-                val copied = copyFromStaging(stagingDir, profileId, filename, dest)
-                if (copied) {
+                val uriFilename = att.uri.substringAfterLast('/')
+                val altName = att.name.substringAfterLast('/').takeIf { it.isNotBlank() && it != uriFilename }
+                val primaryDest = File(attachmentsDir, uriFilename)
+                val copiedPrimary = uriFilename.isNotBlank() && copyFromStaging(stagingDir, profileId, uriFilename, primaryDest)
+                if (copiedPrimary) {
                     mediaCount++
-                    copiedFiles.add(dest)
+                    copiedFiles.add(primaryDest)
+                    att.copy(uri = "file://" + primaryDest.absolutePath)
+                } else if (altName != null) {
+                    val altDest = File(attachmentsDir, altName)
+                    if (copyFromStaging(stagingDir, profileId, altName, altDest)) {
+                        mediaCount++
+                        copiedFiles.add(altDest)
+                        att.copy(uri = "file://" + altDest.absolutePath)
+                    } else {
+                        att.copy(uri = "file://" + primaryDest.absolutePath)
+                    }
+                } else {
+                    att.copy(uri = "file://" + primaryDest.absolutePath)
                 }
-                att.copy(uri = "file://" + dest.absolutePath)
             } ?: emptyList()
 
             entry.copy(photo_urls = newPhotos, attachments = newAttachments)
